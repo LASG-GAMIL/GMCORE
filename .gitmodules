@@ -1,0 +1,6 @@
+[submodule "lib/datetime"]
+	path = lib/datetime
+	url = https://github.com/dongli/fortran-datetime
+[submodule "lib/container"]
+	path = lib/container
+	url = https://github.com/dongli/fortran-container
