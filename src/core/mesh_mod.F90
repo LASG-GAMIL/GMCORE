@@ -2,6 +2,7 @@ module mesh_mod
 
   use const_mod
   use sphere_geometry_mod
+  use log_mod
 
   implicit none
 
@@ -130,14 +131,17 @@ contains
     end do
 
     this%dlat = (this%end_lat - this%start_lat) / this%num_half_lat
-    do j = 1 - this%halo_width, this%num_half_lat + this%halo_width
+    do j = 1 - this%halo_width, this%num_full_lat + this%halo_width
       this%full_lat(j) = this%start_lat + (j - 1) * this%dlat
-      this%half_lat(j) = this%full_lat(j) + 0.5 * this%dlat
       this%full_lat_deg(j) = this%full_lat(j) * deg
-      this%half_lat_deg(j) = this%half_lat(j) * deg
     end do
     this%full_lat(num_lat) = this%end_lat
     this%full_lat_deg(num_lat) = this%end_lat * deg
+
+    do j = 1 - this%halo_width, this%num_half_lat + this%halo_width
+      this%half_lat(j) = this%full_lat(j) + 0.5 * this%dlat
+      this%half_lat_deg(j) = this%half_lat(j) * deg
+    end do
 
     do i = 1, this%num_full_lon
       this%full_cos_lon(i) = cos(this%full_lon(i))
@@ -158,13 +162,6 @@ contains
       this%full_cos_lat(j) = cos(this%full_lat(j))
       this%full_sin_lat(j) = sin(this%full_lat(j))
     end do
-
-    this%lon_edge_left_area = 0.0
-    this%lon_edge_right_area = 0.0
-    this%lon_edge_area = 0.0
-    this%lat_edge_up_area = 0.0
-    this%lat_edge_down_area = 0.0
-    this%lat_edge_area = 0.0
 
     do j = 1, this%num_full_lat
       if (this%has_south_pole() .and. j == 1) then
@@ -204,13 +201,22 @@ contains
 
     total_area = 0.0
     do j = 1, this%num_full_lat
-      print *, j, this%lon_edge_area(j)
+      total_area = total_area + this%cell_area(j) * this%num_full_lon
+    end do
+    if (abs((4 * pi * radius**2 - total_area) / (4 * pi * radius**2)) > 1.0e-12) then
+      call log_error('Failed to calculate cell area!', __FILE__, __LINE__)
+    end if
+
+    total_area = 0.0
+    do j = 1, this%num_full_lat
       total_area = total_area + this%lon_edge_area(j) * this%num_full_lon
     end do
     do j = 1, this%num_half_lat
       total_area = total_area + this%lat_edge_area(j) * this%num_full_lon
     end do
-    print *, 4 * pi * radius**2 - total_area
+    if (abs((4 * pi * radius**2 - total_area) / (4 * pi * radius**2)) > 1.0e-12) then
+      call log_error('Failed to calculate edge area!', __FILE__, __LINE__)
+    end if
 
   end subroutine mesh_init
 
@@ -234,27 +240,31 @@ contains
 
     type(mesh_type), intent(inout) :: this
 
-    if (allocated(this%full_lon))      deallocate(this%full_lon)
-    if (allocated(this%full_lat))      deallocate(this%full_lat)
-    if (allocated(this%half_lon))      deallocate(this%half_lon)
-    if (allocated(this%half_lat))      deallocate(this%half_lat)
-    if (allocated(this%full_cos_lon))  deallocate(this%full_cos_lon)
-    if (allocated(this%half_cos_lon))  deallocate(this%half_cos_lon)
-    if (allocated(this%full_sin_lon))  deallocate(this%full_sin_lon)
-    if (allocated(this%half_sin_lon))  deallocate(this%half_sin_lon)
-    if (allocated(this%full_cos_lat))  deallocate(this%full_cos_lat)
-    if (allocated(this%half_cos_lat))  deallocate(this%half_cos_lat)
-    if (allocated(this%full_sin_lat))  deallocate(this%full_sin_lat)
-    if (allocated(this%half_sin_lat))  deallocate(this%half_sin_lat)
-    if (allocated(this%cell_area))     deallocate(this%cell_area)
-    if (allocated(this%lon_edge_area)) deallocate(this%lon_edge_area)
-    if (allocated(this%lat_edge_area)) deallocate(this%lat_edge_area)
-    if (allocated(this%vertex_area))   deallocate(this%vertex_area)
-    if (allocated(this%subcell_area))  deallocate(this%subcell_area)
-    if (allocated(this%full_lon_deg))  deallocate(this%full_lon_deg)
-    if (allocated(this%half_lon_deg))  deallocate(this%half_lon_deg)
-    if (allocated(this%full_lat_deg))  deallocate(this%full_lat_deg)
-    if (allocated(this%half_lat_deg))  deallocate(this%half_lat_deg)
+    if (allocated(this%full_lon))            deallocate(this%full_lon)
+    if (allocated(this%full_lat))            deallocate(this%full_lat)
+    if (allocated(this%half_lon))            deallocate(this%half_lon)
+    if (allocated(this%half_lat))            deallocate(this%half_lat)
+    if (allocated(this%full_cos_lon))        deallocate(this%full_cos_lon)
+    if (allocated(this%half_cos_lon))        deallocate(this%half_cos_lon)
+    if (allocated(this%full_sin_lon))        deallocate(this%full_sin_lon)
+    if (allocated(this%half_sin_lon))        deallocate(this%half_sin_lon)
+    if (allocated(this%full_cos_lat))        deallocate(this%full_cos_lat)
+    if (allocated(this%half_cos_lat))        deallocate(this%half_cos_lat)
+    if (allocated(this%full_sin_lat))        deallocate(this%full_sin_lat)
+    if (allocated(this%half_sin_lat))        deallocate(this%half_sin_lat)
+    if (allocated(this%cell_area))           deallocate(this%cell_area)
+    if (allocated(this%lon_edge_area))       deallocate(this%lon_edge_area)
+    if (allocated(this%lon_edge_left_area))  deallocate(this%lon_edge_left_area)
+    if (allocated(this%lon_edge_right_area)) deallocate(this%lon_edge_right_area)
+    if (allocated(this%lat_edge_area))       deallocate(this%lat_edge_area)
+    if (allocated(this%lat_edge_up_area))    deallocate(this%lat_edge_up_area)
+    if (allocated(this%lat_edge_down_area))  deallocate(this%lat_edge_down_area)
+    if (allocated(this%vertex_area))         deallocate(this%vertex_area)
+    if (allocated(this%subcell_area))        deallocate(this%subcell_area)
+    if (allocated(this%full_lon_deg))        deallocate(this%full_lon_deg)
+    if (allocated(this%half_lon_deg))        deallocate(this%half_lon_deg)
+    if (allocated(this%full_lat_deg))        deallocate(this%full_lat_deg)
+    if (allocated(this%half_lat_deg))        deallocate(this%half_lat_deg)
 
   end subroutine mesh_final
 
