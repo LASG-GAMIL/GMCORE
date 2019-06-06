@@ -40,6 +40,7 @@ set(source_files
   src/utils/sphere_geometry_mod.F90
   src/core/mesh_mod.F90
   src/core/state_mod.F90
+  src/core/tend_mod.F90
   src/core/gmcore_mod.F90
 )
 

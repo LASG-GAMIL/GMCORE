@@ -11,11 +11,12 @@ module tend_mod
   public create_tends
 
   type tend_type
-    real, allocatable :: u (:,:)
-    real, allocatable :: v (:,:)
-    real, allocatable :: gd(:,:)
+    real, allocatable :: du (:,:)
+    real, allocatable :: dv (:,:)
+    real, allocatable :: dgd(:,:)
   contains
     procedure :: init => tend_init
+    procedure :: clear => tend_clear
     final :: tend_final
   end type tend_type
 
@@ -40,24 +41,27 @@ contains
 
     class(tend_type), intent(inout) :: this
 
-    if (allocated(this%u))  deallocate(this%u)
-    if (allocated(this%v))  deallocate(this%v)
-    if (allocated(this%gd)) deallocate(this%gd)
-
-    allocate(this%u (1-mesh%halo_width:mesh%num_half_lon+mesh%halo_width,1-mesh%halo_width:mesh%num_full_lat+mesh%halo_width))
-    allocate(this%v (1-mesh%halo_width:mesh%num_full_lon+mesh%halo_width,1-mesh%halo_width:mesh%num_half_lat+mesh%halo_width))
-    allocate(this%gd(1-mesh%halo_width:mesh%num_full_lon+mesh%halo_width,1-mesh%halo_width:mesh%num_full_lat+mesh%halo_width))
+    allocate(this%du (1-mesh%halo_width:mesh%num_half_lon+mesh%halo_width,1-mesh%halo_width:mesh%num_full_lat+mesh%halo_width))
+    allocate(this%dv (1-mesh%halo_width:mesh%num_full_lon+mesh%halo_width,1-mesh%halo_width:mesh%num_half_lat+mesh%halo_width))
+    allocate(this%dgd(1-mesh%halo_width:mesh%num_full_lon+mesh%halo_width,1-mesh%halo_width:mesh%num_full_lat+mesh%halo_width))
 
   end subroutine tend_init
+
+  subroutine tend_clear(this)
+
+    class(tend_type), intent(inout) :: this
+
+    if (allocated(this%du))  deallocate(this%du)
+    if (allocated(this%dv))  deallocate(this%dv)
+    if (allocated(this%dgd)) deallocate(this%dgd)
+
+  end subroutine tend_clear
 
   subroutine tend_final(this)
 
     type(tend_type), intent(inout) :: this
 
-
-    if (allocated(this%u))  deallocate(this%u)
-    if (allocated(this%v))  deallocate(this%v)
-    if (allocated(this%gd)) deallocate(this%gd)
+    call this%clear()
 
   end subroutine tend_final
 

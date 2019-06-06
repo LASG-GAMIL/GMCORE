@@ -135,8 +135,8 @@ contains
       this%full_lat(j) = this%start_lat + (j - 1) * this%dlat
       this%full_lat_deg(j) = this%full_lat(j) * deg
     end do
-    this%full_lat(num_lat) = this%end_lat
-    this%full_lat_deg(num_lat) = this%end_lat * deg
+    this%full_lat(this%num_full_lat) = this%end_lat
+    this%full_lat_deg(this%num_full_lat) = this%end_lat * deg
 
     do j = 1 - this%halo_width, this%num_half_lat + this%halo_width
       this%half_lat(j) = this%full_lat(j) + 0.5 * this%dlat
