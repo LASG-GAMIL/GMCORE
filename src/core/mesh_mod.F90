@@ -21,6 +21,24 @@ module mesh_mod
     integer num_half_lon
     integer num_full_lat
     integer num_half_lat
+    integer full_lon_start_idx
+    integer full_lon_end_idx
+    integer full_lat_start_idx
+    integer full_lat_end_idx
+    integer full_lat_start_idx_no_pole
+    integer full_lat_end_idx_no_pole
+    integer half_lon_start_idx
+    integer half_lon_end_idx
+    integer half_lat_start_idx
+    integer half_lat_end_idx
+    integer full_lon_lb
+    integer full_lon_ub
+    integer half_lon_lb
+    integer half_lon_ub
+    integer full_lat_lb
+    integer full_lat_ub
+    integer half_lat_lb
+    integer half_lat_ub
     real start_lon
     real end_lon
     real start_lat
@@ -49,6 +67,11 @@ module mesh_mod
     real, allocatable :: lat_edge_down_area(:)
     real, allocatable :: vertex_area(:)
     real, allocatable :: subcell_area(:,:)
+    ! Edge length
+    real, allocatable :: cell_lon_distance(:)
+    real, allocatable :: cell_lat_distance(:)
+    real, allocatable :: vertex_lon_distance(:)
+    real, allocatable :: vertex_lat_distance(:)
     ! For output
     real, allocatable :: full_lon_deg(:)
     real, allocatable :: half_lon_deg(:)
@@ -58,6 +81,8 @@ module mesh_mod
     procedure :: init => mesh_init
     procedure :: has_south_pole => mesh_has_south_pole
     procedure :: has_north_pole => mesh_has_north_pole
+    procedure :: is_south_pole => mesh_is_south_pole
+    procedure :: is_north_pole => mesh_is_north_pole
     final :: mesh_final
   end type mesh_type
 
@@ -88,6 +113,26 @@ contains
     this%num_full_lat = num_lat
     this%num_half_lat = num_lat - 1
 
+    this%full_lon_start_idx = 1
+    this%full_lon_end_idx = this%num_full_lon
+    this%full_lat_start_idx = 1
+    this%full_lat_end_idx = this%num_full_lat
+    this%half_lon_start_idx = 1
+    this%half_lon_end_idx = this%num_half_lon
+    this%half_lat_start_idx = 1
+    this%half_lat_end_idx = this%num_half_lat
+
+    this%full_lat_start_idx_no_pole = merge(this%full_lat_start_idx, this%full_lat_start_idx + 1, this%has_south_pole())
+    this%full_lat_end_idx_no_pole   = merge(this%full_lat_end_idx,   this%full_lat_end_idx   - 1, this%has_north_pole())
+
+    this%full_lon_lb = this%full_lon_start_idx-this%halo_width
+    this%full_lon_ub = this%full_lon_end_idx  +this%halo_width
+    this%full_lat_lb = this%full_lat_start_idx-this%halo_width
+    this%full_lat_ub = this%full_lat_end_idx  +this%halo_width
+    this%half_lon_lb = this%half_lon_start_idx-this%halo_width
+    this%half_lon_ub = this%half_lon_end_idx  +this%halo_width
+    this%half_lat_lb = this%half_lat_start_idx-this%halo_width
+    this%half_lat_ub = this%half_lat_end_idx  +this%halo_width
 
     this%id         = merge(id,         0,        present(id))
     this%halo_width = merge(halo_width, 1,        present(halo_width))
@@ -96,34 +141,38 @@ contains
     this%start_lat  = merge(start_lat, -0.5 * pi, present(start_lat))
     this%end_lat    = merge(end_lat,    0.5 * pi, present(end_lat))
 
-    allocate(this%full_lon(this%num_full_lon))
-    allocate(this%half_lon(this%num_half_lon))
-    allocate(this%full_lat(1-this%halo_width:this%num_full_lat+this%halo_width))
-    allocate(this%half_lat(1-this%halo_width:this%num_half_lat+this%halo_width))
-    allocate(this%full_cos_lon(this%num_full_lon))
-    allocate(this%half_cos_lon(this%num_half_lon))
-    allocate(this%full_sin_lon(this%num_full_lon))
-    allocate(this%half_sin_lon(this%num_half_lon))
-    allocate(this%full_cos_lat(1-this%halo_width:this%num_full_lat+this%halo_width))
-    allocate(this%half_cos_lat(1-this%halo_width:this%num_half_lat+this%halo_width))
-    allocate(this%full_sin_lat(1-this%halo_width:this%num_full_lat+this%halo_width))
-    allocate(this%half_sin_lat(1-this%halo_width:this%num_half_lat+this%halo_width))
-    allocate(this%cell_area(this%num_full_lat))
-    allocate(this%lon_edge_area(this%num_full_lat))
-    allocate(this%lon_edge_left_area(this%num_full_lat))
-    allocate(this%lon_edge_right_area(this%num_full_lat))
-    allocate(this%lat_edge_area(this%num_half_lat))
-    allocate(this%lat_edge_up_area(this%num_half_lat))
-    allocate(this%lat_edge_down_area(this%num_half_lat))
-    allocate(this%vertex_area(this%num_half_lat))
-    allocate(this%subcell_area(2,this%num_full_lat))
-    allocate(this%full_lon_deg(this%num_full_lon))
-    allocate(this%half_lon_deg(this%num_half_lon))
-    allocate(this%full_lat_deg(this%num_full_lat))
-    allocate(this%half_lat_deg(this%num_half_lat))
+    allocate(this%full_lon           (this%full_lon_lb:this%full_lon_ub))
+    allocate(this%half_lon           (this%half_lon_lb:this%half_lon_ub))
+    allocate(this%full_lat           (this%full_lat_lb:this%full_lat_ub))
+    allocate(this%half_lat           (this%half_lat_lb:this%half_lat_ub))
+    allocate(this%full_cos_lon       (this%full_lon_lb:this%full_lon_ub))
+    allocate(this%half_cos_lon       (this%half_lon_lb:this%half_lon_ub))
+    allocate(this%full_sin_lon       (this%full_lon_lb:this%full_lon_ub))
+    allocate(this%half_sin_lon       (this%half_lon_lb:this%half_lon_ub))
+    allocate(this%full_cos_lat       (this%full_lat_lb:this%full_lat_ub))
+    allocate(this%half_cos_lat       (this%half_lat_lb:this%half_lat_ub))
+    allocate(this%full_sin_lat       (this%full_lat_lb:this%full_lat_ub))
+    allocate(this%half_sin_lat       (this%half_lat_lb:this%half_lat_ub))
+    allocate(this%cell_area          (this%full_lat_lb:this%full_lat_ub))
+    allocate(this%lon_edge_area      (this%full_lat_lb:this%full_lat_ub))
+    allocate(this%lon_edge_left_area (this%full_lat_lb:this%full_lat_ub))
+    allocate(this%lon_edge_right_area(this%full_lat_lb:this%full_lat_ub))
+    allocate(this%lat_edge_area      (this%half_lat_lb:this%half_lat_ub))
+    allocate(this%lat_edge_up_area   (this%half_lat_lb:this%half_lat_ub))
+    allocate(this%lat_edge_down_area (this%half_lat_lb:this%half_lat_ub))
+    allocate(this%vertex_area        (this%half_lat_lb:this%half_lat_ub))
+    allocate(this%subcell_area     (2,this%full_lat_lb:this%full_lat_ub))
+    allocate(this%cell_lon_distance  (this%full_lat_lb:this%full_lat_ub))
+    allocate(this%cell_lat_distance  (this%half_lat_lb:this%half_lat_ub))
+    allocate(this%vertex_lon_distance(this%half_lat_lb:this%half_lat_ub))
+    allocate(this%vertex_lat_distance(this%full_lat_lb:this%full_lat_ub))
+    allocate(this%full_lon_deg       (this%full_lon_lb:this%full_lon_ub))
+    allocate(this%half_lon_deg       (this%half_lon_lb:this%half_lon_ub))
+    allocate(this%full_lat_deg       (this%full_lat_lb:this%full_lat_ub))
+    allocate(this%half_lat_deg       (this%half_lat_lb:this%half_lat_ub))
 
     this%dlon = (this%end_lon - this%start_lon) / this%num_full_lon
-    do i = 1, this%num_full_lon
+    do i = this%full_lon_lb, this%full_lon_ub
       this%full_lon(i) = this%start_lon + (i - 1) * this%dlon
       this%half_lon(i) = this%full_lon(i) + 0.5 * this%dlon
       this%full_lon_deg(i) = this%full_lon(i) * deg
@@ -131,44 +180,44 @@ contains
     end do
 
     this%dlat = (this%end_lat - this%start_lat) / this%num_half_lat
-    do j = 1 - this%halo_width, this%num_full_lat + this%halo_width
+    do j = this%full_lat_lb, this%full_lat_ub
       this%full_lat(j) = this%start_lat + (j - 1) * this%dlat
       this%full_lat_deg(j) = this%full_lat(j) * deg
     end do
     this%full_lat(this%num_full_lat) = this%end_lat
     this%full_lat_deg(this%num_full_lat) = this%end_lat * deg
 
-    do j = 1 - this%halo_width, this%num_half_lat + this%halo_width
+    do j = this%half_lat_lb, this%half_lat_ub
       this%half_lat(j) = this%full_lat(j) + 0.5 * this%dlat
       this%half_lat_deg(j) = this%half_lat(j) * deg
     end do
 
-    do i = 1, this%num_full_lon
+    do i = this%full_lon_lb, this%full_lon_ub
       this%full_cos_lon(i) = cos(this%full_lon(i))
       this%full_sin_lon(i) = sin(this%full_lon(i))
     end do
 
-    do i = 1, this%num_half_lon
+    do i = this%half_lon_lb, this%half_lon_ub
       this%half_cos_lon(i) = cos(this%half_lon(i))
       this%half_sin_lon(i) = sin(this%half_lon(i))
     end do
 
-    do j = 1 - this%halo_width, this%num_half_lat + this%halo_width
+    do j = this%half_lat_lb, this%half_lat_ub
       this%half_cos_lat(j) = cos(this%half_lat(j))
       this%half_sin_lat(j) = sin(this%half_lat(j))
     end do
 
-    do j = 1 - this%halo_width, this%num_full_lat + this%halo_width
+    do j = this%full_lat_lb, this%full_lat_ub
       this%full_cos_lat(j) = cos(this%full_lat(j))
       this%full_sin_lat(j) = sin(this%full_lat(j))
     end do
 
-    do j = 1, this%num_full_lat
-      if (this%has_south_pole() .and. j == 1) then
+    do j = this%full_lat_start_idx, this%full_lat_end_idx
+      if (this%is_south_pole(j)) then
         this%cell_area(j) = radius**2 * this%dlon * (this%half_sin_lat(j) + 1.0)
         this%subcell_area(1,j) = 0
         this%subcell_area(2,j) = radius**2 * 0.5 * this%dlon * (this%half_sin_lat(j) + 1.0)
-      else if (this%has_north_pole() .and. j == this%num_full_lat) then
+      else if (this%is_north_pole(j)) then
         this%cell_area(j) = radius**2 * this%dlon * (1.0 - this%half_sin_lat(j-1))
         this%subcell_area(1,j) = radius**2 * 0.5 * this%dlon * (1.0 - this%half_sin_lat(j-1))
         this%subcell_area(2,j) = 0
@@ -176,31 +225,31 @@ contains
         this%cell_area(j) = radius**2 * this%dlon * (this%half_sin_lat(j) - this%half_sin_lat(j-1))
         this%subcell_area(1,j) = radius**2 * 0.5 * this%dlon * (this%full_sin_lat(j) - this%half_sin_lat(j-1))
         this%subcell_area(2,j) = radius**2 * 0.5 * this%dlon * (this%half_sin_lat(j) - this%full_sin_lat(j))
-        call cartesian_transform(mesh%full_lon(1), mesh%full_lat(j  ), x(1), y(1), z(1))
-        call cartesian_transform(mesh%half_lon(1), mesh%half_lat(j-1), x(2), y(2), z(2))
-        call cartesian_transform(mesh%half_lon(1), mesh%half_lat(j  ), x(3), y(3), z(3))
+        call cartesian_transform(this%full_lon(1), this%full_lat(j  ), x(1), y(1), z(1))
+        call cartesian_transform(this%half_lon(1), this%half_lat(j-1), x(2), y(2), z(2))
+        call cartesian_transform(this%half_lon(1), this%half_lat(j  ), x(3), y(3), z(3))
         this%lon_edge_left_area(j) = calc_area(x, y, z)
         this%lon_edge_right_area(j) = this%lon_edge_left_area(j)
         this%lon_edge_area(j) = this%lon_edge_left_area(j) + this%lon_edge_right_area(j)
       end if
     end do
 
-    do j = 1, this%num_half_lat
+    do j = this%half_lat_start_idx, this%half_lat_end_idx
       this%vertex_area(j) = radius**2 * this%dlon * (this%full_sin_lat(j+1) - this%full_sin_lat(j))
       this%lat_edge_area(j) = this%vertex_area(j)
-      call cartesian_transform(mesh%full_lon(2), mesh%full_lat(j+1), x(1), y(1), z(1))
-      call cartesian_transform(mesh%half_lon(1), mesh%half_lat(j  ), x(2), y(2), z(2))
-      call cartesian_transform(mesh%half_lon(2), mesh%half_lat(j  ), x(3), y(3), z(3))
+      call cartesian_transform(this%full_lon(2), this%full_lat(j+1), x(1), y(1), z(1))
+      call cartesian_transform(this%half_lon(1), this%half_lat(j  ), x(2), y(2), z(2))
+      call cartesian_transform(this%half_lon(2), this%half_lat(j  ), x(3), y(3), z(3))
       this%lat_edge_up_area(j) = calc_area_with_last_small_arc(x, y, z)
-      call cartesian_transform(mesh%full_lon(2), mesh%full_lat(j), x(1), y(1), z(1))
-      call cartesian_transform(mesh%half_lon(2), mesh%half_lat(j), x(2), y(2), z(2))
-      call cartesian_transform(mesh%half_lon(1), mesh%half_lat(j), x(3), y(3), z(3))
+      call cartesian_transform(this%full_lon(2), this%full_lat(j), x(1), y(1), z(1))
+      call cartesian_transform(this%half_lon(2), this%half_lat(j), x(2), y(2), z(2))
+      call cartesian_transform(this%half_lon(1), this%half_lat(j), x(3), y(3), z(3))
       this%lat_edge_down_area(j) = calc_area_with_last_small_arc(x, y, z)
       this%lat_edge_area(j) = this%lat_edge_up_area(j) + this%lat_edge_down_area(j)
     end do
 
     total_area = 0.0
-    do j = 1, this%num_full_lat
+    do j = this%full_lat_start_idx, this%full_lat_end_idx
       total_area = total_area + this%cell_area(j) * this%num_full_lon
     end do
     if (abs((4 * pi * radius**2 - total_area) / (4 * pi * radius**2)) > 1.0e-12) then
@@ -208,15 +257,25 @@ contains
     end if
 
     total_area = 0.0
-    do j = 1, this%num_full_lat
+    do j = this%full_lat_start_idx, this%full_lat_end_idx
       total_area = total_area + this%lon_edge_area(j) * this%num_full_lon
     end do
-    do j = 1, this%num_half_lat
+    do j = this%half_lat_start_idx, this%half_lat_end_idx
       total_area = total_area + this%lat_edge_area(j) * this%num_full_lon
     end do
     if (abs((4 * pi * radius**2 - total_area) / (4 * pi * radius**2)) > 1.0e-12) then
       call log_error('Failed to calculate edge area!', __FILE__, __LINE__)
     end if
+
+    do j = this%full_lat_start_idx_no_pole, this%full_lat_end_idx_no_pole
+      this%vertex_lat_distance(j) = this%dlat * radius
+      this%cell_lon_distance(j) = 2.0 * this%lon_edge_area(j) / this%vertex_lat_distance(j)
+    end do
+
+    do j = this%half_lat_start_idx, this%half_lat_end_idx
+      this%vertex_lon_distance(j) = this%dlon * radius * this%half_cos_lat(j)
+      this%cell_lat_distance(j) = 2.0 * this%lat_edge_area(j) / this%vertex_lon_distance(j)
+    end do
 
   end subroutine mesh_init
 
@@ -235,6 +294,24 @@ contains
     res = this%end_lat == 0.5 * Pi
 
   end function mesh_has_north_pole
+
+  logical function mesh_is_south_pole(this, j) result(res)
+
+    class(mesh_type), intent(in) :: this
+    integer, intent(in) :: j
+
+    res = this%has_south_pole() .and. j == 1
+
+  end function mesh_is_south_pole
+
+  logical function mesh_is_north_pole(this, j) result(res)
+
+    class(mesh_type), intent(in) :: this
+    integer, intent(in) :: j
+
+    res = this%has_north_pole() .and. j == this%num_full_lat
+
+  end function mesh_is_north_pole
 
   subroutine mesh_final(this)
 
@@ -261,6 +338,10 @@ contains
     if (allocated(this%lat_edge_down_area))  deallocate(this%lat_edge_down_area)
     if (allocated(this%vertex_area))         deallocate(this%vertex_area)
     if (allocated(this%subcell_area))        deallocate(this%subcell_area)
+    if (allocated(this%cell_lon_distance))   deallocate(this%cell_lon_distance)
+    if (allocated(this%cell_lat_distance))   deallocate(this%cell_lat_distance)
+    if (allocated(this%vertex_lon_distance)) deallocate(this%vertex_lon_distance)
+    if (allocated(this%vertex_lat_distance)) deallocate(this%vertex_lat_distance)
     if (allocated(this%full_lon_deg))        deallocate(this%full_lon_deg)
     if (allocated(this%half_lon_deg))        deallocate(this%half_lon_deg)
     if (allocated(this%full_lat_deg))        deallocate(this%full_lat_deg)

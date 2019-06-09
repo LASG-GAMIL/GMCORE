@@ -22,16 +22,13 @@ module sphere_geometry_mod
   public intersect
   public point_type
 
-  integer, parameter :: ORIENT_LEFT      = 1
-  integer, parameter :: ORIENT_RIGHT     = 2
-  integer, parameter :: ORIENT_ON        = 3
+  integer, parameter :: ORIENT_LEFT  = 1
+  integer, parameter :: ORIENT_RIGHT = 2
+  integer, parameter :: ORIENT_ON    = 3
 
   type point_type
-    real lon
-    real lat
-    real x
-    real y
-    real z
+    real lon, lat
+    real x, y, z
   contains
     procedure :: copy_coord => point_copy_coord
   end type point_type
@@ -274,7 +271,7 @@ contains
     end if
     area2 = calc_area(xv, yv, zv)
     area3 = area1 - area2
-    if (area3 < 0.0) call log_error('Lune area is negative!', __FILE__, __LINE__)
+    if (area3 < 0.0 .and. abs(area3) > 1.0e-10) call log_error('Lune area is negative!', __FILE__, __LINE__)
 
     if (lat0 * lat1 >= 0 .and. abs(lat0) > abs(lat1)) then
       res = res + area3
