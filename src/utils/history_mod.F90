@@ -37,21 +37,8 @@ contains
     character(10) time_value, time_units
     real(real_kind) seconds
 
-    call io_create_dataset('h0', desc=case_desc, file_prefix=case_name // '.h0')
-    call io_add_att('h0', 'time_step_size', dt)
-    call io_add_dim('h0', 'time', add_var=.true.)
-    call io_add_dim('h0', 'lon',  size=mesh%num_full_lon, add_var=.true.)
-    call io_add_dim('h0', 'lat',  size=mesh%num_full_lat, add_var=.true.)
-    call io_add_dim('h0', 'ilon', size=mesh%num_half_lon, add_var=.true.)
-    call io_add_dim('h0', 'ilat', size=mesh%num_half_lat, add_var=.true.)
-    call io_add_var('h0', 'u',    long_name='u wind component',     units='m s-1',  dim_names=['lon ', 'lat ', 'time'])
-    call io_add_var('h0', 'v',    long_name='v wind component',     units='m s-1',  dim_names=['lon ', 'lat ', 'time'])
-    call io_add_var('h0', 'h',    long_name='height',               units='m',      dim_names=['lon ', 'lat ', 'time'])
-    call io_add_var('h0', 'hs',   long_name='surface height',       units='m',      dim_names=['lon ', 'lat ', 'time'])
-
-    if (.not. allocated(u)) call allocate_array(mesh, u)
-    if (.not. allocated(v)) call allocate_array(mesh, v)
-    if (.not. allocated(h)) call allocate_array(mesh, h)
+    if (history_interval(1) == 'N/A') call log_error('Parameter history_interval is not set!')
+    if (case_name == 'N/A') call log_error('Parameter case_name is not set!')
 
     time_value = string_split(history_interval(1), 1)
     time_units = string_split(history_interval(1), 2)
@@ -69,6 +56,23 @@ contains
       call log_error('Invalid history invalid ' // trim(history_interval(1)) // '!')
     end select
 
+    call io_init(time_units, start_time_str)
+
+    call io_create_dataset('h0', desc=case_desc, file_prefix=trim(case_name))
+    call io_add_att('h0', 'time_step_size', dt)
+    call io_add_dim('h0', 'time', add_var=.true.)
+    call io_add_dim('h0', 'lon',  size=mesh%num_full_lon, add_var=.true.)
+    call io_add_dim('h0', 'lat',  size=mesh%num_full_lat, add_var=.true.)
+    call io_add_dim('h0', 'ilon', size=mesh%num_half_lon, add_var=.true.)
+    call io_add_dim('h0', 'ilat', size=mesh%num_half_lat, add_var=.true.)
+    call io_add_var('h0', 'u',    long_name='u wind component',     units='m s-1',  dim_names=['lon ', 'lat ', 'time'])
+    call io_add_var('h0', 'v',    long_name='v wind component',     units='m s-1',  dim_names=['lon ', 'lat ', 'time'])
+    call io_add_var('h0', 'h',    long_name='height',               units='m',      dim_names=['lon ', 'lat ', 'time'])
+    call io_add_var('h0', 'hs',   long_name='surface height',       units='m',      dim_names=['lon ', 'lat ', 'time'])
+
+    if (.not. allocated(u)) call allocate_array(mesh, u)
+    if (.not. allocated(v)) call allocate_array(mesh, v)
+    if (.not. allocated(h)) call allocate_array(mesh, h)
 
     call time_add_alert('history_write', seconds=seconds)
 
@@ -92,13 +96,13 @@ contains
     ! Convert wind from C grid to A grid.
     do j = state%mesh%full_lat_start_idx, state%mesh%full_lat_end_idx
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-        u(i,j) = 0.5 * (state%u(i,j) + state%u(i-1,j))
-        v(i,j) = 0.5 * (state%v(i,j) + state%v(i,j-1))
+        u(i,j) = 0.5d0 * (state%u(i,j) + state%u(i-1,j))
+        v(i,j) = 0.5d0 * (state%v(i,j) + state%v(i,j-1))
         h(i,j) = (state%gd(i,j) + static%ghs(i,j)) / g
       end do
     end do
 
-    call io_start_output('h0')
+    call io_start_output('h0', elapsed_seconds, tag=curr_time_str)
     call io_output('h0', 'lon',  mesh%full_lon_deg(:))
     call io_output('h0', 'lat',  mesh%full_lat_deg(:))
     call io_output('h0', 'ilon', mesh%half_lon_deg(:))

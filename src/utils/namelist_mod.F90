@@ -8,7 +8,7 @@ module namelist_mod
   character(256) :: case_desc = 'N/A'
   character(30) :: case_name = 'N/A'
   character(30) :: test_case = 'N/A'
-  character(30) :: history_interval(1) = ''
+  character(30) :: history_interval(1) = 'N/A'
 
   namelist /gmcore_swm_control/ &
     case_name,                  &

@@ -26,6 +26,7 @@ contains
     call create_states()
     call create_static()
     call create_tends()
+    call history_init()
 
   end subroutine gmcore_init
 

@@ -19,7 +19,9 @@ module time_mod
   public time_is_alerted
 
   public curr_time
+  public start_time_str
   public curr_time_str
+  public elapsed_seconds
   public time_step
   public old_time_idx
   public new_time_idx
@@ -46,6 +48,7 @@ module time_mod
   integer time_step
   integer old_time_idx
   integer new_time_idx
+  character(30) start_time_str
   character(30) curr_time_str
 
 contains
@@ -78,6 +81,8 @@ contains
     dt = timedelta(seconds=dt_in_seconds)
 
     curr_time = start_time
+
+    start_time_str = start_time%format('%Y-%m-%dT%H_%M_%S')
     curr_time_str = curr_time%format('%Y-%m-%dT%H_%M_%S')
 
     alerts = hash_table()
@@ -187,7 +192,7 @@ contains
     end if
 
     alert%period = timedelta(months=months_, days=days_, hours=hours_, minutes=minutes_, seconds=seconds_)
-    alert%last_time = start_time
+    alert%last_time = start_time - alert%period
     call alerts%insert(trim(name), alert)
 
   end subroutine time_add_alert

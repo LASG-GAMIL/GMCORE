@@ -17,4 +17,8 @@ program gmcore_swm_driver
     call log_error('Unknown test case ' // trim(test_case) // '!')
   end select
 
+  call gmcore_run()
+
+  call gmcore_final()
+
 end program gmcore_swm_driver
