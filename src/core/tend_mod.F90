@@ -1,5 +1,6 @@
 module tend_mod
 
+  use const_mod
   use mesh_mod
   use allocator_mod
 
@@ -13,21 +14,21 @@ module tend_mod
 
   type tend_type
     type(mesh_type), pointer :: mesh => null()
-    real, allocatable :: du (:,:)
-    real, allocatable :: dv (:,:)
-    real, allocatable :: dgd(:,:)
+    real(real_kind), allocatable :: du (:,:)
+    real(real_kind), allocatable :: dv (:,:)
+    real(real_kind), allocatable :: dgd(:,:)
     ! Individual tendencies
-    real, allocatable :: coriolis_u(:,:)
-    real, allocatable :: coriolis_v(:,:)
-    real, allocatable :: grad_energy_u(:,:)
-    real, allocatable :: grad_energy_v(:,:)
-    real, allocatable :: div_mass_flux(:,:)
+    real(real_kind), allocatable :: coriolis_u(:,:)
+    real(real_kind), allocatable :: coriolis_v(:,:)
+    real(real_kind), allocatable :: grad_energy_u(:,:)
+    real(real_kind), allocatable :: grad_energy_v(:,:)
+    real(real_kind), allocatable :: div_mass_flux(:,:)
     ! Derived variables
-    real, allocatable :: pv_lon_edge(:,:)
-    real, allocatable :: pv_lat_edge(:,:)
-    real, allocatable :: dpvdlon(:,:)
-    real, allocatable :: dpvdlat(:,:)
-    real, allocatable :: ke_cell(:,:)
+    real(real_kind), allocatable :: pv_lon_edge(:,:)
+    real(real_kind), allocatable :: pv_lat_edge(:,:)
+    real(real_kind), allocatable :: dpvdlon(:,:)
+    real(real_kind), allocatable :: dpvdlat(:,:)
+    real(real_kind), allocatable :: ke_cell(:,:)
   contains
     procedure :: init => tend_init
     procedure :: clear => tend_clear

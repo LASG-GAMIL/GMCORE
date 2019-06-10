@@ -1,5 +1,6 @@
 module static_mod
 
+  use const_mod
   use mesh_mod
   use allocator_mod
 
@@ -7,7 +8,7 @@ module static_mod
 
   type static_type
     type(mesh_type), pointer :: mesh => null()
-    real, allocatable :: ghs(:,:)
+    real(real_kind), allocatable :: ghs(:,:)
   contains
     procedure :: init => static_init
     procedure :: clear => static_clear

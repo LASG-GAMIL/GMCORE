@@ -12,19 +12,19 @@ module mountain_zonal_flow_test_mod
 
   public mountain_zonal_flow_test_set_initial_condition
 
-  real, parameter :: alpha = 0.0
-  real, parameter :: u0 = 20.0
-  real, parameter :: gd0 = 5960.0 * g ! m2 s-2
-  real, parameter :: lon0 = pi * 1.5
-  real, parameter :: lat0 = pi / 6.0
-  real, parameter :: ghs0 = 2000.0 * g
-  real, parameter :: R = pi / 9.0
+  real(real_kind), parameter :: alpha = 0.0
+  real(real_kind), parameter :: u0 = 20.0
+  real(real_kind), parameter :: gd0 = 5960.0 * g ! m2 s-2
+  real(real_kind), parameter :: lon0 = pi * 1.5
+  real(real_kind), parameter :: lat0 = pi / 6.0
+  real(real_kind), parameter :: ghs0 = 2000.0 * g
+  real(real_kind), parameter :: R = pi / 9.0
 
 contains
 
   subroutine mountain_zonal_flow_test_set_initial_condition()
 
-    real cos_lat, sin_lat, cos_lon, sin_lon, cos_alpha, sin_alpha, dlon, d
+    real(real_kind) cos_lat, sin_lat, cos_lon, sin_lon, cos_alpha, sin_alpha, dlon, d
     integer i, j, k
 
     write(6, *) '[Notice]: Use mountain zonal flow initial condition.'

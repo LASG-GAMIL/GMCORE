@@ -1,5 +1,6 @@
 module state_mod
 
+  use const_mod
   use mesh_mod
   use allocator_mod
 
@@ -13,10 +14,10 @@ module state_mod
 
   type state_type
     type(mesh_type), pointer :: mesh => null()
-    real, allocatable :: u (:,:)
-    real, allocatable :: v (:,:)
-    real, allocatable :: gd(:,:)
-    real, allocatable :: pv(:,:)
+    real(real_kind), allocatable :: u (:,:)
+    real(real_kind), allocatable :: v (:,:)
+    real(real_kind), allocatable :: gd(:,:)
+    real(real_kind), allocatable :: pv(:,:)
   contains
     procedure :: init => state_init
     procedure :: clear => state_clear

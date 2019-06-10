@@ -22,9 +22,9 @@ module history_mod
   public history_write
 
   ! A-grid velocity
-  real, allocatable :: u(:,:)
-  real, allocatable :: v(:,:)
-  real, allocatable :: h(:,:)
+  real(real_kind), allocatable :: u(:,:)
+  real(real_kind), allocatable :: v(:,:)
+  real(real_kind), allocatable :: h(:,:)
 
   interface history_write
     module procedure history_write_state
@@ -35,7 +35,7 @@ contains
   subroutine history_init()
 
     character(10) time_value, time_units
-    real seconds
+    real(real_kind) seconds
 
     call io_create_dataset('h0', desc=case_desc, file_prefix=case_name // '.h0')
     call io_add_att('h0', 'time_step_size', dt)

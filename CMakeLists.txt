@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8)
 project(gmcore LANGUAGES Fortran)
 
 if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
-  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fdefault-real-8 -ffpe-summary=none -ffree-line-length-none -Ofast -fopenmp")
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -ffpe-summary=none -ffree-line-length-none -Ofast -fopenmp")
 endif ()
 
 find_package(MPI)
