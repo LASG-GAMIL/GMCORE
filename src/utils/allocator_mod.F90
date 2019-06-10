@@ -55,6 +55,8 @@ contains
       if (half_lon .and. full_lat) allocate(array(mesh%half_lon_lb:mesh%half_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub))
     else if (present(half_lon) .and. present(half_lat)) then
       if (half_lon .and. half_lat) allocate(array(mesh%half_lon_lb:mesh%half_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub))
+    else
+      allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub))
     end if
 
   end subroutine allocate_array_2d_r8

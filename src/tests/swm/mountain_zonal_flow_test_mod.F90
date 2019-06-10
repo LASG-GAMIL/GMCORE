@@ -22,10 +22,7 @@ module mountain_zonal_flow_test_mod
 
 contains
 
-  subroutine mountain_zonal_flow_test_set_initial_condition(state, static)
-
-    type(state_type), intent(inout) :: state
-    type(static_type), intent(inout) :: static
+  subroutine mountain_zonal_flow_test_set_initial_condition()
 
     real cos_lat, sin_lat, cos_lon, sin_lon, cos_alpha, sin_alpha, dlon, d
     integer i, j, k
@@ -35,8 +32,12 @@ contains
     cos_alpha = cos(alpha)
     sin_alpha = sin(alpha)
 
-    do j = state%mesh%full_lat_start_idx, state%mesh%full_lat_end_idx
-      do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
+#ifdef STAGGER_V_ON_POLE
+    do j = static%mesh%half_lat_start_idx, static%mesh%half_lat_end_idx
+#else
+    do j = static%mesh%full_lat_start_idx, static%mesh%full_lat_end_idx
+#endif
+      do i = static%mesh%full_lon_start_idx, static%mesh%full_lon_end_idx
         dlon = abs(mesh%full_lon(i) - lon0)
         dlon = min(dlon, 2 * pi - dlon)
         d = min(R, sqrt(dlon**2 + (mesh%full_lat(j) - lat0)**2))
@@ -46,36 +47,48 @@ contains
 
     call parallel_fill_halo(static%ghs, all_halo=.true.)
 
-    do j = state%mesh%full_lat_start_idx_no_pole, state%mesh%full_lat_end_idx_no_pole
+#ifdef STAGGER_V_ON_POLE
+    do j = state(1)%mesh%half_lat_start_idx, state(1)%mesh%half_lat_end_idx
+#else
+    do j = state(1)%mesh%full_lat_start_idx_no_pole, state(1)%mesh%full_lat_end_idx_no_pole
+#endif
       cos_lat = mesh%full_cos_lat(j)
       sin_lat = mesh%full_sin_lat(j)
-      do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
+      do i = state(1)%mesh%half_lon_start_idx, state(1)%mesh%half_lon_end_idx
         cos_lon = mesh%half_cos_lon(i)
-        state%u(i,j) = u0 * (cos_lat * cos_alpha + cos_lon * sin_lat * sin_alpha)
+        state(1)%u(i,j) = u0 * (cos_lat * cos_alpha + cos_lon * sin_lat * sin_alpha)
       end do
     end do
 
-    call parallel_fill_halo(state%u, all_halo=.true.)
+    call parallel_fill_halo(state(1)%u, all_halo=.true.)
 
-    do j = state%mesh%half_lat_start_idx, state%mesh%half_lat_end_idx
-      do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
+#ifdef STAGGER_V_ON_POLE
+    do j = state(1)%mesh%full_lat_start_idx_no_pole, state(1)%mesh%full_lat_end_idx_no_pole
+#else
+    do j = state(1)%mesh%half_lat_start_idx, state(1)%mesh%half_lat_end_idx
+#endif
+      do i = state(1)%mesh%full_lon_start_idx, state(1)%mesh%full_lon_end_idx
         sin_lon = mesh%full_cos_lon(i)
-        state%v(i,j) = - u0 * sin_lon * sin_alpha
+        state(1)%v(i,j) = - u0 * sin_lon * sin_alpha
       end do
     end do
 
-    call parallel_fill_halo(state%v, all_halo=.true.)
+    call parallel_fill_halo(state(1)%v, all_halo=.true.)
 
-    do j = state%mesh%full_lat_start_idx, state%mesh%full_lat_end_idx
+#ifdef STAGGER_V_ON_POLE
+    do j = state(1)%mesh%half_lat_start_idx, state(1)%mesh%half_lat_end_idx
+#else
+    do j = state(1)%mesh%full_lat_start_idx, state(1)%mesh%full_lat_end_idx
+#endif
       cos_lat = mesh%full_cos_lat(j)
       sin_lat = mesh%full_sin_lat(j)
-      do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
+      do i = state(1)%mesh%full_lon_start_idx, state(1)%mesh%full_lon_end_idx
         cos_lon = mesh%full_cos_lon(i)
-        state%gd(i,j) = gd0 - (radius * omega * u0 + u0**2 * 0.5) * (sin_lat * cos_alpha - cos_lon * cos_lat * sin_alpha)**2 - static%ghs(i,j)
+        state(1)%gd(i,j) = gd0 - (radius * omega * u0 + u0**2 * 0.5) * (sin_lat * cos_alpha - cos_lon * cos_lat * sin_alpha)**2 - static%ghs(i,j)
       end do
     end do
 
-    call parallel_fill_halo(state%gd, all_halo=.true.)
+    call parallel_fill_halo(state(1)%gd, all_halo=.true.)
 
   end subroutine mountain_zonal_flow_test_set_initial_condition
 

@@ -32,13 +32,15 @@ endif ()
 
 add_subdirectory(lib/container)
 add_subdirectory(lib/datetime)
+add_subdirectory(lib/fiona)
+add_subdirectory(lib/flogger)
 
 set(source_files
   src/utils/const_mod.F90
   src/utils/namelist_mod.F90
+  src/utils/time_mod.F90
   src/utils/math_mod.F90
-  src/utils/log_mod.F90
-  src/utils/string_mod.F90
+  src/utils/history_mod.F90 
   src/utils/time_mod.F90
   src/utils/sphere_geometry_mod.F90
   src/utils/allocator_mod.F90
@@ -52,7 +54,7 @@ set(source_files
 )
 
 add_library(gmcore ${source_files})
-target_link_libraries(gmcore netcdff fortran_container fortran_datetime ${MPI_Fortran_LIBRARIES})
+target_link_libraries(gmcore netcdff fortran_container fortran_datetime fiona ${MPI_Fortran_LIBRARIES})
 
 add_executable(gmcore_swm_driver.exe src/drivers/gmcore_swm_driver.F90)
 target_link_libraries(gmcore_swm_driver.exe gmcore)

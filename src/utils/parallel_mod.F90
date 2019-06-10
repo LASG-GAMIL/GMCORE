@@ -33,11 +33,11 @@ contains
 
     parallel_info%comm = MPI_COMM_WORLD
 
-    call MPI_INIT(ierr)
-    call MPI_CART_CREATE(MPI_COMM_WORLD, 2, [2, 2], [.true., .false.], .true., parallel_info%comm, ierr)
-    call MPI_COMM_SIZE(parallel_info%comm, parallel_info%num_proc, ierr)
-    call MPI_COMM_RANK(parallel_info%comm, parallel_info%rank, ierr)
-    call MPI_GET_PROCESSOR_NAME(parallel_info%proc_name, n, ierr)
+    ! call MPI_INIT(ierr)
+    ! call MPI_CART_CREATE(MPI_COMM_WORLD, 2, [2, 2], [.true., .false.], .true., parallel_info%comm, ierr)
+    ! call MPI_COMM_SIZE(parallel_info%comm, parallel_info%num_proc, ierr)
+    ! call MPI_COMM_RANK(parallel_info%comm, parallel_info%rank, ierr)
+    ! call MPI_GET_PROCESSOR_NAME(parallel_info%proc_name, n, ierr)
 
   end subroutine parallel_init
 
@@ -45,7 +45,7 @@ contains
 
     integer ierr
 
-    call MPI_FINALIZE(ierr)
+    ! call MPI_FINALIZE(ierr)
 
   end subroutine parallel_final
 

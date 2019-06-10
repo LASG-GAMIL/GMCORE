@@ -18,8 +18,7 @@ module time_mod
   public time_is_alerted
 
   public curr_time
-  public start_time_format
-  public curr_time_format
+  public curr_time_str
   public time_step
   public old_time_idx
   public new_time_idx
@@ -30,41 +29,55 @@ module time_mod
     logical :: ring = .false.
   end type alert_type
 
+  ! Namelist parameters
+  integer, public :: start_time_array(5) = 0
+  integer, public :: end_time_array(5) = 0
+  integer, public :: run_hours = 0
+  integer, public :: run_days = 0
+  real, public :: dt_in_seconds = 0.0
+
   type(datetime_type) start_time
   type(datetime_type) end_time
   type(datetime_type) curr_time
-  type(timedelta_type) time_step_size
+  type(timedelta_type) dt
   real(8) elapsed_seconds
   type(hash_table_type) alerts
   integer time_step
   integer old_time_idx
   integer new_time_idx
-  character(30) start_time_format
-  character(30) curr_time_format
+  character(30) curr_time_str
 
 contains
 
-  subroutine time_init(start_time_in, end_time_in, time_step_size_in)
+  subroutine time_init()
 
-    integer, intent(in) :: start_time_in(:)
-    integer, intent(in) :: end_time_in(:)
-    real, intent(in) :: time_step_size_in
-
-    start_time = create_datetime(year=start_time_in(1), month=start_time_in(2), day=start_time_in(3), &
-      hour=start_time_in(4), minute=start_time_in(5))
-    end_time = create_datetime(year=end_time_in(1), month=end_time_in(2), day=end_time_in(3), &
-      hour=end_time_in(4), minute=end_time_in(5))
+    if (sum(start_time_array) > 0) then
+      start_time = create_datetime(year=start_time_array(1),  &
+                                   month=start_time_array(2), &
+                                   day=start_time_array(3),   &
+                                   hour=start_time_array(4),  &
+                                   minute=start_time_array(5))
+    else
+      start_time = create_datetime(year=1, month=1, day=1, hour=0, minute=0)
+    end if
+    if (run_days > 0 .or. run_hours > 0) then
+      end_time = start_time + timedelta(days=run_days, hours=run_hours)
+    else if (sum(end_time_array) > 0) then
+      end_time = create_datetime(year=end_time_array(1),  &
+                                 month=end_time_array(2), &
+                                 day=end_time_array(3),   &
+                                 hour=end_time_array(4),  &
+                                 minute=end_time_array(5))
+    end if
 
     time_step = 0
     elapsed_seconds = 0
     old_time_idx = 1
     new_time_idx = 2
-    time_step_size = timedelta(seconds=time_step_size_in)
+    dt = timedelta(seconds=dt_in_seconds)
 
     curr_time = start_time
-
-    start_time_format = start_time%format('%Y-%m-%dT%H_%M_%S')
-    curr_time_format  = curr_time %format('%Y-%m-%dT%H_%M_%S')
+    curr_time_str = curr_time%format('%Y-%m-%dT%H_%M_%S')
 
     alerts = hash_table()
 
@@ -76,9 +89,6 @@ contains
 
     start_time = time
     curr_time = start_time
-
-    start_time_format = start_time%format('%Y-%m-%dT%H_%M_%S')
-    curr_time_format  = curr_time %format('%Y-%m-%dT%H_%M_%S')
 
   end subroutine time_reset_start_time
 
@@ -115,9 +125,9 @@ contains
     call time_swap_indices(old_time_idx, new_time_idx)
 
     time_step = time_step + 1
-    elapsed_seconds = elapsed_seconds + time_step_size%total_seconds()
-    curr_time = curr_time + time_step_size
-    curr_time_format = curr_time%isoformat()
+    elapsed_seconds = elapsed_seconds + dt%total_seconds()
+    curr_time = curr_time + dt
+    curr_time_str = curr_time%format('%Y-%m-%dT%H_%M_%S')
 
   end subroutine time_advance
 

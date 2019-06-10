@@ -11,8 +11,8 @@ module mesh_mod
   public mesh_type
   public mesh
   public create_meshes
-  public num_total_lon
-  public num_total_lat
+  public num_lon
+  public num_lat
 
   type mesh_type
     integer :: id
@@ -86,8 +86,8 @@ module mesh_mod
     final :: mesh_final
   end type mesh_type
 
-  integer num_total_lon
-  integer num_total_lat
+  integer num_lon
+  integer num_lat
 
   type(mesh_type) mesh
 
@@ -351,7 +351,7 @@ contains
 
   subroutine create_meshes()
 
-    call mesh%init(num_total_lon, num_total_lat)
+    call mesh%init(num_lon, num_lat)
 
   end subroutine create_meshes
 
