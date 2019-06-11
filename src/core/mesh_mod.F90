@@ -1,8 +1,8 @@
 module mesh_mod
 
+  use flogger
   use const_mod
   use sphere_geometry_mod
-  use log_mod
 
   implicit none
 
@@ -57,6 +57,11 @@ module mesh_mod
     real(real_kind), allocatable :: half_cos_lat(:)
     real(real_kind), allocatable :: full_sin_lat(:)
     real(real_kind), allocatable :: half_sin_lat(:)
+    ! For output
+    real(real_kind), allocatable :: full_lon_deg(:)
+    real(real_kind), allocatable :: half_lon_deg(:)
+    real(real_kind), allocatable :: full_lat_deg(:)
+    real(real_kind), allocatable :: half_lat_deg(:)
     ! Area for weighting
     real(real_kind), allocatable :: cell_area(:)
     real(real_kind), allocatable :: lon_edge_area(:)
@@ -72,11 +77,9 @@ module mesh_mod
     real(real_kind), allocatable :: cell_lat_distance(:)
     real(real_kind), allocatable :: vertex_lon_distance(:)
     real(real_kind), allocatable :: vertex_lat_distance(:)
-    ! For output
-    real(real_kind), allocatable :: full_lon_deg(:)
-    real(real_kind), allocatable :: half_lon_deg(:)
-    real(real_kind), allocatable :: full_lat_deg(:)
-    real(real_kind), allocatable :: half_lat_deg(:)
+    ! Weight for constructing tangential wind
+    real(real_kind), allocatable :: full_tangent_wgt(:,:)
+    real(real_kind), allocatable :: half_tangent_wgt(:,:)
   contains
     procedure :: init => mesh_init
     procedure :: has_south_pole => mesh_has_south_pole
@@ -125,21 +128,21 @@ contains
     this%full_lat_start_idx_no_pole = merge(this%full_lat_start_idx, this%full_lat_start_idx + 1, this%has_south_pole())
     this%full_lat_end_idx_no_pole   = merge(this%full_lat_end_idx,   this%full_lat_end_idx   - 1, this%has_north_pole())
 
-    this%full_lon_lb = this%full_lon_start_idx-this%halo_width
-    this%full_lon_ub = this%full_lon_end_idx  +this%halo_width
-    this%full_lat_lb = this%full_lat_start_idx-this%halo_width
-    this%full_lat_ub = this%full_lat_end_idx  +this%halo_width
-    this%half_lon_lb = this%half_lon_start_idx-this%halo_width
-    this%half_lon_ub = this%half_lon_end_idx  +this%halo_width
-    this%half_lat_lb = this%half_lat_start_idx-this%halo_width
-    this%half_lat_ub = this%half_lat_end_idx  +this%halo_width
-
     this%id         = merge(id,         0,          present(id))
     this%halo_width = merge(halo_width, 1,          present(halo_width))
     this%start_lon  = merge(start_lon,  0.0d0,      present(start_lon))
     this%end_lon    = merge(end_lon,    2.0d0 * pi, present(end_lon))
     this%start_lat  = merge(start_lat, -0.5d0 * pi, present(start_lat))
     this%end_lat    = merge(end_lat,    0.5d0 * pi, present(end_lat))
+
+    this%full_lon_lb = this%full_lon_start_idx - this%halo_width
+    this%full_lon_ub = this%full_lon_end_idx   + this%halo_width
+    this%full_lat_lb = this%full_lat_start_idx - this%halo_width
+    this%full_lat_ub = this%full_lat_end_idx   + this%halo_width
+    this%half_lon_lb = this%half_lon_start_idx - this%halo_width
+    this%half_lon_ub = this%half_lon_end_idx   + this%halo_width
+    this%half_lat_lb = this%half_lat_start_idx - this%halo_width
+    this%half_lat_ub = this%half_lat_end_idx   + this%halo_width
 
     allocate(this%full_lon           (this%full_lon_lb:this%full_lon_ub))
     allocate(this%half_lon           (this%half_lon_lb:this%half_lon_ub))
@@ -153,6 +156,10 @@ contains
     allocate(this%half_cos_lat       (this%half_lat_lb:this%half_lat_ub))
     allocate(this%full_sin_lat       (this%full_lat_lb:this%full_lat_ub))
     allocate(this%half_sin_lat       (this%half_lat_lb:this%half_lat_ub))
+    allocate(this%full_lon_deg       (this%full_lon_lb:this%full_lon_ub))
+    allocate(this%half_lon_deg       (this%half_lon_lb:this%half_lon_ub))
+    allocate(this%full_lat_deg       (this%full_lat_lb:this%full_lat_ub))
+    allocate(this%half_lat_deg       (this%half_lat_lb:this%half_lat_ub))
     allocate(this%cell_area          (this%full_lat_lb:this%full_lat_ub))
     allocate(this%lon_edge_area      (this%full_lat_lb:this%full_lat_ub))
     allocate(this%lon_edge_left_area (this%full_lat_lb:this%full_lat_ub))
@@ -166,10 +173,8 @@ contains
     allocate(this%cell_lat_distance  (this%half_lat_lb:this%half_lat_ub))
     allocate(this%vertex_lon_distance(this%half_lat_lb:this%half_lat_ub))
     allocate(this%vertex_lat_distance(this%full_lat_lb:this%full_lat_ub))
-    allocate(this%full_lon_deg       (this%full_lon_lb:this%full_lon_ub))
-    allocate(this%half_lon_deg       (this%half_lon_lb:this%half_lon_ub))
-    allocate(this%full_lat_deg       (this%full_lat_lb:this%full_lat_ub))
-    allocate(this%half_lat_deg       (this%half_lat_lb:this%half_lat_ub))
+    allocate(this%full_tangent_wgt (2,this%full_lat_lb:this%full_lat_ub))
+    allocate(this%half_tangent_wgt (2,this%half_lat_lb:this%half_lat_ub))
 
     this%dlon = (this%end_lon - this%start_lon) / this%num_full_lon
     do i = this%full_lon_lb, this%full_lon_ub
@@ -182,6 +187,7 @@ contains
     this%dlat = (this%end_lat - this%start_lat) / this%num_half_lat
     do j = this%full_lat_lb, this%full_lat_ub
       this%full_lat(j) = this%start_lat + (j - 1) * this%dlat
+      if (abs(this%full_lat(j)) < 1.0e-14) this%full_lat(j) = 0.0d0
       this%full_lat_deg(j) = this%full_lat(j) * deg
     end do
     this%full_lat(this%num_full_lat) = this%end_lat
@@ -189,6 +195,7 @@ contains
 
     do j = this%half_lat_lb, this%half_lat_ub
       this%half_lat(j) = this%full_lat(j) + 0.5d0 * this%dlat
+      if (abs(this%half_lat(j)) < 1.0e-14) this%half_lat(j) = 0.0d0
       this%half_lat_deg(j) = this%half_lat(j) * deg
     end do
 
@@ -232,7 +239,6 @@ contains
         this%lon_edge_right_area(j) = this%lon_edge_left_area(j)
         this%lon_edge_area(j) = this%lon_edge_left_area(j) + this%lon_edge_right_area(j)
       end if
-      ! print *, j, this%lon_edge_left_area(j), this%lon_edge_right_area(j), this%lon_edge_area(j)
     end do
 
     do j = this%half_lat_start_idx, this%half_lat_end_idx
@@ -264,6 +270,26 @@ contains
     if (abs((4 * pi * radius**2 - total_area) / (4 * pi * radius**2)) > 1.0d-12) then
       call log_error('Failed to calculate vertex area!', __FILE__, __LINE__)
     end if
+
+    total_area = 0.0d0
+    do j = this%full_lat_start_idx, this%full_lat_end_idx
+      total_area = total_area + sum(this%subcell_area(:,j)) * this%num_full_lon * 2
+    end do
+    if (abs((4 * pi * radius**2 - total_area) / (4 * pi * radius**2)) > 1.0d-12) then
+      call log_error('Failed to calculate subcell area!', __FILE__, __LINE__)
+    end if
+
+    do j = this%full_lat_start_idx, this%full_lat_end_idx
+      if (abs((this%cell_area(j) - 2.0d0 * sum(this%subcell_area(:,j))) / this%cell_area(j)) > 1.0d-12) then
+        call log_error('Failed to calculate subcell area!', __FILE__, __LINE__)
+      end if
+    end do
+
+    do j = this%half_lat_start_idx, this%half_lat_end_idx
+      if (abs((this%vertex_area(j) - 2.0d0 * (this%subcell_area(2,j) + this%subcell_area(1,j+1))) / this%vertex_area(j)) > 1.0d-12) then
+        call log_error('Failed to calculate subcell area!', __FILE__, __LINE__)
+      end if
+    end do
 
     total_area = 0.0d0
     do j = this%full_lat_start_idx, this%full_lat_end_idx
@@ -338,6 +364,10 @@ contains
     if (allocated(this%half_cos_lat))        deallocate(this%half_cos_lat)
     if (allocated(this%full_sin_lat))        deallocate(this%full_sin_lat)
     if (allocated(this%half_sin_lat))        deallocate(this%half_sin_lat)
+    if (allocated(this%full_lon_deg))        deallocate(this%full_lon_deg)
+    if (allocated(this%half_lon_deg))        deallocate(this%half_lon_deg)
+    if (allocated(this%full_lat_deg))        deallocate(this%full_lat_deg)
+    if (allocated(this%half_lat_deg))        deallocate(this%half_lat_deg)
     if (allocated(this%cell_area))           deallocate(this%cell_area)
     if (allocated(this%lon_edge_area))       deallocate(this%lon_edge_area)
     if (allocated(this%lon_edge_left_area))  deallocate(this%lon_edge_left_area)
@@ -351,10 +381,8 @@ contains
     if (allocated(this%cell_lat_distance))   deallocate(this%cell_lat_distance)
     if (allocated(this%vertex_lon_distance)) deallocate(this%vertex_lon_distance)
     if (allocated(this%vertex_lat_distance)) deallocate(this%vertex_lat_distance)
-    if (allocated(this%full_lon_deg))        deallocate(this%full_lon_deg)
-    if (allocated(this%half_lon_deg))        deallocate(this%half_lon_deg)
-    if (allocated(this%full_lat_deg))        deallocate(this%full_lat_deg)
-    if (allocated(this%half_lat_deg))        deallocate(this%half_lat_deg)
+    if (allocated(this%full_tangent_wgt))    deallocate(this%full_tangent_wgt)
+    if (allocated(this%half_tangent_wgt))    deallocate(this%half_tangent_wgt)
 
   end subroutine mesh_final
 

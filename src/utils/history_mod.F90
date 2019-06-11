@@ -1,7 +1,7 @@
 module history_mod
 
-  use io_mod
-  use log_mod
+  use fiona
+  use flogger
   use const_mod
   use namelist_mod
   use string_mod
@@ -96,17 +96,21 @@ contains
     ! Convert wind from C grid to A grid.
     do j = state%mesh%full_lat_start_idx, state%mesh%full_lat_end_idx
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-        u(i,j) = 0.5d0 * (state%u(i,j) + state%u(i-1,j))
+#ifdef STAGGER_V_ON_POLE
+        v(i,j) = 0.5d0 * (state%v(i,j) + state%v(i,j+1))
+#else
         v(i,j) = 0.5d0 * (state%v(i,j) + state%v(i,j-1))
+#endif
+        u(i,j) = 0.5d0 * (state%u(i,j) + state%u(i-1,j))
         h(i,j) = (state%gd(i,j) + static%ghs(i,j)) / g
       end do
     end do
 
     call io_start_output('h0', elapsed_seconds, tag=curr_time_str)
-    call io_output('h0', 'lon',  mesh%full_lon_deg(:))
-    call io_output('h0', 'lat',  mesh%full_lat_deg(:))
-    call io_output('h0', 'ilon', mesh%half_lon_deg(:))
-    call io_output('h0', 'ilat', mesh%half_lat_deg(:))
+    call io_output('h0', 'lon',  mesh%full_lon_deg(1:mesh%num_full_lon))
+    call io_output('h0', 'lat',  mesh%full_lat_deg(1:mesh%num_full_lat))
+    call io_output('h0', 'ilon', mesh%half_lon_deg(1:mesh%num_half_lon))
+    call io_output('h0', 'ilat', mesh%half_lat_deg(1:mesh%num_half_lat))
     call io_output('h0', 'u',    u(1:mesh%num_half_lon,1:mesh%num_full_lat))
     call io_output('h0', 'v',    v(1:mesh%num_full_lon,1:mesh%num_half_lat))
     call io_output('h0', 'h',    h(1:mesh%num_full_lon,1:mesh%num_full_lat))

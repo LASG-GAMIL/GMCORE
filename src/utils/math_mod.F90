@@ -1,7 +1,7 @@
 module math_mod
 
+  use flogger
   use const_mod
-  use log_mod
 
   private
   

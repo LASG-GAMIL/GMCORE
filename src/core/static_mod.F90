@@ -15,7 +15,7 @@ module static_mod
     final :: static_final
   end type static_type
 
-  type(static_type) static
+  type(static_type), target :: static
 
 contains
 
@@ -34,11 +34,7 @@ contains
 
     this%mesh => mesh
 
-#ifdef STAGGER_V_ON_POLE
-    call allocate_array(mesh, this%ghs, full_lon=.true., half_lat=.true.)
-#else
     call allocate_array(mesh, this%ghs, full_lon=.true., full_lat=.true.)
-#endif
 
   end subroutine static_init
 

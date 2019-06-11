@@ -54,7 +54,7 @@ set(source_files
 )
 
 add_library(gmcore ${source_files})
-target_link_libraries(gmcore netcdff fortran_container fortran_datetime fiona ${MPI_Fortran_LIBRARIES})
+target_link_libraries(gmcore netcdff fortran_container fortran_datetime fiona flogger ${MPI_Fortran_LIBRARIES})
 
 add_executable(gmcore_swm_driver.exe src/drivers/gmcore_swm_driver.F90)
 target_link_libraries(gmcore_swm_driver.exe gmcore)

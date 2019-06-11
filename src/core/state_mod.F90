@@ -14,17 +14,20 @@ module state_mod
 
   type state_type
     type(mesh_type), pointer :: mesh => null()
-    real(real_kind), allocatable :: u (:,:)
-    real(real_kind), allocatable :: v (:,:)
-    real(real_kind), allocatable :: gd(:,:)
-    real(real_kind), allocatable :: pv(:,:)
+    real(real_kind), allocatable :: u         (:,:)
+    real(real_kind), allocatable :: v         (:,:)
+    real(real_kind), allocatable :: gd        (:,:)
+    real(real_kind), allocatable :: pv        (:,:)
+    real(real_kind), allocatable :: hat_gd    (:,:)
+    real(real_kind), allocatable :: hat_pv_lon(:,:)
+    real(real_kind), allocatable :: hat_pv_lat(:,:)
   contains
     procedure :: init => state_init
     procedure :: clear => state_clear
     final :: state_final
   end type state_type
 
-  type(state_type), allocatable :: state(:)
+  type(state_type), allocatable, target :: state(:)
 
 contains
 
@@ -50,17 +53,13 @@ contains
 
     this%mesh => mesh
 
-#ifdef STAGGER_V_ON_POLE
-    call allocate_array(mesh, this%u , half_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%v , full_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%gd, full_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%pv, half_lon=.true., full_lat=.true.)
-#else
-    call allocate_array(mesh, this%u , half_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%v , full_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%gd, full_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%pv, half_lon=.true., half_lat=.true.)
-#endif
+    call allocate_array(mesh, this%u ,         half_lon=.true., full_lat=.true.)
+    call allocate_array(mesh, this%v ,         full_lon=.true., half_lat=.true.)
+    call allocate_array(mesh, this%gd,         full_lon=.true., full_lat=.true.)
+    call allocate_array(mesh, this%pv,         half_lon=.true., half_lat=.true.)
+    call allocate_array(mesh, this%hat_gd,     half_lon=.true., half_lat=.true.)
+    call allocate_array(mesh, this%hat_pv_lon, full_lon=.true., half_lat=.true.)
+    call allocate_array(mesh, this%hat_pv_lat, half_lon=.true., full_lat=.true.)
 
   end subroutine state_init
 
@@ -68,10 +67,13 @@ contains
 
     class(state_type), intent(inout) :: this
 
-    if (allocated(this%u )) deallocate(this%u )
-    if (allocated(this%v )) deallocate(this%v )
-    if (allocated(this%gd)) deallocate(this%gd)
-    if (allocated(this%pv)) deallocate(this%pv)
+    if (allocated(this%u ))         deallocate(this%u         )
+    if (allocated(this%v ))         deallocate(this%v         )
+    if (allocated(this%gd))         deallocate(this%gd        )
+    if (allocated(this%pv))         deallocate(this%pv        )
+    if (allocated(this%hat_gd))     deallocate(this%hat_gd    )
+    if (allocated(this%hat_pv_lon)) deallocate(this%hat_pv_lon)
+    if (allocated(this%hat_pv_lat)) deallocate(this%hat_pv_lat)
 
   end subroutine state_clear
 

@@ -61,21 +61,6 @@ contains
 
     this%mesh => mesh
 
-#ifdef STAGGER_V_ON_POLE
-    call allocate_array(mesh, this%du           , half_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%dv           , full_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%dgd          , full_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%coriolis_u   , half_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%coriolis_v   , full_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%grad_energy_u, half_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%grad_energy_v, full_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%div_mass_flux, full_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%pv_lon_edge  , half_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%pv_lat_edge  , full_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%dpvdlon      , full_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%dpvdlat      , half_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%ke_cell      , full_lon=.true., half_lat=.true.)
-#else
     call allocate_array(mesh, this%du           , half_lon=.true., full_lat=.true.)
     call allocate_array(mesh, this%dv           , full_lon=.true., half_lat=.true.)
     call allocate_array(mesh, this%dgd          , full_lon=.true., full_lat=.true.)
@@ -89,7 +74,6 @@ contains
     call allocate_array(mesh, this%dpvdlon      , full_lon=.true., half_lat=.true.)
     call allocate_array(mesh, this%dpvdlat      , half_lon=.true., full_lat=.true.)
     call allocate_array(mesh, this%ke_cell      , full_lon=.true., full_lat=.true.)
-#endif
 
   end subroutine tend_init
 

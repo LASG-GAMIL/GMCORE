@@ -49,10 +49,37 @@ contains
 
   end subroutine parallel_final
 
-  subroutine parallel_fill_halo_2d_r8(array, all_halo)
+  subroutine parallel_fill_halo_2d_r8(mesh, array, all_halo, left_halo, right_halo, top_halo, bottom_halo)
 
+    type(mesh_type), intent(in) :: mesh
     real(8), intent(inout) :: array(:,:)
     logical, intent(in), optional :: all_halo
+    logical, intent(in), optional :: left_halo
+    logical, intent(in), optional :: right_halo
+    logical, intent(in), optional :: top_halo
+    logical, intent(in), optional :: bottom_halo
+
+    integer i, j, m, n
+
+    if (merge(all_halo, .true., present(all_halo)) .or. merge(left_halo, .true., present(left_halo))) then
+      m = lbound(array, 1) - 1
+      n = ubound(array, 1) - 2 * mesh%halo_width
+      do j = lbound(array, 2), ubound(array, 2)
+        do i = 1, mesh%halo_width
+          array(m+i,j) = array(n+i,j)
+        end do
+      end do
+    end if
+
+    if (merge(all_halo, .true., present(all_halo)) .or. merge(right_halo, .true., present(right_halo))) then
+      m = ubound(array, 1) - mesh%halo_width
+      n = lbound(array, 1) + mesh%halo_width - 1
+      do j = lbound(array, 2), ubound(array, 2)
+        do i = 1, mesh%halo_width
+          array(m+i,j) = array(n+i,j)
+        end do
+      end do
+    end if
 
   end subroutine parallel_fill_halo_2d_r8
 

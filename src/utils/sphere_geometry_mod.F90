@@ -1,8 +1,8 @@
 module sphere_geometry_mod
 
+  use flogger
   use const_mod
   use math_mod
-  use log_mod
 
   implicit none
 
@@ -248,37 +248,44 @@ contains
     call inverse_cartesian_transform(lon1, lat1, x(2), y(2), z(2))
     call inverse_cartesian_transform(lon2, lat2, x(3), y(3), z(3))
     if (lat1 /= lat2) call log_error('Small arc is not valid!', __FILE__, __LINE__)
-    dlon = merge(lon2 - lon1, lon1 - lon2, lat0 > lat1)
-    if (dlon < 0.0) dlon = dlon + pi2
 
-    xv(1) = 0.0;  yv(1) = 0.0;
-    if (lat0 * lat1 >= 0 .and. abs(lat0) > abs(lat1)) then
-      ! Point 0 is at the side with the Pole.
-      xv(2) = x(2); yv(2) = y(2); zv(2) = z(2)
-      xv(3) = x(3); yv(3) = y(3); zv(3) = z(3)
+    if (lat1 == 0.0) then
+      ! Small arc is actually a great arc.
+      return
     else
-      xv(2) = x(3); yv(2) = y(3); zv(2) = z(3)
-      xv(3) = x(2); yv(3) = y(2); zv(3) = z(2)
-    end if
-    if (lat1 >= 0.0) then
-      ! Small arc is at the North Sphere.
-      zv(1) = radius
-      area1 = radius**2 * dlon * (1.0 - sin(lat1))
-    else
-      ! Small arc is at the South Sphere.
-      zv(1) = -radius
-      area1 = radius**2 * dlon * (sin(lat1) + 1.0)
-    end if
-    area2 = calc_area(xv, yv, zv)
-    area3 = area1 - area2
-    if (area3 < 0.0 .and. abs(area3) > 1.0e-10) call log_error('Lune area is negative!', __FILE__, __LINE__)
+      dlon = merge(lon2 - lon1, lon1 - lon2, lat0 > lat1)
+      if (dlon < 0.0) dlon = dlon + pi2
 
-    if (lat0 * lat1 >= 0 .and. abs(lat0) > abs(lat1)) then
-      res = res + area3
-    else
-      res = res - area3
+      xv(1) = 0.0;  yv(1) = 0.0;
+      if (lat0 * lat1 >= 0 .and. abs(lat0) > abs(lat1)) then
+        ! Point 0 is at the side with the Pole.
+        xv(2) = x(2); yv(2) = y(2); zv(2) = z(2)
+        xv(3) = x(3); yv(3) = y(3); zv(3) = z(3)
+      else
+        ! Point 0 is at the opposite hemisphere.
+        xv(2) = x(3); yv(2) = y(3); zv(2) = z(3)
+        xv(3) = x(2); yv(3) = y(2); zv(3) = z(2)
+      end if
+      if (lat1 > 0.0) then
+        ! Small arc is at the North Sphere.
+        zv(1) = radius
+        area1 = radius**2 * dlon * (1.0 - sin(lat1))
+      else
+        ! Small arc is at the South Sphere.
+        zv(1) = -radius
+        area1 = radius**2 * dlon * (sin(lat1) + 1.0)
+      end if
+      area2 = calc_area(xv, yv, zv)
+      area3 = area1 - area2
+      if (area3 < 0.0 .and. abs(area3) > 1.0e-10) call log_error('Lune area is negative!', __FILE__, __LINE__)
+
+      if (lat0 * lat1 >= 0 .and. abs(lat0) > abs(lat1)) then
+        res = res + area3
+      else
+        res = res - area3
+      end if
+      if (res < 0.0) call log_error('Failed to calculate area with small arc!', __FILE__, __LINE__)
     end if
-    if (res < 0.0) call log_error('Failed to calculate area with small arc!', __FILE__, __LINE__)
 
   end function calc_area_with_last_small_arc
 
