@@ -4,6 +4,7 @@ program gmcore_swm_driver
   use namelist_mod
   use gmcore_mod
   use mountain_zonal_flow_test_mod
+  use rossby_haurwitz_wave_test_mod
 
   implicit none
 
@@ -13,6 +14,8 @@ program gmcore_swm_driver
   select case (test_case)
   case ('mountain_zonal_flow')
     call mountain_zonal_flow_test_set_initial_condition()
+  case ('rossby_haurwitz_wave')
+    call rossby_haurwitz_wave_test_set_initial_condition()
   case default
     call log_error('Unknown test case ' // trim(test_case) // '!')
   end select

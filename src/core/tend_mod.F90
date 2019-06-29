@@ -9,33 +9,30 @@ module tend_mod
   private
 
   public tend_type
-  public tend
+  public tends
   public create_tends
 
   type tend_type
     type(mesh_type), pointer :: mesh => null()
-    real(real_kind), allocatable :: du (:,:)
-    real(real_kind), allocatable :: dv (:,:)
-    real(real_kind), allocatable :: dgd(:,:)
+    real(real_kind), allocatable, dimension(:,:) :: du
+    real(real_kind), allocatable, dimension(:,:) :: dv
+    real(real_kind), allocatable, dimension(:,:) :: dgd
     ! Individual tendencies
-    real(real_kind), allocatable :: coriolis_u(:,:)
-    real(real_kind), allocatable :: coriolis_v(:,:)
-    real(real_kind), allocatable :: grad_energy_u(:,:)
-    real(real_kind), allocatable :: grad_energy_v(:,:)
-    real(real_kind), allocatable :: div_mass_flux(:,:)
+    real(real_kind), allocatable, dimension(:,:) :: qhv
+    real(real_kind), allocatable, dimension(:,:) :: qhu
+    real(real_kind), allocatable, dimension(:,:) :: dEdlon
+    real(real_kind), allocatable, dimension(:,:) :: dEdlat
+    real(real_kind), allocatable, dimension(:,:) :: div_mass_flux
     ! Derived variables
-    real(real_kind), allocatable :: pv_lon_edge(:,:)
-    real(real_kind), allocatable :: pv_lat_edge(:,:)
-    real(real_kind), allocatable :: dpvdlon(:,:)
-    real(real_kind), allocatable :: dpvdlat(:,:)
-    real(real_kind), allocatable :: ke_cell(:,:)
+    real(real_kind), allocatable, dimension(:,:) :: dpvdlon
+    real(real_kind), allocatable, dimension(:,:) :: dpvdlat
   contains
     procedure :: init => tend_init
     procedure :: clear => tend_clear
     final :: tend_final
   end type tend_type
 
-  type(tend_type), allocatable :: tend(:)
+  type(tend_type), allocatable :: tends(:)
 
 contains
 
@@ -43,10 +40,10 @@ contains
 
     integer i
 
-    if (.not. allocated(tend)) then
-      allocate(tend(0:2))
-      do i = lbound(tend, 1), ubound(tend, 1)
-        call tend(i)%init(mesh)
+    if (.not. allocated(tends)) then
+      allocate(tends(0:2))
+      do i = lbound(tends, 1), ubound(tends, 1)
+        call tends(i)%init(mesh)
       end do
     end if
 
@@ -64,16 +61,13 @@ contains
     call allocate_array(mesh, this%du           , half_lon=.true., full_lat=.true.)
     call allocate_array(mesh, this%dv           , full_lon=.true., half_lat=.true.)
     call allocate_array(mesh, this%dgd          , full_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%coriolis_u   , half_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%coriolis_v   , full_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%grad_energy_u, half_lon=.true., full_lon=.true.)
-    call allocate_array(mesh, this%grad_energy_v, full_lon=.true., half_lon=.true.)
+    call allocate_array(mesh, this%qhu          , half_lon=.true., full_lat=.true.)
+    call allocate_array(mesh, this%qhv          , full_lon=.true., half_lat=.true.)
+    call allocate_array(mesh, this%dEdlon       , half_lon=.true., full_lon=.true.)
+    call allocate_array(mesh, this%dEdlat       , full_lon=.true., half_lon=.true.)
     call allocate_array(mesh, this%div_mass_flux, full_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%pv_lon_edge  , half_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%pv_lat_edge  , full_lon=.true., half_lat=.true.)
     call allocate_array(mesh, this%dpvdlon      , full_lon=.true., half_lat=.true.)
     call allocate_array(mesh, this%dpvdlat      , half_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%ke_cell      , full_lon=.true., full_lat=.true.)
 
   end subroutine tend_init
 
@@ -84,16 +78,13 @@ contains
     if (allocated(this%du           )) deallocate(this%du           )
     if (allocated(this%dv           )) deallocate(this%dv           )
     if (allocated(this%dgd          )) deallocate(this%dgd          )
-    if (allocated(this%coriolis_u   )) deallocate(this%coriolis_u   )
-    if (allocated(this%coriolis_v   )) deallocate(this%coriolis_v   )
-    if (allocated(this%grad_energy_u)) deallocate(this%grad_energy_u)
-    if (allocated(this%grad_energy_v)) deallocate(this%grad_energy_v)
+    if (allocated(this%qhu          )) deallocate(this%qhu          )
+    if (allocated(this%qhv          )) deallocate(this%qhv          )
+    if (allocated(this%dEdlon       )) deallocate(this%dEdlon       )
+    if (allocated(this%dEdlat       )) deallocate(this%dEdlat       )
     if (allocated(this%div_mass_flux)) deallocate(this%div_mass_flux)
-    if (allocated(this%pv_lon_edge  )) deallocate(this%pv_lon_edge  )
-    if (allocated(this%pv_lat_edge  )) deallocate(this%pv_lat_edge  )
     if (allocated(this%dpvdlon      )) deallocate(this%dpvdlon      )
     if (allocated(this%dpvdlat      )) deallocate(this%dpvdlat      )
-    if (allocated(this%ke_cell      )) deallocate(this%ke_cell      )
 
   end subroutine tend_clear
 

@@ -10,6 +10,7 @@ module parallel_mod
   public parallel_init
   public parallel_final
   public parallel_fill_halo
+  public parallel_zonal_sum
 
   type parallel_info_type
     integer comm
@@ -23,6 +24,10 @@ module parallel_mod
   interface parallel_fill_halo
     module procedure parallel_fill_halo_2d_r8
   end interface parallel_fill_halo
+
+  interface parallel_zonal_sum
+    module procedure paralle_zonal_sum_0d_r8
+  end interface parallel_zonal_sum
 
 contains
 
@@ -82,5 +87,11 @@ contains
     end if
 
   end subroutine parallel_fill_halo_2d_r8
+
+  subroutine paralle_zonal_sum_0d_r8(value)
+
+    real(8), intent(inout) :: value
+
+  end subroutine paralle_zonal_sum_0d_r8
 
 end module parallel_mod

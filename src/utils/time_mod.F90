@@ -37,7 +37,7 @@ module time_mod
   integer, public :: end_time_array(5) = 0
   integer, public :: run_hours = 0
   integer, public :: run_days = 0
-  real, public :: dt_in_seconds = 0.0
+  real(real_kind), public :: dt_in_seconds = 0.0
 
   type(datetime_type) start_time
   type(datetime_type) end_time

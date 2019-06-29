@@ -45,11 +45,16 @@ set(source_files
   src/utils/sphere_geometry_mod.F90
   src/utils/allocator_mod.F90
   src/utils/parallel_mod.F90
+  src/utils/debug_mod.F90
   src/core/mesh_mod.F90
   src/core/state_mod.F90
   src/core/static_mod.F90
   src/core/tend_mod.F90
+  src/core/pv_mod.F90
+  src/core/ke_mod.F90
+  src/core/operators_mod.F90
   src/core/gmcore_mod.F90
+  src/tests/swm/rossby_haurwitz_wave_test_mod.F90
   src/tests/swm/mountain_zonal_flow_test_mod.F90
 )
 

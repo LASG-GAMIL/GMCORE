@@ -6,6 +6,12 @@ module static_mod
 
   implicit none
 
+  private
+
+  public static_type
+  public static
+  public create_static
+
   type static_type
     type(mesh_type), pointer :: mesh => null()
     real(real_kind), allocatable :: ghs(:,:)

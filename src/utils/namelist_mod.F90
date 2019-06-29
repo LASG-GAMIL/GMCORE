@@ -10,6 +10,11 @@ module namelist_mod
   character(30) :: test_case = 'N/A'
   character(30) :: history_interval(1) = 'N/A'
 
+  integer :: pv_scheme = 1
+  integer :: fast_cycles = 5
+  character(30) :: split_scheme = 'csp2'
+  character(30) :: time_scheme = 'predict_correct'
+
   namelist /gmcore_swm_control/ &
     case_name,                  &
     test_case,                  &
@@ -21,7 +26,9 @@ module namelist_mod
     dt_in_seconds,              &
     run_hours,                  &
     run_days,                   &
-    history_interval
+    history_interval,           &
+    pv_scheme,                  &
+    split_scheme
 
 contains
 
