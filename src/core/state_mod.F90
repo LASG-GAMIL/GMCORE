@@ -30,6 +30,7 @@ module state_mod
     real(real_kind), allocatable, dimension(:,:) :: ke_cell
     real(real_kind) total_mass
     real(real_kind) total_energy
+    real(real_kind) total_absolute_vorticity
     real(real_kind) total_potential_enstrophy
   contains
     procedure :: init => state_init

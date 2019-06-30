@@ -10,7 +10,7 @@ module namelist_mod
   character(30) :: test_case = 'N/A'
   character(30) :: history_interval(1) = 'N/A'
 
-  integer :: pv_scheme = 1
+  integer :: pv_scheme = 2
   integer :: fast_cycles = 5
   character(30) :: split_scheme = 'csp2'
   character(30) :: time_scheme = 'predict_correct'

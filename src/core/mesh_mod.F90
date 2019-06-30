@@ -47,6 +47,7 @@ module mesh_mod
     real(real_kind) end_lat
     real(real_kind) dlon
     real(real_kind) dlat
+    real(real_kind) total_area
     real(real_kind), allocatable :: full_lon(:)
     real(real_kind), allocatable :: half_lon(:)
     real(real_kind), allocatable :: full_lat(:)
@@ -140,6 +141,7 @@ contains
     this%end_lon    = merge(end_lon   ,  2.0d0 * pi, present(end_lon))
     this%start_lat  = merge(start_lat , -0.5d0 * pi, present(start_lat))
     this%end_lat    = merge(end_lat   ,  0.5d0 * pi, present(end_lat))
+    this%total_area = radius**2 * (this%end_lon - this%start_lon) * (sin(this%end_lat) - sin(this%start_lat))
 
 #ifdef STAGGER_V_ON_POLE
     this%full_lat_start_idx_no_pole = this%full_lat_start_idx
@@ -311,7 +313,7 @@ contains
     do j = this%full_lat_start_idx, this%full_lat_end_idx
       total_area = total_area + this%cell_area(j) * this%num_full_lon
     end do
-    if (abs((4 * pi * radius**2 - total_area) / (4 * pi * radius**2)) > 1.0d-12) then
+    if (abs((this%total_area - total_area) / this%total_area) > 1.0d-12) then
       call log_error('Failed to calculate cell area!', __FILE__, __LINE__)
     end if
 
@@ -319,7 +321,7 @@ contains
     do j = this%half_lat_start_idx, this%half_lat_end_idx
       total_area = total_area + this%vertex_area(j) * this%num_full_lon
     end do
-    if (abs((4 * pi * radius**2 - total_area) / (4 * pi * radius**2)) > 1.0d-12) then
+    if (abs((this%total_area - total_area) / this%total_area) > 1.0d-12) then
       call log_error('Failed to calculate vertex area!', __FILE__, __LINE__)
     end if
 
@@ -327,7 +329,7 @@ contains
     do j = this%full_lat_start_idx, this%full_lat_end_idx
       total_area = total_area + sum(this%subcell_area(:,j)) * this%num_full_lon * 2
     end do
-    if (abs((4 * pi * radius**2 - total_area) / (4 * pi * radius**2)) > 1.0d-12) then
+    if (abs((this%total_area - total_area) / this%total_area) > 1.0d-12) then
       call log_error('Failed to calculate subcell area!', __FILE__, __LINE__)
     end if
 
@@ -350,7 +352,7 @@ contains
     do j = this%half_lat_start_idx, this%half_lat_end_idx
       total_area = total_area + this%lat_edge_area(j) * this%num_full_lon
     end do
-    if (abs((4 * pi * radius**2 - total_area) / (4 * pi * radius**2)) > 1.0d-12) then
+    if (abs((this%total_area - total_area) / this%total_area) > 1.0d-12) then
       call log_error('Failed to calculate edge area!', __FILE__, __LINE__)
     end if
 

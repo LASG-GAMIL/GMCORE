@@ -8,7 +8,14 @@ program gmcore_swm_driver
 
   implicit none
 
-  call parse_namelist('namelist.gmcore_swm')
+  character(256) namelist_file_path
+
+  call get_command_argument(1, namelist_file_path)
+  if (namelist_file_path == '') then
+    call log_error('You should give a namelist file path!')
+  end if
+
+  call parse_namelist(namelist_file_path)
   call gmcore_init()
 
   select case (test_case)
