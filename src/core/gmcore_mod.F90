@@ -180,13 +180,13 @@ contains
 
       do j = state%mesh%full_lat_start_idx_no_pole, state%mesh%full_lat_end_idx_no_pole
         do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
-          tend%du(i,j) = - tend%qhv(i,j) - tend%dEdlon(i,j)
+          tend%du(i,j) =   tend%qhv(i,j) - tend%dEdlon(i,j)
         end do
       end do
 
       do j = state%mesh%half_lat_start_idx_no_pole, state%mesh%half_lat_end_idx_no_pole
         do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-          tend%dv(i,j) =   tend%qhu(i,j) - tend%dEdlat(i,j)
+          tend%dv(i,j) = - tend%qhu(i,j) - tend%dEdlat(i,j)
         end do
       end do
 
@@ -200,13 +200,13 @@ contains
 
       do j = state%mesh%full_lat_start_idx_no_pole, state%mesh%full_lat_end_idx_no_pole
         do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
-          tend%du(i,j) = - tend%qhv(i,j)
+          tend%du(i,j) =   tend%qhv(i,j)
         end do
       end do
 
       do j = state%mesh%half_lat_start_idx_no_pole, state%mesh%half_lat_end_idx_no_pole
         do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-          tend%dv(i,j) =   tend%qhu(i,j)
+          tend%dv(i,j) = - tend%qhu(i,j)
         end do
       end do
 
@@ -220,13 +220,13 @@ contains
 
       do j = state%mesh%full_lat_start_idx_no_pole, state%mesh%full_lat_end_idx_no_pole
         do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
-          tend%du(i,j) = - tend%qhv(i,j) - tend%dEdlon(i,j)
+          tend%du(i,j) = - tend%dEdlon(i,j)
         end do
       end do
 
       do j = state%mesh%half_lat_start_idx_no_pole, state%mesh%half_lat_end_idx_no_pole
         do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-          tend%dv(i,j) =   tend%qhu(i,j) - tend%dEdlat(i,j)
+          tend%dv(i,j) = - tend%dEdlat(i,j)
         end do
       end do
 
