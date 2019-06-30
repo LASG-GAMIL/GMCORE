@@ -19,16 +19,13 @@ module history_mod
 
   public history_init
   public history_final
-  public history_write
+  public history_write_state
+  public history_write_debug
 
   ! A-grid velocity
   real(real_kind), allocatable :: u(:,:)
   real(real_kind), allocatable :: v(:,:)
   real(real_kind), allocatable :: h(:,:)
-
-  interface history_write
-    module procedure history_write_state
-  end interface history_write
 
 contains
 
@@ -72,15 +69,29 @@ contains
     call io_add_var('h0', 'pv',    long_name='potential vorticity', units='s-1'  , dim_names=['ilon', 'ilat', 'time'])
 
 
-    call io_add_var('h0', 'us'      , long_name='staggered u wind component' , units='m s-1'  , dim_names=['ilon', 'lat ', 'time'])
-    call io_add_var('h0', 'vs'      , long_name='staggered v wind component' , units='m s-1'  , dim_names=['lon ', 'ilat', 'time'])
-    call io_add_var('h0', 'hv'      , long_name='mass on vertices'           , units='m'      , dim_names=['ilon', 'ilat', 'time'])
-    call io_add_var('h0', 'mf_lon_n', long_name='normal zonal mass flux'     , units='m2 s-1' , dim_names=['ilon', 'lat ', 'time'])
-    call io_add_var('h0', 'mf_lat_t', long_name='tangent merdional mass flux', units='m2 s-1' , dim_names=['ilon', 'lat ', 'time'])
-    call io_add_var('h0', 'mf_lat_n', long_name='normal merdional mass flux' , units='m2 s-1' , dim_names=['lon ', 'ilat', 'time'])
-    call io_add_var('h0', 'mf_lon_t', long_name='tangent zonal mass flux'    , units='m2 s-1' , dim_names=['lon ', 'ilat', 'time'])
-    call io_add_var('h0', 'pv_lon'  , long_name='pv on U grid'               , units='m-1 s-1', dim_names=['ilon', 'lat ', 'time'])
-    call io_add_var('h0', 'pv_lat'  , long_name='pv on V grid'               , units='m-1 s-1', dim_names=['lon ', 'ilat', 'time'])
+
+    call io_create_dataset('h1', desc=case_desc, file_prefix=trim(case_name))
+    call io_add_att('h1', 'time_step_size', dt)
+    call io_add_dim('h1', 'time'    , add_var=.true.)
+    call io_add_dim('h1', 'lon'     , size=mesh%num_full_lon, add_var=.true.)
+    call io_add_dim('h1', 'lat'     , size=mesh%num_full_lat, add_var=.true.)
+    call io_add_dim('h1', 'ilon'    , size=mesh%num_half_lon, add_var=.true.)
+    call io_add_dim('h1', 'ilat'    , size=mesh%num_half_lat, add_var=.true.)
+    call io_add_var('h1', 'qhv'     , long_name='nonliear zonal Coriolis force'     , units='m s-2'  , dim_names=['ilon', 'lat ', 'time'])
+    call io_add_var('h1', 'qhu'     , long_name='nonliear meridional Coriolis force', units='m s-2'  , dim_names=['lon ', 'ilat', 'time'])
+    call io_add_var('h1', 'dEdlon'  , long_name='zonal energy gradient force'       , units=''       , dim_names=['ilon', 'lat ', 'time'])
+    call io_add_var('h1', 'dEdlat'  , long_name='meridional energy gradient force'  , units=''       , dim_names=['lon ', 'ilat', 'time'])
+    call io_add_var('h1', 'mfd'     , long_name='mass flux divergence'              , units=''       , dim_names=['lon ', 'lat ', 'time'])
+    call io_add_var('h1', 'us'      , long_name='staggered u wind component'        , units='m s-1'  , dim_names=['ilon', 'lat ', 'time'])
+    call io_add_var('h1', 'vs'      , long_name='staggered v wind component'        , units='m s-1'  , dim_names=['lon ', 'ilat', 'time'])
+    call io_add_var('h1', 'hv'      , long_name='mass on vertices'                  , units='m'      , dim_names=['ilon', 'ilat', 'time'])
+    call io_add_var('h1', 'mf_lon_n', long_name='normal zonal mass flux'            , units='m2 s-1' , dim_names=['ilon', 'lat ', 'time'])
+    call io_add_var('h1', 'mf_lat_t', long_name='tangent merdional mass flux'       , units='m2 s-1' , dim_names=['ilon', 'lat ', 'time'])
+    call io_add_var('h1', 'mf_lat_n', long_name='normal merdional mass flux'        , units='m2 s-1' , dim_names=['lon ', 'ilat', 'time'])
+    call io_add_var('h1', 'mf_lon_t', long_name='tangent zonal mass flux'           , units='m2 s-1' , dim_names=['lon ', 'ilat', 'time'])
+    call io_add_var('h1', 'pv_lon'  , long_name='pv on U grid'                      , units='m-1 s-1', dim_names=['ilon', 'lat ', 'time'])
+    call io_add_var('h1', 'pv_lat'  , long_name='pv on V grid'                      , units='m-1 s-1', dim_names=['lon ', 'ilat', 'time'])
+    call io_add_var('h1', 'ke_cell' , long_name='kinetic energy on cell grid'       , units='',        dim_names=['lon ', 'lat ', 'time'])
 
     if (.not. allocated(u)) call allocate_array(mesh, u)
     if (.not. allocated(v)) call allocate_array(mesh, v)
@@ -128,19 +139,38 @@ contains
     call io_output('h0', 'h'   , h         (1:mesh%num_full_lon,1:mesh%num_full_lat))
     call io_output('h0', 'hs'  , static%ghs(1:mesh%num_full_lon,1:mesh%num_full_lat) / g)
     call io_output('h0', 'pv'  , state%pv  (1:mesh%num_half_lon,1:mesh%num_half_lat))
-
-    call io_output('h0', 'us'      , state%u              (1:mesh%num_half_lon,1:mesh%num_full_lat))
-    call io_output('h0', 'vs'      , state%v              (1:mesh%num_full_lon,1:mesh%num_half_lat))
-    call io_output('h0', 'hv'      , state%mass_vertex    (1:mesh%num_full_lon,1:mesh%num_full_lat))
-    call io_output('h0', 'mf_lon_n', state%mass_flux_lon_n(1:mesh%num_half_lon,1:mesh%num_full_lat))
-    call io_output('h0', 'mf_lat_t', state%mass_flux_lat_t(1:mesh%num_half_lon,1:mesh%num_full_lat))
-    call io_output('h0', 'mf_lat_n', state%mass_flux_lat_n(1:mesh%num_full_lon,1:mesh%num_half_lat))
-    call io_output('h0', 'mf_lon_t', state%mass_flux_lon_t(1:mesh%num_full_lon,1:mesh%num_half_lat))
-    call io_output('h0', 'pv_lon'  , state%pv_lon         (1:mesh%num_half_lon,1:mesh%num_full_lat))
-    call io_output('h0', 'pv_lat'  , state%pv_lat         (1:mesh%num_full_lon,1:mesh%num_half_lat))
-
     call io_end_output('h0')
 
   end subroutine history_write_state
+
+  subroutine history_write_debug(static, state, tend)
+
+    type(static_type), intent(in) :: static
+    type(state_type ), intent(in) :: state
+    type(tend_type  ), intent(in) :: tend
+
+    call io_start_output('h1', elapsed_seconds, tag=curr_time_str, new_file=.false.)
+    call io_output('h1', 'lon'     , mesh%full_lon_deg    (1:mesh%num_full_lon))
+    call io_output('h1', 'lat'     , mesh%full_lat_deg    (1:mesh%num_full_lat))
+    call io_output('h1', 'ilon'    , mesh%half_lon_deg    (1:mesh%num_half_lon))
+    call io_output('h1', 'ilat'    , mesh%half_lat_deg    (1:mesh%num_half_lat))
+    call io_output('h1', 'qhv'     , tend%qhv             (1:mesh%num_half_lon,1:mesh%num_full_lat))
+    call io_output('h1', 'qhu'     , tend%qhu             (1:mesh%num_full_lon,1:mesh%num_half_lat))
+    call io_output('h1', 'dEdlon'  , tend%dEdlon          (1:mesh%num_half_lon,1:mesh%num_full_lat))
+    call io_output('h1', 'dEdlat'  , tend%dEdlat          (1:mesh%num_full_lon,1:mesh%num_half_lat))
+    call io_output('h1', 'mfd'     , tend%div_mass_flux   (1:mesh%num_full_lon,1:mesh%num_full_lat))
+    call io_output('h1', 'us'      , state%u              (1:mesh%num_half_lon,1:mesh%num_full_lat))
+    call io_output('h1', 'vs'      , state%v              (1:mesh%num_full_lon,1:mesh%num_half_lat))
+    call io_output('h1', 'hv'      , state%mass_vertex    (1:mesh%num_half_lon,1:mesh%num_half_lat))
+    call io_output('h1', 'mf_lon_n', state%mass_flux_lon_n(1:mesh%num_half_lon,1:mesh%num_full_lat))
+    call io_output('h1', 'mf_lat_t', state%mass_flux_lat_t(1:mesh%num_half_lon,1:mesh%num_full_lat))
+    call io_output('h1', 'mf_lat_n', state%mass_flux_lat_n(1:mesh%num_full_lon,1:mesh%num_half_lat))
+    call io_output('h1', 'mf_lon_t', state%mass_flux_lon_t(1:mesh%num_full_lon,1:mesh%num_half_lat))
+    call io_output('h1', 'pv_lon'  , state%pv_lon         (1:mesh%num_half_lon,1:mesh%num_full_lat))
+    call io_output('h1', 'pv_lat'  , state%pv_lat         (1:mesh%num_full_lon,1:mesh%num_half_lat))
+    call io_output('h1', 'ke_cell' , state%ke_cell        (1:mesh%num_full_lon,1:mesh%num_full_lat))
+    call io_end_output('h1')
+
+  end subroutine history_write_debug
 
 end module history_mod

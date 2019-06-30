@@ -85,14 +85,14 @@ contains
 
     call operators_prepare(states(old))
     call diagnose(states(old))
-    call output  (states(old))
+    call output  (states(old), tends(old))
     call log_print_diag(curr_time%isoformat())
 
     do while (.not. time_is_finished())
       call time_integrate(dt, static, tends, states)
       call time_advance()
       call diagnose(states(old))
-      call output  (states(old))
+      call output  (states(old), tends(old))
       call log_print_diag(curr_time%isoformat())
     end do
 
@@ -104,11 +104,15 @@ contains
 
   end subroutine gmcore_final
 
-  subroutine output(state)
+  subroutine output(state, tend)
 
     type(state_type), intent(in) :: state
+    type(tend_type ), intent(in) :: tend
 
-    if (time_is_alerted('history_write')) call history_write(static, state)
+    if (time_is_alerted('history_write')) then
+      call history_write_state(static, state)
+      call history_write_debug(static, state, tend)
+    end if
 
   end subroutine output
 
@@ -206,6 +210,9 @@ contains
         end do
       end do
 
+      tend%dEdlon = 0.0d0
+      tend%dEdlat = 0.0d0
+      tend%div_mass_flux = 0.0d0
       tend%dgd = 0.0d0
     case (fast_pass)
       call energy_gradient_operator(static, state, tend)
@@ -228,6 +235,9 @@ contains
           tend%dgd(i,j) = - tend%div_mass_flux(i,j)
         end do
       end do
+
+      tend%qhv = 0.0d0
+      tend%qhu = 0.0d0
     end select
 
     call debug_check_space_operators(static, state, tend)
