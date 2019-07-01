@@ -41,10 +41,10 @@ contains
       j = state%mesh%full_lat_start_idx
       pole = 0.0d0
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-        pole = pole + state%v(i,j)**2
+        pole = pole + state%mesh%lat_edge_down_area(j) * state%v(i,j)**2
       end do
       call parallel_zonal_sum(pole)
-      pole = pole / state%mesh%num_full_lon
+      pole = pole / state%mesh%num_full_lon / state%mesh%cell_area(j)
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
         state%ke_cell(i,j) = pole
       end do
@@ -53,10 +53,10 @@ contains
       j = state%mesh%full_lat_end_idx
       pole = 0.0d0
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-        pole = pole + state%v(i,j-1)**2
+        pole = pole + state%mesh%lat_edge_up_area(j-1) * state%v(i,j-1)**2
       end do
       call parallel_zonal_sum(pole)
-      pole = pole / state%mesh%num_full_lon
+      pole = pole / state%mesh%num_full_lon / state%mesh%cell_area(j)
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
         state%ke_cell(i,j) = pole
       end do

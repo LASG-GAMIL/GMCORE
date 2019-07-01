@@ -16,7 +16,7 @@ module state_mod
     type(mesh_type), pointer :: mesh => null()
     real(real_kind), allocatable, dimension(:,:) :: u
     real(real_kind), allocatable, dimension(:,:) :: v
-    real(real_kind), allocatable, dimension(:,:) :: gd
+    real(real_kind), allocatable, dimension(:,:) :: hd
     real(real_kind), allocatable, dimension(:,:) :: pv
     real(real_kind), allocatable, dimension(:,:) :: mass_vertex
     real(real_kind), allocatable, dimension(:,:) :: mass_lon
@@ -66,7 +66,7 @@ contains
 
     call allocate_array(mesh, this%u              , half_lon=.true., full_lat=.true.)
     call allocate_array(mesh, this%v              , full_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%gd             , full_lon=.true., full_lat=.true.)
+    call allocate_array(mesh, this%hd             , full_lon=.true., full_lat=.true.)
     call allocate_array(mesh, this%pv             , half_lon=.true., half_lat=.true.)
     call allocate_array(mesh, this%mass_vertex    , half_lon=.true., half_lat=.true.)
     call allocate_array(mesh, this%mass_lon       , half_lon=.true., full_lat=.true.)
@@ -87,7 +87,7 @@ contains
 
     if (allocated(this%u              )) deallocate(this%u              )
     if (allocated(this%v              )) deallocate(this%v              )
-    if (allocated(this%gd             )) deallocate(this%gd             )
+    if (allocated(this%hd             )) deallocate(this%hd             )
     if (allocated(this%pv             )) deallocate(this%pv             )
     if (allocated(this%mass_vertex    )) deallocate(this%mass_vertex    )
     if (allocated(this%mass_lon       )) deallocate(this%mass_lon       )

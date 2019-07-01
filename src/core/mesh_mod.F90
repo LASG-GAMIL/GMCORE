@@ -2,6 +2,7 @@ module mesh_mod
 
   use flogger
   use const_mod
+  use namelist_mod
   use sphere_geometry_mod
 
   implicit none
@@ -11,8 +12,6 @@ module mesh_mod
   public mesh_type
   public mesh
   public create_meshes
-  public num_lon
-  public num_lat
 
   type mesh_type
     integer :: id
@@ -98,9 +97,6 @@ module mesh_mod
     procedure :: is_pole => mesh_is_pole
     final :: mesh_final
   end type mesh_type
-
-  integer num_lon
-  integer num_lat
 
   type(mesh_type) mesh
 
@@ -366,15 +362,68 @@ contains
       this%cell_lat_distance(j) = 2.0d0 * this%lat_edge_area(j) / this%vertex_lon_distance(j)
     end do
 
-    do j = this%full_lat_start_idx_no_pole, this%full_lat_end_idx_no_pole
-      this%full_tangent_wgt(1,j) = this%vertex_lon_distance(j-1) / this%cell_lon_distance(j) * 0.25d0
-      this%full_tangent_wgt(2,j) = this%vertex_lon_distance(j  ) / this%cell_lon_distance(j) * 0.25d0
-    end do
+    !  ____________________                 ____________________                  ____________________                  ____________________                 
+    ! |          |         |               |          |         |                |          |         |                |          |         |                
+    ! |          |         |               |          |         |                |          |         |                |          |         |                
+    ! |          |         |               |          |         |                |          |         |                |          |         |                
+    ! |          |         |               |          |         |                |          |         |                |          |         |                
+    ! |_____o____|____o____|   j           |_____o____|____*____|   j            |_____*____|____o____|   j            |_____o____|____o____|   j             
+    ! |          |////|////|               |          |////|    |                |/////|    |         |                |     |    |         |                
+    ! |          |/3//|/2//|               |          |////|    |                |/////|    |         |                |     |    |         |                
+    ! |          x---------|   j           |          x---------|   j            |-----|----x         |   j            |-----|----x         |   j            
+    ! |          |    |/1//|               |          |    |    |                |/////|////|         |                |     |////|         |                
+    ! |_____o____|____*____|   j - 1       |_____o____|____o____|   j - 1        |_____o____|____o____|   j - 1        |_____*____|____o____|   j - 1        
+    !       i    i   i+1                         i    i   i+1                          i    i   i+1                          i
+    !
+    !
+    !       [ 1    As_1 + As_2 + As_3]
+    ! w = - [--- - ------------------]
+    !       [ 2        A_{i+1,j}     ]
+    !
+    !
 
-    do j = this%half_lat_start_idx_no_pole, this%half_lat_end_idx_no_pole
-      this%half_tangent_wgt(1,j) = this%vertex_lat_distance(j  ) / this%cell_lat_distance(j) * 0.25d0
-      this%half_tangent_wgt(2,j) = this%vertex_lat_distance(j+1) / this%cell_lat_distance(j) * 0.25d0
-    end do
+    select case (tangent_wgt_scheme)
+    case ('classic')
+      do j = this%full_lat_start_idx_no_pole, this%full_lat_end_idx_no_pole
+#ifdef STAGGER_V_ON_POLE
+        this%full_tangent_wgt(1,j) = this%vertex_lon_distance(j  ) / this%cell_lon_distance(j) * 0.25d0
+        this%full_tangent_wgt(2,j) = this%vertex_lon_distance(j+1) / this%cell_lon_distance(j) * 0.25d0
+#else
+        this%full_tangent_wgt(1,j) = this%vertex_lon_distance(j-1) / this%cell_lon_distance(j) * 0.25d0
+        this%full_tangent_wgt(2,j) = this%vertex_lon_distance(j  ) / this%cell_lon_distance(j) * 0.25d0
+#endif
+      end do
+
+      do j = this%half_lat_start_idx_no_pole, this%half_lat_end_idx_no_pole
+#ifdef STAGGER_V_ON_POLE
+        this%half_tangent_wgt(1,j) = this%vertex_lat_distance(j-1) / this%cell_lat_distance(j) * 0.25d0
+        this%half_tangent_wgt(2,j) = this%vertex_lat_distance(j  ) / this%cell_lat_distance(j) * 0.25d0
+#else
+        this%half_tangent_wgt(1,j) = this%vertex_lat_distance(j  ) / this%cell_lat_distance(j) * 0.25d0
+        this%half_tangent_wgt(2,j) = this%vertex_lat_distance(j+1) / this%cell_lat_distance(j) * 0.25d0
+#endif
+      end do
+    case ('thuburn09')
+      do j = this%full_lat_start_idx_no_pole, this%full_lat_end_idx_no_pole
+#ifdef STAGGER_V_ON_POLE
+        this%full_tangent_wgt(1,j) = this%vertex_lon_distance(j  ) / this%cell_lon_distance(j) * this%subcell_area(2,j  ) / this%cell_area(j  )
+        this%full_tangent_wgt(2,j) = this%vertex_lon_distance(j+1) / this%cell_lon_distance(j) * this%subcell_area(1,j  ) / this%cell_area(j  )
+#else
+        this%full_tangent_wgt(1,j) = this%vertex_lon_distance(j-1) / this%cell_lon_distance(j) * this%subcell_area(2,j  ) / this%cell_area(j  )
+        this%full_tangent_wgt(2,j) = this%vertex_lon_distance(j  ) / this%cell_lon_distance(j) * this%subcell_area(1,j  ) / this%cell_area(j  )
+#endif
+      end do
+
+      do j = this%half_lat_start_idx_no_pole, this%half_lat_end_idx_no_pole
+#ifdef STAGGER_V_ON_POLE
+        this%half_tangent_wgt(1,j) = this%vertex_lat_distance(j-1) / this%cell_lat_distance(j) * this%subcell_area(1,j-1) / this%cell_area(j-1)
+        this%half_tangent_wgt(2,j) = this%vertex_lat_distance(j  ) / this%cell_lat_distance(j) * this%subcell_area(2,j  ) / this%cell_area(j  )
+#else
+        this%half_tangent_wgt(1,j) = this%vertex_lat_distance(j  ) / this%cell_lat_distance(j) * this%subcell_area(1,j  ) / this%cell_area(j  )
+        this%half_tangent_wgt(2,j) = this%vertex_lat_distance(j+1) / this%cell_lat_distance(j) * this%subcell_area(2,j+1) / this%cell_area(j+1)
+#endif
+      end do
+    end select
 
     do j = this%full_lat_start_idx, this%full_lat_end_idx
       this%full_upwind_beta(j) = 4 / pi**2 * this%full_lat(j)**2

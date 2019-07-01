@@ -25,7 +25,6 @@ module history_mod
   ! A-grid velocity
   real(real_kind), allocatable :: u(:,:)
   real(real_kind), allocatable :: v(:,:)
-  real(real_kind), allocatable :: h(:,:)
 
 contains
 
@@ -57,18 +56,20 @@ contains
 
     call io_create_dataset('h0', desc=case_desc, file_prefix=trim(case_name))
     call io_add_att('h0', 'time_step_size', dt)
-    call io_add_dim('h0', 'time',  add_var=.true.)
-    call io_add_dim('h0', 'lon',   size=mesh%num_full_lon, add_var=.true.)
-    call io_add_dim('h0', 'lat',   size=mesh%num_full_lat, add_var=.true.)
-    call io_add_dim('h0', 'ilon',  size=mesh%num_half_lon, add_var=.true.)
-    call io_add_dim('h0', 'ilat',  size=mesh%num_half_lat, add_var=.true.)
-    call io_add_var('h0', 'u',     long_name='u wind component',    units='m s-1', dim_names=['lon ', 'lat ', 'time'])
-    call io_add_var('h0', 'v',     long_name='v wind component',    units='m s-1', dim_names=['lon ', 'lat ', 'time'])
-    call io_add_var('h0', 'h',     long_name='height',              units='m'    , dim_names=['lon ', 'lat ', 'time'])
-    call io_add_var('h0', 'hs',    long_name='surface height',      units='m'    , dim_names=['lon ', 'lat ', 'time'])
-    call io_add_var('h0', 'pv',    long_name='potential vorticity', units='s-1'  , dim_names=['ilon', 'ilat', 'time'])
-
-
+    call io_add_dim('h0', 'time' , add_var=.true.)
+    call io_add_dim('h0', 'lon'  , size=mesh%num_full_lon, add_var=.true.)
+    call io_add_dim('h0', 'lat'  , size=mesh%num_full_lat, add_var=.true.)
+    call io_add_dim('h0', 'ilon' , size=mesh%num_half_lon, add_var=.true.)
+    call io_add_dim('h0', 'ilat' , size=mesh%num_half_lat, add_var=.true.)
+    call io_add_var('h0', 'u'    , long_name='u wind component'         , units='m s-1' , dim_names=['lon ', 'lat ', 'time'])
+    call io_add_var('h0', 'v'    , long_name='v wind component'         , units='m s-1' , dim_names=['lon ', 'lat ', 'time'])
+    call io_add_var('h0', 'h'    , long_name='height'                   , units='m'     , dim_names=['lon ', 'lat ', 'time'])
+    call io_add_var('h0', 'hs'   , long_name='surface height'           , units='m'     , dim_names=['lon ', 'lat ', 'time'])
+    call io_add_var('h0', 'pv'   , long_name='potential vorticity'      , units='s-1'   , dim_names=['ilon', 'ilat', 'time'])
+    call io_add_var('h0', 'tm'   , long_name='total mass'               , units='m'     , dim_names=['time'])
+    call io_add_var('h0', 'te'   , long_name='total energy'             , units='m4 s-4', dim_names=['time'])
+    call io_add_var('h0', 'tav'  , long_name='total absolute vorticity' , units='m2 s-3', dim_names=['time'])
+    call io_add_var('h0', 'tpe'  , long_name='total potential enstrophy', units='m2 s-5', dim_names=['time'])
 
     call io_create_dataset('h1', desc=case_desc, file_prefix=trim(case_name))
     call io_add_att('h1', 'time_step_size', dt)
@@ -95,7 +96,6 @@ contains
 
     if (.not. allocated(u)) call allocate_array(mesh, u)
     if (.not. allocated(v)) call allocate_array(mesh, v)
-    if (.not. allocated(h)) call allocate_array(mesh, h)
 
     call time_add_alert('history_write', seconds=seconds)
 
@@ -105,7 +105,6 @@ contains
 
     if (allocated(u)) deallocate(u)
     if (allocated(v)) deallocate(v)
-    if (allocated(h)) deallocate(h)
 
   end subroutine history_final
 
@@ -125,20 +124,23 @@ contains
         v(i,j) = 0.5d0 * (state%v(i,j) + state%v(i,j-1))
 #endif
         u(i,j) = 0.5d0 * (state%u(i,j) + state%u(i-1,j))
-        h(i,j) = (state%gd(i,j) + static%ghs(i,j)) / g
       end do
     end do
 
-    call io_start_output('h0', elapsed_seconds, tag=curr_time_str, new_file=.false.)
+    call io_start_output('h0', elapsed_seconds, new_file=.false.)
     call io_output('h0', 'lon' , mesh%full_lon_deg(1:mesh%num_full_lon))
     call io_output('h0', 'lat' , mesh%full_lat_deg(1:mesh%num_full_lat))
     call io_output('h0', 'ilon', mesh%half_lon_deg(1:mesh%num_half_lon))
     call io_output('h0', 'ilat', mesh%half_lat_deg(1:mesh%num_half_lat))
-    call io_output('h0', 'u'   , u         (1:mesh%num_full_lon,1:mesh%num_full_lat))
-    call io_output('h0', 'v'   , v         (1:mesh%num_full_lon,1:mesh%num_full_lat))
-    call io_output('h0', 'h'   , h         (1:mesh%num_full_lon,1:mesh%num_full_lat))
-    call io_output('h0', 'hs'  , static%ghs(1:mesh%num_full_lon,1:mesh%num_full_lat) / g)
-    call io_output('h0', 'pv'  , state%pv  (1:mesh%num_half_lon,1:mesh%num_half_lat))
+    call io_output('h0', 'u'   , u        (1:mesh%num_full_lon,1:mesh%num_full_lat))
+    call io_output('h0', 'v'   , v        (1:mesh%num_full_lon,1:mesh%num_full_lat))
+    call io_output('h0', 'h'   , static%hs(1:mesh%num_full_lon,1:mesh%num_full_lat) + state%hd(1:mesh%num_full_lon,1:mesh%num_full_lat))
+    call io_output('h0', 'hs'  , static%hs(1:mesh%num_full_lon,1:mesh%num_full_lat))
+    call io_output('h0', 'pv'  , state%pv (1:mesh%num_half_lon,1:mesh%num_half_lat))
+    call io_output('h0', 'tm'  , state%total_mass)
+    call io_output('h0', 'te'  , state%total_energy)
+    call io_output('h0', 'tav' , state%total_absolute_vorticity)
+    call io_output('h0', 'tpe' , state%total_potential_enstrophy)
     call io_end_output('h0')
 
   end subroutine history_write_state
@@ -149,7 +151,7 @@ contains
     type(state_type ), intent(in) :: state
     type(tend_type  ), intent(in) :: tend
 
-    call io_start_output('h1', elapsed_seconds, tag=curr_time_str, new_file=.false.)
+    call io_start_output('h1', elapsed_seconds, new_file=.false.)
     call io_output('h1', 'lon'     , mesh%full_lon_deg    (1:mesh%num_full_lon))
     call io_output('h1', 'lat'     , mesh%full_lat_deg    (1:mesh%num_full_lat))
     call io_output('h1', 'ilon'    , mesh%half_lon_deg    (1:mesh%num_half_lon))

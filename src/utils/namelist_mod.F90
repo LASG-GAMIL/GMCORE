@@ -1,16 +1,22 @@
 module namelist_mod
 
-  use mesh_mod
   use time_mod, start_time => start_time_array, end_time => end_time_array
 
   implicit none
 
   character(256) :: case_desc = 'N/A'
-  character(30) :: case_name = 'N/A'
+  character(256) :: case_name = 'N/A'
   character(30) :: test_case = 'N/A'
   character(30) :: history_interval(1) = 'N/A'
 
+  integer num_lon
+  integer num_lat
+
+  character(30) :: tangent_wgt_scheme = 'classic'
+
   integer :: pv_scheme = 2
+  logical :: pv_pole_stokes = .true.
+
   integer :: fast_cycles = 5
   character(30) :: split_scheme = 'csp2'
   character(30) :: time_scheme = 'predict_correct'
@@ -28,6 +34,7 @@ module namelist_mod
     run_days,                   &
     history_interval,           &
     pv_scheme,                  &
+    pv_pole_stokes,             &
     split_scheme
 
 contains

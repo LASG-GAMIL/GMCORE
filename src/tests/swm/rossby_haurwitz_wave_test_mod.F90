@@ -15,9 +15,7 @@ module rossby_haurwitz_wave_test_mod
 
   real :: R = 4.0
   real :: omg = 7.848e-6
-  real :: gd0 = 8.0e3 * g
-
-  namelist /rossby_haurwitz_wave_test_params/ R, omg, gd0
+  real :: hd0 = 8.0e3
 
 contains
 
@@ -43,7 +41,7 @@ contains
 
     mesh => states(1)%mesh
 
-    static%ghs(:,:) = 0.0
+    static%hs(:,:) = 0.0
 
     do j = mesh%full_lat_start_idx, mesh%full_lat_end_idx
       cos_lat = mesh%full_cos_lat(j)
@@ -78,10 +76,10 @@ contains
       c = 0.25 * omg**2 * cos_lat**(2 * R) * ((R + 1) * cos_lat**2 - R - 2)
       do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
         lon = mesh%full_lon(i)
-        states(1)%gd(i,j) = gd0 + radius**2 * (a + b * cos(R * lon) + c * cos(2 * R * lon))
+        states(1)%hd(i,j) = hd0 + radius**2 * (a + b * cos(R * lon) + c * cos(2 * R * lon)) / g
       end do
     end do
-    call parallel_fill_halo(mesh, states(1)%gd, all_halo=.true.)
+    call parallel_fill_halo(mesh, states(1)%hd, all_halo=.true.)
 
   end subroutine rossby_haurwitz_wave_test_set_initial_condition
 

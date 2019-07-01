@@ -16,7 +16,7 @@ module tend_mod
     type(mesh_type), pointer :: mesh => null()
     real(real_kind), allocatable, dimension(:,:) :: du
     real(real_kind), allocatable, dimension(:,:) :: dv
-    real(real_kind), allocatable, dimension(:,:) :: dgd
+    real(real_kind), allocatable, dimension(:,:) :: dhd
     ! Individual tendencies
     real(real_kind), allocatable, dimension(:,:) :: qhv
     real(real_kind), allocatable, dimension(:,:) :: qhu
@@ -60,7 +60,7 @@ contains
 
     call allocate_array(mesh, this%du           , half_lon=.true., full_lat=.true.)
     call allocate_array(mesh, this%dv           , full_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%dgd          , full_lon=.true., full_lat=.true.)
+    call allocate_array(mesh, this%dhd          , full_lon=.true., full_lat=.true.)
     call allocate_array(mesh, this%qhu          , half_lon=.true., full_lat=.true.)
     call allocate_array(mesh, this%qhv          , full_lon=.true., half_lat=.true.)
     call allocate_array(mesh, this%dEdlon       , half_lon=.true., full_lon=.true.)
@@ -77,7 +77,7 @@ contains
 
     if (allocated(this%du           )) deallocate(this%du           )
     if (allocated(this%dv           )) deallocate(this%dv           )
-    if (allocated(this%dgd          )) deallocate(this%dgd          )
+    if (allocated(this%dhd          )) deallocate(this%dhd          )
     if (allocated(this%qhu          )) deallocate(this%qhu          )
     if (allocated(this%qhv          )) deallocate(this%qhv          )
     if (allocated(this%dEdlon       )) deallocate(this%dEdlon       )

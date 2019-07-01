@@ -125,24 +125,24 @@ contains
     state%total_mass = 0.0d0
     do j = state%mesh%full_lat_start_idx, state%mesh%full_lat_end_idx
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-        state%total_mass = state%total_mass + state%gd(i,j) * state%mesh%cell_area(j)
+        state%total_mass = state%total_mass + state%hd(i,j) * state%mesh%cell_area(j)
       end do
     end do
 
     state%total_energy = 0.0d0
     do j = state%mesh%full_lat_start_idx, state%mesh%full_lat_end_idx
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-        state%total_energy = state%total_energy + (state%gd(i,j) + static%ghs(i,j))**2 * state%mesh%cell_area(j)
+        state%total_energy = state%total_energy + g * state%hd(i,j) * (state%hd(i,j) / 2.0d0 + static%hs(i,j)) * state%mesh%cell_area(j)
       end do
     end do
     do j = state%mesh%full_lat_start_idx, state%mesh%full_lat_end_idx
       do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
-        state%total_energy = state%total_energy + state%gd(i,j) * state%u(i,j)**2 / 2.0d0 * state%mesh%lon_edge_area(j)
+        state%total_energy = state%total_energy + state%hd(i,j) * state%u(i,j)**2 / 2.0d0 * state%mesh%lon_edge_area(j)
       end do
     end do
     do j = state%mesh%half_lat_start_idx, state%mesh%half_lat_end_idx
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-        state%total_energy = state%total_energy + state%gd(i,j) * state%v(i,j)**2 / 2.0d0 * state%mesh%lat_edge_area(j)
+        state%total_energy = state%total_energy + state%hd(i,j) * state%v(i,j)**2 / 2.0d0 * state%mesh%lat_edge_area(j)
       end do
     end do
 
@@ -150,8 +150,8 @@ contains
     do j = state%mesh%half_lat_start_idx, state%mesh%half_lat_end_idx
       do i = state%mesh%half_lon_start_idx, state%mesh%half_lat_end_idx
         state%total_absolute_vorticity = state%total_absolute_vorticity + &
-                                state%mass_vertex(i,j) * state%pv(i,j) * &
-                                state%mesh%vertex_area(j)
+                                         state%mass_vertex(i,j) * state%pv(i,j) * &
+                                         state%mesh%vertex_area(j)
       end do
     end do
 
@@ -202,7 +202,7 @@ contains
 
       do j = state%mesh%full_lat_start_idx, state%mesh%full_lat_end_idx
         do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-          tend%dgd(i,j) = - tend%div_mass_flux(i,j)
+          tend%dhd(i,j) = - tend%div_mass_flux(i,j)
         end do
       end do
     case (slow_pass)
@@ -223,7 +223,7 @@ contains
       tend%dEdlon = 0.0d0
       tend%dEdlat = 0.0d0
       tend%div_mass_flux = 0.0d0
-      tend%dgd = 0.0d0
+      tend%dhd = 0.0d0
     case (fast_pass)
       call energy_gradient_operator(static, state, tend)
       call mass_flux_divergence_operator(state, tend)
@@ -242,7 +242,7 @@ contains
 
       do j = state%mesh%full_lat_start_idx, state%mesh%full_lat_end_idx
         do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-          tend%dgd(i,j) = - tend%div_mass_flux(i,j)
+          tend%dhd(i,j) = - tend%div_mass_flux(i,j)
         end do
       end do
 
@@ -334,7 +334,7 @@ contains
 
     do j = new_state%mesh%full_lat_start_idx, new_state%mesh%full_lat_end_idx
       do i = new_state%mesh%full_lon_start_idx, new_state%mesh%full_lon_end_idx
-        new_state%gd(i,j) = old_state%gd(i,j) + dt * tend%dgd(i,j)
+        new_state%hd(i,j) = old_state%hd(i,j) + dt * tend%dhd(i,j)
       end do
     end do
 
@@ -350,7 +350,7 @@ contains
       end do
     end do
 
-    call parallel_fill_halo(new_state%mesh, new_state%gd(:,:), all_halo=.true.)
+    call parallel_fill_halo(new_state%mesh, new_state%hd(:,:), all_halo=.true.)
     call parallel_fill_halo(new_state%mesh, new_state%u (:,:), all_halo=.true.)
     call parallel_fill_halo(new_state%mesh, new_state%v (:,:), all_halo=.true.)
 

@@ -3,6 +3,7 @@ module pv_mod
   use const_mod
   use mesh_mod
   use allocator_mod
+  use namelist_mod
   use parallel_mod
   use state_mod
   use tend_mod
@@ -27,13 +28,13 @@ contains
     do j = state%mesh%half_lat_start_idx_no_pole, state%mesh%half_lat_end_idx_no_pole
       do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
 #ifdef STAGGER_V_ON_POLE
-        state%mass_vertex(i,j) = ((state%gd(i,j-1) + state%gd(i+1,j-1)) * state%mesh%subcell_area(2,j-1) + &
-                                  (state%gd(i,j  ) + state%gd(i+1,j  )) * state%mesh%subcell_area(1,j  )   &
-                                 ) / state%mesh%vertex_area(j) / g
+        state%mass_vertex(i,j) = ((state%hd(i,j-1) + state%hd(i+1,j-1)) * state%mesh%subcell_area(2,j-1) + &
+                                  (state%hd(i,j  ) + state%hd(i+1,j  )) * state%mesh%subcell_area(1,j  )   &
+                                 ) / state%mesh%vertex_area(j)
 #else
-        state%mass_vertex(i,j) = ((state%gd(i,j  ) + state%gd(i+1,j  )) * state%mesh%subcell_area(2,j  ) + &
-                                  (state%gd(i,j+1) + state%gd(i+1,j+1)) * state%mesh%subcell_area(1,j+1)   &
-                                 ) / state%mesh%vertex_area(j) / g
+        state%mass_vertex(i,j) = ((state%hd(i,j  ) + state%hd(i+1,j  )) * state%mesh%subcell_area(2,j  ) + &
+                                  (state%hd(i,j+1) + state%hd(i+1,j+1)) * state%mesh%subcell_area(1,j+1)   &
+                                 ) / state%mesh%vertex_area(j)
 #endif
       end do
     end do
@@ -42,17 +43,17 @@ contains
       j = state%mesh%half_lat_start_idx
       pole = 0.0d0
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-        pole = pole + state%gd(i,j)
+        pole = pole + state%hd(i,j)
       end do
-      state%mass_vertex(:,j) = pole / state%mesh%num_half_lon / g
+      state%mass_vertex(:,j) = pole / state%mesh%num_half_lon
     end if
     if (state%mesh%has_north_pole()) then
       j = state%mesh%half_lat_end_idx
       pole = 0.0d0
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-        pole = pole + state%gd(i,j-1)
+        pole = pole + state%hd(i,j-1)
       end do
-      state%mass_vertex(:,j) = pole / state%mesh%num_half_lon / g
+      state%mass_vertex(:,j) = pole / state%mesh%num_half_lon
     end if
 #endif
 
@@ -101,30 +102,32 @@ contains
       end do
     end if
 #else
-    ! Special treatment of vorticity around Poles
-    if (state%mesh%has_south_pole()) then
-      j = state%mesh%half_lat_start_idx
-      pole = 0.0d0
-      do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
-        pole = pole - state%u(i,j+1) * state%mesh%cell_lon_distance(j+1)
-      end do
-      call parallel_zonal_sum(pole)
-      pole = pole / state%mesh%num_half_lon / state%mesh%vertex_area(j)
-      do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
-        state%pv(i,j) = (pole + state%mesh%half_f(j)) / state%mass_vertex(i,j)
-      end do
-    end if
-    if (state%mesh%has_north_pole()) then
-      j = state%mesh%half_lat_end_idx
-      pole = 0.0d0
-      do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
-        pole = pole + state%u(i,j) * state%mesh%cell_lon_distance(j)
-      end do
-      call parallel_zonal_sum(pole)
-      pole = pole / state%mesh%num_half_lon / state%mesh%vertex_area(j)
-      do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
-        state%pv(i,j) = (pole + state%mesh%half_f(j)) / state%mass_vertex(i,j)
-      end do
+    if (pv_pole_stokes) then
+      ! Special treatment of vorticity around Poles
+      if (state%mesh%has_south_pole()) then
+        j = state%mesh%half_lat_start_idx
+        pole = 0.0d0
+        do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
+          pole = pole - state%u(i,j+1) * state%mesh%cell_lon_distance(j+1)
+        end do
+        call parallel_zonal_sum(pole)
+        pole = pole / state%mesh%num_half_lon / state%mesh%vertex_area(j)
+        do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
+          state%pv(i,j) = (pole + state%mesh%half_f(j)) / state%mass_vertex(i,j)
+        end do
+      end if
+      if (state%mesh%has_north_pole()) then
+        j = state%mesh%half_lat_end_idx
+        pole = 0.0d0
+        do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
+          pole = pole + state%u(i,j) * state%mesh%cell_lon_distance(j)
+        end do
+        call parallel_zonal_sum(pole)
+        pole = pole / state%mesh%num_half_lon / state%mesh%vertex_area(j)
+        do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
+          state%pv(i,j) = (pole + state%mesh%half_f(j)) / state%mass_vertex(i,j)
+        end do
+      end if
     end if
 #endif
     call parallel_fill_halo(state%mesh, state%pv, all_halo=.true.)
