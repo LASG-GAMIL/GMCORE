@@ -1,12 +1,16 @@
 [submodule "lib/datetime"]
 	path = lib/datetime
 	url = https://github.com/dongli/fortran-datetime
+	shallow = true
 [submodule "lib/container"]
 	path = lib/container
 	url = https://github.com/dongli/fortran-container
+	shallow = true
 [submodule "lib/flogger"]
 	path = lib/flogger
 	url = https://github.com/dongli/flogger
+	shallow = true
 [submodule "lib/fiona"]
 	path = lib/fiona
 	url = https://github.com/dongli/fiona
+	shallow = true
