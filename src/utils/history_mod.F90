@@ -49,7 +49,7 @@ contains
     case ('seconds')
       seconds = seconds
     case default
-      call log_error('Invalid history invalid ' // trim(history_interval(1)) // '!')
+      call log_error('Invalid history interval ' // trim(history_interval(1)) // '!')
     end select
 
     call io_init(time_units, start_time_str)
