@@ -13,9 +13,9 @@ module rossby_haurwitz_wave_test_mod
 
   public rossby_haurwitz_wave_test_set_initial_condition
 
-  real :: R = 4.0
-  real :: omg = 7.848e-6
-  real :: hd0 = 8.0e3
+  real(real_kind) :: R = 4.0
+  real(real_kind) :: omg = 7.848d-6
+  real(real_kind) :: hd0 = 8.0d3
 
 contains
 
@@ -32,8 +32,8 @@ contains
 
   subroutine rossby_haurwitz_wave_test_set_initial_condition()
 
-    real lon, cos_lat, sin_lat
-    real a, b, c
+    real(real_kind) lon, cos_lat, sin_lat
+    real(real_kind) a, b, c
     integer i, j
     type(mesh_type), pointer :: mesh
 
