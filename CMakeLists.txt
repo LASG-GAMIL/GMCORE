@@ -1,6 +1,12 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.0)
 
 project(gmcore LANGUAGES Fortran)
+
+option(STAGGER_V_ON_POLE "Stagger V on the two Poles" OFF)
+
+if (STAGGER_V_ON_POLE)
+  add_definitions(-DSTAGGER_V_ON_POLE)
+endif ()
 
 if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -ffpe-summary=none -ffree-line-length-none -Ofast -fopenmp")
