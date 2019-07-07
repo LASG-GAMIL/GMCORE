@@ -119,8 +119,13 @@ contains
 
     this%num_full_lon = num_lon
     this%num_half_lon = num_lon
+#ifdef STAGGER_V_ON_POLE
+    this%num_full_lat = num_lat - 1
+    this%num_half_lat = num_lat
+#else
     this%num_full_lat = num_lat
     this%num_half_lat = num_lat - 1
+#endif
 
     this%full_lon_start_idx = 1
     this%full_lon_end_idx = this%num_full_lon
@@ -204,6 +209,22 @@ contains
       this%half_lon_deg(i) = this%half_lon(i) * deg
     end do
 
+#ifdef STAGGER_V_ON_POLE
+    this%dlat = (this%end_lat - this%start_lat) / this%num_full_lat
+    do j = this%half_lat_lb, this%half_lat_ub
+      this%half_lat(j) = this%start_lat + (j - 1) * this%dlat
+      if (abs(this%half_lat(j)) < 1.0e-14) this%half_lat(j) = 0.0d0
+      this%half_lat_deg(j) = this%half_lat(j) * deg
+    end do
+    this%half_lat(this%num_half_lat) = this%end_lat
+    this%half_lat_deg(this%num_half_lat) = this%end_lat * deg
+
+    do j = this%full_lat_lb, this%full_lat_ub
+      this%full_lat(j) = this%half_lat(j) + 0.5d0 * this%dlat
+      if (abs(this%full_lat(j)) < 1.0e-14) this%full_lat(j) = 0.0d0
+      this%full_lat_deg(j) = this%full_lat(j) * deg
+    end do
+#else
     this%dlat = (this%end_lat - this%start_lat) / this%num_half_lat
     do j = this%full_lat_lb, this%full_lat_ub
       this%full_lat(j) = this%start_lat + (j - 1) * this%dlat
@@ -218,6 +239,7 @@ contains
       if (abs(this%half_lat(j)) < 1.0e-14) this%half_lat(j) = 0.0d0
       this%half_lat_deg(j) = this%half_lat(j) * deg
     end do
+#endif
 
     do i = this%full_lon_lb, this%full_lon_ub
       this%full_cos_lon(i) = cos(this%full_lon(i))
@@ -252,7 +274,7 @@ contains
       this%lon_edge_area(j) = this%lon_edge_left_area(j) + this%lon_edge_right_area(j)
     end do
 
-    do i = this%half_lat_start_idx, this%half_lat_end_idx
+    do j = this%half_lat_start_idx, this%half_lat_end_idx
       if (this%is_south_pole(j)) then
         mesh%vertex_area(j) = radius**2 * this%dlon * (this%full_sin_lat(j) + 1)
       else if (this%is_north_pole(j)) then
@@ -335,11 +357,29 @@ contains
       end if
     end do
 
+#ifdef STAGGER_V_ON_POLE
+    do j = this%half_lat_start_idx, this%half_lat_end_idx
+      if (this%is_south_pole(j)) then
+        if (abs((this%vertex_area(j) - 2.0d0 * this%subcell_area(1,j)) / this%vertex_area(j)) > 1.0d-12) then
+          call log_error('Failed to calculate subcell area!', __FILE__, __LINE__)
+        end if
+      else if (this%is_north_pole(j)) then
+        if (abs((this%vertex_area(j) - 2.0d0 * this%subcell_area(2,j-1)) / this%vertex_area(j)) > 1.0d-12) then
+          call log_error('Failed to calculate subcell area!', __FILE__, __LINE__)
+        end if
+      else
+        if (abs((this%vertex_area(j) - 2.0d0 * (this%subcell_area(2,j-1) + this%subcell_area(1,j))) / this%vertex_area(j)) > 1.0d-12) then
+          call log_error('Failed to calculate subcell area!', __FILE__, __LINE__)
+        end if
+      end if
+    end do
+#else
     do j = this%half_lat_start_idx, this%half_lat_end_idx
       if (abs((this%vertex_area(j) - 2.0d0 * (this%subcell_area(2,j) + this%subcell_area(1,j+1))) / this%vertex_area(j)) > 1.0d-12) then
         call log_error('Failed to calculate subcell area!', __FILE__, __LINE__)
       end if
     end do
+#endif
 
     total_area = 0.0d0
     do j = this%full_lat_start_idx, this%full_lat_end_idx
