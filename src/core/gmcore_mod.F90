@@ -137,12 +137,12 @@ contains
     end do
     do j = state%mesh%full_lat_start_idx, state%mesh%full_lat_end_idx
       do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
-        state%total_energy = state%total_energy + state%mass_lon(i,j) * state%u(i,j)**2 / 2.0d0 * state%mesh%lon_edge_area(j)
+        state%total_energy = state%total_energy + state%mass_lon(i,j) * state%u(i,j)**2 * state%mesh%lon_edge_area(j)
       end do
     end do
     do j = state%mesh%half_lat_start_idx, state%mesh%half_lat_end_idx
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-        state%total_energy = state%total_energy + state%mass_lat(i,j) * state%v(i,j)**2 / 2.0d0 * state%mesh%lat_edge_area(j)
+        state%total_energy = state%total_energy + state%mass_lat(i,j) * state%v(i,j)**2 * state%mesh%lat_edge_area(j)
       end do
     end do
 
@@ -159,7 +159,7 @@ contains
     do j = state%mesh%half_lat_start_idx, state%mesh%half_lat_end_idx
       do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
         state%total_potential_enstrophy = state%total_potential_enstrophy + &
-                                          state%mass_vertex(i,j) * state%pv(i,j)**2 * &
+                                          state%mass_vertex(i,j) * state%pv(i,j)**2 * 0.5 * &
                                           state%mesh%vertex_area(j)
       end do
     end do
