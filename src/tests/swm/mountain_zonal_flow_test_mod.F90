@@ -60,7 +60,7 @@ contains
 
     do j = mesh%half_lat_start_idx, mesh%half_lat_end_idx
       do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
-        sin_lon = mesh%full_cos_lon(i)
+        sin_lon = mesh%full_sin_lon(i)
         states(1)%v(i,j) = - u0 * sin_lon * sin_alpha
       end do
     end do
