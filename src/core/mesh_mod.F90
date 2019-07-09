@@ -40,54 +40,54 @@ module mesh_mod
     integer full_lat_ub
     integer half_lat_lb
     integer half_lat_ub
-    real(real_kind) start_lon
-    real(real_kind) end_lon
-    real(real_kind) start_lat
-    real(real_kind) end_lat
-    real(real_kind) dlon
-    real(real_kind) dlat
-    real(real_kind) total_area
-    real(real_kind), allocatable :: full_lon(:)
-    real(real_kind), allocatable :: half_lon(:)
-    real(real_kind), allocatable :: full_lat(:)
-    real(real_kind), allocatable :: half_lat(:)
-    real(real_kind), allocatable :: full_cos_lon(:)
-    real(real_kind), allocatable :: half_cos_lon(:)
-    real(real_kind), allocatable :: full_sin_lon(:)
-    real(real_kind), allocatable :: half_sin_lon(:)
-    real(real_kind), allocatable :: full_cos_lat(:)
-    real(real_kind), allocatable :: half_cos_lat(:)
-    real(real_kind), allocatable :: full_sin_lat(:)
-    real(real_kind), allocatable :: half_sin_lat(:)
+    real(r8) start_lon
+    real(r8) end_lon
+    real(r8) start_lat
+    real(r8) end_lat
+    real(r8) dlon
+    real(r8) dlat
+    real(r8) total_area
+    real(r8), allocatable :: full_lon(:)
+    real(r8), allocatable :: half_lon(:)
+    real(r8), allocatable :: full_lat(:)
+    real(r8), allocatable :: half_lat(:)
+    real(r8), allocatable :: full_cos_lon(:)
+    real(r8), allocatable :: half_cos_lon(:)
+    real(r8), allocatable :: full_sin_lon(:)
+    real(r8), allocatable :: half_sin_lon(:)
+    real(r8), allocatable :: full_cos_lat(:)
+    real(r8), allocatable :: half_cos_lat(:)
+    real(r8), allocatable :: full_sin_lat(:)
+    real(r8), allocatable :: half_sin_lat(:)
     ! For output
-    real(real_kind), allocatable :: full_lon_deg(:)
-    real(real_kind), allocatable :: half_lon_deg(:)
-    real(real_kind), allocatable :: full_lat_deg(:)
-    real(real_kind), allocatable :: half_lat_deg(:)
+    real(r8), allocatable :: full_lon_deg(:)
+    real(r8), allocatable :: half_lon_deg(:)
+    real(r8), allocatable :: full_lat_deg(:)
+    real(r8), allocatable :: half_lat_deg(:)
     ! Area for weighting
-    real(real_kind), allocatable :: cell_area(:)
-    real(real_kind), allocatable :: lon_edge_area(:)
-    real(real_kind), allocatable :: lon_edge_left_area(:)
-    real(real_kind), allocatable :: lon_edge_right_area(:)
-    real(real_kind), allocatable :: lat_edge_area(:)
-    real(real_kind), allocatable :: lat_edge_up_area(:)
-    real(real_kind), allocatable :: lat_edge_down_area(:)
-    real(real_kind), allocatable :: vertex_area(:)
-    real(real_kind), allocatable :: subcell_area(:,:)
+    real(r8), allocatable :: cell_area(:)
+    real(r8), allocatable :: lon_edge_area(:)
+    real(r8), allocatable :: lon_edge_left_area(:)
+    real(r8), allocatable :: lon_edge_right_area(:)
+    real(r8), allocatable :: lat_edge_area(:)
+    real(r8), allocatable :: lat_edge_up_area(:)
+    real(r8), allocatable :: lat_edge_down_area(:)
+    real(r8), allocatable :: vertex_area(:)
+    real(r8), allocatable :: subcell_area(:,:)
     ! Edge length
-    real(real_kind), allocatable :: cell_lon_distance(:)
-    real(real_kind), allocatable :: cell_lat_distance(:)
-    real(real_kind), allocatable :: vertex_lon_distance(:)
-    real(real_kind), allocatable :: vertex_lat_distance(:)
+    real(r8), allocatable :: cell_lon_distance(:)
+    real(r8), allocatable :: cell_lat_distance(:)
+    real(r8), allocatable :: vertex_lon_distance(:)
+    real(r8), allocatable :: vertex_lat_distance(:)
     ! Weight for constructing tangential wind
-    real(real_kind), allocatable :: full_tangent_wgt(:,:)
-    real(real_kind), allocatable :: half_tangent_wgt(:,:)
+    real(r8), allocatable :: full_tangent_wgt(:,:)
+    real(r8), allocatable :: half_tangent_wgt(:,:)
     ! Weight for dissipating potential enstrophy
-    real(real_kind), allocatable :: full_upwind_beta(:)
-    real(real_kind), allocatable :: half_upwind_beta(:)
+    real(r8), allocatable :: full_upwind_beta(:)
+    real(r8), allocatable :: half_upwind_beta(:)
     ! Coriolis parameters
-    real(real_kind), allocatable :: full_f(:)
-    real(real_kind), allocatable :: half_f(:)
+    real(r8), allocatable :: full_f(:)
+    real(r8), allocatable :: half_f(:)
   contains
     procedure :: init => mesh_init
     procedure :: has_south_pole => mesh_has_south_pole
@@ -104,17 +104,17 @@ contains
 
   subroutine mesh_init(this, num_lon, num_lat, id, halo_width, start_lon, end_lon, start_lat, end_lat)
 
-    class(mesh_type), intent(inout) :: this
-    integer, intent(in) :: num_lon
-    integer, intent(in) :: num_lat
-    integer, intent(in), optional :: id
-    integer, intent(in), optional :: halo_width
-    real(real_kind), intent(in), optional :: start_lon
-    real(real_kind), intent(in), optional :: end_lon
-    real(real_kind), intent(in), optional :: start_lat
-    real(real_kind), intent(in), optional :: end_lat
+    class(mesh_type), intent(inout)           :: this
+    integer         , intent(in   )           :: num_lon
+    integer         , intent(in   )           :: num_lat
+    integer         , intent(in   ), optional :: id
+    integer         , intent(in   ), optional :: halo_width
+    real(r8)        , intent(in   ), optional :: start_lon
+    real(r8)        , intent(in   ), optional :: end_lon
+    real(r8)        , intent(in   ), optional :: start_lat
+    real(r8)        , intent(in   ), optional :: end_lat
 
-    real(real_kind) x(3), y(3), z(3), total_area
+    real(r8) x(3), y(3), z(3), total_area
     integer i, j
 
     this%num_full_lon = num_lon
@@ -138,10 +138,10 @@ contains
 
     this%id         = merge(id        ,  0         , present(id))
     this%halo_width = merge(halo_width,  1         , present(halo_width))
-    this%start_lon  = merge(start_lon ,  0.0d0     , present(start_lon))
-    this%end_lon    = merge(end_lon   ,  2.0d0 * pi, present(end_lon))
-    this%start_lat  = merge(start_lat , -0.5d0 * pi, present(start_lat))
-    this%end_lat    = merge(end_lat   ,  0.5d0 * pi, present(end_lat))
+    this%start_lon  = merge(start_lon ,  0.0_r8     , present(start_lon))
+    this%end_lon    = merge(end_lon   ,  2.0_r8 * pi, present(end_lon))
+    this%start_lat  = merge(start_lat , -0.5_r8 * pi, present(start_lat))
+    this%end_lat    = merge(end_lat   ,  0.5_r8 * pi, present(end_lat))
     this%total_area = radius**2 * (this%end_lon - this%start_lon) * (sin(this%end_lat) - sin(this%start_lat))
 
 #ifdef STAGGER_V_ON_POLE
@@ -260,6 +260,27 @@ contains
       this%full_cos_lat(j) = cos(this%full_lat(j))
       this%full_sin_lat(j) = sin(this%full_lat(j))
     end do
+
+    ! Ensure the values of cos_lat and sin_lat are expected at the Poles.
+#ifdef STAGGER_V_ON_POLE
+    if (this%has_south_pole()) then
+      mesh%half_cos_lat(this%half_lat_start_idx) = 0.0d0
+      mesh%half_sin_lat(this%half_lat_start_idx) = -1.0d0
+    end if
+    if (this%has_north_pole()) then
+      mesh%half_cos_lat(this%half_lat_end_idx) = 0.0d0
+      mesh%half_sin_lat(this%half_lat_end_idx) = 1.0d0
+    end if
+#else
+    if (this%has_south_pole()) then
+      mesh%full_cos_lat(this%full_lat_start_idx) = 0.0d0
+      mesh%full_sin_lat(this%full_lat_start_idx) = -1.0d0
+    end if
+    if (this%has_north_pole()) then
+      mesh%full_cos_lat(this%full_lat_end_idx) = 0.0d0
+      mesh%full_sin_lat(this%full_lat_end_idx) = 1.0d0
+    end if
+#endif
 
 #ifdef STAGGER_V_ON_POLE
     do j = this%full_lat_start_idx, this%full_lat_end_idx
@@ -398,7 +419,7 @@ contains
     end do
 
     do j = this%half_lat_start_idx_no_pole, this%half_lat_end_idx_no_pole
-      this%vertex_lon_distance(j) = this%dlon * radius * this%half_cos_lat(j)
+      this%vertex_lon_distance(j) = radius * this%half_cos_lat(j) * mesh%dlon
       this%cell_lat_distance(j) = 2.0d0 * this%lat_edge_area(j) / this%vertex_lon_distance(j)
     end do
 
@@ -532,39 +553,41 @@ contains
 
     type(mesh_type), intent(inout) :: this
 
-    if (allocated(this%full_lon))            deallocate(this%full_lon)
-    if (allocated(this%full_lat))            deallocate(this%full_lat)
-    if (allocated(this%half_lon))            deallocate(this%half_lon)
-    if (allocated(this%half_lat))            deallocate(this%half_lat)
-    if (allocated(this%full_cos_lon))        deallocate(this%full_cos_lon)
-    if (allocated(this%half_cos_lon))        deallocate(this%half_cos_lon)
-    if (allocated(this%full_sin_lon))        deallocate(this%full_sin_lon)
-    if (allocated(this%half_sin_lon))        deallocate(this%half_sin_lon)
-    if (allocated(this%full_cos_lat))        deallocate(this%full_cos_lat)
-    if (allocated(this%half_cos_lat))        deallocate(this%half_cos_lat)
-    if (allocated(this%full_sin_lat))        deallocate(this%full_sin_lat)
-    if (allocated(this%half_sin_lat))        deallocate(this%half_sin_lat)
-    if (allocated(this%full_lon_deg))        deallocate(this%full_lon_deg)
-    if (allocated(this%half_lon_deg))        deallocate(this%half_lon_deg)
-    if (allocated(this%full_lat_deg))        deallocate(this%full_lat_deg)
-    if (allocated(this%half_lat_deg))        deallocate(this%half_lat_deg)
-    if (allocated(this%cell_area))           deallocate(this%cell_area)
-    if (allocated(this%lon_edge_area))       deallocate(this%lon_edge_area)
-    if (allocated(this%lon_edge_left_area))  deallocate(this%lon_edge_left_area)
+    if (allocated(this%full_lon           )) deallocate(this%full_lon           )
+    if (allocated(this%full_lat           )) deallocate(this%full_lat           )
+    if (allocated(this%half_lon           )) deallocate(this%half_lon           )
+    if (allocated(this%half_lat           )) deallocate(this%half_lat           )
+    if (allocated(this%full_cos_lon       )) deallocate(this%full_cos_lon       )
+    if (allocated(this%half_cos_lon       )) deallocate(this%half_cos_lon       )
+    if (allocated(this%full_sin_lon       )) deallocate(this%full_sin_lon       )
+    if (allocated(this%half_sin_lon       )) deallocate(this%half_sin_lon       )
+    if (allocated(this%full_cos_lat       )) deallocate(this%full_cos_lat       )
+    if (allocated(this%half_cos_lat       )) deallocate(this%half_cos_lat       )
+    if (allocated(this%full_sin_lat       )) deallocate(this%full_sin_lat       )
+    if (allocated(this%half_sin_lat       )) deallocate(this%half_sin_lat       )
+    if (allocated(this%full_lon_deg       )) deallocate(this%full_lon_deg       )
+    if (allocated(this%half_lon_deg       )) deallocate(this%half_lon_deg       )
+    if (allocated(this%full_lat_deg       )) deallocate(this%full_lat_deg       )
+    if (allocated(this%half_lat_deg       )) deallocate(this%half_lat_deg       )
+    if (allocated(this%cell_area          )) deallocate(this%cell_area          )
+    if (allocated(this%lon_edge_area      )) deallocate(this%lon_edge_area      )
+    if (allocated(this%lon_edge_left_area )) deallocate(this%lon_edge_left_area )
     if (allocated(this%lon_edge_right_area)) deallocate(this%lon_edge_right_area)
-    if (allocated(this%lat_edge_area))       deallocate(this%lat_edge_area)
-    if (allocated(this%lat_edge_up_area))    deallocate(this%lat_edge_up_area)
-    if (allocated(this%lat_edge_down_area))  deallocate(this%lat_edge_down_area)
-    if (allocated(this%vertex_area))         deallocate(this%vertex_area)
-    if (allocated(this%subcell_area))        deallocate(this%subcell_area)
-    if (allocated(this%cell_lon_distance))   deallocate(this%cell_lon_distance)
-    if (allocated(this%cell_lat_distance))   deallocate(this%cell_lat_distance)
+    if (allocated(this%lat_edge_area      )) deallocate(this%lat_edge_area      )
+    if (allocated(this%lat_edge_up_area   )) deallocate(this%lat_edge_up_area   )
+    if (allocated(this%lat_edge_down_area )) deallocate(this%lat_edge_down_area )
+    if (allocated(this%vertex_area        )) deallocate(this%vertex_area        )
+    if (allocated(this%subcell_area       )) deallocate(this%subcell_area       )
+    if (allocated(this%cell_lon_distance  )) deallocate(this%cell_lon_distance  )
+    if (allocated(this%cell_lat_distance  )) deallocate(this%cell_lat_distance  )
     if (allocated(this%vertex_lon_distance)) deallocate(this%vertex_lon_distance)
     if (allocated(this%vertex_lat_distance)) deallocate(this%vertex_lat_distance)
-    if (allocated(this%full_tangent_wgt))    deallocate(this%full_tangent_wgt)
-    if (allocated(this%half_tangent_wgt))    deallocate(this%half_tangent_wgt)
-    if (allocated(this%full_upwind_beta))    deallocate(this%full_upwind_beta)
-    if (allocated(this%half_upwind_beta))    deallocate(this%half_upwind_beta)
+    if (allocated(this%full_tangent_wgt   )) deallocate(this%full_tangent_wgt   )
+    if (allocated(this%half_tangent_wgt   )) deallocate(this%half_tangent_wgt   )
+    if (allocated(this%full_upwind_beta   )) deallocate(this%full_upwind_beta   )
+    if (allocated(this%half_upwind_beta   )) deallocate(this%half_upwind_beta   )
+    if (allocated(this%full_f             )) deallocate(this%full_f             )
+    if (allocated(this%half_f             )) deallocate(this%half_f             )
 
   end subroutine mesh_final
 

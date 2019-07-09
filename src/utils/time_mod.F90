@@ -37,7 +37,7 @@ module time_mod
   integer, public :: end_time_array(5) = 0
   integer, public :: run_hours = 0
   integer, public :: run_days = 0
-  real(real_kind), public :: dt_in_seconds = 0.0
+  real(8), public :: dt_in_seconds = 0.0
 
   type(datetime_type) start_time
   type(datetime_type) end_time
@@ -151,18 +151,18 @@ contains
 
   subroutine time_add_alert(name, months, days, hours, minutes, seconds)
 
-    character(*), intent(in) :: name
-    real(real_kind), intent(in), optional :: months
-    real(real_kind), intent(in), optional :: days
-    real(real_kind), intent(in), optional :: hours
-    real(real_kind), intent(in), optional :: minutes
-    real(real_kind), intent(in), optional :: seconds
+    character(*), intent(in)           :: name
+    real(r8)    , intent(in), optional :: months
+    real(r8)    , intent(in), optional :: days
+    real(r8)    , intent(in), optional :: hours
+    real(r8)    , intent(in), optional :: minutes
+    real(r8)    , intent(in), optional :: seconds
 
-    real(real_kind) months_
-    real(real_kind) days_
-    real(real_kind) hours_
-    real(real_kind) minutes_
-    real(real_kind) seconds_
+    real(r8) months_
+    real(r8) days_
+    real(r8) hours_
+    real(r8) minutes_
+    real(r8) seconds_
     type(alert_type) alert
 
     if (present(months)) then

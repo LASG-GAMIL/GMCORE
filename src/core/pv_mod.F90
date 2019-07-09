@@ -23,39 +23,7 @@ contains
     type(state_type), intent(inout) :: state
 
     integer i, j
-    real(real_kind) pole
-
-    do j = state%mesh%half_lat_start_idx_no_pole, state%mesh%half_lat_end_idx_no_pole
-      do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
-#ifdef STAGGER_V_ON_POLE
-        state%mass_vertex(i,j) = ((state%hd(i,j-1) + state%hd(i+1,j-1)) * state%mesh%subcell_area(2,j-1) + &
-                                  (state%hd(i,j  ) + state%hd(i+1,j  )) * state%mesh%subcell_area(1,j  )   &
-                                 ) / state%mesh%vertex_area(j)
-#else
-        state%mass_vertex(i,j) = ((state%hd(i,j  ) + state%hd(i+1,j  )) * state%mesh%subcell_area(2,j  ) + &
-                                  (state%hd(i,j+1) + state%hd(i+1,j+1)) * state%mesh%subcell_area(1,j+1)   &
-                                 ) / state%mesh%vertex_area(j)
-#endif
-      end do
-    end do
-#ifdef STAGGER_V_ON_POLE
-    if (state%mesh%has_south_pole()) then
-      j = state%mesh%half_lat_start_idx
-      pole = 0.0d0
-      do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-        pole = pole + state%hd(i,j)
-      end do
-      state%mass_vertex(:,j) = pole / state%mesh%num_half_lon
-    end if
-    if (state%mesh%has_north_pole()) then
-      j = state%mesh%half_lat_end_idx
-      pole = 0.0d0
-      do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-        pole = pole + state%hd(i,j-1)
-      end do
-      state%mass_vertex(:,j) = pole / state%mesh%num_half_lon
-    end if
-#endif
+    real(r8) pole
 
     do j = state%mesh%half_lat_start_idx_no_pole, state%mesh%half_lat_end_idx_no_pole
       do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
@@ -79,7 +47,7 @@ contains
 #ifdef STAGGER_V_ON_POLE
     if (state%mesh%has_south_pole()) then
       j = state%mesh%half_lat_start_idx
-      pole = 0.0d0
+      pole = 0.0_r8
       do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
         pole = pole - state%u(i,j) * state%mesh%cell_lon_distance(j)
       end do
@@ -91,7 +59,7 @@ contains
     end if
     if (state%mesh%has_north_pole()) then
       j = state%mesh%half_lat_end_idx
-      pole = 0.0d0
+      pole = 0.0_r8
       do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
         pole = pole + state%u(i,j-1) * state%mesh%cell_lon_distance(j-1)
       end do
@@ -106,7 +74,7 @@ contains
       ! Special treatment of vorticity around Poles
       if (state%mesh%has_south_pole()) then
         j = state%mesh%half_lat_start_idx
-        pole = 0.0d0
+        pole = 0.0_r8
         do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
           pole = pole - state%u(i,j+1) * state%mesh%cell_lon_distance(j+1)
         end do
@@ -118,7 +86,7 @@ contains
       end if
       if (state%mesh%has_north_pole()) then
         j = state%mesh%half_lat_end_idx
-        pole = 0.0d0
+        pole = 0.0_r8
         do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
           pole = pole + state%u(i,j) * state%mesh%cell_lon_distance(j)
         end do
@@ -142,16 +110,16 @@ contains
 
     do j = state%mesh%half_lat_start_idx, state%mesh%half_lat_end_idx
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-        state%pv_lat(i,j) = 0.5 * (state%pv(i-1,j) + state%pv(i,j))
+        state%pv_lat(i,j) = 0.5_r8 * (state%pv(i-1,j) + state%pv(i,j))
       end do 
     end do 
       
     do j = state%mesh%full_lat_start_idx_no_pole, state%mesh%full_lat_end_idx_no_pole
       do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
 #ifdef STAGGER_V_ON_POLE
-        state%pv_lon(i,j) = 0.5 * (state%pv(i,j) + state%pv(i,j+1))
+        state%pv_lon(i,j) = 0.5_r8 * (state%pv(i,j) + state%pv(i,j+1))
 #else
-        state%pv_lon(i,j) = 0.5 * (state%pv(i,j) + state%pv(i,j-1))
+        state%pv_lon(i,j) = 0.5_r8 * (state%pv(i,j) + state%pv(i,j-1))
 #endif
       end do 
     end do 
@@ -169,9 +137,9 @@ contains
 
     do j = state%mesh%half_lat_start_idx, state%mesh%half_lat_end_idx
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-        state%pv_lat(i,j) = 0.5 * (state%pv(i,j) + state%pv(i-1,j)) - state%mesh%half_upwind_beta(j) * &
-                            0.5 * (state%pv(i,j) - state%pv(i-1,j)) * &
-                            sign(1.0_real_kind, state%mass_flux_lon_t(i,j))  
+        state%pv_lat(i,j) = 0.5_r8 * (state%pv(i,j) + state%pv(i-1,j)) - state%mesh%half_upwind_beta(j) * &
+                            0.5_r8 * (state%pv(i,j) - state%pv(i-1,j)) * &
+                            sign(1.0_r8, state%mass_flux_lon_t(i,j))  
       end do 
     end do 
 
@@ -180,11 +148,11 @@ contains
 #ifdef STAGGER_V_ON_POLE
         state%pv_lon(i,j) = 0.5 * (state%pv(i,j+1) + state%pv(i,j)) - state%mesh%full_upwind_beta(j) * &
                             0.5 * (state%pv(i,j+1) - state%pv(i,j)) * &
-                            sign(1.0_real_kind, state%mass_flux_lat_t(i,j))
+                            sign(1.0_r8, state%mass_flux_lat_t(i,j))
 #else
         state%pv_lon(i,j) = 0.5 * (state%pv(i,j) + state%pv(i,j-1)) - state%mesh%full_upwind_beta(j) * &
                             0.5 * (state%pv(i,j) - state%pv(i,j-1)) * &
-                            sign(1.0_real_kind, state%mass_flux_lat_t(i,j))
+                            sign(1.0_r8, state%mass_flux_lat_t(i,j))
 #endif
       end do 
     end do

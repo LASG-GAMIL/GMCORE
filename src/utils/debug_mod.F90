@@ -22,9 +22,9 @@ contains
 
     integer i, j
     type(mesh_type), pointer :: mesh
-    real(real_kind) ip_coriolis
-    real(real_kind) ip_energe_gradient
-    real(real_kind) ip_div_mass_flux
+    real(r8) ip_coriolis
+    real(r8) ip_energe_gradient
+    real(r8) ip_div_mass_flux
 
     mesh => state%mesh
     ip_coriolis = 0.0d0
@@ -47,7 +47,7 @@ contains
 
     do j = mesh%full_lat_start_idx, mesh%full_lat_end_idx
       do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
-        ip_energe_gradient = ip_energe_gradient + tend%div_mass_flux(i,j) * g * (state%hd(i,j) + static%hs(i,j)) * mesh%cell_area(j)
+        ip_energe_gradient = ip_energe_gradient + tend%div_mass_flux(i,j) * (state%gd(i,j) + static%ghs(i,j)) * mesh%cell_area(j)
         ip_div_mass_flux = ip_div_mass_flux + tend%div_mass_flux(i,j) * mesh%cell_area(j)
       end do
     end do
@@ -60,7 +60,7 @@ contains
 
   subroutine debug_print_min_max(array)
 
-    real(real_kind), intent(in) :: array(:,:)
+    real(r8), intent(in) :: array(:,:)
 
     print *, minval(array), maxval(array)
 

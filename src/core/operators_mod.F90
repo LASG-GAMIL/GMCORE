@@ -19,6 +19,8 @@ module operators_mod
   public nonlinear_coriolis_operator
   public energy_gradient_operator
   public mass_flux_divergence_operator
+  public calc_mass_on_edge   ! Shold be called when mass is updated.
+  public calc_mass_on_vertex ! Same as above.
 
 contains
 
@@ -33,6 +35,85 @@ contains
 
   end subroutine operators_prepare
 
+  subroutine calc_mass_on_edge(state)
+
+    type(state_type), intent(inout) :: state
+
+    integer i, j
+
+    do j = state%mesh%full_lat_start_idx_no_pole, state%mesh%full_lat_end_idx_no_pole
+      do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
+        state%mass_lon(i,j) = (state%mesh%lon_edge_left_area (j) * state%gd(i,  j) + &
+                               state%mesh%lon_edge_right_area(j) * state%gd(i+1,j)   &
+                              ) / state%mesh%lon_edge_area(j) / g
+      end do
+    end do
+
+    do j = state%mesh%half_lat_start_idx_no_pole, state%mesh%half_lat_end_idx_no_pole
+      do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
+#ifdef STAGGER_V_ON_POLE
+        state%mass_lat(i,j) = (state%mesh%lat_edge_up_area  (j) * state%gd(i,j  ) + &
+                               state%mesh%lat_edge_down_area(j) * state%gd(i,j-1)   &
+                              ) / state%mesh%lat_edge_area(j) / g
+#else
+        state%mass_lat(i,j) = (state%mesh%lat_edge_up_area  (j) * state%gd(i,j+1) + &
+                               state%mesh%lat_edge_down_area(j) * state%gd(i,j  )   &
+                              ) / state%mesh%lat_edge_area(j) / g
+#endif
+      end do
+    end do
+
+  end subroutine calc_mass_on_edge
+
+  subroutine calc_mass_on_vertex(state)
+
+    type(state_type), intent(inout) :: state
+
+    integer i, j
+    real(r8) pole
+
+    do j = state%mesh%half_lat_start_idx_no_pole, state%mesh%half_lat_end_idx_no_pole
+      do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
+#ifdef STAGGER_V_ON_POLE
+        state%mass_vertex(i,j) = ((state%gd(i,j-1) + state%gd(i+1,j-1)) * state%mesh%subcell_area(2,j-1) + &
+                                  (state%gd(i,j  ) + state%gd(i+1,j  )) * state%mesh%subcell_area(1,j  )   &
+                                 ) / state%mesh%vertex_area(j) / g
+#else
+        state%mass_vertex(i,j) = ((state%gd(i,j  ) + state%gd(i+1,j  )) * state%mesh%subcell_area(2,j  ) + &
+                                  (state%gd(i,j+1) + state%gd(i+1,j+1)) * state%mesh%subcell_area(1,j+1)   &
+                                 ) / state%mesh%vertex_area(j) / g
+#endif
+      end do
+    end do
+#ifdef STAGGER_V_ON_POLE
+    if (state%mesh%has_south_pole()) then
+      j = state%mesh%half_lat_start_idx
+      pole = 0.0_r8
+      do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
+        pole = pole + state%gd(i,j)
+      end do
+      call parallel_zonal_sum(pole)
+      pole = pole / state%mesh%num_half_lon / g
+      do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
+        state%mass_vertex(i,j) = pole
+      end do
+    end if
+    if (state%mesh%has_north_pole()) then
+      j = state%mesh%half_lat_end_idx
+      pole = 0.0_r8
+      do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
+        pole = pole + state%gd(i,j-1)
+      end do
+      call parallel_zonal_sum(pole)
+      pole = pole / state%mesh%num_half_lon / g
+      do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
+        state%mass_vertex(i,j) = pole
+      end do
+    end if
+#endif
+
+  end subroutine calc_mass_on_vertex
+
   subroutine calc_normal_mass_flux(state)
 
     type(state_type), intent(inout) :: state
@@ -41,24 +122,12 @@ contains
 
     do j = state%mesh%full_lat_start_idx_no_pole, state%mesh%full_lat_end_idx_no_pole
       do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
-        state%mass_lon(i,j) = (state%mesh%lon_edge_left_area (j) * state%hd(i,  j) + &
-                               state%mesh%lon_edge_right_area(j) * state%hd(i+1,j)   &
-                              ) / state%mesh%lon_edge_area(j)
         state%mass_flux_lon_n(i,j) = state%mass_lon(i,j) * state%u(i,j)
       end do
     end do
 
     do j = state%mesh%half_lat_start_idx_no_pole, state%mesh%half_lat_end_idx_no_pole
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-#ifdef STAGGER_V_ON_POLE
-        state%mass_lat(i,j) = (state%mesh%lat_edge_up_area  (j) * state%hd(i,j  ) + &
-                               state%mesh%lat_edge_down_area(j) * state%hd(i,j-1)   &
-                              ) / state%mesh%lat_edge_area(j)
-#else
-        state%mass_lat(i,j) = (state%mesh%lat_edge_up_area  (j) * state%hd(i,j+1) + &
-                               state%mesh%lat_edge_down_area(j) * state%hd(i,j  )   &
-                              ) / state%mesh%lat_edge_area(j)
-#endif
         state%mass_flux_lat_n(i,j) = state%mass_lat(i,j) * state%v(i,j)
       end do
     end do
@@ -168,8 +237,8 @@ contains
     do j = state%mesh%full_lat_start_idx_no_pole, state%mesh%full_lat_end_idx_no_pole
       do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
         tend%dEdlon(i,j) = (state%ke_cell(i+1,j) - state%ke_cell(i,j)  +   &
-                            (state%hd    (i+1,j) - state%hd     (i,j)  +   &
-                             static%hs   (i+1,j) - static%hs    (i,j)) * g &
+                            state%gd     (i+1,j) - state%gd     (i,j)  +   &
+                            static%ghs   (i+1,j) - static%ghs   (i,j)      &
                            ) / state%mesh%cell_lon_distance(j)
       end do
     end do
@@ -178,12 +247,12 @@ contains
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
 #ifdef STAGGER_V_ON_POLE
         tend%dEdlat(i,j) = (state%ke_cell(i,j) - state%ke_cell(i,j-1)  +   &
-                            (state%hd    (i,j) - state%hd     (i,j-1)  +   &
-                             static%hs   (i,j) - static%hs    (i,j-1)) * g &
+                            state%gd     (i,j) - state%gd     (i,j-1)  +   &
+                            static%ghs   (i,j) - static%ghs   (i,j-1)      &
 #else
         tend%dEdlat(i,j) = (state%ke_cell(i,j+1) - state%ke_cell(i,j)  +   &
-                            (state%hd    (i,j+1) - state%hd     (i,j)  +   &
-                             static%hs   (i,j+1) - static%hs    (i,j)) * g &
+                            state%gd     (i,j+1) - state%gd     (i,j)  +   &
+                            static%ghs   (i,j+1) - static%ghs   (i,j)      &
 #endif
                            ) / state%mesh%cell_lat_distance(j)
       end do
@@ -197,7 +266,7 @@ contains
     type(tend_type), intent(inout) :: tend
 
     integer i, j
-    real(real_kind) pole
+    real(r8) pole
 
     do j = state%mesh%full_lat_start_idx_no_pole, state%mesh%full_lat_end_idx_no_pole
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx

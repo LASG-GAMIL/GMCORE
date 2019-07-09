@@ -20,7 +20,7 @@ contains
     type(state_type), intent(inout) :: state
 
     integer i, j
-    real(real_kind) pole
+    real(r8) pole
 
     do j = state%mesh%full_lat_start_idx, state%mesh%full_lat_end_idx
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx

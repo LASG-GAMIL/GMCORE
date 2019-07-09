@@ -12,9 +12,9 @@ contains
 
   function cross_product(x, y) result(res)
 
-    real(real_kind), intent(in) :: x(3)
-    real(real_kind), intent(in) :: y(3)
-    real(real_kind) res(3)
+    real(r8), intent(in) :: x(3)
+    real(r8), intent(in) :: y(3)
+    real(r8) res(3)
 
     res(1) = x(2) * y(3) - x(3) * y(2)
     res(2) = x(3) * y(1) - x(1) * y(3)
@@ -24,11 +24,11 @@ contains
     
   subroutine math_inv_matrix(n, A, B)
 
-    integer, intent(in) :: n
-    real(real_kind), intent(inout) :: A(n,n)
-    real(real_kind), intent(out)   :: B(n,n)
+    integer , intent(in   ) :: n
+    real(r8), intent(inout) :: A(n,n)
+    real(r8), intent(  out) :: B(n,n)
 
-    real(real_kind) C(n,n)
+    real(r8) C(n,n)
     integer ipiv(n)
     integer i, j, k
 
@@ -62,11 +62,11 @@ contains
 
   subroutine gaussian_elimination(n, A, ipiv)
 
-    integer, intent(in) :: n
-    real(real_kind), intent(inout) :: A(n,n)
-    integer, intent(out) :: ipiv(n)
+    integer , intent(   in) :: n
+    real(r8), intent(inout) :: A(n,n)
+    integer , intent(  out) :: ipiv(n)
 
-    real(real_kind) c1, c(n), pi, pi1, pj
+    real(r8) c1, c(n), pi, pi1, pj
     integer i, j, k, itmp
 
     do i = 1, n

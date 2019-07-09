@@ -23,15 +23,15 @@ module history_mod
   public history_write_debug
 
   ! A-grid velocity
-  real(real_kind), allocatable :: u(:,:)
-  real(real_kind), allocatable :: v(:,:)
+  real(r8), allocatable :: u(:,:)
+  real(r8), allocatable :: v(:,:)
 
 contains
 
   subroutine history_init()
 
     character(10) time_value, time_units
-    real(real_kind) seconds
+    real(r8) seconds
 
     if (history_interval(1) == 'N/A') call log_error('Parameter history_interval is not set!')
     if (case_name == 'N/A') call log_error('Parameter case_name is not set!')
@@ -63,8 +63,8 @@ contains
     call io_add_dim('h0', 'ilat' , size=mesh%num_half_lat, add_var=.true.)
     call io_add_var('h0', 'u'    , long_name='u wind component'         , units='m s-1' , dim_names=['lon ', 'lat ', 'time'])
     call io_add_var('h0', 'v'    , long_name='v wind component'         , units='m s-1' , dim_names=['lon ', 'lat ', 'time'])
-    call io_add_var('h0', 'h'    , long_name='height'                   , units='m'     , dim_names=['lon ', 'lat ', 'time'])
-    call io_add_var('h0', 'hs'   , long_name='surface height'           , units='m'     , dim_names=['lon ', 'lat ', 'time'])
+    call io_add_var('h0', 'gh'   , long_name='height'                   , units='m2 s-2', dim_names=['lon ', 'lat ', 'time'])
+    call io_add_var('h0', 'ghs'  , long_name='surface height'           , units='m2 s-2', dim_names=['lon ', 'lat ', 'time'])
     call io_add_var('h0', 'pv'   , long_name='potential vorticity'      , units='s-1'   , dim_names=['ilon', 'ilat', 'time'])
     call io_add_var('h0', 'tm'   , long_name='total mass'               , units='m'     , dim_names=['time'])
     call io_add_var('h0', 'te'   , long_name='total energy'             , units='m4 s-4', dim_names=['time'])
@@ -134,8 +134,8 @@ contains
     call io_output('h0', 'ilat', mesh%half_lat_deg(1:mesh%num_half_lat))
     call io_output('h0', 'u'   , u        (1:mesh%num_full_lon,1:mesh%num_full_lat))
     call io_output('h0', 'v'   , v        (1:mesh%num_full_lon,1:mesh%num_full_lat))
-    call io_output('h0', 'h'   , static%hs(1:mesh%num_full_lon,1:mesh%num_full_lat) + state%hd(1:mesh%num_full_lon,1:mesh%num_full_lat))
-    call io_output('h0', 'hs'  , static%hs(1:mesh%num_full_lon,1:mesh%num_full_lat))
+    call io_output('h0', 'gh'  , static%ghs(1:mesh%num_full_lon,1:mesh%num_full_lat) + state%gd(1:mesh%num_full_lon,1:mesh%num_full_lat))
+    call io_output('h0', 'ghs' , static%ghs(1:mesh%num_full_lon,1:mesh%num_full_lat))
     call io_output('h0', 'pv'  , state%pv (1:mesh%num_half_lon,1:mesh%num_half_lat))
     call io_output('h0', 'tm'  , state%total_mass)
     call io_output('h0', 'te'  , state%total_energy)

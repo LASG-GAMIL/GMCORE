@@ -28,8 +28,8 @@ module gmcore_mod
 
   interface
     subroutine integrator_interface(dt, static, tends, states, old, new, pass)
-      import real_kind, static_type, tend_type, state_type
-      real(real_kind  ), intent(in   ) :: dt
+      import r8, static_type, tend_type, state_type
+      real(r8)         , intent(in   ) :: dt
       type(static_type), intent(in   ) :: static
       type(tend_type  ), intent(inout) :: tends (0:2)
       type(state_type ), intent(inout) :: states(0:2)
@@ -39,8 +39,8 @@ module gmcore_mod
     end subroutine integrator_interface
 
     subroutine splitter_interface(dt, static, tends, states)
-      import real_kind, static_type, tend_type, state_type
-      real(real_kind  ), intent(in   ) :: dt
+      import r8, static_type, tend_type, state_type
+      real(r8)         , intent(in   ) :: dt
       type(static_type), intent(in   ) :: static
       type(tend_type  ), intent(inout) :: tends (0:2)
       type(state_type ), intent(inout) :: states(0:2)
@@ -83,6 +83,8 @@ contains
 
   subroutine gmcore_run()
 
+    call calc_mass_on_edge(states(old))
+    call calc_mass_on_vertex(states(old))
     call operators_prepare(states(old))
     call diagnose(states(old))
     call output  (states(old), tends(old))
@@ -125,24 +127,24 @@ contains
     state%total_mass = 0.0d0
     do j = state%mesh%full_lat_start_idx, state%mesh%full_lat_end_idx
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-        state%total_mass = state%total_mass + state%hd(i,j) * state%mesh%cell_area(j)
+        state%total_mass = state%total_mass + state%gd(i,j) * state%mesh%cell_area(j)
       end do
     end do
 
     state%total_energy = 0.0d0
-    do j = state%mesh%full_lat_start_idx, state%mesh%full_lat_end_idx
-      do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-        state%total_energy = state%total_energy + g * state%hd(i,j) * (state%hd(i,j) / 2.0d0 + static%hs(i,j)) * state%mesh%cell_area(j)
-      end do
-    end do
-    do j = state%mesh%full_lat_start_idx, state%mesh%full_lat_end_idx
+    do j = state%mesh%full_lat_start_idx_no_pole, state%mesh%full_lat_end_idx_no_pole
       do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
         state%total_energy = state%total_energy + state%mass_lon(i,j) * state%u(i,j)**2 * state%mesh%lon_edge_area(j)
       end do
     end do
-    do j = state%mesh%half_lat_start_idx, state%mesh%half_lat_end_idx
+    do j = state%mesh%half_lat_start_idx_no_pole, state%mesh%half_lat_end_idx_no_pole
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
         state%total_energy = state%total_energy + state%mass_lat(i,j) * state%v(i,j)**2 * state%mesh%lat_edge_area(j)
+      end do
+    end do
+    do j = state%mesh%full_lat_start_idx, state%mesh%full_lat_end_idx
+      do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
+        state%total_energy = state%total_energy + (state%gd(i,j)**2 / g * 0.5d0 + state%gd(i,j) * static%ghs(i,j) / g) * state%mesh%cell_area(j)
       end do
     end do
 
@@ -159,7 +161,7 @@ contains
     do j = state%mesh%half_lat_start_idx, state%mesh%half_lat_end_idx
       do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
         state%total_potential_enstrophy = state%total_potential_enstrophy + &
-                                          state%mass_vertex(i,j) * state%pv(i,j)**2 * 0.5 * &
+                                          state%mass_vertex(i,j) * state%pv(i,j)**2 * 0.5d0 * &
                                           state%mesh%vertex_area(j)
       end do
     end do
@@ -202,7 +204,7 @@ contains
 
       do j = state%mesh%full_lat_start_idx, state%mesh%full_lat_end_idx
         do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-          tend%dhd(i,j) = - tend%div_mass_flux(i,j)
+          tend%dgd(i,j) = - tend%div_mass_flux(i,j) * g
         end do
       end do
     case (slow_pass)
@@ -223,7 +225,7 @@ contains
       tend%dEdlon = 0.0d0
       tend%dEdlat = 0.0d0
       tend%div_mass_flux = 0.0d0
-      tend%dhd = 0.0d0
+      tend%dgd = 0.0d0
     case (fast_pass)
       call energy_gradient_operator(static, state, tend)
       call mass_flux_divergence_operator(state, tend)
@@ -242,7 +244,7 @@ contains
 
       do j = state%mesh%full_lat_start_idx, state%mesh%full_lat_end_idx
         do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-          tend%dhd(i,j) = - tend%div_mass_flux(i,j)
+          tend%dgd(i,j) = - tend%div_mass_flux(i,j) * g
         end do
       end do
 
@@ -250,13 +252,13 @@ contains
       tend%qhu = 0.0d0
     end select
 
-    call debug_check_space_operators(static, state, tend)
+    ! call debug_check_space_operators(static, state, tend)
 
   end subroutine space_operators
 
   subroutine time_integrate(dt, static, tends, states)
 
-    real(real_kind  ), intent(in   ) :: dt
+    real(r8)         , intent(in   ) :: dt
     type(static_type), intent(in   ) :: static
     type(tend_type  ), intent(inout) :: tends (0:2)
     type(state_type ), intent(inout) :: states(0:2)
@@ -267,12 +269,12 @@ contains
 
   subroutine csp2_splitting(dt, static, tends, states)
 
-    real(real_kind  ), intent(in   ) :: dt
+    real(r8)         , intent(in   ) :: dt
     type(static_type), intent(in   ) :: static
     type(tend_type  ), intent(inout) :: tends (0:2)
     type(state_type ), intent(inout) :: states(0:2)
 
-    real(real_kind) fast_dt
+    real(r8) fast_dt
     integer subcycle, t1, t2
 
     fast_dt = dt / fast_cycles
@@ -290,7 +292,7 @@ contains
 
   subroutine no_splitting(dt, static, tends, states)
 
-    real(real_kind  ), intent(in   ) :: dt
+    real(r8)         , intent(in   ) :: dt
     type(static_type), intent(in   ) :: static
     type(tend_type  ), intent(inout) :: tends (0:2)
     type(state_type ), intent(inout) :: states(0:2)
@@ -301,7 +303,7 @@ contains
 
   subroutine predict_correct(dt, static, tends, states, old, new, pass)
 
-    real(real_kind  ), intent(in   ) :: dt
+    real(r8)         , intent(in   ) :: dt
     type(static_type), intent(in   ) :: static
     type(tend_type  ), intent(inout) :: tends (0:2)
     type(state_type ), intent(inout) :: states(0:2)
@@ -311,21 +313,21 @@ contains
 
     ! Do first predict step.
     call space_operators(static, states(old), tends(old), pass)
-    call update_state(0.5d0 * dt, tends(old), states(old), states(new))
+    call update_state(0.5_r8 * dt, tends(old), states(old), states(new))
 
     ! Do second predict step.
     call space_operators(static, states(new), tends(old), pass)
-    call update_state(0.5d0 * dt, tends(old), states(old), states(new))
+    call update_state(0.5_r8 * dt, tends(old), states(old), states(new))
 
     ! Do correct stepe
     call space_operators(static, states(new), tends(new), pass)
-    call update_state(        dt, tends(new), states(old), states(new))
+    call update_state(         dt, tends(new), states(old), states(new))
 
   end subroutine predict_correct
 
   subroutine update_state(dt, tend, old_state, new_state)
 
-    real(real_kind ), intent(in   ) :: dt
+    real(r8)        , intent(in   ) :: dt
     type(tend_type ), intent(in   ) :: tend
     type(state_type), intent(in   ) :: old_state
     type(state_type), intent(inout) :: new_state
@@ -334,7 +336,7 @@ contains
 
     do j = new_state%mesh%full_lat_start_idx, new_state%mesh%full_lat_end_idx
       do i = new_state%mesh%full_lon_start_idx, new_state%mesh%full_lon_end_idx
-        new_state%hd(i,j) = old_state%hd(i,j) + dt * tend%dhd(i,j)
+        new_state%gd(i,j) = old_state%gd(i,j) + dt * tend%dgd(i,j)
       end do
     end do
 
@@ -350,9 +352,13 @@ contains
       end do
     end do
 
-    call parallel_fill_halo(new_state%mesh, new_state%hd(:,:), all_halo=.true.)
+    call parallel_fill_halo(new_state%mesh, new_state%gd(:,:), all_halo=.true.)
     call parallel_fill_halo(new_state%mesh, new_state%u (:,:), all_halo=.true.)
     call parallel_fill_halo(new_state%mesh, new_state%v (:,:), all_halo=.true.)
+
+    ! Do not forget to synchronize the mass on edge and vertex for diagnosing!
+    call calc_mass_on_edge(new_state)
+    call calc_mass_on_vertex(new_state)
 
   end subroutine update_state
 
