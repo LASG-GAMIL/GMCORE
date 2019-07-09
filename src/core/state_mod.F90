@@ -27,6 +27,10 @@ module state_mod
     real(r8), allocatable, dimension(:,:) :: mass_flux_lat_t
     real(r8), allocatable, dimension(:,:) :: pv_lon
     real(r8), allocatable, dimension(:,:) :: pv_lat
+    real(r8), allocatable, dimension(:,:) :: dpv_lon_t
+    real(r8), allocatable, dimension(:,:) :: dpv_lat_n
+    real(r8), allocatable, dimension(:,:) :: dpv_lat_t
+    real(r8), allocatable, dimension(:,:) :: dpv_lon_n
     real(r8), allocatable, dimension(:,:) :: ke_cell
     real(r8) total_mass
     real(r8) total_energy
@@ -77,6 +81,10 @@ contains
     call allocate_array(mesh, this%mass_flux_lat_t, half_lon=.true., full_lat=.true.)
     call allocate_array(mesh, this%pv_lon         , half_lon=.true., full_lat=.true.)
     call allocate_array(mesh, this%pv_lat         , full_lon=.true., half_lat=.true.)
+    call allocate_array(mesh, this%dpv_lon_t      , full_lon=.true., half_lat=.true.)
+    call allocate_array(mesh, this%dpv_lat_n      , full_lon=.true., half_lat=.true.)
+    call allocate_array(mesh, this%dpv_lat_t      , half_lon=.true., full_lat=.true.)
+    call allocate_array(mesh, this%dpv_lon_n      , half_lon=.true., full_lat=.true.)
     call allocate_array(mesh, this%ke_cell        , full_lon=.true., full_lat=.true.)
 
   end subroutine state_init
@@ -98,6 +106,10 @@ contains
     if (allocated(this%mass_flux_lat_t)) deallocate(this%mass_flux_lat_t)
     if (allocated(this%pv_lon         )) deallocate(this%pv_lon         )
     if (allocated(this%pv_lat         )) deallocate(this%pv_lat         )
+    if (allocated(this%dpv_lon_t      )) deallocate(this%dpv_lon_t      )
+    if (allocated(this%dpv_lat_n      )) deallocate(this%dpv_lat_n      )
+    if (allocated(this%dpv_lat_t      )) deallocate(this%dpv_lat_t      )
+    if (allocated(this%dpv_lon_n      )) deallocate(this%dpv_lon_n      )
     if (allocated(this%ke_cell        )) deallocate(this%ke_cell        )
 
   end subroutine state_clear
