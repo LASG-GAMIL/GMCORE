@@ -23,8 +23,10 @@ module history_mod
   public history_write_debug
 
   ! A-grid velocity
-  real(r8), allocatable :: u(:,:)
-  real(r8), allocatable :: v(:,:)
+  real(r8), allocatable, dimension(:,:) :: u
+  real(r8), allocatable, dimension(:,:) :: v
+  real(r8), allocatable, dimension(:,:) :: h
+  real(r8), allocatable, dimension(:,:) :: hs
 
 contains
 
@@ -63,8 +65,8 @@ contains
     call io_add_dim('h0', 'ilat' , size=mesh%num_half_lat, add_var=.true.)
     call io_add_var('h0', 'u'    , long_name='u wind component'         , units='m s-1' , dim_names=['lon ', 'lat ', 'time'])
     call io_add_var('h0', 'v'    , long_name='v wind component'         , units='m s-1' , dim_names=['lon ', 'lat ', 'time'])
-    call io_add_var('h0', 'gh'   , long_name='height'                   , units='m2 s-2', dim_names=['lon ', 'lat ', 'time'])
-    call io_add_var('h0', 'ghs'  , long_name='surface height'           , units='m2 s-2', dim_names=['lon ', 'lat ', 'time'])
+    call io_add_var('h0', 'h'    , long_name='height'                   , units='m'     , dim_names=['lon ', 'lat ', 'time'])
+    call io_add_var('h0', 'hs'   , long_name='surface height'           , units='m'     , dim_names=['lon ', 'lat ', 'time'])
     call io_add_var('h0', 'pv'   , long_name='potential vorticity'      , units='s-1'   , dim_names=['ilon', 'ilat', 'time'])
     call io_add_var('h0', 'tm'   , long_name='total mass'               , units='m'     , dim_names=['time'])
     call io_add_var('h0', 'te'   , long_name='total energy'             , units='m4 s-4', dim_names=['time'])
@@ -94,8 +96,10 @@ contains
     call io_add_var('h1', 'pv_lat'  , long_name='pv on V grid'                      , units='m-1 s-1', dim_names=['lon ', 'ilat', 'time'])
     call io_add_var('h1', 'ke_cell' , long_name='kinetic energy on cell grid'       , units='',        dim_names=['lon ', 'lat ', 'time'])
 
-    if (.not. allocated(u)) call allocate_array(mesh, u)
-    if (.not. allocated(v)) call allocate_array(mesh, v)
+    if (.not. allocated(u )) call allocate_array(mesh, u )
+    if (.not. allocated(v )) call allocate_array(mesh, v )
+    if (.not. allocated(h )) call allocate_array(mesh, h )
+    if (.not. allocated(hs)) call allocate_array(mesh, hs)
 
     call time_add_alert('history_write', seconds=seconds)
 
@@ -103,8 +107,10 @@ contains
 
   subroutine history_final()
 
-    if (allocated(u)) deallocate(u)
-    if (allocated(v)) deallocate(v)
+    if (allocated(u )) deallocate(u )
+    if (allocated(v )) deallocate(v )
+    if (allocated(h )) deallocate(h )
+    if (allocated(hs)) deallocate(hs)
 
   end subroutine history_final
 
@@ -124,6 +130,8 @@ contains
         v(i,j) = 0.5d0 * (state%v(i,j) + state%v(i,j-1))
 #endif
         u(i,j) = 0.5d0 * (state%u(i,j) + state%u(i-1,j))
+        h(i,j) = (static%ghs(i,j) + state%gd(i,j)) / g
+        hs(i,j) = static%ghs(i,j) / g
       end do
     end do
 
@@ -132,11 +140,11 @@ contains
     call io_output('h0', 'lat' , mesh%full_lat_deg(1:mesh%num_full_lat))
     call io_output('h0', 'ilon', mesh%half_lon_deg(1:mesh%num_half_lon))
     call io_output('h0', 'ilat', mesh%half_lat_deg(1:mesh%num_half_lat))
-    call io_output('h0', 'u'   , u        (1:mesh%num_full_lon,1:mesh%num_full_lat))
-    call io_output('h0', 'v'   , v        (1:mesh%num_full_lon,1:mesh%num_full_lat))
-    call io_output('h0', 'gh'  , static%ghs(1:mesh%num_full_lon,1:mesh%num_full_lat) + state%gd(1:mesh%num_full_lon,1:mesh%num_full_lat))
-    call io_output('h0', 'ghs' , static%ghs(1:mesh%num_full_lon,1:mesh%num_full_lat))
-    call io_output('h0', 'pv'  , state%pv (1:mesh%num_half_lon,1:mesh%num_half_lat))
+    call io_output('h0', 'u'   , u                (1:mesh%num_full_lon,1:mesh%num_full_lat))
+    call io_output('h0', 'v'   , v                (1:mesh%num_full_lon,1:mesh%num_full_lat))
+    call io_output('h0', 'h'   , h                (1:mesh%num_full_lon,1:mesh%num_full_lat))
+    call io_output('h0', 'hs'  , hs               (1:mesh%num_full_lon,1:mesh%num_full_lat))
+    call io_output('h0', 'pv'  , state%pv         (1:mesh%num_half_lon,1:mesh%num_half_lat))
     call io_output('h0', 'tm'  , state%total_mass)
     call io_output('h0', 'te'  , state%total_energy)
     call io_output('h0', 'tav' , state%total_absolute_vorticity)
