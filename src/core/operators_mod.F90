@@ -172,10 +172,11 @@ contains
 
   end subroutine calc_tangent_mass_flux
 
-  subroutine nonlinear_coriolis_operator(state, tend)
+  subroutine nonlinear_coriolis_operator(state, tend, dt)
 
     type(state_type), intent(inout) :: state
-    type(tend_type), intent(inout) :: tend
+    type(tend_type ), intent(inout) :: tend
+    real(r8)        , intent(in   ) :: dt
 
     integer i, j
 
@@ -184,6 +185,8 @@ contains
       call calc_pv_on_edge_midpoint(state)
     case (2)
       call calc_pv_on_edge_upwind(state)
+    case (3)
+      call calc_pv_on_edge_apvm(state, dt)
     case default
       call log_error('Unknown PV scheme!')
     end select

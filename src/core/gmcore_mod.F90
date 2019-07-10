@@ -173,11 +173,12 @@ contains
 
   end subroutine diagnose
 
-  subroutine space_operators(static, state, tend, pass)
+  subroutine space_operators(static, state, tend, dt, pass)
 
     type(static_type), intent(in   ) :: static
     type(state_type) , intent(inout) :: state
     type(tend_type)  , intent(inout) :: tend
+    real(r8)         , intent(in   ) :: dt
     integer          , intent(in   ) :: pass
 
     integer i, j
@@ -186,7 +187,7 @@ contains
 
     select case (pass)
     case (all_pass)
-      call nonlinear_coriolis_operator(state, tend)
+      call nonlinear_coriolis_operator(state, tend, dt)
       call energy_gradient_operator(static, state, tend)
       call mass_flux_divergence_operator(state, tend)
 
@@ -208,7 +209,7 @@ contains
         end do
       end do
     case (slow_pass)
-      call nonlinear_coriolis_operator(state, tend)
+      call nonlinear_coriolis_operator(state, tend, dt)
 
       do j = state%mesh%full_lat_start_idx_no_pole, state%mesh%full_lat_end_idx_no_pole
         do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
@@ -312,15 +313,15 @@ contains
     integer          , intent(in   ) :: pass
 
     ! Do first predict step.
-    call space_operators(static, states(old), tends(old), pass)
+    call space_operators(static, states(old), tends(old), 0.5_r8 * dt, pass)
     call update_state(0.5_r8 * dt, tends(old), states(old), states(new))
 
     ! Do second predict step.
-    call space_operators(static, states(new), tends(old), pass)
+    call space_operators(static, states(new), tends(old), 0.5_r8 * dt, pass)
     call update_state(0.5_r8 * dt, tends(old), states(old), states(new))
 
     ! Do correct stepe
-    call space_operators(static, states(new), tends(new), pass)
+    call space_operators(static, states(new), tends(new),          dt, pass)
     call update_state(         dt, tends(new), states(old), states(new))
 
   end subroutine predict_correct

@@ -15,6 +15,7 @@ module pv_mod
   public calc_pv_on_vertex
   public calc_pv_on_edge_midpoint
   public calc_pv_on_edge_upwind
+  public calc_pv_on_edge_apvm
 
 contains
 
@@ -207,5 +208,46 @@ contains
     call parallel_fill_halo(state%mesh, state%pv_lat, all_halo = .true.)
 
   end subroutine calc_pv_on_edge_upwind
+
+  subroutine calc_pv_on_edge_apvm(state, dt)
+
+    type(state_type), intent(inout) :: state
+    real(r8)        , intent(in   ) :: dt
+
+    real(r8) un, vn, ut, vt, le, de
+    integer i, j
+
+    call calc_dpv_on_edge(state)
+
+    do j = state%mesh%half_lat_start_idx, state%mesh%half_lat_end_idx
+      le = state%mesh%vertex_lon_distance(j)
+      de = state%mesh%cell_lat_distance(j)
+      do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
+        if (state%mesh%is_pole(j)) then
+          state%pv_lat(i,j) = 0.5_r8 * (state%pv(i,j) + state%pv(i-1,j))
+        else
+          ut = state%mass_flux_lon_t(i,j) / state%mass_lat(i,j)
+          vn = state%v(i,j)
+          state%pv_lat(i,j) = 0.5_r8 * (state%pv(i,j) + state%pv(i-1,j)) - &
+                              0.5_r8 * (ut * state%dpv_lon_t(i,j) / le + vn * state%dpv_lat_n(i,j) / de) * dt
+        end if
+      end do
+    end do
+
+    do j = state%mesh%full_lat_start_idx_no_pole, state%mesh%full_lat_end_idx_no_pole
+      le = state%mesh%vertex_lat_distance(j)
+      de = state%mesh%cell_lon_distance(j)
+      do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
+        un = state%u(i,j)
+        vt = state%mass_flux_lat_t(i,j) / state%mass_lon(i,j)
+        state%pv_lon(i,j) = 0.5_r8 * (state%pv(i,j+1) + state%pv(i,j)) - &
+                            0.5_r8 * (un * state%dpv_lon_n(i,j) / de + vt * state%dpv_lat_t(i,j) / le) * dt
+      end do
+    end do
+
+    call parallel_fill_halo(state%mesh, state%pv_lon, all_halo = .true.)
+    call parallel_fill_halo(state%mesh, state%pv_lat, all_halo = .true.)
+
+  end subroutine calc_pv_on_edge_apvm
 
 end module pv_mod
