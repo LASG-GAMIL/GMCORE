@@ -5,6 +5,7 @@ program gmcore_swm_driver
   use gmcore_mod
   use mountain_zonal_flow_test_mod
   use rossby_haurwitz_wave_test_mod
+  use jet_zonal_flow_test_mod
 
   implicit none
 
@@ -23,6 +24,8 @@ program gmcore_swm_driver
     call mountain_zonal_flow_test_set_initial_condition()
   case ('rossby_haurwitz_wave')
     call rossby_haurwitz_wave_test_set_initial_condition()
+  case ('jet_zonal_flow')
+    call jet_zonal_flow_test_set_initial_condition()
   case default
     call log_error('Unknown test case ' // trim(test_case) // '!')
   end select

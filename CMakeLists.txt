@@ -62,6 +62,8 @@ set(source_files
   src/core/gmcore_mod.F90
   src/tests/swm/rossby_haurwitz_wave_test_mod.F90
   src/tests/swm/mountain_zonal_flow_test_mod.F90
+  src/tests/swm/jet_zonal_flow_test_mod.F90
+  lib/quadpack.f90
 )
 
 add_library(gmcore ${source_files})
