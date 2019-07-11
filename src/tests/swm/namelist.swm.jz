@@ -1,0 +1,12 @@
+&gmcore_swm_control
+num_lon = 360
+num_lat = 180
+! mountain_zonal_flow, rossby_haurwitz_wave
+test_case = 'jet_zonal_flow'
+run_days = 7
+pv_scheme = 2
+dt_in_seconds = 2
+split_scheme = ''
+case_name = 'jz.v_pole.upwind2d.360x180.dt2'
+history_interval = '1 hours'
+/
