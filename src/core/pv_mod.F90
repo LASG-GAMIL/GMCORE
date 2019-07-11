@@ -193,14 +193,16 @@ contains
     do j = state%mesh%half_lat_start_idx, state%mesh%half_lat_end_idx
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
         state%pv_lat(i,j) = 0.5_r8 * (state%pv(i,j) + state%pv(i-1,j)) - state%mesh%half_upwind_beta(j) * &
-                            0.5_r8 * state%dpv_lon_t(i,j) * sign(1.0_r8, state%mass_flux_lon_t(i,j))
+                            0.5_r8 * (state%dpv_lon_t(i,j) * sign(1.0_r8, state%mass_flux_lon_t(i,j)    + &
+                                      state%dpv_lat_n(i,j) * sign(1.0_r8, state%v(i,j))))
       end do
     end do
 
     do j = state%mesh%full_lat_start_idx_no_pole, state%mesh%full_lat_end_idx_no_pole 
      do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
         state%pv_lon(i,j) = 0.5_r8 * (state%pv(i,j+1) + state%pv(i,j)) - state%mesh%full_upwind_beta(j) * &
-                            0.5_r8 * state%dpv_lat_t(i,j) * sign(1.0_r8, state%mass_flux_lat_t(i,j))
+                            0.5_r8 * (state%dpv_lat_t(i,j) * sign(1.0_r8, state%mass_flux_lat_t(i,j)    + &
+                                      state%dpv_lon_n(i,j) * sign(1.0_r8, state%u(i,j))))
       end do
     end do
 
