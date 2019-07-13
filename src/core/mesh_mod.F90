@@ -204,7 +204,7 @@ contains
     this%dlon = (this%end_lon - this%start_lon) / this%num_full_lon
     do i = this%full_lon_lb, this%full_lon_ub
       this%full_lon(i) = this%start_lon + (i - 1) * this%dlon
-      this%half_lon(i) = this%full_lon(i) + 0.5d0 * this%dlon
+      this%half_lon(i) = this%full_lon(i) + 0.5_r8 * this%dlon
       this%full_lon_deg(i) = this%full_lon(i) * deg
       this%half_lon_deg(i) = this%half_lon(i) * deg
     end do
@@ -213,30 +213,30 @@ contains
     this%dlat = (this%end_lat - this%start_lat) / this%num_full_lat
     do j = this%half_lat_lb, this%half_lat_ub
       this%half_lat(j) = this%start_lat + (j - 1) * this%dlat
-      if (abs(this%half_lat(j)) < 1.0e-14) this%half_lat(j) = 0.0d0
+      if (abs(this%half_lat(j)) < 1.0e-14) this%half_lat(j) = 0.0_r8
       this%half_lat_deg(j) = this%half_lat(j) * deg
     end do
     this%half_lat(this%num_half_lat) = this%end_lat
     this%half_lat_deg(this%num_half_lat) = this%end_lat * deg
 
     do j = this%full_lat_lb, this%full_lat_ub
-      this%full_lat(j) = this%half_lat(j) + 0.5d0 * this%dlat
-      if (abs(this%full_lat(j)) < 1.0e-14) this%full_lat(j) = 0.0d0
+      this%full_lat(j) = this%half_lat(j) + 0.5_r8 * this%dlat
+      if (abs(this%full_lat(j)) < 1.0e-14) this%full_lat(j) = 0.0_r8
       this%full_lat_deg(j) = this%full_lat(j) * deg
     end do
 #else
     this%dlat = (this%end_lat - this%start_lat) / this%num_half_lat
     do j = this%full_lat_lb, this%full_lat_ub
       this%full_lat(j) = this%start_lat + (j - 1) * this%dlat
-      if (abs(this%full_lat(j)) < 1.0e-14) this%full_lat(j) = 0.0d0
+      if (abs(this%full_lat(j)) < 1.0e-14) this%full_lat(j) = 0.0_r8
       this%full_lat_deg(j) = this%full_lat(j) * deg
     end do
     this%full_lat(this%num_full_lat) = this%end_lat
     this%full_lat_deg(this%num_full_lat) = this%end_lat * deg
 
     do j = this%half_lat_lb, this%half_lat_ub
-      this%half_lat(j) = this%full_lat(j) + 0.5d0 * this%dlat
-      if (abs(this%half_lat(j)) < 1.0e-14) this%half_lat(j) = 0.0d0
+      this%half_lat(j) = this%full_lat(j) + 0.5_r8 * this%dlat
+      if (abs(this%half_lat(j)) < 1.0e-14) this%half_lat(j) = 0.0_r8
       this%half_lat_deg(j) = this%half_lat(j) * deg
     end do
 #endif
@@ -264,21 +264,21 @@ contains
     ! Ensure the values of cos_lat and sin_lat are expected at the Poles.
 #ifdef STAGGER_V_ON_POLE
     if (this%has_south_pole()) then
-      mesh%half_cos_lat(this%half_lat_start_idx) = 0.0d0
-      mesh%half_sin_lat(this%half_lat_start_idx) = -1.0d0
+      mesh%half_cos_lat(this%half_lat_start_idx) = 0.0_r8
+      mesh%half_sin_lat(this%half_lat_start_idx) = -1.0_r8
     end if
     if (this%has_north_pole()) then
-      mesh%half_cos_lat(this%half_lat_end_idx) = 0.0d0
-      mesh%half_sin_lat(this%half_lat_end_idx) = 1.0d0
+      mesh%half_cos_lat(this%half_lat_end_idx) = 0.0_r8
+      mesh%half_sin_lat(this%half_lat_end_idx) = 1.0_r8
     end if
 #else
     if (this%has_south_pole()) then
-      mesh%full_cos_lat(this%full_lat_start_idx) = 0.0d0
-      mesh%full_sin_lat(this%full_lat_start_idx) = -1.0d0
+      mesh%full_cos_lat(this%full_lat_start_idx) = 0.0_r8
+      mesh%full_sin_lat(this%full_lat_start_idx) = -1.0_r8
     end if
     if (this%has_north_pole()) then
-      mesh%full_cos_lat(this%full_lat_end_idx) = 0.0d0
-      mesh%full_sin_lat(this%full_lat_end_idx) = 1.0d0
+      mesh%full_cos_lat(this%full_lat_end_idx) = 0.0_r8
+      mesh%full_sin_lat(this%full_lat_end_idx) = 1.0_r8
     end if
 #endif
 
@@ -494,10 +494,10 @@ contains
     end do
 
     do j = this%full_lat_start_idx, this%full_lat_end_idx
-      this%full_f(j) = 2.0d0 * omega * this%full_sin_lat(j)
+      this%full_f(j) = 2.0_r8 * omega * this%full_sin_lat(j)
     end do
     do j = this%half_lat_start_idx, this%half_lat_end_idx
-      this%half_f(j) = 2.0d0 * omega * this%half_sin_lat(j)
+      this%half_f(j) = 2.0_r8 * omega * this%half_sin_lat(j)
     end do
 
   end subroutine mesh_init
@@ -506,7 +506,7 @@ contains
 
     class(mesh_type), intent(in) :: this
 
-    res = this%start_lat == -0.5 * pi
+    res = this%start_lat == -0.5_r8 * pi
 
   end function mesh_has_south_pole
 
@@ -514,7 +514,7 @@ contains
 
     class(mesh_type), intent(in) :: this
 
-    res = this%end_lat == 0.5 * Pi
+    res = this%end_lat == 0.5_r8 * pi
 
   end function mesh_has_north_pole
 

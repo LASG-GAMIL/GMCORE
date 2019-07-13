@@ -23,9 +23,6 @@ module tend_mod
     real(r8), allocatable, dimension(:,:) :: dEdlon
     real(r8), allocatable, dimension(:,:) :: dEdlat
     real(r8), allocatable, dimension(:,:) :: div_mass_flux
-    ! Derived variables
-    real(r8), allocatable, dimension(:,:) :: dpvdlon
-    real(r8), allocatable, dimension(:,:) :: dpvdlat
   contains
     procedure :: init => tend_init
     procedure :: clear => tend_clear
@@ -66,8 +63,6 @@ contains
     call allocate_array(mesh, this%dEdlon       , half_lon=.true., full_lon=.true.)
     call allocate_array(mesh, this%dEdlat       , full_lon=.true., half_lon=.true.)
     call allocate_array(mesh, this%div_mass_flux, full_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%dpvdlon      , full_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%dpvdlat      , half_lon=.true., full_lat=.true.)
 
   end subroutine tend_init
 
@@ -83,8 +78,6 @@ contains
     if (allocated(this%dEdlon       )) deallocate(this%dEdlon       )
     if (allocated(this%dEdlat       )) deallocate(this%dEdlat       )
     if (allocated(this%div_mass_flux)) deallocate(this%div_mass_flux)
-    if (allocated(this%dpvdlon      )) deallocate(this%dpvdlon      )
-    if (allocated(this%dpvdlat      )) deallocate(this%dpvdlat      )
 
   end subroutine tend_clear
 

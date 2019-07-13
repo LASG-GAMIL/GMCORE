@@ -99,6 +99,8 @@ contains
     call io_add_var('h1', 'dpv_lat_t', long_name='meridional dpv on U grid'          , units='m-1 s-1', dim_names=['ilon', 'lat ', 'time'])
     call io_add_var('h1', 'dpv_lon_n', long_name='zonal dpv on U grid'               , units='m-1 s-1', dim_names=['ilon', 'lat ', 'time'])
     call io_add_var('h1', 'ke_cell'  , long_name='kinetic energy on cell grid'       , units='',        dim_names=['lon ', 'lat ', 'time'])
+    call io_add_var('h1', 'pvc_lon'  , long_name='corrected pv on U grid'            , units='',        dim_names=['ilon', 'lat ', 'time'])
+    call io_add_var('h1', 'pvc_lat'  , long_name='corrected pv on V grid'            , units='',        dim_names=['lon ', 'ilat', 'time'])
 
     if (.not. allocated(u )) call allocate_array(mesh, u )
     if (.not. allocated(v )) call allocate_array(mesh, v )
@@ -187,6 +189,8 @@ contains
     call io_output('h1', 'dpv_lon_t', state%dpv_lon_t      (1:mesh%num_half_lon,1:mesh%num_full_lat))
     call io_output('h1', 'dpv_lat_n', state%dpv_lat_n      (1:mesh%num_half_lon,1:mesh%num_full_lat))
     call io_output('h1', 'ke_cell'  , state%ke_cell        (1:mesh%num_full_lon,1:mesh%num_full_lat))
+    call io_output('h1', 'pvc_lon'  , state%pvc_lon        (1:mesh%num_half_lon,1:mesh%num_full_lat))
+    call io_output('h1', 'pvc_lat'  , state%pvc_lat        (1:mesh%num_full_lon,1:mesh%num_half_lat))
     call io_end_output('h1')
 
   end subroutine history_write_debug

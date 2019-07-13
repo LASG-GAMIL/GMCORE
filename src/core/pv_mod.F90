@@ -192,17 +192,19 @@ contains
 
     do j = state%mesh%half_lat_start_idx, state%mesh%half_lat_end_idx
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-        state%pv_lat(i,j) = 0.5_r8 * (state%pv(i,j) + state%pv(i-1,j)) - state%mesh%half_upwind_beta(j) * &
-                            0.5_r8 * (state%dpv_lon_t(i,j) * sign(1.0_r8, state%mass_flux_lon_t(i,j)    + &
-                                      state%dpv_lat_n(i,j) * sign(1.0_r8, state%v(i,j))))
+        state%pvc_lat(i,j) = state%mesh%half_upwind_beta(j) * 0.5_r8 * &
+          (state%dpv_lon_t(i,j) * sign(1.0_r8, state%mass_flux_lon_t(i,j) + &
+           state%dpv_lat_n(i,j) * sign(1.0_r8, state%v(i,j))))
+        state%pv_lat(i,j) = 0.5_r8 * (state%pv(i,j) + state%pv(i-1,j)) - state%pvc_lat(i,j)
       end do
     end do
 
     do j = state%mesh%full_lat_start_idx_no_pole, state%mesh%full_lat_end_idx_no_pole 
      do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
-        state%pv_lon(i,j) = 0.5_r8 * (state%pv(i,j+1) + state%pv(i,j)) - state%mesh%full_upwind_beta(j) * &
-                            0.5_r8 * (state%dpv_lat_t(i,j) * sign(1.0_r8, state%mass_flux_lat_t(i,j)    + &
-                                      state%dpv_lon_n(i,j) * sign(1.0_r8, state%u(i,j))))
+        state%pvc_lon(i,j) = state%mesh%full_upwind_beta(j) * 0.5_r8 * &
+          (state%dpv_lat_t(i,j) * sign(1.0_r8, state%mass_flux_lat_t(i,j) + &
+           state%dpv_lon_n(i,j) * sign(1.0_r8, state%u(i,j))))
+        state%pv_lon(i,j) = 0.5_r8 * (state%pv(i,j+1) + state%pv(i,j)) - state%pvc_lon(i,j)
       end do
     end do
 
@@ -230,8 +232,8 @@ contains
         else
           ut = state%mass_flux_lon_t(i,j) / state%mass_lat(i,j)
           vn = state%v(i,j)
-          state%pv_lat(i,j) = 0.5_r8 * (state%pv(i,j) + state%pv(i-1,j)) - &
-                              0.5_r8 * (ut * state%dpv_lon_t(i,j) / le + vn * state%dpv_lat_n(i,j) / de) * dt
+          state%pvc_lat(i,j) = 0.5_r8 * (ut * state%dpv_lon_t(i,j) / le + vn * state%dpv_lat_n(i,j) / de) * dt
+          state%pv_lat(i,j) = 0.5_r8 * (state%pv(i,j) + state%pv(i-1,j)) - state%pvc_lat(i,j)
         end if
       end do
     end do
@@ -242,8 +244,8 @@ contains
       do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
         un = state%u(i,j)
         vt = state%mass_flux_lat_t(i,j) / state%mass_lon(i,j)
-        state%pv_lon(i,j) = 0.5_r8 * (state%pv(i,j+1) + state%pv(i,j)) - &
-                            0.5_r8 * (un * state%dpv_lon_n(i,j) / de + vt * state%dpv_lat_t(i,j) / le) * dt
+        state%pvc_lon(i,j) = 0.5_r8 * (un * state%dpv_lon_n(i,j) / de + vt * state%dpv_lat_t(i,j) / le) * dt
+        state%pv_lon(i,j) = 0.5_r8 * (state%pv(i,j+1) + state%pv(i,j)) - state%pvc_lon(i,j)
       end do
     end do
 
