@@ -62,7 +62,7 @@ contains
 
   subroutine gaussian_elimination(n, A, ipiv)
 
-    integer , intent(   in) :: n
+    integer , intent(in   ) :: n
     real(r8), intent(inout) :: A(n,n)
     integer , intent(  out) :: ipiv(n)
 

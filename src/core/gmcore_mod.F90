@@ -124,7 +124,7 @@ contains
 
     integer i, j
 
-    state%total_mass = 0.0d0
+    state%total_mass = 0.0_r8
     do j = state%mesh%full_lat_start_idx, state%mesh%full_lat_end_idx
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
         state%total_mass = state%total_mass + state%gd(i,j) * state%mesh%cell_area(j)
@@ -148,7 +148,7 @@ contains
       end do
     end do
 
-    state%total_absolute_vorticity = 0.0d0
+    state%total_absolute_vorticity = 0.0_r8
     do j = state%mesh%half_lat_start_idx, state%mesh%half_lat_end_idx
       do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
         state%total_absolute_vorticity = state%total_absolute_vorticity + &
@@ -157,11 +157,11 @@ contains
       end do
     end do
 
-    state%total_potential_enstrophy = 0.0d0
+    state%total_potential_enstrophy = 0.0_r8
     do j = state%mesh%half_lat_start_idx, state%mesh%half_lat_end_idx
       do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
         state%total_potential_enstrophy = state%total_potential_enstrophy + &
-                                          state%mass_vertex(i,j) * state%pv(i,j)**2 * 0.5d0 * &
+                                          state%mass_vertex(i,j) * state%pv(i,j)**2 * 0.5_r8 * &
                                           state%mesh%vertex_area(j)
       end do
     end do
@@ -223,10 +223,10 @@ contains
         end do
       end do
 
-      tend%dEdlon = 0.0d0
-      tend%dEdlat = 0.0d0
-      tend%div_mass_flux = 0.0d0
-      tend%dgd = 0.0d0
+      tend%dEdlon = 0.0_r8
+      tend%dEdlat = 0.0_r8
+      tend%div_mass_flux = 0.0_r8
+      tend%dgd = 0.0_r8
     case (fast_pass)
       call energy_gradient_operator(static, state, tend)
       call mass_flux_divergence_operator(state, tend)
@@ -249,8 +249,8 @@ contains
         end do
       end do
 
-      tend%qhv = 0.0d0
-      tend%qhu = 0.0d0
+      tend%qhv = 0.0_r8
+      tend%qhu = 0.0_r8
     end select
 
     ! call debug_check_space_operators(static, state, tend)
@@ -282,12 +282,12 @@ contains
     t1 = 0 
     t2 = old
 
-    call integrator(0.5 * dt, static, tends, states, old, t1, slow_pass)
+    call integrator(0.5_r8 * dt, static, tends, states, old, t1, slow_pass)
     do subcycle = 1, fast_cycles
       call integrator(fast_dt, static, tends, states, t1, t2, fast_pass)
       call time_swap_indices(t1, t2)
     end do 
-    call integrator(0.5 * dt, static, tends, states, t1, new, slow_pass)
+    call integrator(0.5_r8 * dt, static, tends, states, t1, new, slow_pass)
 
   end subroutine csp2_splitting
 

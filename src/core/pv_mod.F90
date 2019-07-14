@@ -232,20 +232,20 @@ contains
 
     call calc_dpv_on_edge(state)
 
-    do j = state%mesh%half_lat_start_idx, state%mesh%half_lat_end_idx
+    do j = state%mesh%half_lat_start_idx_no_pole, state%mesh%half_lat_end_idx_no_pole
       le = state%mesh%vertex_lon_distance(j)
       de = state%mesh%cell_lat_distance(j)
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-        if (state%mesh%is_pole(j)) then
-          state%pv_lat(i,j) = 0.5_r8 * (state%pv(i,j) + state%pv(i-1,j))
-        else
-          ut = state%mass_flux_lon_t(i,j) / state%mass_lat(i,j)
-          vn = state%v(i,j)
-          state%pvc_lat(i,j) = 0.5_r8 * (ut * state%dpv_lon_t(i,j) / le + vn * state%dpv_lat_n(i,j) / de) * dt
-          state%pv_lat(i,j) = 0.5_r8 * (state%pv(i,j) + state%pv(i-1,j)) - state%pvc_lat(i,j)
-        end if
+        ut = state%mass_flux_lon_t(i,j) / state%mass_lat(i,j)
+        vn = state%v(i,j)
+        state%pvc_lat(i,j) = 0.5_r8 * (ut * state%dpv_lon_t(i,j) / le + vn * state%dpv_lat_n(i,j) / de) * dt
+        state%pv_lat(i,j) = 0.5_r8 * (state%pv(i,j) + state%pv(i-1,j)) - state%pvc_lat(i,j)
       end do
     end do
+#ifdef STAGGER_V_ON_POLE
+    state%pv_lat(:,state%mesh%half_lon_start_idx) = state%pv(:,state%mesh%half_lon_start_idx)
+    state%pv_lat(:,state%mesh%half_lon_end_idx  ) = state%pv(:,state%mesh%half_lon_end_idx  )
+#endif
 
     do j = state%mesh%full_lat_start_idx_no_pole, state%mesh%full_lat_end_idx_no_pole
       le = state%mesh%vertex_lat_distance(j)

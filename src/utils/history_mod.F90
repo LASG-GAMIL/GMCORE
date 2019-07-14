@@ -131,11 +131,11 @@ contains
     do j = state%mesh%full_lat_start_idx, state%mesh%full_lat_end_idx
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
 #ifdef STAGGER_V_ON_POLE
-        v(i,j) = 0.5d0 * (state%v(i,j) + state%v(i,j+1))
+        v(i,j) = 0.5_r8 * (state%v(i,j) + state%v(i,j+1))
 #else
-        v(i,j) = 0.5d0 * (state%v(i,j) + state%v(i,j-1))
+        v(i,j) = 0.5_r8 * (state%v(i,j) + state%v(i,j-1))
 #endif
-        u(i,j) = 0.5d0 * (state%u(i,j) + state%u(i-1,j))
+        u(i,j) = 0.5_r8 * (state%u(i,j) + state%u(i-1,j))
         h(i,j) = (static%ghs(i,j) + state%gd(i,j)) / g
         hs(i,j) = static%ghs(i,j) / g
       end do

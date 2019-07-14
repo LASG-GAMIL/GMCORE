@@ -56,13 +56,13 @@ contains
 
   subroutine parallel_fill_halo_2d_r8(mesh, array, all_halo, left_halo, right_halo, top_halo, bottom_halo)
 
-    type(mesh_type), intent(in) :: mesh
-    real(8), intent(inout) :: array(:,:)
-    logical, intent(in), optional :: all_halo
-    logical, intent(in), optional :: left_halo
-    logical, intent(in), optional :: right_halo
-    logical, intent(in), optional :: top_halo
-    logical, intent(in), optional :: bottom_halo
+    type(mesh_type), intent(in   )           :: mesh
+    real(8)        , intent(inout)           :: array(:,:)
+    logical        , intent(in   ), optional :: all_halo
+    logical        , intent(in   ), optional :: left_halo
+    logical        , intent(in   ), optional :: right_halo
+    logical        , intent(in   ), optional :: top_halo
+    logical        , intent(in   ), optional :: bottom_halo
 
     integer i, j, m, n
 

@@ -17,12 +17,12 @@ contains
 
   subroutine allocate_array_1d_r8(mesh, array, full_lon, half_lon, full_lat, half_lat)
 
-    type(mesh_type), intent(in) :: mesh
-    real(8), intent(out), allocatable :: array(:)
-    logical, intent(in), optional :: full_lon
-    logical, intent(in), optional :: half_lon
-    logical, intent(in), optional :: full_lat
-    logical, intent(in), optional :: half_lat
+    type(mesh_type), intent(in )              :: mesh
+    real(8)        , intent(out), allocatable :: array(:)
+    logical        , intent(in ), optional    :: full_lon
+    logical        , intent(in ), optional    :: half_lon
+    logical        , intent(in ), optional    :: full_lat
+    logical        , intent(in ), optional    :: half_lat
 
     if (allocated(array)) deallocate(array)
 
@@ -42,12 +42,12 @@ contains
 
   subroutine allocate_array_2d_r8(mesh, array, full_lon, half_lon, full_lat, half_lat)
 
-    type(mesh_type), intent(in) :: mesh
-    real(8), intent(out), allocatable :: array(:,:)
-    logical, intent(in), optional :: full_lon
-    logical, intent(in), optional :: half_lon
-    logical, intent(in), optional :: full_lat
-    logical, intent(in), optional :: half_lat
+    type(mesh_type), intent(in )              :: mesh
+    real(8)        , intent(out), allocatable :: array(:,:)
+    logical        , intent(in ), optional    :: full_lon
+    logical        , intent(in ), optional    :: half_lon
+    logical        , intent(in ), optional    :: full_lat
+    logical        , intent(in ), optional    :: half_lat
 
     if (present(full_lon) .and. present(full_lat)) then
       if (full_lon .and. full_lat) allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub))
