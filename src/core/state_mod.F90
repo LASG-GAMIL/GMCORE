@@ -35,6 +35,7 @@ module state_mod
     real(r8), allocatable, dimension(:,:) :: pvc_lon ! Corrected PV on U grids
     real(r8), allocatable, dimension(:,:) :: pvc_lat ! Corrected PV on V grids
     real(r8) total_mass
+    real(r8) total_ke
     real(r8) total_energy
     real(r8) total_absolute_vorticity
     real(r8) total_potential_enstrophy

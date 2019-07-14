@@ -187,6 +187,8 @@ contains
       call calc_pv_on_edge_upwind(state)
     case (3)
       call calc_pv_on_edge_apvm(state, dt)
+    case (4)
+      call calc_pv_on_edge_scale_aware_apvm(state)
     case default
       call log_error('Unknown PV scheme!')
     end select
