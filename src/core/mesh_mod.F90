@@ -264,21 +264,21 @@ contains
     ! Ensure the values of cos_lat and sin_lat are expected at the Poles.
 #ifdef STAGGER_V_ON_POLE
     if (this%has_south_pole()) then
-      mesh%half_cos_lat(this%half_lat_start_idx) = 0.0_r8
-      mesh%half_sin_lat(this%half_lat_start_idx) = -1.0_r8
+      this%half_cos_lat(this%half_lat_start_idx) = 0.0_r8
+      this%half_sin_lat(this%half_lat_start_idx) = -1.0_r8
     end if
     if (this%has_north_pole()) then
-      mesh%half_cos_lat(this%half_lat_end_idx) = 0.0_r8
-      mesh%half_sin_lat(this%half_lat_end_idx) = 1.0_r8
+      this%half_cos_lat(this%half_lat_end_idx) = 0.0_r8
+      this%half_sin_lat(this%half_lat_end_idx) = 1.0_r8
     end if
 #else
     if (this%has_south_pole()) then
-      mesh%full_cos_lat(this%full_lat_start_idx) = 0.0_r8
-      mesh%full_sin_lat(this%full_lat_start_idx) = -1.0_r8
+      this%full_cos_lat(this%full_lat_start_idx) = 0.0_r8
+      this%full_sin_lat(this%full_lat_start_idx) = -1.0_r8
     end if
     if (this%has_north_pole()) then
-      mesh%full_cos_lat(this%full_lat_end_idx) = 0.0_r8
-      mesh%full_sin_lat(this%full_lat_end_idx) = 1.0_r8
+      this%full_cos_lat(this%full_lat_end_idx) = 0.0_r8
+      this%full_sin_lat(this%full_lat_end_idx) = 1.0_r8
     end if
 #endif
 
@@ -297,11 +297,11 @@ contains
 
     do j = this%half_lat_start_idx, this%half_lat_end_idx
       if (this%is_south_pole(j)) then
-        mesh%vertex_area(j) = radius**2 * this%dlon * (this%full_sin_lat(j) + 1)
+        this%vertex_area(j) = radius**2 * this%dlon * (this%full_sin_lat(j) + 1)
       else if (this%is_north_pole(j)) then
-        mesh%vertex_area(j) = radius**2 * this%dlon * (1 - this%full_sin_lat(j-1))
+        this%vertex_area(j) = radius**2 * this%dlon * (1 - this%full_sin_lat(j-1))
       else
-        mesh%vertex_area(j) = radius**2 * this%dlon * (this%full_sin_lat(j) - this%full_sin_lat(j-1))
+        this%vertex_area(j) = radius**2 * this%dlon * (this%full_sin_lat(j) - this%full_sin_lat(j-1))
         call cartesian_transform(this%full_lon(2), this%full_lat(j  ), x(1), y(1), z(1))
         call cartesian_transform(this%half_lon(1), this%half_lat(j  ), x(2), y(2), z(2))
         call cartesian_transform(this%half_lon(2), this%half_lat(j  ), x(3), y(3), z(3))
@@ -499,6 +499,8 @@ contains
     do j = this%half_lat_start_idx, this%half_lat_end_idx
       this%half_f(j) = 2.0_r8 * omega * this%half_sin_lat(j)
     end do
+
+    call log_notice('Mesh module is initialized.')
 
   end subroutine mesh_init
 
