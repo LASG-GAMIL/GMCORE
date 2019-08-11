@@ -255,7 +255,11 @@ contains
         un = state%u(i,j)
         vt = state%mass_flux_lat_t(i,j) / state%mass_lon(i,j)
         state%pvc_lon(i,j) = 0.5_r8 * (un * state%dpv_lon_n(i,j) / de + vt * state%dpv_lat_t(i,j) / le) * dt
+#ifdef STAGGER_V_ON_POLE
         state%pv_lon(i,j) = 0.5_r8 * (state%pv(i,j+1) + state%pv(i,j)) - state%pvc_lon(i,j)
+#else
+        state%pv_lon(i,j) = 0.5_r8 * (state%pv(i,j-1) + state%pv(i,j)) - state%pvc_lon(i,j)
+#endif
       end do
     end do
 
@@ -301,7 +305,11 @@ contains
         vt = state%mass_flux_lat_t(i,j) / state%mass_lon(i,j)
         pv_adv = un * state%dpv_lon_n(i,j) / de + vt * state%dpv_lat_t(i,j) / le
         state%pvc_lon(i,j) = alpha * ke * h * de**3 * abs(pv_adv) * pv_adv
+#ifdef STAGGER_V_ON_POLE
         state%pv_lon (i,j) = 0.5_r8 * (state%pv(i,j+1) + state%pv(i,j)) - state%pvc_lon(i,j)
+#else
+        state%pv_lon (i,j) = 0.5_r8 * (state%pv(i,j-1) + state%pv(i,j)) - state%pvc_lon(i,j)
+#endif
       end do
     end do
 
