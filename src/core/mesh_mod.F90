@@ -14,8 +14,8 @@ module mesh_mod
   public create_meshes
 
   type mesh_type
-    integer :: id
-    integer :: halo_width
+    integer id
+    integer halo_width
     integer num_full_lon
     integer num_half_lon
     integer num_full_lat
@@ -75,10 +75,10 @@ module mesh_mod
     real(r8), allocatable :: vertex_area(:)
     real(r8), allocatable :: subcell_area(:,:)
     ! Edge length
-    real(r8), allocatable :: cell_lon_distance(:)
-    real(r8), allocatable :: cell_lat_distance(:)
-    real(r8), allocatable :: vertex_lon_distance(:)
-    real(r8), allocatable :: vertex_lat_distance(:)
+    real(r8), allocatable :: cell_lon_dist(:)
+    real(r8), allocatable :: cell_lat_dist(:)
+    real(r8), allocatable :: vertex_lon_dist(:)
+    real(r8), allocatable :: vertex_lat_dist(:)
     ! Weight for constructing tangential wind
     real(r8), allocatable :: full_tangent_wgt(:,:)
     real(r8), allocatable :: half_tangent_wgt(:,:)
@@ -158,48 +158,48 @@ contains
 
     this%full_lon_lb = this%full_lon_start_idx - this%halo_width
     this%full_lon_ub = this%full_lon_end_idx   + this%halo_width
-    this%full_lat_lb = this%full_lat_start_idx - this%halo_width
-    this%full_lat_ub = this%full_lat_end_idx   + this%halo_width
+    this%full_lat_lb = this%full_lat_start_idx - 2
+    this%full_lat_ub = this%full_lat_end_idx   + 2
     this%half_lon_lb = this%half_lon_start_idx - this%halo_width
     this%half_lon_ub = this%half_lon_end_idx   + this%halo_width
-    this%half_lat_lb = this%half_lat_start_idx - this%halo_width
-    this%half_lat_ub = this%half_lat_end_idx   + this%halo_width
+    this%half_lat_lb = this%half_lat_start_idx - 2
+    this%half_lat_ub = this%half_lat_end_idx   + 2
 
-    allocate(this%full_lon           (this%full_lon_lb:this%full_lon_ub)); this%full_lon            = 0.0d0
-    allocate(this%half_lon           (this%half_lon_lb:this%half_lon_ub)); this%half_lon            = 0.0d0
-    allocate(this%full_lat           (this%full_lat_lb:this%full_lat_ub)); this%full_lat            = 0.0d0
-    allocate(this%half_lat           (this%half_lat_lb:this%half_lat_ub)); this%half_lat            = 0.0d0
-    allocate(this%full_cos_lon       (this%full_lon_lb:this%full_lon_ub)); this%full_cos_lon        = 0.0d0
-    allocate(this%half_cos_lon       (this%half_lon_lb:this%half_lon_ub)); this%half_cos_lon        = 0.0d0
-    allocate(this%full_sin_lon       (this%full_lon_lb:this%full_lon_ub)); this%full_sin_lon        = 0.0d0
-    allocate(this%half_sin_lon       (this%half_lon_lb:this%half_lon_ub)); this%half_sin_lon        = 0.0d0
-    allocate(this%full_cos_lat       (this%full_lat_lb:this%full_lat_ub)); this%full_cos_lat        = 0.0d0
-    allocate(this%half_cos_lat       (this%half_lat_lb:this%half_lat_ub)); this%half_cos_lat        = 0.0d0
-    allocate(this%full_sin_lat       (this%full_lat_lb:this%full_lat_ub)); this%full_sin_lat        = 0.0d0
-    allocate(this%half_sin_lat       (this%half_lat_lb:this%half_lat_ub)); this%half_sin_lat        = 0.0d0
-    allocate(this%full_lon_deg       (this%full_lon_lb:this%full_lon_ub)); this%full_lon_deg        = 0.0d0
-    allocate(this%half_lon_deg       (this%half_lon_lb:this%half_lon_ub)); this%half_lon_deg        = 0.0d0
-    allocate(this%full_lat_deg       (this%full_lat_lb:this%full_lat_ub)); this%full_lat_deg        = 0.0d0
-    allocate(this%half_lat_deg       (this%half_lat_lb:this%half_lat_ub)); this%half_lat_deg        = 0.0d0
-    allocate(this%cell_area          (this%full_lat_lb:this%full_lat_ub)); this%cell_area           = 0.0d0
-    allocate(this%lon_edge_area      (this%full_lat_lb:this%full_lat_ub)); this%lon_edge_area       = 0.0d0
-    allocate(this%lon_edge_left_area (this%full_lat_lb:this%full_lat_ub)); this%lon_edge_left_area  = 0.0d0
-    allocate(this%lon_edge_right_area(this%full_lat_lb:this%full_lat_ub)); this%lon_edge_right_area = 0.0d0
-    allocate(this%lat_edge_area      (this%half_lat_lb:this%half_lat_ub)); this%lat_edge_area       = 0.0d0
-    allocate(this%lat_edge_up_area   (this%half_lat_lb:this%half_lat_ub)); this%lat_edge_up_area    = 0.0d0
-    allocate(this%lat_edge_down_area (this%half_lat_lb:this%half_lat_ub)); this%lat_edge_down_area  = 0.0d0
-    allocate(this%vertex_area        (this%half_lat_lb:this%half_lat_ub)); this%vertex_area         = 0.0d0
-    allocate(this%subcell_area     (2,this%full_lat_lb:this%full_lat_ub)); this%subcell_area        = 0.0d0
-    allocate(this%cell_lon_distance  (this%full_lat_lb:this%full_lat_ub)); this%cell_lon_distance   = 0.0d0
-    allocate(this%cell_lat_distance  (this%half_lat_lb:this%half_lat_ub)); this%cell_lat_distance   = 0.0d0
-    allocate(this%vertex_lon_distance(this%half_lat_lb:this%half_lat_ub)); this%vertex_lon_distance = 0.0d0
-    allocate(this%vertex_lat_distance(this%full_lat_lb:this%full_lat_ub)); this%vertex_lat_distance = 0.0d0
-    allocate(this%full_tangent_wgt (2,this%full_lat_lb:this%full_lat_ub)); this%full_tangent_wgt    = 0.0d0
-    allocate(this%half_tangent_wgt (2,this%half_lat_lb:this%half_lat_ub)); this%half_tangent_wgt    = 0.0d0
-    allocate(this%full_upwind_beta   (this%full_lat_lb:this%full_lat_ub)); this%full_upwind_beta    = 0.0d0
-    allocate(this%half_upwind_beta   (this%half_lat_lb:this%half_lat_ub)); this%half_upwind_beta    = 0.0d0
-    allocate(this%full_f             (this%full_lat_lb:this%full_lat_ub)); this%full_f              = 0.0d0
-    allocate(this%half_f             (this%half_lat_lb:this%half_lat_ub)); this%half_f              = 0.0d0
+    allocate(this%full_lon           (this%full_lon_lb:this%full_lon_ub)); this%full_lon            = inf
+    allocate(this%half_lon           (this%half_lon_lb:this%half_lon_ub)); this%half_lon            = inf
+    allocate(this%full_lat           (this%full_lat_lb:this%full_lat_ub)); this%full_lat            = inf
+    allocate(this%half_lat           (this%half_lat_lb:this%half_lat_ub)); this%half_lat            = inf
+    allocate(this%full_cos_lon       (this%full_lon_lb:this%full_lon_ub)); this%full_cos_lon        = inf
+    allocate(this%half_cos_lon       (this%half_lon_lb:this%half_lon_ub)); this%half_cos_lon        = inf
+    allocate(this%full_sin_lon       (this%full_lon_lb:this%full_lon_ub)); this%full_sin_lon        = inf
+    allocate(this%half_sin_lon       (this%half_lon_lb:this%half_lon_ub)); this%half_sin_lon        = inf
+    allocate(this%full_cos_lat       (this%full_lat_lb:this%full_lat_ub)); this%full_cos_lat        = inf
+    allocate(this%half_cos_lat       (this%half_lat_lb:this%half_lat_ub)); this%half_cos_lat        = inf
+    allocate(this%full_sin_lat       (this%full_lat_lb:this%full_lat_ub)); this%full_sin_lat        = inf
+    allocate(this%half_sin_lat       (this%half_lat_lb:this%half_lat_ub)); this%half_sin_lat        = inf
+    allocate(this%full_lon_deg       (this%full_lon_lb:this%full_lon_ub)); this%full_lon_deg        = inf
+    allocate(this%half_lon_deg       (this%half_lon_lb:this%half_lon_ub)); this%half_lon_deg        = inf
+    allocate(this%full_lat_deg       (this%full_lat_lb:this%full_lat_ub)); this%full_lat_deg        = inf
+    allocate(this%half_lat_deg       (this%half_lat_lb:this%half_lat_ub)); this%half_lat_deg        = inf
+    allocate(this%cell_area          (this%full_lat_lb:this%full_lat_ub)); this%cell_area           = inf
+    allocate(this%lon_edge_area      (this%full_lat_lb:this%full_lat_ub)); this%lon_edge_area       = inf
+    allocate(this%lon_edge_left_area (this%full_lat_lb:this%full_lat_ub)); this%lon_edge_left_area  = inf
+    allocate(this%lon_edge_right_area(this%full_lat_lb:this%full_lat_ub)); this%lon_edge_right_area = inf
+    allocate(this%lat_edge_area      (this%half_lat_lb:this%half_lat_ub)); this%lat_edge_area       = inf
+    allocate(this%lat_edge_up_area   (this%half_lat_lb:this%half_lat_ub)); this%lat_edge_up_area    = inf
+    allocate(this%lat_edge_down_area (this%half_lat_lb:this%half_lat_ub)); this%lat_edge_down_area  = inf
+    allocate(this%vertex_area        (this%half_lat_lb:this%half_lat_ub)); this%vertex_area         = inf
+    allocate(this%subcell_area     (2,this%full_lat_lb:this%full_lat_ub)); this%subcell_area        = inf
+    allocate(this%cell_lon_dist      (this%full_lat_lb:this%full_lat_ub)); this%cell_lon_dist       = inf
+    allocate(this%cell_lat_dist      (this%half_lat_lb:this%half_lat_ub)); this%cell_lat_dist       = inf
+    allocate(this%vertex_lon_dist    (this%half_lat_lb:this%half_lat_ub)); this%vertex_lon_dist     = inf
+    allocate(this%vertex_lat_dist    (this%full_lat_lb:this%full_lat_ub)); this%vertex_lat_dist     = inf
+    allocate(this%full_tangent_wgt (2,this%full_lat_lb:this%full_lat_ub)); this%full_tangent_wgt    = inf
+    allocate(this%half_tangent_wgt (2,this%half_lat_lb:this%half_lat_ub)); this%half_tangent_wgt    = inf
+    allocate(this%full_upwind_beta   (this%full_lat_lb:this%full_lat_ub)); this%full_upwind_beta    = inf
+    allocate(this%half_upwind_beta   (this%half_lat_lb:this%half_lat_ub)); this%half_upwind_beta    = inf
+    allocate(this%full_f             (this%full_lat_lb:this%full_lat_ub)); this%full_f              = inf
+    allocate(this%half_f             (this%half_lat_lb:this%half_lat_ub)); this%half_f              = inf
 
     this%dlon = (this%end_lon - this%start_lon) / this%num_full_lon
     do i = this%full_lon_lb, this%full_lon_ub
@@ -215,6 +215,10 @@ contains
       this%half_lat(j) = this%start_lat + (j - 1) * this%dlat
       if (abs(this%half_lat(j)) < 1.0e-14) this%half_lat(j) = 0.0_r8
       this%half_lat_deg(j) = this%half_lat(j) * deg
+      if (this%half_lat(j) < -pi05 .or. this%half_lat(j) > pi05) then
+        this%half_lat(j) = inf
+        this%half_lat_deg(j) = inf
+      end if
     end do
     this%half_lat(this%num_half_lat) = this%end_lat
     this%half_lat_deg(this%num_half_lat) = this%end_lat * deg
@@ -223,6 +227,10 @@ contains
       this%full_lat(j) = this%half_lat(j) + 0.5_r8 * this%dlat
       if (abs(this%full_lat(j)) < 1.0e-14) this%full_lat(j) = 0.0_r8
       this%full_lat_deg(j) = this%full_lat(j) * deg
+      if (this%full_lat(j) < -pi05 .or. this%full_lat(j) > pi05) then
+        this%full_lat(j) = inf
+        this%full_lat_deg(j) = inf
+      end if
     end do
 #else
     this%dlat = (this%end_lat - this%start_lat) / this%num_half_lat
@@ -230,6 +238,10 @@ contains
       this%full_lat(j) = this%start_lat + (j - 1) * this%dlat
       if (abs(this%full_lat(j)) < 1.0e-14) this%full_lat(j) = 0.0_r8
       this%full_lat_deg(j) = this%full_lat(j) * deg
+      if (this%full_lat(j) < -pi05 .or. this%full_lat(j) > pi05) then
+        this%full_lat(j) = inf
+        this%full_lat_deg(j) = inf
+      end if
     end do
     this%full_lat(this%num_full_lat) = this%end_lat
     this%full_lat_deg(this%num_full_lat) = this%end_lat * deg
@@ -238,6 +250,10 @@ contains
       this%half_lat(j) = this%full_lat(j) + 0.5_r8 * this%dlat
       if (abs(this%half_lat(j)) < 1.0e-14) this%half_lat(j) = 0.0_r8
       this%half_lat_deg(j) = this%half_lat(j) * deg
+      if (this%half_lat(j) < -pi05 .or. this%half_lat(j) > pi05) then
+        this%half_lat(j) = inf
+        this%half_lat_deg(j) = inf
+      end if
     end do
 #endif
 
@@ -252,13 +268,17 @@ contains
     end do
 
     do j = this%half_lat_lb, this%half_lat_ub
-      this%half_cos_lat(j) = cos(this%half_lat(j))
-      this%half_sin_lat(j) = sin(this%half_lat(j))
+      if (this%half_lat(j) >= -pi05 .and. this%half_lat(j) <= pi05) then
+        this%half_cos_lat(j) = cos(this%half_lat(j))
+        this%half_sin_lat(j) = sin(this%half_lat(j))
+      end if
     end do
 
     do j = this%full_lat_lb, this%full_lat_ub
-      this%full_cos_lat(j) = cos(this%full_lat(j))
-      this%full_sin_lat(j) = sin(this%full_lat(j))
+      if (this%full_lat(j) >= -pi05 .and. this%full_lat(j) <= pi05) then
+        this%full_cos_lat(j) = cos(this%full_lat(j))
+        this%full_sin_lat(j) = sin(this%full_lat(j))
+      end if
     end do
 
     ! Ensure the values of cos_lat and sin_lat are expected at the Poles.
@@ -403,10 +423,10 @@ contains
 #endif
 
     total_area = 0.0d0
-    do j = this%full_lat_start_idx, this%full_lat_end_idx
+    do j = this%full_lat_start_idx_no_pole, this%full_lat_end_idx_no_pole
       total_area = total_area + this%lon_edge_area(j) * this%num_full_lon
     end do
-    do j = this%half_lat_start_idx, this%half_lat_end_idx
+    do j = this%half_lat_start_idx_no_pole, this%half_lat_end_idx_no_pole
       total_area = total_area + this%lat_edge_area(j) * this%num_full_lon
     end do
     if (abs((this%total_area - total_area) / this%total_area) > 1.0d-11) then
@@ -414,13 +434,13 @@ contains
     end if
 
     do j = this%full_lat_start_idx_no_pole, this%full_lat_end_idx_no_pole
-      this%vertex_lat_distance(j) = this%dlat * radius
-      this%cell_lon_distance(j) = 2.0d0 * this%lon_edge_area(j) / this%vertex_lat_distance(j)
+      this%vertex_lat_dist(j) = this%dlat * radius
+      this%cell_lon_dist(j) = 2.0d0 * this%lon_edge_area(j) / this%vertex_lat_dist(j)
     end do
 
     do j = this%half_lat_start_idx_no_pole, this%half_lat_end_idx_no_pole
-      this%vertex_lon_distance(j) = radius * this%half_cos_lat(j) * mesh%dlon
-      this%cell_lat_distance(j) = 2.0d0 * this%lat_edge_area(j) / this%vertex_lon_distance(j)
+      this%vertex_lon_dist(j) = radius * this%half_cos_lat(j) * mesh%dlon
+      this%cell_lat_dist(j) = 2.0d0 * this%lat_edge_area(j) / this%vertex_lon_dist(j)
     end do
 
     !  ____________________                 ____________________                  ____________________                  ____________________                 
@@ -447,41 +467,41 @@ contains
     case ('classic')
       do j = this%full_lat_start_idx_no_pole, this%full_lat_end_idx_no_pole
 #ifdef STAGGER_V_ON_POLE
-        this%full_tangent_wgt(1,j) = this%vertex_lon_distance(j  ) / this%cell_lon_distance(j) * 0.25d0
-        this%full_tangent_wgt(2,j) = this%vertex_lon_distance(j+1) / this%cell_lon_distance(j) * 0.25d0
+        this%full_tangent_wgt(1,j) = this%vertex_lon_dist(j  ) / this%cell_lon_dist(j) * 0.25d0
+        this%full_tangent_wgt(2,j) = this%vertex_lon_dist(j+1) / this%cell_lon_dist(j) * 0.25d0
 #else
-        this%full_tangent_wgt(1,j) = this%vertex_lon_distance(j-1) / this%cell_lon_distance(j) * 0.25d0
-        this%full_tangent_wgt(2,j) = this%vertex_lon_distance(j  ) / this%cell_lon_distance(j) * 0.25d0
+        this%full_tangent_wgt(1,j) = this%vertex_lon_dist(j-1) / this%cell_lon_dist(j) * 0.25d0
+        this%full_tangent_wgt(2,j) = this%vertex_lon_dist(j  ) / this%cell_lon_dist(j) * 0.25d0
 #endif
       end do
 
       do j = this%half_lat_start_idx_no_pole, this%half_lat_end_idx_no_pole
 #ifdef STAGGER_V_ON_POLE
-        this%half_tangent_wgt(1,j) = this%vertex_lat_distance(j-1) / this%cell_lat_distance(j) * 0.25d0
-        this%half_tangent_wgt(2,j) = this%vertex_lat_distance(j  ) / this%cell_lat_distance(j) * 0.25d0
+        this%half_tangent_wgt(1,j) = this%vertex_lat_dist(j-1) / this%cell_lat_dist(j) * 0.25d0
+        this%half_tangent_wgt(2,j) = this%vertex_lat_dist(j  ) / this%cell_lat_dist(j) * 0.25d0
 #else
-        this%half_tangent_wgt(1,j) = this%vertex_lat_distance(j  ) / this%cell_lat_distance(j) * 0.25d0
-        this%half_tangent_wgt(2,j) = this%vertex_lat_distance(j+1) / this%cell_lat_distance(j) * 0.25d0
+        this%half_tangent_wgt(1,j) = this%vertex_lat_dist(j  ) / this%cell_lat_dist(j) * 0.25d0
+        this%half_tangent_wgt(2,j) = this%vertex_lat_dist(j+1) / this%cell_lat_dist(j) * 0.25d0
 #endif
       end do
     case ('thuburn09')
       do j = this%full_lat_start_idx_no_pole, this%full_lat_end_idx_no_pole
 #ifdef STAGGER_V_ON_POLE
-        this%full_tangent_wgt(1,j) = this%vertex_lon_distance(j  ) / this%cell_lon_distance(j) * this%subcell_area(2,j  ) / this%cell_area(j  )
-        this%full_tangent_wgt(2,j) = this%vertex_lon_distance(j+1) / this%cell_lon_distance(j) * this%subcell_area(1,j  ) / this%cell_area(j  )
+        this%full_tangent_wgt(1,j) = this%vertex_lon_dist(j  ) / this%cell_lon_dist(j) * this%subcell_area(2,j  ) / this%cell_area(j  )
+        this%full_tangent_wgt(2,j) = this%vertex_lon_dist(j+1) / this%cell_lon_dist(j) * this%subcell_area(1,j  ) / this%cell_area(j  )
 #else
-        this%full_tangent_wgt(1,j) = this%vertex_lon_distance(j-1) / this%cell_lon_distance(j) * this%subcell_area(2,j  ) / this%cell_area(j  )
-        this%full_tangent_wgt(2,j) = this%vertex_lon_distance(j  ) / this%cell_lon_distance(j) * this%subcell_area(1,j  ) / this%cell_area(j  )
+        this%full_tangent_wgt(1,j) = this%vertex_lon_dist(j-1) / this%cell_lon_dist(j) * this%subcell_area(2,j  ) / this%cell_area(j  )
+        this%full_tangent_wgt(2,j) = this%vertex_lon_dist(j  ) / this%cell_lon_dist(j) * this%subcell_area(1,j  ) / this%cell_area(j  )
 #endif
       end do
 
       do j = this%half_lat_start_idx_no_pole, this%half_lat_end_idx_no_pole
 #ifdef STAGGER_V_ON_POLE
-        this%half_tangent_wgt(1,j) = this%vertex_lat_distance(j-1) / this%cell_lat_distance(j) * this%subcell_area(1,j-1) / this%cell_area(j-1)
-        this%half_tangent_wgt(2,j) = this%vertex_lat_distance(j  ) / this%cell_lat_distance(j) * this%subcell_area(2,j  ) / this%cell_area(j  )
+        this%half_tangent_wgt(1,j) = this%vertex_lat_dist(j-1) / this%cell_lat_dist(j) * this%subcell_area(1,j-1) / this%cell_area(j-1)
+        this%half_tangent_wgt(2,j) = this%vertex_lat_dist(j  ) / this%cell_lat_dist(j) * this%subcell_area(2,j  ) / this%cell_area(j  )
 #else
-        this%half_tangent_wgt(1,j) = this%vertex_lat_distance(j  ) / this%cell_lat_distance(j) * this%subcell_area(1,j  ) / this%cell_area(j  )
-        this%half_tangent_wgt(2,j) = this%vertex_lat_distance(j+1) / this%cell_lat_distance(j) * this%subcell_area(2,j+1) / this%cell_area(j+1)
+        this%half_tangent_wgt(1,j) = this%vertex_lat_dist(j  ) / this%cell_lat_dist(j) * this%subcell_area(1,j  ) / this%cell_area(j  )
+        this%half_tangent_wgt(2,j) = this%vertex_lat_dist(j+1) / this%cell_lat_dist(j) * this%subcell_area(2,j+1) / this%cell_area(j+1)
 #endif
       end do
     end select
@@ -580,10 +600,10 @@ contains
     if (allocated(this%lat_edge_down_area )) deallocate(this%lat_edge_down_area )
     if (allocated(this%vertex_area        )) deallocate(this%vertex_area        )
     if (allocated(this%subcell_area       )) deallocate(this%subcell_area       )
-    if (allocated(this%cell_lon_distance  )) deallocate(this%cell_lon_distance  )
-    if (allocated(this%cell_lat_distance  )) deallocate(this%cell_lat_distance  )
-    if (allocated(this%vertex_lon_distance)) deallocate(this%vertex_lon_distance)
-    if (allocated(this%vertex_lat_distance)) deallocate(this%vertex_lat_distance)
+    if (allocated(this%cell_lon_dist      )) deallocate(this%cell_lon_dist      )
+    if (allocated(this%cell_lat_dist      )) deallocate(this%cell_lat_dist      )
+    if (allocated(this%vertex_lon_dist    )) deallocate(this%vertex_lon_dist    )
+    if (allocated(this%vertex_lat_dist    )) deallocate(this%vertex_lat_dist    )
     if (allocated(this%full_tangent_wgt   )) deallocate(this%full_tangent_wgt   )
     if (allocated(this%half_tangent_wgt   )) deallocate(this%half_tangent_wgt   )
     if (allocated(this%full_upwind_beta   )) deallocate(this%full_upwind_beta   )

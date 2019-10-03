@@ -124,53 +124,53 @@ contains
 
     integer i, j
 
-    state%total_mass = 0.0_r8
+    state%total_m = 0.0_r8
     do j = state%mesh%full_lat_start_idx, state%mesh%full_lat_end_idx
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-        state%total_mass = state%total_mass + state%gd(i,j) * state%mesh%cell_area(j)
+        state%total_m = state%total_m + state%gd(i,j) * state%mesh%cell_area(j)
       end do
     end do
 
     state%total_ke = 0.0_r8
     do j = state%mesh%full_lat_start_idx_no_pole, state%mesh%full_lat_end_idx_no_pole
       do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
-        state%total_ke = state%total_ke + state%mass_lon(i,j) * state%u(i,j)**2 * state%mesh%lon_edge_area(j)
+        state%total_ke = state%total_ke + state%m_lon(i,j) * state%u(i,j)**2 * state%mesh%lon_edge_area(j)
       end do
     end do
     do j = state%mesh%half_lat_start_idx_no_pole, state%mesh%half_lat_end_idx_no_pole
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-        state%total_ke = state%total_ke + state%mass_lat(i,j) * state%v(i,j)**2 * state%mesh%lat_edge_area(j)
+        state%total_ke = state%total_ke + state%m_lat(i,j) * state%v(i,j)**2 * state%mesh%lat_edge_area(j)
       end do
     end do
-    state%total_energy = state%total_ke
+    state%total_e = state%total_ke
     do j = state%mesh%full_lat_start_idx, state%mesh%full_lat_end_idx
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-        state%total_energy = state%total_energy + (state%gd(i,j)**2 / g * 0.5_r8 + state%gd(i,j) * static%ghs(i,j) / g) * state%mesh%cell_area(j)
+        state%total_e = state%total_e + (state%gd(i,j)**2 / g * 0.5_r8 + state%gd(i,j) * static%ghs(i,j) / g) * state%mesh%cell_area(j)
       end do
     end do
 
-    state%total_absolute_vorticity = 0.0_r8
+    state%total_av = 0.0_r8
     do j = state%mesh%half_lat_start_idx, state%mesh%half_lat_end_idx
       do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
-        state%total_absolute_vorticity = state%total_absolute_vorticity + &
-                                         state%mass_vertex(i,j) * state%pv(i,j) * &
+        state%total_av = state%total_av + &
+                                         state%m_vtx(i,j) * state%pv(i,j) * &
                                          state%mesh%vertex_area(j)
       end do
     end do
 
-    state%total_potential_enstrophy = 0.0_r8
+    state%total_pe = 0.0_r8
     do j = state%mesh%half_lat_start_idx, state%mesh%half_lat_end_idx
       do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
-        state%total_potential_enstrophy = state%total_potential_enstrophy + &
-                                          state%mass_vertex(i,j) * state%pv(i,j)**2 * 0.5_r8 * &
+        state%total_pe = state%total_pe + &
+                                          state%m_vtx(i,j) * state%pv(i,j)**2 * 0.5_r8 * &
                                           state%mesh%vertex_area(j)
       end do
     end do
 
-    call log_add_diag('total_mass', state%total_mass)
-    call log_add_diag('total_energy', state%total_energy)
-    call log_add_diag('total_absolute_vorticity', state%total_absolute_vorticity)
-    call log_add_diag('total_potential_enstrophy', state%total_potential_enstrophy)
+    call log_add_diag('total_m', state%total_m)
+    call log_add_diag('total_e', state%total_e)
+    call log_add_diag('total_av', state%total_av)
+    call log_add_diag('total_pe', state%total_pe)
 
   end subroutine diagnose
 

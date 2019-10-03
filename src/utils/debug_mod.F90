@@ -33,15 +33,15 @@ contains
 
     do j = mesh%full_lat_start_idx_no_pole, mesh%full_lat_end_idx_no_pole
       do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
-        ip_coriolis = ip_coriolis + tend%qhv(i,j) * state%mass_flux_lon_n(i,j) * mesh%lon_edge_area(j) / radius**2
-        ip_energe_gradient = ip_energe_gradient + tend%dEdlon(i,j) * state%mass_flux_lon_n(i,j) * mesh%lon_edge_area(j)
+        ip_coriolis = ip_coriolis + tend%qhv(i,j) * state%mf_lon_n(i,j) * mesh%lon_edge_area(j) / radius**2
+        ip_energe_gradient = ip_energe_gradient + tend%dEdlon(i,j) * state%mf_lon_n(i,j) * mesh%lon_edge_area(j)
       end do
     end do
 
     do j = mesh%half_lat_start_idx, mesh%half_lat_end_idx
       do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
-        ip_coriolis = ip_coriolis + tend%qhu(i,j) * state%mass_flux_lat_n(i,j) * mesh%lat_edge_area(j) / radius**2
-        ip_energe_gradient = ip_energe_gradient + tend%dEdlat(i,j) * state%mass_flux_lat_n(i,j) * mesh%lat_edge_area(j)
+        ip_coriolis = ip_coriolis + tend%qhu(i,j) * state%mf_lat_n(i,j) * mesh%lat_edge_area(j) / radius**2
+        ip_energe_gradient = ip_energe_gradient + tend%dEdlat(i,j) * state%mf_lat_n(i,j) * mesh%lat_edge_area(j)
       end do
     end do
 
