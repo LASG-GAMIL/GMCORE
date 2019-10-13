@@ -352,9 +352,9 @@ contains
       end do
     end do
 
-    call parallel_fill_halo(new_state%mesh, new_state%gd(:,:), all_halo=.true.)
-    call parallel_fill_halo(new_state%mesh, new_state%u (:,:), all_halo=.true.)
-    call parallel_fill_halo(new_state%mesh, new_state%v (:,:), all_halo=.true.)
+    call parallel_fill_halo(new_state%mesh, new_state%gd(:,:))
+    call parallel_fill_halo(new_state%mesh, new_state%u (:,:))
+    call parallel_fill_halo(new_state%mesh, new_state%v (:,:))
 
     ! Do not forget to synchronize the mass on edge and vertex for diagnosing!
     call calc_mass_on_edge(new_state)

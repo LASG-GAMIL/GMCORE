@@ -43,7 +43,7 @@ contains
       end do
     end do
 
-    call parallel_fill_halo(mesh, states(1)%u, all_halo=.true.)
+    call parallel_fill_halo(mesh, states(1)%u)
 
     states(1)%v = 0.0_r8
 
@@ -67,7 +67,7 @@ contains
       end do
     end do
 
-    call parallel_fill_halo(mesh, states(1)%gd, all_halo=.true.)
+    call parallel_fill_halo(mesh, states(1)%gd)
 
   end subroutine jet_zonal_flow_test_set_initial_condition
 

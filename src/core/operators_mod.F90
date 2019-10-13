@@ -134,8 +134,8 @@ contains
       end do
     end do
 
-    call parallel_fill_halo(state%mesh, state%mf_lon_n, all_halo=.true.)
-    call parallel_fill_halo(state%mesh, state%mf_lat_n, all_halo=.true.)
+    call parallel_fill_halo(state%mesh, state%mf_lon_n)
+    call parallel_fill_halo(state%mesh, state%mf_lat_n)
 
   end subroutine calc_normal_mass_flux
 
@@ -169,8 +169,8 @@ contains
       end do
     end do
 
-    call parallel_fill_halo(state%mesh, state%mf_lat_t, all_halo=.true.)
-    call parallel_fill_halo(state%mesh, state%mf_lon_t, all_halo=.true.)
+    call parallel_fill_halo(state%mesh, state%mf_lat_t)
+    call parallel_fill_halo(state%mesh, state%mf_lon_t)
 
   end subroutine calc_tangent_mass_flux
 
