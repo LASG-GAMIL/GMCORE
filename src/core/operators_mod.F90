@@ -127,14 +127,13 @@ contains
         state%mf_lon_n(i,j) = state%m_lon(i,j) * state%u(i,j)
       end do
     end do
+    call parallel_fill_halo(state%mesh, state%mf_lon_n)
 
     do j = state%mesh%half_lat_start_idx_no_pole, state%mesh%half_lat_end_idx_no_pole
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
         state%mf_lat_n(i,j) = state%m_lat(i,j) * state%v(i,j)
       end do
     end do
-
-    call parallel_fill_halo(state%mesh, state%mf_lon_n)
     call parallel_fill_halo(state%mesh, state%mf_lat_n)
 
   end subroutine calc_normal_mass_flux
@@ -156,6 +155,7 @@ contains
 #endif
       end do
     end do
+    call parallel_fill_halo(state%mesh, state%mf_lat_t)
 
     do j = state%mesh%half_lat_start_idx_no_pole, state%mesh%half_lat_end_idx_no_pole
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
@@ -168,8 +168,6 @@ contains
 #endif
       end do
     end do
-
-    call parallel_fill_halo(state%mesh, state%mf_lat_t)
     call parallel_fill_halo(state%mesh, state%mf_lon_t)
 
   end subroutine calc_tangent_mass_flux
@@ -284,19 +282,34 @@ contains
     integer i, j
     real(r8) pole
 
+    ! --------------------------------------------------------------------------
+    !                       Zonal mass flux divergence
     do j = state%mesh%full_lat_start_idx_no_pole, state%mesh%full_lat_end_idx_no_pole
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-        tend%mf_div(i,j) = ((state%mf_lon_n(i,j  ) - state%mf_lon_n(i-1,j)) * mesh%le_lon(j) + &
-#ifdef STAGGER_V_ON_POLE
-                            (state%mf_lat_n(i,j+1) * mesh%le_lat(j+1) -                 &
-                             state%mf_lat_n(i,j  ) * mesh%le_lat(j  ))                  &
-#else
-                            (state%mf_lat_n(i,j  ) * mesh%le_lat(j  ) -                 &
-                             state%mf_lat_n(i,j-1) * mesh%le_lat(j-1))                  &
-#endif
-                           ) / mesh%cell_area(j)
+        tend%mf_div(i,j) = (                          &
+          state%mf_lon_n(i,j) - state%mf_lon_n(i-1,j) &
+        ) * mesh %le_lon(j) / mesh %cell_area(j)
       end do
     end do
+
+    ! --------------------------------------------------------------------------
+    !                    Meridional mass flux divergence
+    do j = state%mesh%full_lat_start_idx_no_pole, state%mesh%full_lat_end_idx_no_pole
+      do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
+#ifdef STAGGER_V_ON_POLE
+        tend%mf_div(i,j) = tend%mf_div(i,j) + (      &
+          state%mf_lat_n(i,j+1) * mesh%le_lat(j+1) - &
+          state%mf_lat_n(i,j  ) * mesh%le_lat(j  )   &
+        ) / mesh%cell_area(j)
+#else
+        tend%mf_div(i,j) = tend%mf_div(i,j) + (      &
+          state%mf_lat_n(i,j  ) * mesh%le_lat(j  ) - &
+          state%mf_lat_n(i,j-1) * mesh%le_lat(j-1)   &
+        ) / mesh%cell_area(j)
+#endif
+      end do
+    end do
+
 #ifndef STAGGER_V_ON_POLE
     if (state%mesh%has_south_pole()) then
       j = state%mesh%full_lat_start_idx
