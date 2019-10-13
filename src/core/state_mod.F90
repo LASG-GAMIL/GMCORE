@@ -18,13 +18,13 @@ module state_mod
     real(r8), allocatable, dimension(:,:) :: v
     real(r8), allocatable, dimension(:,:) :: gd
     real(r8), allocatable, dimension(:,:) :: pv
-    real(r8), allocatable, dimension(:,:) :: mass_vertex
-    real(r8), allocatable, dimension(:,:) :: mass_lon
-    real(r8), allocatable, dimension(:,:) :: mass_lat
-    real(r8), allocatable, dimension(:,:) :: mass_flux_lon_n
-    real(r8), allocatable, dimension(:,:) :: mass_flux_lat_n
-    real(r8), allocatable, dimension(:,:) :: mass_flux_lon_t
-    real(r8), allocatable, dimension(:,:) :: mass_flux_lat_t
+    real(r8), allocatable, dimension(:,:) :: m_vtx
+    real(r8), allocatable, dimension(:,:) :: m_lon
+    real(r8), allocatable, dimension(:,:) :: m_lat
+    real(r8), allocatable, dimension(:,:) :: mf_lon_n
+    real(r8), allocatable, dimension(:,:) :: mf_lat_n
+    real(r8), allocatable, dimension(:,:) :: mf_lon_t
+    real(r8), allocatable, dimension(:,:) :: mf_lat_t
     real(r8), allocatable, dimension(:,:) :: pv_lon
     real(r8), allocatable, dimension(:,:) :: pv_lat
     real(r8), allocatable, dimension(:,:) :: dpv_lon_t
@@ -71,26 +71,26 @@ contains
 
     this%mesh => mesh
 
-    call allocate_array(mesh, this%u              , half_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%v              , full_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%gd             , full_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%pv             , half_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%mass_vertex    , half_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%mass_lon       , half_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%mass_lat       , full_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%mass_flux_lon_n, half_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%mass_flux_lat_n, full_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%mass_flux_lon_t, full_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%mass_flux_lat_t, half_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%pv_lon         , half_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%pv_lat         , full_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%dpv_lon_t      , half_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%dpv_lon_n      , half_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%dpv_lat_t      , full_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%dpv_lat_n      , full_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%ke_cell        , full_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%pvc_lon        , half_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%pvc_lat        , full_lon=.true., half_lat=.true.)
+    call allocate_array(mesh, this%u        , half_lon=.true., full_lat=.true.)
+    call allocate_array(mesh, this%v        , full_lon=.true., half_lat=.true.)
+    call allocate_array(mesh, this%gd       , full_lon=.true., full_lat=.true.)
+    call allocate_array(mesh, this%pv       , half_lon=.true., half_lat=.true.)
+    call allocate_array(mesh, this%m_vtx    , half_lon=.true., half_lat=.true.)
+    call allocate_array(mesh, this%m_lon    , half_lon=.true., full_lat=.true.)
+    call allocate_array(mesh, this%m_lat    , full_lon=.true., half_lat=.true.)
+    call allocate_array(mesh, this%mf_lon_n , half_lon=.true., full_lat=.true.)
+    call allocate_array(mesh, this%mf_lat_n , full_lon=.true., half_lat=.true.)
+    call allocate_array(mesh, this%mf_lon_t , full_lon=.true., half_lat=.true.)
+    call allocate_array(mesh, this%mf_lat_t , half_lon=.true., full_lat=.true.)
+    call allocate_array(mesh, this%pv_lon   , half_lon=.true., full_lat=.true.)
+    call allocate_array(mesh, this%pv_lat   , full_lon=.true., half_lat=.true.)
+    call allocate_array(mesh, this%dpv_lon_t, half_lon=.true., full_lat=.true.)
+    call allocate_array(mesh, this%dpv_lon_n, half_lon=.true., full_lat=.true.)
+    call allocate_array(mesh, this%dpv_lat_t, full_lon=.true., half_lat=.true.)
+    call allocate_array(mesh, this%dpv_lat_n, full_lon=.true., half_lat=.true.)
+    call allocate_array(mesh, this%ke_cell  , full_lon=.true., full_lat=.true.)
+    call allocate_array(mesh, this%pvc_lon  , half_lon=.true., full_lat=.true.)
+    call allocate_array(mesh, this%pvc_lat  , full_lon=.true., half_lat=.true.)
 
   end subroutine state_init
 
@@ -98,26 +98,26 @@ contains
 
     class(state_type), intent(inout) :: this
 
-    if (allocated(this%u              )) deallocate(this%u              )
-    if (allocated(this%v              )) deallocate(this%v              )
-    if (allocated(this%gd             )) deallocate(this%gd             )
-    if (allocated(this%pv             )) deallocate(this%pv             )
-    if (allocated(this%mass_vertex    )) deallocate(this%mass_vertex    )
-    if (allocated(this%mass_lon       )) deallocate(this%mass_lon       )
-    if (allocated(this%mass_lat       )) deallocate(this%mass_lat       )
-    if (allocated(this%mass_flux_lon_n)) deallocate(this%mass_flux_lon_n)
-    if (allocated(this%mass_flux_lat_n)) deallocate(this%mass_flux_lat_n)
-    if (allocated(this%mass_flux_lon_t)) deallocate(this%mass_flux_lon_t)
-    if (allocated(this%mass_flux_lat_t)) deallocate(this%mass_flux_lat_t)
-    if (allocated(this%pv_lon         )) deallocate(this%pv_lon         )
-    if (allocated(this%pv_lat         )) deallocate(this%pv_lat         )
-    if (allocated(this%dpv_lon_t      )) deallocate(this%dpv_lon_t      )
-    if (allocated(this%dpv_lon_n      )) deallocate(this%dpv_lon_n      )
-    if (allocated(this%dpv_lat_t      )) deallocate(this%dpv_lat_t      )
-    if (allocated(this%dpv_lat_n      )) deallocate(this%dpv_lat_n      )
-    if (allocated(this%ke_cell        )) deallocate(this%ke_cell        )
-    if (allocated(this%pvc_lon        )) deallocate(this%pvc_lon        )
-    if (allocated(this%pvc_lat        )) deallocate(this%pvc_lat        )
+    if (allocated(this%u        )) deallocate(this%u        )
+    if (allocated(this%v        )) deallocate(this%v        )
+    if (allocated(this%gd       )) deallocate(this%gd       )
+    if (allocated(this%pv       )) deallocate(this%pv       )
+    if (allocated(this%m_vtx    )) deallocate(this%m_vtx    )
+    if (allocated(this%m_lon    )) deallocate(this%m_lon    )
+    if (allocated(this%m_lat    )) deallocate(this%m_lat    )
+    if (allocated(this%mf_lon_n )) deallocate(this%mf_lon_n )
+    if (allocated(this%mf_lat_n )) deallocate(this%mf_lat_n )
+    if (allocated(this%mf_lon_t )) deallocate(this%mf_lon_t )
+    if (allocated(this%mf_lat_t )) deallocate(this%mf_lat_t )
+    if (allocated(this%pv_lon   )) deallocate(this%pv_lon   )
+    if (allocated(this%pv_lat   )) deallocate(this%pv_lat   )
+    if (allocated(this%dpv_lon_t)) deallocate(this%dpv_lon_t)
+    if (allocated(this%dpv_lon_n)) deallocate(this%dpv_lon_n)
+    if (allocated(this%dpv_lat_t)) deallocate(this%dpv_lat_t)
+    if (allocated(this%dpv_lat_n)) deallocate(this%dpv_lat_n)
+    if (allocated(this%ke_cell  )) deallocate(this%ke_cell  )
+    if (allocated(this%pvc_lon  )) deallocate(this%pvc_lon  )
+    if (allocated(this%pvc_lat  )) deallocate(this%pvc_lat  )
 
   end subroutine state_clear
 
