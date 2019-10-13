@@ -30,19 +30,19 @@ contains
     do j = state%mesh%half_lat_start_idx_no_pole, state%mesh%half_lat_end_idx_no_pole
       do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
 #ifdef STAGGER_V_ON_POLE
-        state%pv(i,j) = ((state%u(i  ,j-1) * state%mesh%cell_lon_distance(j-1) - &
-                          state%u(i  ,j  ) * state%mesh%cell_lon_distance(j  ) + &
-                          state%v(i+1,j  ) * state%mesh%cell_lat_distance(j  ) - &
-                          state%v(i  ,j  ) * state%mesh%cell_lat_distance(j  )   &
-                         ) / state%mesh%vertex_area(j) + state%mesh%half_f(j)    &
-                        ) / state%mass_vertex(i,j)
+        state%pv(i,j) = (                                                                           &
+          (                                                                                         &
+            state%u(i  ,j-1) * state%mesh%de_lon(j-1) - state%u(i  ,j  ) * state%mesh%de_lon(j  ) + &
+            state%v(i+1,j  ) * state%mesh%de_lat(j  ) - state%v(i  ,j  ) * state%mesh%de_lat(j  )   &
+          ) / state%mesh%vertex_area(j) + state%mesh%half_f(j)                                      &
+        ) / state%mass_vertex(i,j)
 #else
-        state%pv(i,j) = ((state%u(i  ,j  ) * state%mesh%cell_lon_distance(j  ) - &
-                          state%u(i  ,j+1) * state%mesh%cell_lon_distance(j+1) + &
-                          state%v(i+1,j  ) * state%mesh%cell_lat_distance(j  ) - &
-                          state%v(i  ,j  ) * state%mesh%cell_lat_distance(j  )   &
-                         ) / state%mesh%vertex_area(j) + state%mesh%half_f(j)    &
-                        ) / state%mass_vertex(i,j)
+        state%pv(i,j) = (                                                                           &
+          (                                                                                         &
+            state%u(i  ,j  ) * state%mesh%de_lon(j  ) - state%u(i  ,j+1) * state%mesh%de_lon(j+1) + &
+            state%v(i+1,j  ) * state%mesh%de_lat(j  ) - state%v(i  ,j  ) * state%mesh%de_lat(j  )   &
+          ) / state%mesh%vertex_area(j) + state%mesh%half_f(j)                                      &
+        ) / state%mass_vertex(i,j)
 #endif
       end do
     end do
@@ -51,7 +51,7 @@ contains
       j = state%mesh%half_lat_start_idx
       pole = 0.0_r8
       do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
-        pole = pole - state%u(i,j) * state%mesh%cell_lon_distance(j)
+        pole = pole - state%u(i,j) * state%mesh%de_lon(j)
       end do
       call parallel_zonal_sum(pole)
       pole = pole / state%mesh%num_half_lon / state%mesh%vertex_area(j)
@@ -63,7 +63,7 @@ contains
       j = state%mesh%half_lat_end_idx
       pole = 0.0_r8
       do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
-        pole = pole + state%u(i,j-1) * state%mesh%cell_lon_distance(j-1)
+        pole = pole + state%u(i,j-1) * state%mesh%de_lon(j-1)
       end do
       call parallel_zonal_sum(pole)
       pole = pole / state%mesh%num_half_lon / state%mesh%vertex_area(j)
@@ -78,7 +78,7 @@ contains
         j = state%mesh%half_lat_start_idx
         pole = 0.0_r8
         do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
-          pole = pole - state%u(i,j+1) * state%mesh%cell_lon_distance(j+1)
+          pole = pole - state%u(i,j+1) * state%mesh%de_lon(j+1)
         end do
         call parallel_zonal_sum(pole)
         pole = pole / state%mesh%num_half_lon / state%mesh%vertex_area(j)
@@ -90,7 +90,7 @@ contains
         j = state%mesh%half_lat_end_idx
         pole = 0.0_r8
         do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
-          pole = pole + state%u(i,j) * state%mesh%cell_lon_distance(j)
+          pole = pole + state%u(i,j) * state%mesh%de_lon(j)
         end do
         call parallel_zonal_sum(pole)
         pole = pole / state%mesh%num_half_lon / state%mesh%vertex_area(j)
@@ -234,8 +234,8 @@ contains
     call calc_dpv_on_edge(state)
 
     do j = state%mesh%half_lat_start_idx_no_pole, state%mesh%half_lat_end_idx_no_pole
-      le = state%mesh%vertex_lon_distance(j)
-      de = state%mesh%cell_lat_distance(j)
+      le = state%mesh%le_lat(j)
+      de = state%mesh%de_lat(j)
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
         ut = state%mass_flux_lon_t(i,j) / state%mass_lat(i,j)
         vn = state%v(i,j)
@@ -249,8 +249,8 @@ contains
 #endif
 
     do j = state%mesh%full_lat_start_idx_no_pole, state%mesh%full_lat_end_idx_no_pole
-      le = state%mesh%vertex_lat_distance(j)
-      de = state%mesh%cell_lon_distance(j)
+      le = state%mesh%le_lon(j)
+      de = state%mesh%de_lon(j)
       do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
         un = state%u(i,j)
         vt = state%mass_flux_lat_t(i,j) / state%mass_lon(i,j)
@@ -282,8 +282,8 @@ contains
     h  = state%total_mass / state%mesh%total_area / g
 
     do j = state%mesh%half_lat_start_idx_no_pole, state%mesh%half_lat_end_idx_no_pole
-      le = state%mesh%vertex_lon_distance(j)
-      de = state%mesh%cell_lat_distance(j)
+      le = state%mesh%le_lat(j)
+      de = state%mesh%de_lat(j)
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
         ut = state%mass_flux_lon_t(i,j) / state%mass_lat(i,j)
         vn = state%v(i,j)
@@ -298,8 +298,8 @@ contains
 #endif
 
     do j = state%mesh%full_lat_start_idx_no_pole, state%mesh%full_lat_end_idx_no_pole
-      le = state%mesh%vertex_lat_distance(j)
-      de = state%mesh%cell_lon_distance(j)
+      le = state%mesh%le_lon(j)
+      de = state%mesh%de_lon(j)
       do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
         un = state%u(i,j)
         vt = state%mass_flux_lat_t(i,j) / state%mass_lon(i,j)

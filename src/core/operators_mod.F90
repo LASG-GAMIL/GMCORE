@@ -244,7 +244,7 @@ contains
         tend%dEdlon(i,j) = (state%ke_cell(i+1,j) - state%ke_cell(i,j)  +   &
                             state%gd     (i+1,j) - state%gd     (i,j)  +   &
                             static%ghs   (i+1,j) - static%ghs   (i,j)      &
-                           ) / state%mesh%cell_lon_distance(j)
+                           ) / state%mesh%de_lon(j)
       end do
     end do
 
@@ -259,7 +259,7 @@ contains
                             state%gd     (i,j+1) - state%gd     (i,j)  +   &
                             static%ghs   (i,j+1) - static%ghs   (i,j)      &
 #endif
-                           ) / state%mesh%cell_lat_distance(j)
+                           ) / state%mesh%de_lat(j)
       end do
     end do
 
@@ -275,13 +275,13 @@ contains
 
     do j = state%mesh%full_lat_start_idx_no_pole, state%mesh%full_lat_end_idx_no_pole
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-        tend%div_mass_flux(i,j) = ((state%mass_flux_lon_n(i,j  ) - state%mass_flux_lon_n(i-1,j)) * mesh%vertex_lat_distance(j) + &
+        tend%div_mass_flux(i,j) = ((state%mass_flux_lon_n(i,j  ) - state%mass_flux_lon_n(i-1,j)) * mesh%le_lon(j) + &
 #ifdef STAGGER_V_ON_POLE
-                                   (state%mass_flux_lat_n(i,j+1) * mesh%vertex_lon_distance(j+1) -                               &
-                                    state%mass_flux_lat_n(i,j  ) * mesh%vertex_lon_distance(j  ))                                &
+                                   (state%mass_flux_lat_n(i,j+1) * mesh%le_lat(j+1) -                               &
+                                    state%mass_flux_lat_n(i,j  ) * mesh%le_lat(j  ))                                &
 #else
-                                   (state%mass_flux_lat_n(i,j  ) * mesh%vertex_lon_distance(j  ) -                               &
-                                    state%mass_flux_lat_n(i,j-1) * mesh%vertex_lon_distance(j-1))                                &
+                                   (state%mass_flux_lat_n(i,j  ) * mesh%le_lat(j  ) -                               &
+                                    state%mass_flux_lat_n(i,j-1) * mesh%le_lat(j-1))                                &
 #endif
                                   ) / mesh%cell_area(j)
       end do
@@ -294,7 +294,7 @@ contains
         pole = pole + state%mass_flux_lat_n(i,j)
       end do
       call parallel_zonal_sum(pole)
-      pole = pole * mesh%vertex_lon_distance(j) / state%mesh%num_full_lon / mesh%cell_area(j)
+      pole = pole * mesh%le_lat(j) / state%mesh%num_full_lon / mesh%cell_area(j)
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
         tend%div_mass_flux(i,j) = pole
       end do
@@ -306,7 +306,7 @@ contains
         pole = pole - state%mass_flux_lat_n(i,j-1)
       end do
       call parallel_zonal_sum(pole)
-      pole = pole * mesh%vertex_lon_distance(j-1) / state%mesh%num_full_lon / mesh%cell_area(j)
+      pole = pole * mesh%le_lat(j-1) / state%mesh%num_full_lon / mesh%cell_area(j)
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
         tend%div_mass_flux(i,j) = pole
       end do

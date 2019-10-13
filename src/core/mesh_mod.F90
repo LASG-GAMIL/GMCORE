@@ -14,8 +14,8 @@ module mesh_mod
   public create_meshes
 
   type mesh_type
-    integer :: id
-    integer :: halo_width
+    integer id
+    integer halo_width
     integer num_full_lon
     integer num_half_lon
     integer num_full_lat
@@ -75,10 +75,10 @@ module mesh_mod
     real(r8), allocatable :: vertex_area(:)
     real(r8), allocatable :: subcell_area(:,:)
     ! Edge length
-    real(r8), allocatable :: cell_lon_distance(:)
-    real(r8), allocatable :: cell_lat_distance(:)
-    real(r8), allocatable :: vertex_lon_distance(:)
-    real(r8), allocatable :: vertex_lat_distance(:)
+    real(r8), allocatable :: de_lon(:)
+    real(r8), allocatable :: de_lat(:)
+    real(r8), allocatable :: le_lat(:)
+    real(r8), allocatable :: le_lon(:)
     ! Weight for constructing tangential wind
     real(r8), allocatable :: full_tangent_wgt(:,:)
     real(r8), allocatable :: half_tangent_wgt(:,:)
@@ -190,10 +190,10 @@ contains
     allocate(this%lat_edge_down_area (this%half_lat_lb:this%half_lat_ub)); this%lat_edge_down_area  = 0.0d0
     allocate(this%vertex_area        (this%half_lat_lb:this%half_lat_ub)); this%vertex_area         = 0.0d0
     allocate(this%subcell_area     (2,this%full_lat_lb:this%full_lat_ub)); this%subcell_area        = 0.0d0
-    allocate(this%cell_lon_distance  (this%full_lat_lb:this%full_lat_ub)); this%cell_lon_distance   = 0.0d0
-    allocate(this%cell_lat_distance  (this%half_lat_lb:this%half_lat_ub)); this%cell_lat_distance   = 0.0d0
-    allocate(this%vertex_lon_distance(this%half_lat_lb:this%half_lat_ub)); this%vertex_lon_distance = 0.0d0
-    allocate(this%vertex_lat_distance(this%full_lat_lb:this%full_lat_ub)); this%vertex_lat_distance = 0.0d0
+    allocate(this%de_lon             (this%full_lat_lb:this%full_lat_ub)); this%de_lon              = 0.0d0
+    allocate(this%de_lat             (this%half_lat_lb:this%half_lat_ub)); this%de_lat              = 0.0d0
+    allocate(this%le_lat             (this%half_lat_lb:this%half_lat_ub)); this%le_lat              = 0.0d0
+    allocate(this%le_lon             (this%full_lat_lb:this%full_lat_ub)); this%le_lon              = 0.0d0
     allocate(this%full_tangent_wgt (2,this%full_lat_lb:this%full_lat_ub)); this%full_tangent_wgt    = 0.0d0
     allocate(this%half_tangent_wgt (2,this%half_lat_lb:this%half_lat_ub)); this%half_tangent_wgt    = 0.0d0
     allocate(this%full_upwind_beta   (this%full_lat_lb:this%full_lat_ub)); this%full_upwind_beta    = 0.0d0
@@ -414,13 +414,13 @@ contains
     end if
 
     do j = this%full_lat_start_idx_no_pole, this%full_lat_end_idx_no_pole
-      this%vertex_lat_distance(j) = this%dlat * radius
-      this%cell_lon_distance(j) = 2.0d0 * this%lon_edge_area(j) / this%vertex_lat_distance(j)
+      this%le_lon(j) = this%dlat * radius
+      this%de_lon(j) = 2.0d0 * this%lon_edge_area(j) / this%le_lon(j)
     end do
 
     do j = this%half_lat_start_idx_no_pole, this%half_lat_end_idx_no_pole
-      this%vertex_lon_distance(j) = radius * this%half_cos_lat(j) * mesh%dlon
-      this%cell_lat_distance(j) = 2.0d0 * this%lat_edge_area(j) / this%vertex_lon_distance(j)
+      this%le_lat(j) = radius * this%half_cos_lat(j) * mesh%dlon
+      this%de_lat(j) = 2.0d0 * this%lat_edge_area(j) / this%le_lat(j)
     end do
 
     !  ____________________                 ____________________                  ____________________                  ____________________                 
@@ -447,41 +447,41 @@ contains
     case ('classic')
       do j = this%full_lat_start_idx_no_pole, this%full_lat_end_idx_no_pole
 #ifdef STAGGER_V_ON_POLE
-        this%full_tangent_wgt(1,j) = this%vertex_lon_distance(j  ) / this%cell_lon_distance(j) * 0.25d0
-        this%full_tangent_wgt(2,j) = this%vertex_lon_distance(j+1) / this%cell_lon_distance(j) * 0.25d0
+        this%full_tangent_wgt(1,j) = this%le_lat(j  ) / this%de_lon(j) * 0.25d0
+        this%full_tangent_wgt(2,j) = this%le_lat(j+1) / this%de_lon(j) * 0.25d0
 #else
-        this%full_tangent_wgt(1,j) = this%vertex_lon_distance(j-1) / this%cell_lon_distance(j) * 0.25d0
-        this%full_tangent_wgt(2,j) = this%vertex_lon_distance(j  ) / this%cell_lon_distance(j) * 0.25d0
+        this%full_tangent_wgt(1,j) = this%le_lat(j-1) / this%de_lon(j) * 0.25d0
+        this%full_tangent_wgt(2,j) = this%le_lat(j  ) / this%de_lon(j) * 0.25d0
 #endif
       end do
 
       do j = this%half_lat_start_idx_no_pole, this%half_lat_end_idx_no_pole
 #ifdef STAGGER_V_ON_POLE
-        this%half_tangent_wgt(1,j) = this%vertex_lat_distance(j-1) / this%cell_lat_distance(j) * 0.25d0
-        this%half_tangent_wgt(2,j) = this%vertex_lat_distance(j  ) / this%cell_lat_distance(j) * 0.25d0
+        this%half_tangent_wgt(1,j) = this%le_lon(j-1) / this%de_lat(j) * 0.25d0
+        this%half_tangent_wgt(2,j) = this%le_lon(j  ) / this%de_lat(j) * 0.25d0
 #else
-        this%half_tangent_wgt(1,j) = this%vertex_lat_distance(j  ) / this%cell_lat_distance(j) * 0.25d0
-        this%half_tangent_wgt(2,j) = this%vertex_lat_distance(j+1) / this%cell_lat_distance(j) * 0.25d0
+        this%half_tangent_wgt(1,j) = this%le_lon(j  ) / this%de_lat(j) * 0.25d0
+        this%half_tangent_wgt(2,j) = this%le_lon(j+1) / this%de_lat(j) * 0.25d0
 #endif
       end do
     case ('thuburn09')
       do j = this%full_lat_start_idx_no_pole, this%full_lat_end_idx_no_pole
 #ifdef STAGGER_V_ON_POLE
-        this%full_tangent_wgt(1,j) = this%vertex_lon_distance(j  ) / this%cell_lon_distance(j) * this%subcell_area(2,j  ) / this%cell_area(j  )
-        this%full_tangent_wgt(2,j) = this%vertex_lon_distance(j+1) / this%cell_lon_distance(j) * this%subcell_area(1,j  ) / this%cell_area(j  )
+        this%full_tangent_wgt(1,j) = this%le_lat(j  ) / this%de_lon(j) * this%subcell_area(2,j  ) / this%cell_area(j  )
+        this%full_tangent_wgt(2,j) = this%le_lat(j+1) / this%de_lon(j) * this%subcell_area(1,j  ) / this%cell_area(j  )
 #else
-        this%full_tangent_wgt(1,j) = this%vertex_lon_distance(j-1) / this%cell_lon_distance(j) * this%subcell_area(2,j  ) / this%cell_area(j  )
-        this%full_tangent_wgt(2,j) = this%vertex_lon_distance(j  ) / this%cell_lon_distance(j) * this%subcell_area(1,j  ) / this%cell_area(j  )
+        this%full_tangent_wgt(1,j) = this%le_lat(j-1) / this%de_lon(j) * this%subcell_area(2,j  ) / this%cell_area(j  )
+        this%full_tangent_wgt(2,j) = this%le_lat(j  ) / this%de_lon(j) * this%subcell_area(1,j  ) / this%cell_area(j  )
 #endif
       end do
 
       do j = this%half_lat_start_idx_no_pole, this%half_lat_end_idx_no_pole
 #ifdef STAGGER_V_ON_POLE
-        this%half_tangent_wgt(1,j) = this%vertex_lat_distance(j-1) / this%cell_lat_distance(j) * this%subcell_area(1,j-1) / this%cell_area(j-1)
-        this%half_tangent_wgt(2,j) = this%vertex_lat_distance(j  ) / this%cell_lat_distance(j) * this%subcell_area(2,j  ) / this%cell_area(j  )
+        this%half_tangent_wgt(1,j) = this%le_lon(j-1) / this%de_lat(j) * this%subcell_area(1,j-1) / this%cell_area(j-1)
+        this%half_tangent_wgt(2,j) = this%le_lon(j  ) / this%de_lat(j) * this%subcell_area(2,j  ) / this%cell_area(j  )
 #else
-        this%half_tangent_wgt(1,j) = this%vertex_lat_distance(j  ) / this%cell_lat_distance(j) * this%subcell_area(1,j  ) / this%cell_area(j  )
-        this%half_tangent_wgt(2,j) = this%vertex_lat_distance(j+1) / this%cell_lat_distance(j) * this%subcell_area(2,j+1) / this%cell_area(j+1)
+        this%half_tangent_wgt(1,j) = this%le_lon(j  ) / this%de_lat(j) * this%subcell_area(1,j  ) / this%cell_area(j  )
+        this%half_tangent_wgt(2,j) = this%le_lon(j+1) / this%de_lat(j) * this%subcell_area(2,j+1) / this%cell_area(j+1)
 #endif
       end do
     end select
@@ -580,10 +580,10 @@ contains
     if (allocated(this%lat_edge_down_area )) deallocate(this%lat_edge_down_area )
     if (allocated(this%vertex_area        )) deallocate(this%vertex_area        )
     if (allocated(this%subcell_area       )) deallocate(this%subcell_area       )
-    if (allocated(this%cell_lon_distance  )) deallocate(this%cell_lon_distance  )
-    if (allocated(this%cell_lat_distance  )) deallocate(this%cell_lat_distance  )
-    if (allocated(this%vertex_lon_distance)) deallocate(this%vertex_lon_distance)
-    if (allocated(this%vertex_lat_distance)) deallocate(this%vertex_lat_distance)
+    if (allocated(this%de_lon             )) deallocate(this%de_lon             )
+    if (allocated(this%de_lat             )) deallocate(this%de_lat             )
+    if (allocated(this%le_lat             )) deallocate(this%le_lat             )
+    if (allocated(this%le_lon             )) deallocate(this%le_lon             )
     if (allocated(this%full_tangent_wgt   )) deallocate(this%full_tangent_wgt   )
     if (allocated(this%half_tangent_wgt   )) deallocate(this%half_tangent_wgt   )
     if (allocated(this%full_upwind_beta   )) deallocate(this%full_upwind_beta   )
