@@ -151,10 +151,10 @@ contains
     call io_output('h0', 'h'   , h                (1:mesh%num_full_lon,1:mesh%num_full_lat))
     call io_output('h0', 'hs'  , hs               (1:mesh%num_full_lon,1:mesh%num_full_lat))
     call io_output('h0', 'pv'  , state%pv         (1:mesh%num_half_lon,1:mesh%num_half_lat))
-    call io_output('h0', 'tm'  , state%total_mass)
-    call io_output('h0', 'te'  , state%total_energy)
-    call io_output('h0', 'tav' , state%total_absolute_vorticity)
-    call io_output('h0', 'tpe' , state%total_potential_enstrophy)
+    call io_output('h0', 'tm'  , state%total_m)
+    call io_output('h0', 'te'  , state%total_e)
+    call io_output('h0', 'tav' , state%total_av)
+    call io_output('h0', 'tpe' , state%total_pe)
     call io_end_output('h0')
 
   end subroutine history_write_state

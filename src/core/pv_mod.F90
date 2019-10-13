@@ -279,7 +279,7 @@ contains
     call calc_dpv_on_edge(state)
 
     ke = state%total_ke**(-3.0_r8 / 4.0_r8)
-    h  = state%total_mass / state%mesh%total_area / g
+    h  = state%total_m / state%mesh%total_area / g
 
     do j = state%mesh%half_lat_start_idx_no_pole, state%mesh%half_lat_end_idx_no_pole
       le = state%mesh%le_lat(j)

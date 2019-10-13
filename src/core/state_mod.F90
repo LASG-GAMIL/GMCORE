@@ -34,11 +34,11 @@ module state_mod
     real(r8), allocatable, dimension(:,:) :: ke_cell
     real(r8), allocatable, dimension(:,:) :: pvc_lon ! Corrected PV on U grids
     real(r8), allocatable, dimension(:,:) :: pvc_lat ! Corrected PV on V grids
-    real(r8) total_mass
+    real(r8) total_m
     real(r8) total_ke
-    real(r8) total_energy
-    real(r8) total_absolute_vorticity
-    real(r8) total_potential_enstrophy
+    real(r8) total_e
+    real(r8) total_av
+    real(r8) total_pe
   contains
     procedure :: init => state_init
     procedure :: clear => state_clear
