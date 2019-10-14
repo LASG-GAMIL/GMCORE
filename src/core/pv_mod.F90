@@ -167,7 +167,8 @@ contains
         state%pv_lat(i,j) = 0.5_r8 * (state%pv(i-1,j) + state%pv(i,j))
       end do 
     end do 
-      
+    call parallel_fill_halo(state%mesh, state%pv_lon)
+
     do j = state%mesh%full_lat_start_idx_no_pole, state%mesh%full_lat_end_idx_no_pole
       do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
 #ifdef STAGGER_V_ON_POLE
@@ -177,8 +178,6 @@ contains
 #endif
       end do 
     end do 
-
-    call parallel_fill_halo(state%mesh, state%pv_lon)
     call parallel_fill_halo(state%mesh, state%pv_lat)
 
   end subroutine calc_pv_on_edge_midpoint
@@ -205,6 +204,7 @@ contains
         state%pv_lat(i,j) = 0.5_r8 * (state%pv(i,j) + state%pv(i-1,j)) - state%pvc_lat(i,j)
       end do
     end do
+    call parallel_fill_halo(state%mesh, state%pv_lon)
 
     do j = state%mesh%full_lat_start_idx_no_pole, state%mesh%full_lat_end_idx_no_pole 
      do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
@@ -217,8 +217,6 @@ contains
         state%pv_lon(i,j) = 0.5_r8 * (state%pv(i,j+1) + state%pv(i,j)) - state%pvc_lon(i,j)
       end do
     end do
-
-    call parallel_fill_halo(state%mesh, state%pv_lon)
     call parallel_fill_halo(state%mesh, state%pv_lat)
 
   end subroutine calc_pv_on_edge_upwind
@@ -247,6 +245,7 @@ contains
     state%pv_lat(:,state%mesh%half_lat_start_idx) = state%pv(:,state%mesh%half_lat_start_idx)
     state%pv_lat(:,state%mesh%half_lat_end_idx  ) = state%pv(:,state%mesh%half_lat_end_idx  )
 #endif
+    call parallel_fill_halo(state%mesh, state%pv_lon)
 
     do j = state%mesh%full_lat_start_idx_no_pole, state%mesh%full_lat_end_idx_no_pole
       le = state%mesh%le_lon(j)
@@ -262,8 +261,6 @@ contains
 #endif
       end do
     end do
-
-    call parallel_fill_halo(state%mesh, state%pv_lon)
     call parallel_fill_halo(state%mesh, state%pv_lat)
 
   end subroutine calc_pv_on_edge_apvm

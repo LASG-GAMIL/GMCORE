@@ -4,7 +4,7 @@ num_lat = 90
 ! mountain_zonal_flow, rossby_haurwitz_wave
 test_case = 'mountain_zonal_flow'
 run_days = 25
-dt_in_seconds = 30
+dt_in_seconds = 10
 pv_scheme = 2
 pv_pole_stokes = .true.
 split_scheme = ''
