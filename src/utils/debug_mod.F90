@@ -41,9 +41,9 @@ contains
       end do
     end do
 
-    do j = mesh%half_lat_start_idx, mesh%half_lat_end_idx
+    do j = mesh%half_lat_start_idx_no_pole, mesh%half_lat_end_idx_no_pole
       do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
-        ip_cf = ip_cf + tend%qhu(i,j) * state%mf_lat_n(i,j) * mesh%lat_edge_area(j)
+        ip_cf = ip_cf - tend%qhu(i,j) * state%mf_lat_n(i,j) * mesh%lat_edge_area(j)
         ip_ke_grad = ip_ke_grad + tend%dkedlat(i,j) * state%mf_lat_n(i,j) * mesh%lat_edge_area(j) * 2
         ip_pe_grad = ip_pe_grad + tend%dpedlat(i,j) * state%mf_lat_n(i,j) * mesh%lat_edge_area(j) * 2
       end do
