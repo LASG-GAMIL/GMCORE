@@ -41,29 +41,29 @@ module reduce_mod
     real(r8) dlon
     real(r8), allocatable, dimension(  :) :: full_lon
     real(r8), allocatable, dimension(  :) :: half_lon
-    real(r8), allocatable, dimension(  :) :: full_lat
-    real(r8), allocatable, dimension(  :) :: half_lat
-    real(r8), allocatable, dimension(  :) :: full_cos_lat
-    real(r8), allocatable, dimension(  :) :: half_cos_lat
-    real(r8), allocatable, dimension(  :) :: full_sin_lat
-    real(r8), allocatable, dimension(  :) :: half_sin_lat
-    real(r8), allocatable, dimension(  :) :: cell_area
-    real(r8), allocatable, dimension(  :) :: lon_edge_area
-    real(r8), allocatable, dimension(  :) :: lon_edge_left_area
-    real(r8), allocatable, dimension(  :) :: lon_edge_right_area
-    real(r8), allocatable, dimension(  :) :: lat_edge_area
-    real(r8), allocatable, dimension(  :) :: lat_edge_up_area
-    real(r8), allocatable, dimension(  :) :: lat_edge_down_area
-    real(r8), allocatable, dimension(  :) :: vertex_area
-    real(r8), allocatable, dimension(:,:) :: subcell_area
-    real(r8), allocatable, dimension(  :) :: de_lon
-    real(r8), allocatable, dimension(  :) :: de_lat
-    real(r8), allocatable, dimension(  :) :: le_lat
-    real(r8), allocatable, dimension(  :) :: le_lon
-    real(r8), allocatable, dimension(:,:) :: full_tangent_wgt
-    real(r8), allocatable, dimension(:,:) :: half_tangent_wgt
-    real(r8), allocatable, dimension(  :) :: full_f
-    real(r8), allocatable, dimension(  :) :: half_f
+    real(r8), dimension(  -3:3) :: full_lat            = inf
+    real(r8), dimension(  -3:3) :: half_lat            = inf
+    real(r8), dimension(  -3:3) :: full_cos_lat        = inf
+    real(r8), dimension(  -3:3) :: half_cos_lat        = inf
+    real(r8), dimension(  -3:3) :: full_sin_lat        = inf
+    real(r8), dimension(  -3:3) :: half_sin_lat        = inf
+    real(r8), dimension(  -1:1) :: cell_area           = inf
+    real(r8), dimension(2,-2:2) :: subcell_area        = inf
+    real(r8), dimension(  -2:2) :: lon_edge_area       = inf
+    real(r8), dimension(  -2:2) :: lon_edge_left_area  = inf
+    real(r8), dimension(  -2:2) :: lon_edge_right_area = inf
+    real(r8), dimension(  -1:2) :: vertex_area         = inf
+    real(r8), dimension(  -1:2) :: lat_edge_area       = inf
+    real(r8), dimension(  -1:2) :: lat_edge_up_area    = inf
+    real(r8), dimension(  -1:2) :: lat_edge_down_area  = inf
+    real(r8), dimension(  -2:2) :: de_lon              = inf
+    real(r8), dimension(  -1:2) :: de_lat              = inf
+    real(r8), dimension(  -2:2) :: le_lat              = inf
+    real(r8), dimension(  -2:2) :: le_lon              = inf
+    real(r8), dimension(2,-1:1) :: full_tangent_wgt    = inf
+    real(r8), dimension(2,-1:1) :: half_tangent_wgt    = inf
+    real(r8), dimension(  -1:1) :: full_f              = inf
+    real(r8), dimension(  -1:2) :: half_f              = inf
   contains
     final :: reduced_mesh_final
   end type reduced_mesh_type
@@ -222,29 +222,6 @@ contains
       reduced_mesh%half_lon(i) = reduced_mesh%full_lon(reduced_mesh%full_lon_start_idx) + (i - 0.5) * reduced_mesh%dlon
     end do
 
-    allocate(reduced_mesh%full_lat           (  -3:3)); reduced_mesh%full_lat            = inf
-    allocate(reduced_mesh%half_lat           (  -3:3)); reduced_mesh%half_lat            = inf
-    allocate(reduced_mesh%full_cos_lat       (  -3:3)); reduced_mesh%full_cos_lat        = inf
-    allocate(reduced_mesh%half_cos_lat       (  -3:3)); reduced_mesh%half_cos_lat        = inf
-    allocate(reduced_mesh%full_sin_lat       (  -3:3)); reduced_mesh%full_sin_lat        = inf
-    allocate(reduced_mesh%half_sin_lat       (  -3:3)); reduced_mesh%half_sin_lat        = inf
-    allocate(reduced_mesh%cell_area          (  -1:1)); reduced_mesh%cell_area           = inf
-    allocate(reduced_mesh%subcell_area       (2,-2:2)); reduced_mesh%subcell_area        = inf
-    allocate(reduced_mesh%lon_edge_area      (  -2:2)); reduced_mesh%lon_edge_area       = inf
-    allocate(reduced_mesh%lon_edge_left_area (  -2:2)); reduced_mesh%lon_edge_left_area  = inf
-    allocate(reduced_mesh%lon_edge_right_area(  -2:2)); reduced_mesh%lon_edge_right_area = inf
-    allocate(reduced_mesh%vertex_area        (  -1:2)); reduced_mesh%vertex_area         = inf
-    allocate(reduced_mesh%lat_edge_area      (  -1:2)); reduced_mesh%lat_edge_area       = inf
-    allocate(reduced_mesh%lat_edge_up_area   (  -1:2)); reduced_mesh%lat_edge_up_area    = inf
-    allocate(reduced_mesh%lat_edge_down_area (  -1:2)); reduced_mesh%lat_edge_down_area  = inf
-    allocate(reduced_mesh%de_lon             (  -2:2)); reduced_mesh%de_lon              = inf
-    allocate(reduced_mesh%de_lat             (  -1:2)); reduced_mesh%de_lat              = inf
-    allocate(reduced_mesh%le_lat             (  -2:2)); reduced_mesh%le_lat              = inf
-    allocate(reduced_mesh%le_lon             (  -2:2)); reduced_mesh%le_lon              = inf
-    allocate(reduced_mesh%full_tangent_wgt   (2,-1:1)); reduced_mesh%full_tangent_wgt    = inf
-    allocate(reduced_mesh%half_tangent_wgt   (2,-1:1)); reduced_mesh%full_tangent_wgt    = inf
-    allocate(reduced_mesh%full_f             (  -1:1)); reduced_mesh%full_f              = inf
-    allocate(reduced_mesh%half_f             (  -1:2)); reduced_mesh%half_f              = inf
     reduced_mesh%full_lat     = raw_mesh%full_lat    (j+lbound(reduced_mesh%full_lat    , 1):j+ubound(reduced_mesh%full_lat    , 1))
     reduced_mesh%half_lat     = raw_mesh%half_lat    (j+lbound(reduced_mesh%half_lat    , 1):j+ubound(reduced_mesh%half_lat    , 1))
     reduced_mesh%full_cos_lat = raw_mesh%full_cos_lat(j+lbound(reduced_mesh%full_cos_lat, 1):j+ubound(reduced_mesh%full_cos_lat, 1))
