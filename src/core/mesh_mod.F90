@@ -158,12 +158,12 @@ contains
 
     this%full_lon_lb = this%full_lon_start_idx - this%halo_width
     this%full_lon_ub = this%full_lon_end_idx   + this%halo_width
-    this%full_lat_lb = this%full_lat_start_idx - 2
-    this%full_lat_ub = this%full_lat_end_idx   + 2
+    this%full_lat_lb = this%full_lat_start_idx - 3
+    this%full_lat_ub = this%full_lat_end_idx   + 3
     this%half_lon_lb = this%half_lon_start_idx - this%halo_width
     this%half_lon_ub = this%half_lon_end_idx   + this%halo_width
-    this%half_lat_lb = this%half_lat_start_idx - 2
-    this%half_lat_ub = this%half_lat_end_idx   + 2
+    this%half_lat_lb = this%half_lat_start_idx - 3
+    this%half_lat_ub = this%half_lat_end_idx   + 3
 
     allocate(this%full_lon           (this%full_lon_lb:this%full_lon_ub)); this%full_lon            = inf
     allocate(this%half_lon           (this%half_lon_lb:this%half_lon_ub)); this%half_lon            = inf
