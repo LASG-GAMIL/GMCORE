@@ -2,7 +2,7 @@ module reduce_mod
 
   use flogger
   use const_mod
-  use namelist_mod
+  use namelist_mod, only: reduce_factors
   use sphere_geometry_mod
   use mesh_mod
   use static_mod
@@ -572,15 +572,21 @@ contains
     type(reduced_state_type), intent(inout) :: reduced_state
     real(r8), intent(in) :: dt
 
-    integer raw_i, i
+    integer i
 
 #ifdef STAGGER_V_ON_POLE
-    do i = reduced_mesh%half_lon_start_idx, reduced_mesh%half_lon_end_idx
-      reduced_state%m_vtx(i,buf_j,move) = (                                                                              &
-        (reduced_state%gd(i,buf_j-1,move) + reduced_state%gd(i+1,buf_j-1,move)) * reduced_mesh%subcell_area(2,buf_j-1) + &
-        (reduced_state%gd(i,buf_j  ,move) + reduced_state%gd(i+1,buf_j  ,move)) * reduced_mesh%subcell_area(1,buf_j  )   &
-      ) / reduced_mesh%vertex_area(buf_j) / g
-      if (reduced_state%m_vtx(i,buf_j,move) /= 0.0_r8) then
+    if (raw_mesh%is_south_pole(j) .and. buf_j == 0) then
+      reduced_state%m_vtx(:,buf_j,move) = raw_state%m_vtx(raw_mesh%full_lon_start_idx,raw_mesh%half_lat_start_idx)
+      reduced_state%pv(:,buf_j,move) = raw_state%pv(raw_mesh%full_lon_start_idx,raw_mesh%half_lat_start_idx)
+    else if (raw_mesh%is_north_pole(j+1) .and. buf_j == 1) then
+      reduced_state%m_vtx(:,buf_j,move) = raw_state%m_vtx(raw_mesh%full_lon_start_idx,raw_mesh%half_lat_end_idx)
+      reduced_state%pv(:,buf_j,move) = raw_state%pv(raw_mesh%full_lon_start_idx,raw_mesh%half_lat_end_idx)
+    else
+      do i = reduced_mesh%half_lon_start_idx, reduced_mesh%half_lon_end_idx
+        reduced_state%m_vtx(i,buf_j,move) = (                                                                              &
+          (reduced_state%gd(i,buf_j-1,move) + reduced_state%gd(i+1,buf_j-1,move)) * reduced_mesh%subcell_area(2,buf_j-1) + &
+          (reduced_state%gd(i,buf_j  ,move) + reduced_state%gd(i+1,buf_j  ,move)) * reduced_mesh%subcell_area(1,buf_j  )   &
+        ) / reduced_mesh%vertex_area(buf_j) / g
         reduced_state%pv(i,buf_j,move) = (                                     &
           (                                                                    &
             reduced_state%u(i  ,buf_j-1,move) * reduced_mesh%de_lon(buf_j-1) - &
@@ -589,8 +595,8 @@ contains
             reduced_state%v(i  ,buf_j  ,move) * reduced_mesh%de_lat(buf_j  )   &
           ) / reduced_mesh%vertex_area(buf_j) + reduced_mesh%half_f(buf_j)     &
         ) / reduced_state%m_vtx(i,buf_j,move)
-      end if
-    end do
+      end do
+    end if
 #else
     do i = reduced_mesh%half_lon_start_idx, reduced_mesh%half_lon_end_idx
       reduced_state%m_vtx(i,buf_j,move) = (                                                                              &

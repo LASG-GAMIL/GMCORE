@@ -24,21 +24,21 @@ module namelist_mod
   integer :: reduce_factors(20) = 0
 
   namelist /gmcore_swm_control/ &
-    case_name,                  &
-    test_case,                  &
-    case_desc,                  &
-    num_lon,                    &
-    num_lat,                    &
-    start_time,                 &
-    end_time,                   &
-    dt_in_seconds,              &
-    run_hours,                  &
-    run_days,                   &
-    history_interval,           &
-    tangent_wgt_scheme,         &
-    pv_scheme,                  &
-    pv_pole_stokes,             &
-    split_scheme,               &
+    case_name                 , &
+    test_case                 , &
+    case_desc                 , &
+    num_lon                   , &
+    num_lat                   , &
+    start_time                , &
+    end_time                  , &
+    dt_in_seconds             , &
+    run_hours                 , &
+    run_days                  , &
+    history_interval          , &
+    tangent_wgt_scheme        , &
+    pv_scheme                 , &
+    pv_pole_stokes            , &
+    split_scheme              , &
     reduce_factors
 
 contains
