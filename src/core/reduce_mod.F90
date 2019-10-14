@@ -96,6 +96,7 @@ module reduce_mod
     real(r8), allocatable, dimension(:,:,:) :: mf_lat_n
     real(r8), allocatable, dimension(:,:,:) :: mf_lon_t
     real(r8), allocatable, dimension(:,:,:) :: mf_lat_t
+    real(r8), allocatable, dimension(:,:,:) :: ke
   contains
     final :: reduced_state_final
   end type reduced_state_type
@@ -107,6 +108,7 @@ module reduce_mod
     real(r8), allocatable, dimension(:) :: qhu
     real(r8), allocatable, dimension(:) :: mf_div_lon
     real(r8), allocatable, dimension(:) :: dpedlon
+    real(r8), allocatable, dimension(:) :: dkedlon
   contains
     final :: reduced_tend_final
   end type reduced_tend_type
@@ -388,6 +390,7 @@ contains
     allocate(reduced_state%mf_lon_t (reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub, 0:0,reduced_mesh%reduce_factor))
     allocate(reduced_state%mf_lat_n (reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub, 0:1,reduced_mesh%reduce_factor))
     allocate(reduced_state%mf_lat_t (reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub, 0:1,reduced_mesh%reduce_factor))
+    allocate(reduced_state%ke       (reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub, 0:0,reduced_mesh%reduce_factor))
 #else
 #endif
 
@@ -432,6 +435,7 @@ contains
     call apply_reduce(lbound(reduced_state%dpv_lon_n, 2), ubound(reduced_state%dpv_lon_n, 2), j, raw_mesh, raw_state, reduced_mesh, reduced_state, reduce_dpv_lon_n  , dt)
     call apply_reduce(lbound(reduced_state%pv_lon   , 2), ubound(reduced_state%pv_lon   , 2), j, raw_mesh, raw_state, reduced_mesh, reduced_state, reduce_pv_lon_apvm, dt)
     call apply_reduce(lbound(reduced_state%pv_lat   , 2), ubound(reduced_state%pv_lat   , 2), j, raw_mesh, raw_state, reduced_mesh, reduced_state, reduce_pv_lat_apvm, dt)
+    call apply_reduce(lbound(reduced_state%ke       , 2), ubound(reduced_state%ke       , 2), j, raw_mesh, raw_state, reduced_mesh, reduced_state, reduce_ke         , dt)
 
 #ifdef STAGGER_V_ON_POLE
     if (raw_mesh%is_south_pole(j)) then
@@ -928,6 +932,36 @@ contains
 
   end subroutine reduce_pv_lat_apvm
 
+  subroutine reduce_ke(j, buf_j, move, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
+
+    integer, intent(in) :: j
+    integer, intent(in) :: buf_j
+    integer, intent(in) :: move
+    type(mesh_type), intent(in) :: raw_mesh
+    type(state_type), intent(in) :: raw_state
+    type(reduced_mesh_type), intent(in) :: reduced_mesh
+    type(reduced_state_type), intent(inout) :: reduced_state
+    real(r8), intent(in) :: dt
+
+    integer i
+
+    do i = reduced_mesh%full_lon_start_idx, reduced_mesh%full_lon_end_idx
+      reduced_state%ke(i,buf_j,move) = (                                              &
+        reduced_mesh%lon_edge_right_area( 0) * reduced_state%u(i-1,buf_j  ,move)**2 + &
+        reduced_mesh%lon_edge_left_area ( 0) * reduced_state%u(i  ,buf_j  ,move)**2 + &
+#ifdef STAGGER_V_ON_POLE
+        reduced_mesh%lat_edge_up_area   ( 0) * reduced_state%v(i  ,buf_j  ,move)**2 + &
+        reduced_mesh%lat_edge_down_area ( 1) * reduced_state%v(i  ,buf_j+1,move)**2   &
+#else
+        reduced_mesh%lat_edge_up_area   (-1) * reduced_state%v(i  ,buf_j-1,move)**2 + &
+        reduced_mesh%lat_edge_down_area ( 0) * reduced_state%v(i  ,buf_j  ,move)**2   &
+#endif
+      ) / reduced_mesh%cell_area(0)
+    end do
+    call parallel_fill_halo(reduced_mesh%halo_width, reduced_state%ke(:,buf_j,move))
+
+  end subroutine reduce_ke
+
   subroutine reduce_append_array(move, reduced_mesh, reduced_array, raw_mesh, raw_array)
 
     integer, intent(in) :: move
@@ -964,6 +998,7 @@ contains
     allocate(reduced_tend%qhv       (reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub))
     allocate(reduced_tend%mf_div_lon(reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub))
     allocate(reduced_tend%dpedlon   (reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub))
+    allocate(reduced_tend%dkedlon   (reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub))
 
   end subroutine allocate_reduced_full_tend
 
@@ -1033,6 +1068,7 @@ contains
     if (allocated(this%qhu       )) deallocate(this%qhu       )
     if (allocated(this%mf_div_lon)) deallocate(this%mf_div_lon)
     if (allocated(this%dpedlon   )) deallocate(this%dpedlon   )
+    if (allocated(this%dkedlon   )) deallocate(this%dkedlon   )
 
   end subroutine reduced_tend_final
 

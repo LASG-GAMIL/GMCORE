@@ -418,9 +418,24 @@ contains
     end do
 
     do j = state%mesh%full_lat_start_idx_no_pole, state%mesh%full_lat_end_idx_no_pole
-      do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
-        tend%dkedlon(i,j) = (state%ke_cell(i+1,j) - state%ke_cell(i,j)) / state%mesh%de_lon(j)
-      end do
+      if (reduced_full_mesh(j)%reduce_factor > 0) then
+        tend%dkedlon(:,j) = 0.0_r8
+        do move = 1, reduced_full_mesh(j)%reduce_factor
+          do i = reduced_full_mesh(j)%full_lon_start_idx, reduced_full_mesh(j)%full_lon_end_idx
+            reduced_full_tend(j)%dkedlon(i) = (                           &
+              reduced_full_state(j)%ke(i+1,0,move) - reduced_full_state(j)%ke(i,0,move) &
+            ) / reduced_full_mesh(j)%de_lon(0)
+          end do
+          call reduce_append_array(move, reduced_full_mesh(j)  , &
+                                   reduced_full_tend(j)%dkedlon, &
+                                   state%mesh, tend%dkedlon(:,j))
+        end do
+        call parallel_overlay_inner_halo(state%mesh, tend%dkedlon(:,j), left_halo=.true.)
+      else
+        do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
+          tend%dkedlon(i,j) = (state%ke(i+1,j) - state%ke(i,j)) / state%mesh%de_lon(j)
+        end do
+      end if
     end do
 
     do j = state%mesh%half_lat_start_idx_no_pole, state%mesh%half_lat_end_idx_no_pole
@@ -430,13 +445,13 @@ contains
           state %gd (i,j) - state %gd (i,j-1) + &
           static%ghs(i,j) - static%ghs(i,j-1)   &
         ) / state%mesh%de_lat(j)
-        tend%dkedlat(i,j) = (state%ke_cell(i,j) - state%ke_cell(i,j-1)) / state%mesh%de_lat(j)
+        tend%dkedlat(i,j) = (state%ke(i,j) - state%ke(i,j-1)) / state%mesh%de_lat(j)
 #else
         tend%dpedlat(i,j) = (                   &
           state %gd (i,j+1) - state %gd (i,j) + &
           static%ghs(i,j+1) - static%ghs(i,j)   &
         ) / state%mesh%de_lat(j)
-        tend%dkedlat(i,j) = (state%ke_cell(i,j+1) - state%ke_cell(i,j)) / state%mesh%de_lat(j)
+        tend%dkedlat(i,j) = (state%ke(i,j+1) - state%ke(i,j)) / state%mesh%de_lat(j)
 #endif
       end do
     end do
