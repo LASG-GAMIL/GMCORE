@@ -554,10 +554,10 @@ contains
 #ifdef STAGGER_V_ON_POLE
     if (raw_mesh%is_south_pole(j) .and. buf_j == 0) then
       reduced_state%m_vtx(:,buf_j,move) = raw_state%m_vtx(raw_mesh%full_lon_start_idx,raw_mesh%half_lat_start_idx)
-      reduced_state%pv(:,buf_j,move) = raw_state%pv(raw_mesh%full_lon_start_idx,raw_mesh%half_lat_start_idx)
+      reduced_state%pv   (:,buf_j,move) = raw_state%pv   (raw_mesh%full_lon_start_idx,raw_mesh%half_lat_start_idx)
     else if (raw_mesh%is_north_pole(j+1) .and. buf_j == 1) then
       reduced_state%m_vtx(:,buf_j,move) = raw_state%m_vtx(raw_mesh%full_lon_start_idx,raw_mesh%half_lat_end_idx)
-      reduced_state%pv(:,buf_j,move) = raw_state%pv(raw_mesh%full_lon_start_idx,raw_mesh%half_lat_end_idx)
+      reduced_state%pv   (:,buf_j,move) = raw_state%pv   (raw_mesh%full_lon_start_idx,raw_mesh%half_lat_end_idx)
     else
       do i = reduced_mesh%half_lon_start_idx, reduced_mesh%half_lon_end_idx
         reduced_state%m_vtx(i,buf_j,move) = (                                                                              &
@@ -852,30 +852,30 @@ contains
     type(reduced_state_type), intent(inout) :: reduced_state
     real(r8), intent(in) :: dt
 
-    real(r8) un, vn, ut, vt, le, de
+    real(r8) u, v, le, de
     integer i
 
     le = reduced_mesh%le_lon(buf_j)
     de = reduced_mesh%de_lon(buf_j)
     if (le == inf .or. de == inf) return
     do i = reduced_mesh%half_lon_start_idx, reduced_mesh%half_lon_end_idx
-      un = reduced_state%u(i,buf_j,move)
-      vt = reduced_state%mf_lon_t(i,buf_j,move) / reduced_state%m_lon(i,buf_j,move)
+      u = reduced_state%u(i,buf_j,move)
+      v = reduced_state%mf_lon_t(i,buf_j,move) / reduced_state%m_lon(i,buf_j,move)
 #ifdef STAGGER_V_ON_POLE
-      reduced_state%pv_lon(i,buf_j,move) = 0.5_r8 * (     &
-        reduced_state%pv(i,buf_j+1,move) +                &
-        reduced_state%pv(i,buf_j  ,move)                  &
-      ) - 0.5_r8 * (                                      &
-        un * reduced_state%dpv_lon_n(i,buf_j,move) / de + &
-        vt * reduced_state%dpv_lon_t(i,buf_j,move) / le   &
+      reduced_state%pv_lon(i,buf_j,move) = 0.5_r8 * (    &
+        reduced_state%pv(i,buf_j+1,move) +               &
+        reduced_state%pv(i,buf_j  ,move)                 &
+      ) - 0.5_r8 * (                                     &
+        u * reduced_state%dpv_lon_n(i,buf_j,move) / de + &
+        v * reduced_state%dpv_lon_t(i,buf_j,move) / le   &
       ) * dt
 #else
-      reduced_state%pv_lon(i,buf_j,move) = 0.5_r8 * (     &
-        reduced_state%pv(i,buf_j-1,move) +                &
-        reduced_state%pv(i,buf_j  ,move)                  &
-      ) - 0.5_r8 * (                                      &
-        un * reduced_state%dpv_lon_n(i,buf_j,move) / de + &
-        vt * reduced_state%dpv_lon_t(i,buf_j,move) / le   &
+      reduced_state%pv_lon(i,buf_j,move) = 0.5_r8 * (    &
+        reduced_state%pv(i,buf_j-1,move) +               &
+        reduced_state%pv(i,buf_j  ,move)                 &
+      ) - 0.5_r8 * (                                     &
+        u * reduced_state%dpv_lon_n(i,buf_j,move) / de + &
+        v * reduced_state%dpv_lon_t(i,buf_j,move) / le   &
       ) * dt
 #endif
     end do
@@ -894,21 +894,21 @@ contains
     type(reduced_state_type), intent(inout) :: reduced_state
     real(r8), intent(in) :: dt
 
-    real(r8) un, vn, ut, vt, le, de
+    real(r8) u, v, le, de
     integer i
 
     le = reduced_mesh%le_lat(buf_j)
     de = reduced_mesh%de_lat(buf_j)
     if (le == inf .or. de == inf) return
     do i = reduced_mesh%full_lon_start_idx, reduced_mesh%full_lon_end_idx
-      ut = reduced_state%mf_lat_t(i,buf_j,move) / reduced_state%m_lat(i,buf_j,move)
-      vn = reduced_state%v(i,buf_j,move)
-      reduced_state%pv_lat(i,buf_j,move) = 0.5_r8 * (     &
-        reduced_state%pv(i  ,buf_j,move) +                &
-        reduced_state%pv(i-1,buf_j,move)                  &
-      ) - 0.5_r8 * (                                      &
-        ut * reduced_state%dpv_lat_t(i,buf_j,move) / le + &
-        vn * reduced_state%dpv_lat_n(i,buf_j,move) / de   &
+      u = reduced_state%mf_lat_t(i,buf_j,move) / reduced_state%m_lat(i,buf_j,move)
+      v = reduced_state%v(i,buf_j,move)
+      reduced_state%pv_lat(i,buf_j,move) = 0.5_r8 * (    &
+        reduced_state%pv(i  ,buf_j,move) +               &
+        reduced_state%pv(i-1,buf_j,move)                 &
+      ) - 0.5_r8 * (                                     &
+        u * reduced_state%dpv_lat_t(i,buf_j,move) / le + &
+        v * reduced_state%dpv_lat_n(i,buf_j,move) / de   &
       ) * dt
     end do
     call parallel_fill_halo(reduced_mesh%halo_width, reduced_state%pv_lat(:,buf_j,move))

@@ -226,7 +226,7 @@ contains
     type(state_type), intent(inout) :: state
     real(r8)        , intent(in   ) :: dt
 
-    real(r8) un, vn, ut, vt, le, de
+    real(r8) u, v, le, de
     integer i, j
 
     call calc_dpv_on_edge(state)
@@ -235,9 +235,9 @@ contains
       le = state%mesh%le_lat(j)
       de = state%mesh%de_lat(j)
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-        ut = state%mf_lon_t(i,j) / state%m_lat(i,j)
-        vn = state%v(i,j)
-        state%pvc_lat(i,j) = 0.5_r8 * (ut * state%dpv_lat_t(i,j) / le + vn * state%dpv_lat_n(i,j) / de) * dt
+        u = state%mf_lon_t(i,j) / state%m_lat(i,j)
+        v = state%v(i,j)
+        state%pvc_lat(i,j) = 0.5_r8 * (u * state%dpv_lat_t(i,j) / le + v * state%dpv_lat_n(i,j) / de) * dt
         state%pv_lat(i,j) = 0.5_r8 * (state%pv(i,j) + state%pv(i-1,j)) - state%pvc_lat(i,j)
       end do
     end do
@@ -251,9 +251,9 @@ contains
       le = state%mesh%le_lon(j)
       de = state%mesh%de_lon(j)
       do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
-        un = state%u(i,j)
-        vt = state%mf_lat_t(i,j) / state%m_lon(i,j)
-        state%pvc_lon(i,j) = 0.5_r8 * (un * state%dpv_lon_n(i,j) / de + vt * state%dpv_lon_t(i,j) / le) * dt
+        u = state%u(i,j)
+        v = state%mf_lat_t(i,j) / state%m_lon(i,j)
+        state%pvc_lon(i,j) = 0.5_r8 * (u * state%dpv_lon_n(i,j) / de + v * state%dpv_lon_t(i,j) / le) * dt
 #ifdef STAGGER_V_ON_POLE
         state%pv_lon(i,j) = 0.5_r8 * (state%pv(i,j+1) + state%pv(i,j)) - state%pvc_lon(i,j)
 #else
@@ -270,7 +270,7 @@ contains
     type(state_type), intent(inout) :: state
 
     real(r8), parameter :: alpha = 0.0013_r8
-    real(r8) un, vn, ut, vt, le, de, ke, h, pv_adv
+    real(r8) u, v, le, de, ke, h, pv_adv
     integer i, j
 
     call calc_dpv_on_edge(state)
@@ -282,9 +282,9 @@ contains
       le = state%mesh%le_lat(j)
       de = state%mesh%de_lat(j)
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-        ut = state%mf_lon_t(i,j) / state%m_lat(i,j)
-        vn = state%v(i,j)
-        pv_adv = ut * state%dpv_lat_t(i,j) / le + vn * state%dpv_lat_n(i,j) / de
+        u = state%mf_lon_t(i,j) / state%m_lat(i,j)
+        v = state%v(i,j)
+        pv_adv = u * state%dpv_lat_t(i,j) / le + v * state%dpv_lat_n(i,j) / de
         state%pvc_lat(i,j) = alpha * ke * h * de**3 * abs(pv_adv) * pv_adv
         state%pv_lat (i,j) = 0.5_r8 * (state%pv(i,j) + state%pv(i-1,j)) - state%pvc_lat(i,j)
       end do
@@ -298,9 +298,9 @@ contains
       le = state%mesh%le_lon(j)
       de = state%mesh%de_lon(j)
       do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
-        un = state%u(i,j)
-        vt = state%mf_lat_t(i,j) / state%m_lon(i,j)
-        pv_adv = un * state%dpv_lon_n(i,j) / de + vt * state%dpv_lon_t(i,j) / le
+        u = state%u(i,j)
+        v = state%mf_lat_t(i,j) / state%m_lon(i,j)
+        pv_adv = u * state%dpv_lon_n(i,j) / de + v * state%dpv_lon_t(i,j) / le
         state%pvc_lon(i,j) = alpha * ke * h * de**3 * abs(pv_adv) * pv_adv
 #ifdef STAGGER_V_ON_POLE
         state%pv_lon (i,j) = 0.5_r8 * (state%pv(i,j+1) + state%pv(i,j)) - state%pvc_lon(i,j)
