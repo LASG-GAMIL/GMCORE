@@ -245,7 +245,7 @@ contains
     state%pv_lat(:,state%mesh%half_lat_start_idx) = state%pv(:,state%mesh%half_lat_start_idx)
     state%pv_lat(:,state%mesh%half_lat_end_idx  ) = state%pv(:,state%mesh%half_lat_end_idx  )
 #endif
-    call parallel_fill_halo(state%mesh, state%pv_lon)
+    call parallel_fill_halo(state%mesh, state%pv_lat)
 
     do j = state%mesh%full_lat_start_idx_no_pole, state%mesh%full_lat_end_idx_no_pole
       le = state%mesh%le_lon(j)
@@ -261,7 +261,7 @@ contains
 #endif
       end do
     end do
-    call parallel_fill_halo(state%mesh, state%pv_lat)
+    call parallel_fill_halo(state%mesh, state%pv_lon)
 
   end subroutine calc_pv_on_edge_apvm
 
