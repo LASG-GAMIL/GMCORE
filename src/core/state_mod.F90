@@ -23,8 +23,8 @@ module state_mod
     real(r8), allocatable, dimension(:,:) :: m_lat
     real(r8), allocatable, dimension(:,:) :: mf_lon_n
     real(r8), allocatable, dimension(:,:) :: mf_lat_n
-    real(r8), allocatable, dimension(:,:) :: mf_lon_t
     real(r8), allocatable, dimension(:,:) :: mf_lat_t
+    real(r8), allocatable, dimension(:,:) :: mf_lon_t
     real(r8), allocatable, dimension(:,:) :: pv_lon
     real(r8), allocatable, dimension(:,:) :: pv_lat
     real(r8), allocatable, dimension(:,:) :: dpv_lon_t
@@ -79,9 +79,9 @@ contains
     call allocate_array(mesh, this%m_lon    , half_lon=.true., full_lat=.true.)
     call allocate_array(mesh, this%m_lat    , full_lon=.true., half_lat=.true.)
     call allocate_array(mesh, this%mf_lon_n , half_lon=.true., full_lat=.true.)
+    call allocate_array(mesh, this%mf_lon_t , half_lon=.true., full_lat=.true.)
     call allocate_array(mesh, this%mf_lat_n , full_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%mf_lon_t , full_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%mf_lat_t , half_lon=.true., full_lat=.true.)
+    call allocate_array(mesh, this%mf_lat_t , full_lon=.true., half_lat=.true.)
     call allocate_array(mesh, this%pv_lon   , half_lon=.true., full_lat=.true.)
     call allocate_array(mesh, this%pv_lat   , full_lon=.true., half_lat=.true.)
     call allocate_array(mesh, this%dpv_lon_t, half_lon=.true., full_lat=.true.)
@@ -107,8 +107,8 @@ contains
     if (allocated(this%m_lat    )) deallocate(this%m_lat    )
     if (allocated(this%mf_lon_n )) deallocate(this%mf_lon_n )
     if (allocated(this%mf_lat_n )) deallocate(this%mf_lat_n )
-    if (allocated(this%mf_lon_t )) deallocate(this%mf_lon_t )
     if (allocated(this%mf_lat_t )) deallocate(this%mf_lat_t )
+    if (allocated(this%mf_lon_t )) deallocate(this%mf_lon_t )
     if (allocated(this%pv_lon   )) deallocate(this%pv_lon   )
     if (allocated(this%pv_lat   )) deallocate(this%pv_lat   )
     if (allocated(this%dpv_lon_t)) deallocate(this%dpv_lon_t)

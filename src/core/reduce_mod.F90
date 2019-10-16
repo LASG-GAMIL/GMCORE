@@ -93,8 +93,8 @@ module reduce_mod
     real(r8), allocatable, dimension(:,:,:) :: m_lon
     real(r8), allocatable, dimension(:,:,:) :: m_lat
     real(r8), allocatable, dimension(:,:,:) :: mf_lon_n
-    real(r8), allocatable, dimension(:,:,:) :: mf_lat_n
     real(r8), allocatable, dimension(:,:,:) :: mf_lon_t
+    real(r8), allocatable, dimension(:,:,:) :: mf_lat_n
     real(r8), allocatable, dimension(:,:,:) :: mf_lat_t
     real(r8), allocatable, dimension(:,:,:) :: ke
   contains
@@ -392,8 +392,8 @@ contains
     reduced_state%m_lon    (:,:,:) = inf
     reduced_state%m_lat    (:,:,:) = inf
     reduced_state%mf_lon_n (:,:,:) = inf
-    reduced_state%mf_lat_n (:,:,:) = inf
     reduced_state%mf_lon_t (:,:,:) = inf
+    reduced_state%mf_lat_n (:,:,:) = inf
     reduced_state%mf_lat_t (:,:,:) = inf
 
     call apply_reduce(lbound(reduced_state%u        , 2), ubound(reduced_state%u        , 2), j, raw_mesh, raw_state, reduced_mesh, reduced_state, reduce_u          , dt)
@@ -1037,8 +1037,8 @@ contains
     if (allocated(this%m_lon    )) deallocate(this%m_lon    )
     if (allocated(this%m_lat    )) deallocate(this%m_lat    )
     if (allocated(this%mf_lon_n )) deallocate(this%mf_lon_n )
-    if (allocated(this%mf_lat_n )) deallocate(this%mf_lat_n )
     if (allocated(this%mf_lon_t )) deallocate(this%mf_lon_t )
+    if (allocated(this%mf_lat_n )) deallocate(this%mf_lat_n )
     if (allocated(this%mf_lat_t )) deallocate(this%mf_lat_t )
 
   end subroutine reduced_state_final
