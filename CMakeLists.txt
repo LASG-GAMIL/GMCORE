@@ -38,6 +38,7 @@ endif ()
 
 add_subdirectory(lib/container)
 add_subdirectory(lib/datetime)
+add_subdirectory(lib/string)
 add_subdirectory(lib/fiona)
 add_subdirectory(lib/flogger)
 

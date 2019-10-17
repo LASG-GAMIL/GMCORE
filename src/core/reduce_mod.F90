@@ -1,6 +1,7 @@
 module reduce_mod
 
   use flogger
+  use string
   use const_mod
   use namelist_mod, only: reduce_factors
   use sphere_geometry_mod

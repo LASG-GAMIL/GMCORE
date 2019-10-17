@@ -1,6 +1,7 @@
 module jet_zonal_flow_test_mod
 
   use flogger
+  use string
   use const_mod
   use parallel_mod
   use mesh_mod
