@@ -470,7 +470,7 @@ contains
     !                       Zonal mass flux divergence
     do j = state%mesh%full_lat_start_idx_no_pole, state%mesh%full_lat_end_idx_no_pole
       if (reduced_full_mesh(j)%reduce_factor > 0) then
-        tend%mf_div(:,j) = 0.0_r8
+        tend%dmfdlon(:,j) = 0.0_r8
         do move = 1, reduced_full_mesh(j)%reduce_factor
           do i = reduced_full_mesh(j)%full_lon_start_idx, reduced_full_mesh(j)%full_lon_end_idx
             reduced_full_tend(j)%mf_div_lon(i) = (                                                  &
@@ -479,12 +479,12 @@ contains
           end do
           call reduce_append_array(move, reduced_full_mesh(j),      &
                                    reduced_full_tend(j)%mf_div_lon, &
-                                   state%mesh, tend%mf_div(:,j))
+                                   state%mesh, tend%dmfdlon(:,j))
         end do
-        call parallel_overlay_inner_halo(state%mesh, tend%mf_div(:,j), left_halo=.true.)
+        call parallel_overlay_inner_halo(state%mesh, tend%dmfdlon(:,j), left_halo=.true.)
       else
         do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-          tend%mf_div(i,j) = (                          &
+          tend%dmfdlon(i,j) = (                      &
             state%mf_lon_n(i,j) - state%mf_lon_n(i-1,j) &
           ) * mesh %le_lon(j) / mesh %cell_area(j)
         end do
@@ -496,12 +496,12 @@ contains
     do j = state%mesh%full_lat_start_idx_no_pole, state%mesh%full_lat_end_idx_no_pole
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
 #ifdef STAGGER_V_ON_POLE
-        tend%mf_div(i,j) = tend%mf_div(i,j) + (      &
+        tend%dmfdlat(i,j) = (                     &
           state%mf_lat_n(i,j+1) * mesh%le_lat(j+1) - &
           state%mf_lat_n(i,j  ) * mesh%le_lat(j  )   &
         ) / mesh%cell_area(j)
 #else
-        tend%mf_div(i,j) = tend%mf_div(i,j) + (      &
+        tend%dmfdlat(i,j) = (                     &
           state%mf_lat_n(i,j  ) * mesh%le_lat(j  ) - &
           state%mf_lat_n(i,j-1) * mesh%le_lat(j-1)   &
         ) / mesh%cell_area(j)
@@ -519,7 +519,7 @@ contains
       call parallel_zonal_sum(pole)
       pole = pole * mesh%le_lat(j) / state%mesh%num_full_lon / mesh%cell_area(j)
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-        tend%mf_div(i,j) = pole
+        tend%dmfdlat(i,j) = pole
       end do
     end if
     if (state%mesh%has_north_pole()) then
@@ -531,7 +531,7 @@ contains
       call parallel_zonal_sum(pole)
       pole = pole * mesh%le_lat(j-1) / state%mesh%num_full_lon / mesh%cell_area(j)
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-        tend%mf_div(i,j) = pole
+        tend%dmfdlat(i,j) = pole
       end do
     end if
 #endif

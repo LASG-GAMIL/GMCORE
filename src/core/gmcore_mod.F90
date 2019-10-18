@@ -205,7 +205,7 @@ contains
 
       do j = state%mesh%full_lat_start_idx, state%mesh%full_lat_end_idx
         do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-          tend%dgd(i,j) = - tend%mf_div(i,j) * g
+          tend%dgd(i,j) = - (tend%dmfdlon(i,j) + tend%dmfdlat(i,j)) * g
         end do
       end do
     case (slow_pass)
@@ -227,7 +227,8 @@ contains
       tend%dkedlon = 0.0_r8
       tend%dpedlat = 0.0_r8
       tend%dkedlat = 0.0_r8
-      tend%mf_div = 0.0_r8
+      tend%dmfdlon = 0.0_r8
+      tend%dmfdlat = 0.0_r8
       tend%dgd = 0.0_r8
     case (fast_pass)
       call energy_gradient_operator(static, state, tend)
@@ -247,7 +248,7 @@ contains
 
       do j = state%mesh%full_lat_start_idx, state%mesh%full_lat_end_idx
         do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-          tend%dgd(i,j) = - tend%mf_div(i,j) * g
+          tend%dgd(i,j) = - (tend%dmfdlon(i,j) + tend%dmfdlat(i,j)) * g
         end do
       end do
 

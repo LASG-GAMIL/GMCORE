@@ -24,7 +24,8 @@ module tend_mod
     real(r8), allocatable, dimension(:,:) :: dkedlon
     real(r8), allocatable, dimension(:,:) :: dpedlat
     real(r8), allocatable, dimension(:,:) :: dkedlat
-    real(r8), allocatable, dimension(:,:) :: mf_div
+    real(r8), allocatable, dimension(:,:) :: dmfdlon
+    real(r8), allocatable, dimension(:,:) :: dmfdlat
   contains
     procedure :: init => tend_init
     procedure :: clear => tend_clear
@@ -66,7 +67,8 @@ contains
     call allocate_array(mesh, this%dkedlon, half_lon=.true., full_lon=.true.)
     call allocate_array(mesh, this%dpedlat, full_lon=.true., half_lon=.true.)
     call allocate_array(mesh, this%dkedlat, full_lon=.true., half_lon=.true.)
-    call allocate_array(mesh, this%mf_div , full_lon=.true., full_lat=.true.)
+    call allocate_array(mesh, this%dmfdlon, full_lon=.true., full_lat=.true.)
+    call allocate_array(mesh, this%dmfdlat, full_lon=.true., full_lat=.true.)
 
   end subroutine tend_init
 
@@ -83,7 +85,8 @@ contains
     if (allocated(this%dpedlon)) deallocate(this%dkedlon)
     if (allocated(this%dkedlat)) deallocate(this%dpedlat)
     if (allocated(this%dkedlat)) deallocate(this%dkedlat)
-    if (allocated(this%mf_div )) deallocate(this%mf_div )
+    if (allocated(this%dmfdlon)) deallocate(this%dmfdlon)
+    if (allocated(this%dmfdlat)) deallocate(this%dmfdlat)
 
   end subroutine tend_clear
 
