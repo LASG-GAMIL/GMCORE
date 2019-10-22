@@ -22,6 +22,7 @@ module namelist_mod
   character(30) :: time_scheme = 'predict_correct'
 
   integer :: reduce_factors(20) = 0
+  integer :: damp_order = 8
 
   namelist /gmcore_swm_control/ &
     case_name                 , &
@@ -39,7 +40,8 @@ module namelist_mod
     pv_scheme                 , &
     pv_pole_stokes            , &
     split_scheme              , &
-    reduce_factors
+    reduce_factors            , &
+    damp_order
 
 contains
 

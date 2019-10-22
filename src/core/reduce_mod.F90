@@ -3,12 +3,13 @@ module reduce_mod
   use flogger
   use string
   use const_mod
-  use namelist_mod, only: reduce_factors
+  use namelist_mod
   use sphere_geometry_mod
   use mesh_mod
   use static_mod
   use state_mod
   use parallel_mod
+  use damp_mod
 
   implicit none
 
@@ -107,7 +108,7 @@ module reduce_mod
   type reduced_tend_type
     real(r8), allocatable, dimension(:) :: qhv
     real(r8), allocatable, dimension(:) :: qhu
-    real(r8), allocatable, dimension(:) :: mf_div_lon
+    real(r8), allocatable, dimension(:) :: dmfdlon
     real(r8), allocatable, dimension(:) :: dpedlon
     real(r8), allocatable, dimension(:) :: dkedlon
   contains
@@ -553,10 +554,12 @@ contains
     integer i
 
 #ifdef STAGGER_V_ON_POLE
-    if (raw_mesh%is_south_pole(j) .and. buf_j == 0) then
+    if (reduced_mesh%half_lat(buf_j) == inf) then
+      return
+    else if (reduced_mesh%half_lat(buf_j) == -pi05) then
       reduced_state%m_vtx(:,buf_j,move) = raw_state%m_vtx(raw_mesh%full_lon_start_idx,raw_mesh%half_lat_start_idx)
       reduced_state%pv   (:,buf_j,move) = raw_state%pv   (raw_mesh%full_lon_start_idx,raw_mesh%half_lat_start_idx)
-    else if (raw_mesh%is_north_pole(j+1) .and. buf_j == 1) then
+    else if (reduced_mesh%half_lat(buf_j) ==  pi05) then
       reduced_state%m_vtx(:,buf_j,move) = raw_state%m_vtx(raw_mesh%full_lon_start_idx,raw_mesh%half_lat_end_idx)
       reduced_state%pv   (:,buf_j,move) = raw_state%pv   (raw_mesh%full_lon_start_idx,raw_mesh%half_lat_end_idx)
     else
@@ -574,6 +577,7 @@ contains
           ) / reduced_mesh%vertex_area(buf_j) + reduced_mesh%half_f(buf_j)     &
         ) / reduced_state%m_vtx(i,buf_j,move)
       end do
+      call damp_run(damp_order, dt, reduced_mesh%de_lat(buf_j), reduced_mesh%half_lon_lb, reduced_mesh%half_lon_ub, reduced_mesh%num_half_lon, reduced_state%pv(:,buf_j,move))
     end if
 #else
     do i = reduced_mesh%half_lon_start_idx, reduced_mesh%half_lon_end_idx
@@ -978,11 +982,11 @@ contains
     type(reduced_mesh_type), intent(in) :: reduced_mesh
     type(reduced_tend_type), intent(inout) :: reduced_tend
 
-    allocate(reduced_tend%qhu       (reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub))
-    allocate(reduced_tend%qhv       (reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub))
-    allocate(reduced_tend%mf_div_lon(reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub))
-    allocate(reduced_tend%dpedlon   (reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub))
-    allocate(reduced_tend%dkedlon   (reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub))
+    allocate(reduced_tend%qhu    (reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub))
+    allocate(reduced_tend%qhv    (reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub))
+    allocate(reduced_tend%dmfdlon(reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub))
+    allocate(reduced_tend%dpedlon(reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub))
+    allocate(reduced_tend%dkedlon(reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub))
 
   end subroutine allocate_reduced_full_tend
 
@@ -1048,11 +1052,11 @@ contains
 
     type(reduced_tend_type), intent(inout) :: this
 
-    if (allocated(this%qhv       )) deallocate(this%qhv       )
-    if (allocated(this%qhu       )) deallocate(this%qhu       )
-    if (allocated(this%mf_div_lon)) deallocate(this%mf_div_lon)
-    if (allocated(this%dpedlon   )) deallocate(this%dpedlon   )
-    if (allocated(this%dkedlon   )) deallocate(this%dkedlon   )
+    if (allocated(this%qhv    )) deallocate(this%qhv    )
+    if (allocated(this%qhu    )) deallocate(this%qhu    )
+    if (allocated(this%dmfdlon)) deallocate(this%dmfdlon)
+    if (allocated(this%dpedlon)) deallocate(this%dpedlon)
+    if (allocated(this%dkedlon)) deallocate(this%dkedlon)
 
   end subroutine reduced_tend_final
 
