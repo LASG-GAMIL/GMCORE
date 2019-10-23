@@ -51,7 +51,7 @@ contains
       ns = diff_halo_width(order - 1)
       w  = diff_weights(:,order - 1)
       do i = 1, n
-        g (i) = sum(f(i-ns+1:i+ns) * w(:2*ns+1))
+        g (i) = sum(f(i-ns+1:i+ns) * w(:2*ns))
         df(i) = f(i+1) - f(i)
       end do
       g = g * (-1)**(order / 2) * a / dx**order

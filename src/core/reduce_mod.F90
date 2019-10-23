@@ -28,7 +28,7 @@ module reduce_mod
   public reduced_full_tend
 
   type reduced_mesh_type
-    integer reduce_factor
+    integer :: reduce_factor = 0
     integer halo_width
     integer num_full_lon
     integer num_half_lon
