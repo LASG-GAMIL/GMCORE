@@ -252,7 +252,7 @@ contains
       do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
         u = state%mf_lat_t(i,j) / state%m_lat(i,j)
         v = state%v(i,j)
-        state%pvc_lat(i,j) = 0.5_r8 * (u * state%dpv_lat_t(i,j) / le + v * state%dpv_lat_n(i,j) / de) * dt * 10
+        state%pvc_lat(i,j) = 0.5_r8 * (u * state%dpv_lat_t(i,j) / le + v * state%dpv_lat_n(i,j) / de) * dt
         state%pv_lat(i,j) = 0.5_r8 * (state%pv(i,j) + state%pv(i-1,j)) - state%pvc_lat(i,j)
       end do
     end do
@@ -268,7 +268,7 @@ contains
       do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
         u = state%u(i,j)
         v = state%mf_lon_t(i,j) / state%m_lon(i,j)
-        state%pvc_lon(i,j) = 0.5_r8 * (u * state%dpv_lon_n(i,j) / de + v * state%dpv_lon_t(i,j) / le) * dt * 10
+        state%pvc_lon(i,j) = 0.5_r8 * (u * state%dpv_lon_n(i,j) / de + v * state%dpv_lon_t(i,j) / le) * dt
 #ifdef STAGGER_V_ON_POLE
         state%pv_lon(i,j) = 0.5_r8 * (state%pv(i,j+1) + state%pv(i,j)) - state%pvc_lon(i,j)
 #else

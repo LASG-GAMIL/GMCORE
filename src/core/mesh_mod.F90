@@ -136,12 +136,12 @@ contains
     this%half_lat_start_idx = 1
     this%half_lat_end_idx = this%num_half_lat
 
-    this%id         = merge(id        ,  0          , present(id))
-    this%halo_width = merge(halo_width,  1          , present(halo_width))
-    this%start_lon  = merge(start_lon ,  0.0_r8     , present(start_lon))
-    this%end_lon    = merge(end_lon   ,  2.0_r8 * pi, present(end_lon))
-    this%start_lat  = merge(start_lat , -0.5_r8 * pi, present(start_lat))
-    this%end_lat    = merge(end_lat   ,  0.5_r8 * pi, present(end_lat))
+    this%id         = merge(id        ,  0     , present(id))
+    this%halo_width = merge(halo_width,  1     , present(halo_width))
+    this%start_lon  = merge(start_lon ,  0.0_r8, present(start_lon))
+    this%end_lon    = merge(end_lon   ,  pi2   , present(end_lon))
+    this%start_lat  = merge(start_lat , -pi05  , present(start_lat))
+    this%end_lat    = merge(end_lat   ,  pi05  , present(end_lat))
     this%total_area = radius**2 * (this%end_lon - this%start_lon) * (sin(this%end_lat) - sin(this%start_lat))
 
 #ifdef STAGGER_V_ON_POLE
@@ -224,6 +224,7 @@ contains
     this%half_lat_deg(this%num_half_lat) = this%end_lat * deg
 
     do j = this%full_lat_lb, this%full_lat_ub
+      if (is_inf(this%half_lat(j)) .or. this%half_lat(j) == pi05) cycle
       this%full_lat(j) = this%half_lat(j) + 0.5_r8 * this%dlat
       if (abs(this%full_lat(j)) < 1.0e-14) this%full_lat(j) = 0.0_r8
       this%full_lat_deg(j) = this%full_lat(j) * deg
@@ -247,13 +248,10 @@ contains
     this%full_lat_deg(this%num_full_lat) = this%end_lat * deg
 
     do j = this%half_lat_lb, this%half_lat_ub
+      if (is_inf(this%full_lat(j)) .or. this%full_lat(j) == pi05) cycle
       this%half_lat(j) = this%full_lat(j) + 0.5_r8 * this%dlat
       if (abs(this%half_lat(j)) < 1.0e-14) this%half_lat(j) = 0.0_r8
       this%half_lat_deg(j) = this%half_lat(j) * deg
-      if (this%half_lat(j) < -pi05 .or. this%half_lat(j) > pi05) then
-        this%half_lat(j) = inf
-        this%half_lat_deg(j) = inf
-      end if
     end do
 #endif
 
