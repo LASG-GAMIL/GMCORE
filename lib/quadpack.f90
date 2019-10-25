@@ -880,7 +880,7 @@ subroutine qagi ( f, bound, inf, epsabs, epsrel, result, abserr, neval, ier )
     boun = bound
   end if
 
-  call qk15i ( f, boun, inf, 0.0E+00, 1.0E+00, result, abserr, defabs, resabs )
+  call qk15i ( f, boun, inf, 0.0D+00, 1.0D+00, result, abserr, defabs, resabs )
 !
 !  Test on accuracy.
 !
@@ -3269,26 +3269,26 @@ subroutine qawfe ( f, a, omega, integr, epsabs, limlst, limit, maxp1, &
 !
 !  Test on validity of parameters.
 !
-  result = 0.0E+00
-  abserr = 0.0E+00
+  result = 0.0D+00
+  abserr = 0.0D+00
   neval = 0
   lst = 0
   ier = 0
 
   if ( (integr /= 1 .and. integr /= 2 ) .or. &
-    epsabs <= 0.0E+00 .or. &
+    epsabs <= 0.0D+00 .or. &
     limlst < 3 ) then
     ier = 6
     return
   end if
 
-  if ( omega == 0.0E+00 ) then
+  if ( omega == 0.0D+00 ) then
 
     if ( integr == 1 ) then
-      call qagi ( f, 0.0E+00, 1, epsabs, 0.0E+00, result, abserr, neval, ier )
+      call qagi ( f, 0.0D+00, 1, epsabs, 0.0D+00, result, abserr, neval, ier )
     else
-      result = 0.0E+00
-      abserr = 0.0E+00
+      result = 0.0D+00
+      abserr = 0.0D+00
       neval = 0
       ier = 0
     end if
@@ -3313,7 +3313,7 @@ subroutine qawfe ( f, a, omega, integr, epsabs, limlst, limit, maxp1, &
   nres = 0
   c1 = a
   c2 = cycle+a
-  p1 = 1.0E+00 - p
+  p1 = 1.0D+00 - p
   eps = epsabs
 
   if ( epsabs > tiny ( epsabs ) / p1 ) then
@@ -3321,10 +3321,10 @@ subroutine qawfe ( f, a, omega, integr, epsabs, limlst, limit, maxp1, &
   end if
 
   ep = eps
-  fact = 1.0E+00
-  correc = 0.0E+00
-  abserr = 0.0E+00
-  errsum = 0.0E+00
+  fact = 1.0D+00
+  correc = 0.0D+00
+  abserr = 0.0D+00
+  errsum = 0.0D+00
 
   do lst = 1, limlst
 !
@@ -3333,14 +3333,14 @@ subroutine qawfe ( f, a, omega, integr, epsabs, limlst, limit, maxp1, &
 !   dla = lst
     epsa = eps * fact
 
-    call qfour ( f, c1, c2, omega, integr, epsa, 0.0E+00, limit, lst, maxp1, &
+    call qfour ( f, c1, c2, omega, integr, epsa, 0.0D+00, limit, lst, maxp1, &
       rslst(lst), erlst(lst), nev, ierlst(lst), alist, blist, rlist, elist, &
       iord, nnlog, momcom, chebmo )
 
     neval = neval + nev
     fact = fact * p
     errsum = errsum + erlst(lst)
-    drl = 5.0E+01 * abs(rslst(lst))
+    drl = 5.0D+01 * abs(rslst(lst))
 !
 !  Test on accuracy with partial sum.
 !

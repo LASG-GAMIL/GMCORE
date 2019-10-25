@@ -72,11 +72,11 @@ contains
 
   end subroutine jet_zonal_flow_test_set_initial_condition
 
-  real function gh_integrand(lat) result(res)
+  real(r8) function gh_integrand(lat) result(res)
 
-    real, intent(in) :: lat
+    real(r8), intent(in) :: lat
 
-    real u, f
+    real(r8) u, f
 
     u = u_function(lat)
     f = 2 * omega * sin(lat)
@@ -84,9 +84,9 @@ contains
 
   end function gh_integrand
 
-  real function u_function(lat) result(res)
+  real(r8) function u_function(lat) result(res)
 
-    real, intent(in) :: lat
+    real(r8), intent(in) :: lat
 
     if (lat <= lat0 .or. lat >= lat1) then
       res = 0.0
