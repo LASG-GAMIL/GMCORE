@@ -11,7 +11,9 @@ module gmcore_mod
   use static_mod
   use tend_mod
   use operators_mod
+  use reduce_mod
   use debug_mod
+  use damp_mod
 
   implicit none
 
@@ -62,6 +64,7 @@ contains
     call create_static()
     call create_tends()
     call history_init()
+    call reduce_init()
 
     select case (time_scheme)
     case ('predict_correct')
@@ -152,23 +155,19 @@ contains
     state%total_av = 0.0_r8
     do j = state%mesh%half_lat_start_idx, state%mesh%half_lat_end_idx
       do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
-        state%total_av = state%total_av + &
-                                         state%m_vtx(i,j) * state%pv(i,j) * &
-                                         state%mesh%vertex_area(j)
+        state%total_av = state%total_av + state%m_vtx(i,j) * state%pv(i,j) * state%mesh%vertex_area(j)
       end do
     end do
 
     state%total_pe = 0.0_r8
     do j = state%mesh%half_lat_start_idx, state%mesh%half_lat_end_idx
       do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
-        state%total_pe = state%total_pe + &
-                                          state%m_vtx(i,j) * state%pv(i,j)**2 * 0.5_r8 * &
-                                          state%mesh%vertex_area(j)
+        state%total_pe = state%total_pe + state%m_vtx(i,j) * state%pv(i,j)**2 * 0.5_r8 * state%mesh%vertex_area(j)
       end do
     end do
 
-    call log_add_diag('total_m', state%total_m)
-    call log_add_diag('total_e', state%total_e)
+    call log_add_diag('total_m' , state%total_m )
+    call log_add_diag('total_e' , state%total_e )
     call log_add_diag('total_av', state%total_av)
     call log_add_diag('total_pe', state%total_pe)
 
@@ -185,28 +184,29 @@ contains
     integer i, j
 
     call operators_prepare(state)
+    call reduce_run(state, dt)
 
     select case (pass)
     case (all_pass)
       call nonlinear_coriolis_operator(state, tend, dt)
-      call energy_gradient_operator(static, state, tend)
-      call mass_flux_divergence_operator(state, tend)
+      call energy_gradient_operator(static, state, tend, dt)
+      call mass_flux_divergence_operator(state, tend, dt)
 
       do j = state%mesh%full_lat_start_idx_no_pole, state%mesh%full_lat_end_idx_no_pole
         do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
-          tend%du(i,j) =   tend%qhv(i,j) - tend%dEdlon(i,j)
+          tend%du(i,j) =   tend%qhv(i,j) - tend%dpedlon(i,j) - tend%dkedlon(i,j)
         end do
       end do
 
       do j = state%mesh%half_lat_start_idx_no_pole, state%mesh%half_lat_end_idx_no_pole
         do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-          tend%dv(i,j) = - tend%qhu(i,j) - tend%dEdlat(i,j)
+          tend%dv(i,j) = - tend%qhu(i,j) - tend%dpedlat(i,j) - tend%dkedlat(i,j)
         end do
       end do
 
       do j = state%mesh%full_lat_start_idx, state%mesh%full_lat_end_idx
         do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-          tend%dgd(i,j) = - tend%div_mass_flux(i,j) * g
+          tend%dgd(i,j) = - (tend%dmfdlon(i,j) + tend%dmfdlat(i,j)) * g
         end do
       end do
     case (slow_pass)
@@ -224,29 +224,32 @@ contains
         end do
       end do
 
-      tend%dEdlon = 0.0_r8
-      tend%dEdlat = 0.0_r8
-      tend%div_mass_flux = 0.0_r8
+      tend%dpedlon = 0.0_r8
+      tend%dkedlon = 0.0_r8
+      tend%dpedlat = 0.0_r8
+      tend%dkedlat = 0.0_r8
+      tend%dmfdlon = 0.0_r8
+      tend%dmfdlat = 0.0_r8
       tend%dgd = 0.0_r8
     case (fast_pass)
-      call energy_gradient_operator(static, state, tend)
-      call mass_flux_divergence_operator(state, tend)
+      call energy_gradient_operator(static, state, tend, dt)
+      call mass_flux_divergence_operator(state, tend, dt)
 
       do j = state%mesh%full_lat_start_idx_no_pole, state%mesh%full_lat_end_idx_no_pole
         do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
-          tend%du(i,j) = - tend%dEdlon(i,j)
+          tend%du(i,j) = - tend%dpedlon(i,j) - tend%dkedlon(i,j)
         end do
       end do
 
       do j = state%mesh%half_lat_start_idx_no_pole, state%mesh%half_lat_end_idx_no_pole
         do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-          tend%dv(i,j) = - tend%dEdlat(i,j)
+          tend%dv(i,j) = - tend%dpedlat(i,j) - tend%dkedlat(i,j)
         end do
       end do
 
       do j = state%mesh%full_lat_start_idx, state%mesh%full_lat_end_idx
         do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-          tend%dgd(i,j) = - tend%div_mass_flux(i,j) * g
+          tend%dgd(i,j) = - (tend%dmfdlon(i,j) + tend%dmfdlat(i,j)) * g
         end do
       end do
 
@@ -334,29 +337,34 @@ contains
     type(state_type), intent(in   ) :: old_state
     type(state_type), intent(inout) :: new_state
 
+    type(mesh_type), pointer :: mesh
     integer i, j
 
-    do j = new_state%mesh%full_lat_start_idx, new_state%mesh%full_lat_end_idx
-      do i = new_state%mesh%full_lon_start_idx, new_state%mesh%full_lon_end_idx
+    mesh => old_state%mesh
+
+    do j = mesh%full_lat_start_idx, mesh%full_lat_end_idx
+      do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
         new_state%gd(i,j) = old_state%gd(i,j) + dt * tend%dgd(i,j)
       end do
     end do
 
-    do j = new_state%mesh%full_lat_start_idx_no_pole, new_state%mesh%full_lat_end_idx_no_pole
-      do i = new_state%mesh%half_lon_start_idx, new_state%mesh%half_lon_end_idx
+    do j = mesh%full_lat_start_idx_no_pole, mesh%full_lat_end_idx_no_pole
+      do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
         new_state%u(i,j) = old_state%u(i,j) + dt * tend%du(i,j)
       end do
     end do
 
-    do j = new_state%mesh%half_lat_start_idx_no_pole, new_state%mesh%half_lat_end_idx_no_pole
-      do i = new_state%mesh%full_lon_start_idx, new_state%mesh%full_lon_end_idx
+    do j = mesh%half_lat_start_idx_no_pole, mesh%half_lat_end_idx_no_pole
+      do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
         new_state%v(i,j) = old_state%v(i,j) + dt * tend%dv(i,j)
       end do
     end do
 
-    call parallel_fill_halo(new_state%mesh, new_state%gd(:,:), all_halo=.true.)
-    call parallel_fill_halo(new_state%mesh, new_state%u (:,:), all_halo=.true.)
-    call parallel_fill_halo(new_state%mesh, new_state%v (:,:), all_halo=.true.)
+    call damp_state(new_state)
+
+    call parallel_fill_halo(mesh, new_state%gd(:,:))
+    call parallel_fill_halo(mesh, new_state%u (:,:))
+    call parallel_fill_halo(mesh, new_state%v (:,:))
 
     ! Do not forget to synchronize the mass on edge and vertex for diagnosing!
     call calc_mass_on_edge(new_state)
@@ -365,5 +373,42 @@ contains
     if (pv_scheme == 4) call diagnose(new_state)
 
   end subroutine update_state
+
+  subroutine damp_state(state)
+
+    type(state_type), intent(inout) :: state
+
+    type(mesh_type), pointer :: mesh
+    integer i, j
+
+    mesh => state%mesh
+
+    do j = mesh%full_lat_start_idx, mesh%full_lat_end_idx
+      if (reduced_full_mesh(j)%reduce_factor > 0) then
+        call damp_run(damp_order, dt, mesh%de_lon(j), mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%gd(:,j))
+      end if
+    end do
+
+    do j = mesh%full_lat_start_idx_no_pole, mesh%full_lat_end_idx_no_pole
+      if (reduced_full_mesh(j)%reduce_factor > 0) then
+        call damp_run(damp_order, dt, mesh%de_lon(j), mesh%half_lon_lb, mesh%half_lon_ub, mesh%num_full_lon, state%u(:,j))
+      end if
+    end do
+
+    do j = mesh%half_lat_start_idx_no_pole, mesh%half_lat_end_idx_no_pole
+#ifdef STAGGER_V_ON_POLE
+      if ((mesh%half_lat(j) < 0.0 .and. reduced_full_mesh(j-1)%reduce_factor > 0) .or. &
+          (mesh%half_lat(j) > 0.0 .and. reduced_full_mesh(j  )%reduce_factor > 0)) then
+        call damp_run(damp_order, dt, mesh%le_lat(j), mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%v(:,j))
+      end if
+#else
+      if ((mesh%half_lat(j) < 0.0 .and. reduced_full_mesh(j+1)%reduce_factor > 0) .or. &
+          (mesh%half_lat(j) > 0.0 .and. reduced_full_mesh(j  )%reduce_factor > 0)) then
+        call damp_run(damp_order, dt, mesh%le_lat(j), mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%v(:,j))
+      end if
+#endif
+    end do
+
+  end subroutine damp_state
 
 end module gmcore_mod

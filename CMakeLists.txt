@@ -9,7 +9,7 @@ if (STAGGER_V_ON_POLE)
 endif ()
 
 if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
-  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -ffpe-summary=none -fdefault-real-8 -ffree-line-length-none -Ofast -fopenmp")
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fdefault-real-8 -ffree-line-length-none -Ofast -fopenmp")
 endif ()
 
 find_package(MPI)
@@ -38,6 +38,7 @@ endif ()
 
 add_subdirectory(lib/container)
 add_subdirectory(lib/datetime)
+add_subdirectory(lib/string)
 add_subdirectory(lib/fiona)
 add_subdirectory(lib/flogger)
 
@@ -59,6 +60,8 @@ set(source_files
   src/core/pv_mod.F90
   src/core/ke_mod.F90
   src/core/operators_mod.F90
+  src/core/reduce_mod.F90
+  src/core/damp_mod.F90
   src/core/gmcore_mod.F90
   src/tests/swm/rossby_haurwitz_wave_test_mod.F90
   src/tests/swm/mountain_zonal_flow_test_mod.F90

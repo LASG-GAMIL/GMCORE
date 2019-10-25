@@ -14,3 +14,6 @@
 	path = lib/fiona
 	url = https://github.com/dongli/fiona
 	shallow = true
+[submodule "lib/string"]
+	path = lib/string
+	url = https://github.com/dongli/fortran-string
