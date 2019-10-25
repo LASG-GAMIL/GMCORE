@@ -402,8 +402,12 @@ contains
         call damp_run(damp_order, dt, mesh%le_lat(j), mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%v(:,j))
       end if
 #else
-      if ((mesh%half_lat(j) < 0.0 .and. reduced_full_mesh(j+1)%reduce_factor > 0) .or. &
-          (mesh%half_lat(j) > 0.0 .and. reduced_full_mesh(j  )%reduce_factor > 0)) then
+      if (j == mesh%half_lat_start_idx) then
+        state%v(:,j) = 0.8 * state%v(:,j+1) + 0.2 * state%v(:,j)
+      else if (j == mesh%half_lat_end_idx) then
+        state%v(:,j) = 0.8 * state%v(:,j-1) + 0.2 * state%v(:,j)
+      else if ((mesh%half_lat(j) < 0.0 .and. reduced_full_mesh(j+1)%reduce_factor > 0) .or. &
+               (mesh%half_lat(j) > 0.0 .and. reduced_full_mesh(j  )%reduce_factor > 0)) then
         call damp_run(damp_order, dt, mesh%le_lat(j), mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%v(:,j))
       end if
 #endif
