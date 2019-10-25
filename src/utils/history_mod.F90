@@ -144,23 +144,6 @@ contains
       end do
     end do
 
-<<<<<<< HEAD
-    call io_start_output('h0', elapsed_seconds, new_file=.false.)
-    call io_output('h0', 'lon' , mesh%full_lon_deg(1:mesh%num_full_lon))
-    call io_output('h0', 'lat' , mesh%full_lat_deg(1:mesh%num_full_lat))
-    call io_output('h0', 'ilon', mesh%half_lon_deg(1:mesh%num_half_lon))
-    call io_output('h0', 'ilat', mesh%half_lat_deg(1:mesh%num_half_lat))
-    call io_output('h0', 'u'   , u                (1:mesh%num_full_lon,1:mesh%num_full_lat))
-    call io_output('h0', 'v'   , v                (1:mesh%num_full_lon,1:mesh%num_full_lat))
-    call io_output('h0', 'h'   , h                (1:mesh%num_full_lon,1:mesh%num_full_lat))
-    call io_output('h0', 'hs'  , hs               (1:mesh%num_full_lon,1:mesh%num_full_lat))
-    call io_output('h0', 'pv'  , state%pv         (1:mesh%num_half_lon,1:mesh%num_half_lat))
-    call io_output('h0', 'tm'  , state%total_m)
-    call io_output('h0', 'te'  , state%total_e)
-    call io_output('h0', 'tav' , state%total_av)
-    call io_output('h0', 'tpe' , state%total_pe)
-    call io_end_output('h0')
-=======
     call fiona_start_output('h0', elapsed_seconds, new_file=.false.)
     call fiona_output('h0', 'lon' , mesh%full_lon_deg(1:mesh%num_full_lon))
     call fiona_output('h0', 'lat' , mesh%full_lat_deg(1:mesh%num_full_lat))
@@ -176,7 +159,6 @@ contains
     call fiona_output('h0', 'tav' , state%total_av)
     call fiona_output('h0', 'tpe' , state%total_pe)
     call fiona_end_output('h0')
->>>>>>> reduce2
 
   end subroutine history_write_state
 
@@ -186,35 +168,6 @@ contains
     type(state_type ), intent(in) :: state
     type(tend_type  ), intent(in) :: tend
 
-<<<<<<< HEAD
-    call io_start_output('h1', elapsed_seconds, new_file=.false.)
-    call io_output('h1', 'lon'      , mesh%full_lon_deg    (1:mesh%num_full_lon))
-    call io_output('h1', 'lat'      , mesh%full_lat_deg    (1:mesh%num_full_lat))
-    call io_output('h1', 'ilon'     , mesh%half_lon_deg    (1:mesh%num_half_lon))
-    call io_output('h1', 'ilat'     , mesh%half_lat_deg    (1:mesh%num_half_lat))
-    call io_output('h1', 'qhv'      , tend%qhv             (1:mesh%num_half_lon,1:mesh%num_full_lat))
-    call io_output('h1', 'qhu'      , tend%qhu             (1:mesh%num_full_lon,1:mesh%num_half_lat))
-    call io_output('h1', 'dEdlon'   , tend%dEdlon          (1:mesh%num_half_lon,1:mesh%num_full_lat))
-    call io_output('h1', 'dEdlat'   , tend%dEdlat          (1:mesh%num_full_lon,1:mesh%num_half_lat))
-    call io_output('h1', 'mfd'      , tend%div_mass_flux   (1:mesh%num_full_lon,1:mesh%num_full_lat))
-    call io_output('h1', 'us'       , state%u              (1:mesh%num_half_lon,1:mesh%num_full_lat))
-    call io_output('h1', 'vs'       , state%v              (1:mesh%num_full_lon,1:mesh%num_half_lat))
-    call io_output('h1', 'hv'       , state%m_vtx   (1:mesh%num_half_lon,1:mesh%num_half_lat))
-    call io_output('h1', 'mf_lon_n' , state%mf_lon_n(1:mesh%num_half_lon,1:mesh%num_full_lat))
-    call io_output('h1', 'mf_lat_t' , state%mf_lat_t(1:mesh%num_half_lon,1:mesh%num_full_lat))
-    call io_output('h1', 'mf_lat_n' , state%mf_lat_n(1:mesh%num_full_lon,1:mesh%num_half_lat))
-    call io_output('h1', 'mf_lon_t' , state%mf_lon_t(1:mesh%num_full_lon,1:mesh%num_half_lat))
-    call io_output('h1', 'pv_lon'   , state%pv_lon         (1:mesh%num_half_lon,1:mesh%num_full_lat))
-    call io_output('h1', 'pv_lat'   , state%pv_lat         (1:mesh%num_full_lon,1:mesh%num_half_lat))
-    call io_output('h1', 'dpv_lat_t', state%dpv_lat_t      (1:mesh%num_full_lon,1:mesh%num_half_lat))
-    call io_output('h1', 'dpv_lon_n', state%dpv_lon_n      (1:mesh%num_full_lon,1:mesh%num_half_lat))
-    call io_output('h1', 'dpv_lon_t', state%dpv_lon_t      (1:mesh%num_half_lon,1:mesh%num_full_lat))
-    call io_output('h1', 'dpv_lat_n', state%dpv_lat_n      (1:mesh%num_half_lon,1:mesh%num_full_lat))
-    call io_output('h1', 'ke_cell'  , state%ke_cell        (1:mesh%num_full_lon,1:mesh%num_full_lat))
-    call io_output('h1', 'pvc_lon'  , state%pvc_lon        (1:mesh%num_half_lon,1:mesh%num_full_lat))
-    call io_output('h1', 'pvc_lat'  , state%pvc_lat        (1:mesh%num_full_lon,1:mesh%num_half_lat))
-    call io_end_output('h1')
-=======
     call fiona_start_output('h1', elapsed_seconds, new_file=.false.)
     call fiona_output('h1', 'lon'      , mesh%full_lon_deg(1:mesh%num_full_lon))
     call fiona_output('h1', 'lat'      , mesh%full_lat_deg(1:mesh%num_full_lat))
@@ -245,7 +198,6 @@ contains
     call fiona_output('h1', 'pvc_lon'  , state%pvc_lon    (1:mesh%num_half_lon,1:mesh%num_full_lat))
     call fiona_output('h1', 'pvc_lat'  , state%pvc_lat    (1:mesh%num_full_lon,1:mesh%num_half_lat))
     call fiona_end_output('h1')
->>>>>>> reduce2
 
   end subroutine history_write_debug
 
