@@ -224,12 +224,6 @@ contains
         end do
       end do
 
-      tend%dpedlon = 0.0_r8
-      tend%dkedlon = 0.0_r8
-      tend%dpedlat = 0.0_r8
-      tend%dkedlat = 0.0_r8
-      tend%dmfdlon = 0.0_r8
-      tend%dmfdlat = 0.0_r8
       tend%dgd = 0.0_r8
     case (fast_pass)
       call energy_gradient_operator(static, state, tend, dt)
@@ -252,9 +246,6 @@ contains
           tend%dgd(i,j) = - (tend%dmfdlon(i,j) + tend%dmfdlat(i,j)) * g
         end do
       end do
-
-      tend%qhv = 0.0_r8
-      tend%qhu = 0.0_r8
     end select
 
     ! call debug_check_space_operators(static, state, tend)
