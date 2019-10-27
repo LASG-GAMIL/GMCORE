@@ -1,0 +1,12 @@
+&gmcore_swm_control
+num_lon = 180
+num_lat = 90
+! mountain_zonal_flow, rossby_haurwitz_wave
+test_case = 'rossby_haurwitz_wave'
+run_days = 100
+dt_in_seconds = 10
+pv_scheme = 3
+split_scheme = ''
+case_name = 'rh4.180x90'
+history_interval = '1 days'
+/

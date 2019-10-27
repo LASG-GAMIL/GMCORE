@@ -21,13 +21,12 @@ module nest_mod
 
 contains
 
-  subroutine nest_add_domain(start_lon, end_lon, start_lat, end_lat, nest_ratio, root_mesh)
+  subroutine nest_add_domain(start_lon, end_lon, start_lat, end_lat, root_mesh)
 
     real(r8)       , intent(in) :: start_lon
     real(r8)       , intent(in) :: end_lon
     real(r8)       , intent(in) :: start_lat
     real(r8)       , intent(in) :: end_lat
-    integer        , intent(in) :: nest_ratio
     type(mesh_type), intent(in) :: root_mesh
 
   end subroutine nest_add_domain

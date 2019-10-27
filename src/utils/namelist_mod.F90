@@ -1,5 +1,5 @@
 module namelist_mod
-
+  use const_mod
   use time_mod, start_time => start_time_array, end_time => end_time_array
 
   implicit none
@@ -23,7 +23,15 @@ module namelist_mod
 
   integer :: reduce_factors(20) = 0
   integer :: damp_order = 8
-
+  
+  ! Nest settings
+  integer :: nest_max_dom       = 0
+  integer :: nest_parent_id(20)
+  real(r8):: nest_start_lon(20) = 0.,&
+             nest_end_lon  (20) = 0.,&
+             nest_start_lat(20) = 0.,&
+             nest_end_lat  (20) = 0.
+  
   namelist /gmcore_swm_control/ &
     case_name                 , &
     test_case                 , &
@@ -42,7 +50,13 @@ module namelist_mod
     split_scheme              , &
     fast_cycles               , &
     reduce_factors            , &
-    damp_order
+    damp_order                , &
+    nest_max_dom              , &
+    nest_parent_id            , &
+    nest_start_lon            , &
+    nest_end_lon              , &
+    nest_start_lat            , &
+    nest_end_lat
 
 contains
 
