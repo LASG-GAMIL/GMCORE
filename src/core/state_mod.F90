@@ -10,7 +10,7 @@ module state_mod
 
   public state_type
   public states
-  public create_states
+  public state_init_root
 
   type state_type
     type(mesh_type), pointer :: mesh => null()
@@ -51,7 +51,7 @@ module state_mod
 
 contains
 
-  subroutine create_states()
+  subroutine state_init_root()
 
     integer i
 
@@ -62,7 +62,7 @@ contains
       end do
     end if
 
-  end subroutine create_states
+  end subroutine state_init_root
 
   subroutine state_init(this, mesh)
 

@@ -10,7 +10,7 @@ module tend_mod
 
   public tend_type
   public tends
-  public create_tends
+  public tend_init_root
 
   type tend_type
     type(mesh_type), pointer :: mesh => null()
@@ -36,7 +36,7 @@ module tend_mod
 
 contains
 
-  subroutine create_tends()
+  subroutine tend_init_root()
 
     integer i
 
@@ -47,7 +47,7 @@ contains
       end do
     end if
 
-  end subroutine create_tends
+  end subroutine tend_init_root
 
   subroutine tend_init(this, mesh)
 

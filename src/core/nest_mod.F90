@@ -3,14 +3,16 @@ module nest_mod
   use const_mod
   use mesh_mod
   use state_mod
+  use static_mod
+  use tend_mod
 
   implicit none
 
   private
 
   public nest_add_domain
-  public nest_exchange_one_way
-  public nest_exchange_two_way
+  public nest_from_coarse_to_fine
+  public nest_from_fine_to_coarse
 
   type(mesh_type  ), allocatable, dimension(:  ) :: nested_mesh
   type(static_type), allocatable, dimension(:  ) :: nested_static

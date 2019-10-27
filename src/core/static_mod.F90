@@ -10,7 +10,7 @@ module static_mod
 
   public static_type
   public static
-  public create_static
+  public static_init_root
 
   type static_type
     type(mesh_type), pointer :: mesh => null()
@@ -25,11 +25,11 @@ module static_mod
 
 contains
 
-  subroutine create_static()
+  subroutine static_init_root()
 
     call static%init(mesh)
 
-  end subroutine create_static
+  end subroutine static_init_root
 
   subroutine static_init(this, mesh)
 

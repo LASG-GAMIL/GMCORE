@@ -11,7 +11,7 @@ module mesh_mod
 
   public mesh_type
   public mesh
-  public create_meshes
+  public mesh_init_root
 
   type mesh_type
     integer id
@@ -615,10 +615,10 @@ contains
 
   end subroutine mesh_final
 
-  subroutine create_meshes()
+  subroutine mesh_init_root()
 
     call mesh%init(num_lon, num_lat, halo_width=merge(maxval(reduce_factors), 1, maxval(reduce_factors) /= 0))
 
-  end subroutine create_meshes
+  end subroutine mesh_init_root
 
 end module mesh_mod
