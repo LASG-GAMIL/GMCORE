@@ -19,18 +19,19 @@ module namelist_mod
 
   integer :: fast_cycles = 5
   character(30) :: split_scheme = ''
-  character(30) :: time_scheme = 'predict_correct'
+  character(30) :: time_scheme = 'pc2'
 
   integer :: reduce_factors(20) = 0
   integer :: damp_order = 8
   
   ! Nest settings
-  integer :: nest_max_dom       = 0
-  integer :: nest_parent_id(20)
-  real(r8):: nest_start_lon(20) = 0.,&
-             nest_end_lon  (20) = 0.,&
-             nest_start_lat(20) = 0.,&
-             nest_end_lat  (20) = 0.
+  character(30) :: nest_time_scheme   = 'pc2'
+  integer       :: nest_max_dom       = 0
+  integer       :: nest_parent_id(20)
+  real(r8)      :: nest_start_lon(20) = 0.,&
+                   nest_end_lon  (20) = 0.,&
+                   nest_start_lat(20) = 0.,&
+                   nest_end_lat  (20) = 0.
   
   namelist /gmcore_swm_control/ &
     case_name                 , &
@@ -51,6 +52,7 @@ module namelist_mod
     fast_cycles               , &
     reduce_factors            , &
     damp_order                , &
+    nest_time_scheme          , &
     nest_max_dom              , &
     nest_parent_id            , &
     nest_start_lon            , &

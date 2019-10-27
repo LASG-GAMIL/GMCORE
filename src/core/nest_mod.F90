@@ -28,7 +28,21 @@ contains
     real(r8)       , intent(in) :: start_lat
     real(r8)       , intent(in) :: end_lat
     type(mesh_type), intent(in) :: root_mesh
-
+    
+    integer :: time_substep_num
+    
+    select case(nest_time_scheme)
+      case('pc2'.or.'rk2')
+        time_substep_num = 2
+      case('pc3'.or.'rk3')
+        time_substep_num = 3
+    end select
+    
+    allocate(nested_mesh  (nest_max_dom                    ))
+    allocate(nested_static(nest_max_dom                    ))
+    allocate(nested_state (nest_max_dom, 0:time_substep_num))
+    allocate(nested_tend  (nest_max_dom, 0:time_substep_num))
+    
   end subroutine nest_add_domain
 
   subroutine nest_init_domain(static, state)
