@@ -2,6 +2,7 @@ module state_mod
 
   use const_mod
   use mesh_mod
+  use namelist_mod
   use allocator_mod
 
   implicit none
@@ -14,6 +15,9 @@ module state_mod
 
   type state_type
     type(mesh_type), pointer :: mesh => null()
+    ! For nesting
+    integer :: id = 0
+    type(state_type), pointer :: parent => null()
     ! Prognostic variables
     real(r8), allocatable, dimension(:,:) :: u
     real(r8), allocatable, dimension(:,:) :: v
@@ -56,7 +60,11 @@ contains
     integer i
 
     if (.not. allocated(states)) then
-      allocate(states(0:2))
+      select case (trim(time_scheme))
+      case ('pc2', 'rk2')
+        allocate(states(0:2))
+      case ('rk3')
+      end select
       do i = lbound(states, 1), ubound(states, 1)
         call states(i)%init(mesh)
       end do

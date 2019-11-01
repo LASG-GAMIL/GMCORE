@@ -27,11 +27,11 @@ module namelist_mod
   ! Nest settings
   character(30) :: nest_time_scheme   = 'pc2'
   integer       :: nest_max_dom       = 0
-  integer       :: nest_parent_id(20)
-  real(r8)      :: nest_start_lon(20) = 0.,&
-                   nest_end_lon  (20) = 0.,&
-                   nest_start_lat(20) = 0.,&
-                   nest_end_lat  (20) = 0.
+  integer       :: nest_parent_id(20) = 0
+  real(r8)      :: nest_start_lon(20) = 0.0_r8
+  real(r8)      :: nest_end_lon  (20) = 0.0_r8
+  real(r8)      :: nest_start_lat(20) = 0.0_r8
+  real(r8)      :: nest_end_lat  (20) = 0.0_r8
   
   namelist /gmcore_swm_control/ &
     case_name                 , &

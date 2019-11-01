@@ -30,16 +30,17 @@ contains
   ! C(φ) = 1/4 ω² cos²ᴿφ ((R + 1) cos²φ - (R + 2))
 
 
-  subroutine rossby_haurwitz_wave_test_set_initial_condition()
+  subroutine rossby_haurwitz_wave_test_set_initial_condition(static, state)
+
+    type(static_type), intent(inout) :: static
+    type(state_type) , intent(inout) :: state
 
     real(r8) lon, cos_lat, sin_lat
     real(r8) a, b, c
     integer i, j
     type(mesh_type), pointer :: mesh
 
-    call log_notice('Use Rossby-Haurwitz wave initial condition.')
-
-    mesh => states(1)%mesh
+    mesh => state%mesh
 
     static%ghs(:,:) = 0.0
 
@@ -51,10 +52,10 @@ contains
         a = cos_lat
         b = R * cos_lat**(R - 1) * sin_lat**2 * cos(R * lon)
         c = cos_lat**(R + 1) * cos(R * lon)
-        states(1)%u(i,j) = radius * omg * (a + b - c)
+        state%u(i,j) = radius * omg * (a + b - c)
       end do
     end do
-    call parallel_fill_halo(mesh, states(1)%u)
+    call parallel_fill_halo(mesh, state%u)
 
     do j = mesh%half_lat_start_idx, mesh%half_lat_end_idx
       cos_lat = mesh%half_cos_lat(j)
@@ -62,10 +63,10 @@ contains
       do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
         lon = mesh%full_lon(i)
         a = R * cos_lat**(R - 1) * sin_lat * sin(R * lon)
-        states(1)%v(i,j) = - radius * omg * a
+        state%v(i,j) = - radius * omg * a
       end do
     end do
-    call parallel_fill_halo(mesh, states(1)%v)
+    call parallel_fill_halo(mesh, state%v)
 
     do j = mesh%full_lat_start_idx, mesh%full_lat_end_idx
       cos_lat = mesh%full_cos_lat(j)
@@ -76,10 +77,10 @@ contains
       c = 0.25 * omg**2 * cos_lat**(2 * R) * ((R + 1) * cos_lat**2 - R - 2)
       do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
         lon = mesh%full_lon(i)
-        states(1)%gd(i,j) = gd0 + radius**2 * (a + b * cos(R * lon) + c * cos(2 * R * lon))
+        state%gd(i,j) = gd0 + radius**2 * (a + b * cos(R * lon) + c * cos(2 * R * lon))
       end do
     end do
-    call parallel_fill_halo(mesh, states(1)%gd)
+    call parallel_fill_halo(mesh, state%gd)
 
   end subroutine rossby_haurwitz_wave_test_set_initial_condition
 

@@ -14,7 +14,13 @@ module mesh_mod
   public mesh_init_root
 
   type mesh_type
-    integer id
+    ! For nesting
+    integer :: id = 0
+    type(mesh_type), pointer :: parent => null()
+    integer :: parent_lon_start_idx = 0
+    integer :: parent_lon_end_idx   = 0
+    integer :: parent_lat_start_idx = 0
+    integer :: parent_lat_end_idx   = 0
     integer halo_width
     integer num_full_lon
     integer num_half_lon
@@ -98,7 +104,7 @@ module mesh_mod
     final :: mesh_final
   end type mesh_type
 
-  type(mesh_type) mesh
+  type(mesh_type), target :: mesh
 
 contains
 

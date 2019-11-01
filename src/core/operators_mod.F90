@@ -17,11 +17,12 @@ module operators_mod
   private
 
   public operators_prepare
-  public nonlinear_coriolis_operator
-  public energy_gradient_operator
-  public mass_flux_divergence_operator
-  public calc_mass_on_edge   ! Shold be called when mass is updated.
-  public calc_mass_on_vertex ! Same as above.
+  public calc_qhu_qhv
+  public calc_dkedlon_dkedlat
+  public calc_dpedlon_dpedlat
+  public calc_dmfdlon_dmfdlat
+  public calc_m_lon_m_lat   ! Shold be called when mass is updated.
+  public calc_m_vtx ! Same as above.
 
 contains
 
@@ -29,14 +30,14 @@ contains
 
     type(state_type), intent(inout) :: state
 
-    call calc_normal_mass_flux(state)
-    call calc_tangent_mass_flux(state)
+    call calc_mf_lon_n_mf_lat_n(state)
+    call calc_mf_lon_t_mf_lat_t(state)
     call calc_pv_on_vertex(state)
     call calc_ke_on_cell(state)
 
   end subroutine operators_prepare
 
-  subroutine calc_mass_on_edge(state)
+  subroutine calc_m_lon_m_lat(state)
 
     type(state_type), intent(inout) :: state
 
@@ -64,9 +65,9 @@ contains
       end do
     end do
 
-  end subroutine calc_mass_on_edge
+  end subroutine calc_m_lon_m_lat
 
-  subroutine calc_mass_on_vertex(state)
+  subroutine calc_m_vtx(state)
 
     type(state_type), intent(inout) :: state
 
@@ -115,9 +116,9 @@ contains
     end if
 #endif
 
-  end subroutine calc_mass_on_vertex
+  end subroutine calc_m_vtx
 
-  subroutine calc_normal_mass_flux(state)
+  subroutine calc_mf_lon_n_mf_lat_n(state)
 
     type(state_type), intent(inout) :: state
 
@@ -137,9 +138,9 @@ contains
     end do
     call parallel_fill_halo(state%mesh, state%mf_lat_n)
 
-  end subroutine calc_normal_mass_flux
+  end subroutine calc_mf_lon_n_mf_lat_n
 
-  subroutine calc_tangent_mass_flux(state)
+  subroutine calc_mf_lon_t_mf_lat_t(state)
 
     type(state_type), intent(inout), target :: state
 
@@ -171,9 +172,9 @@ contains
     end do
     call parallel_fill_halo(state%mesh, state%mf_lat_t)
 
-  end subroutine calc_tangent_mass_flux
+  end subroutine calc_mf_lon_t_mf_lat_t
 
-  subroutine nonlinear_coriolis_operator(state, tend, dt)
+  subroutine calc_qhu_qhv(state, tend, dt)
 
     type(state_type), intent(inout) :: state
     type(tend_type ), intent(inout) :: tend
@@ -433,9 +434,54 @@ contains
     end do
 #endif
 
-  end subroutine nonlinear_coriolis_operator
+  end subroutine calc_qhu_qhv
 
-  subroutine energy_gradient_operator(static, state, tend, dt)
+  subroutine calc_dkedlon_dkedlat(static, state, tend, dt)
+
+    type(static_type), intent(in   ) :: static
+    type(state_type ), intent(inout) :: state
+    type(tend_type  ), intent(inout) :: tend
+    real(r8)         , intent(in   ) :: dt
+
+    type(mesh_type), pointer :: mesh
+    integer i, j, move
+
+    mesh => state%mesh
+
+    do j = mesh%full_lat_start_idx_no_pole, mesh%full_lat_end_idx_no_pole
+      if (reduced_full_mesh(j)%reduce_factor > 0) then
+        tend%dkedlon(:,j) = 0.0_r8
+        do move = 1, reduced_full_mesh(j)%reduce_factor
+          do i = reduced_full_mesh(j)%full_lon_start_idx, reduced_full_mesh(j)%full_lon_end_idx
+            reduced_full_tend(j)%dkedlon(i) = (                                         &
+              reduced_full_state(j)%ke(i+1,0,move) - reduced_full_state(j)%ke(i,0,move) &
+            ) / reduced_full_mesh(j)%de_lon(0)
+          end do
+          call reduce_append_array(move, reduced_full_mesh(j)  , &
+                                   reduced_full_tend(j)%dkedlon, &
+                                   mesh, tend%dkedlon(:,j))
+        end do
+        call parallel_overlay_inner_halo(mesh, tend%dkedlon(:,j), left_halo=.true.)
+      else
+        do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
+          tend%dkedlon(i,j) = (state%ke(i+1,j) - state%ke(i,j)) / mesh%de_lon(j)
+        end do
+      end if
+    end do
+
+    do j = mesh%half_lat_start_idx_no_pole, mesh%half_lat_end_idx_no_pole
+      do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
+#ifdef STAGGER_V_ON_POLE
+        tend%dkedlat(i,j) = (state%ke(i,j) - state%ke(i,j-1)) / mesh%de_lat(j)
+#else
+        tend%dkedlat(i,j) = (state%ke(i,j+1) - state%ke(i,j)) / mesh%de_lat(j)
+#endif
+      end do
+    end do
+
+  end subroutine calc_dkedlon_dkedlat
+
+  subroutine calc_dpedlon_dpedlat(static, state, tend, dt)
 
     type(static_type), intent(in   ) :: static
     type(state_type ), intent(inout) :: state
@@ -472,27 +518,6 @@ contains
       end if
     end do
 
-    do j = mesh%full_lat_start_idx_no_pole, mesh%full_lat_end_idx_no_pole
-      if (reduced_full_mesh(j)%reduce_factor > 0) then
-        tend%dkedlon(:,j) = 0.0_r8
-        do move = 1, reduced_full_mesh(j)%reduce_factor
-          do i = reduced_full_mesh(j)%full_lon_start_idx, reduced_full_mesh(j)%full_lon_end_idx
-            reduced_full_tend(j)%dkedlon(i) = (                                         &
-              reduced_full_state(j)%ke(i+1,0,move) - reduced_full_state(j)%ke(i,0,move) &
-            ) / reduced_full_mesh(j)%de_lon(0)
-          end do
-          call reduce_append_array(move, reduced_full_mesh(j)  , &
-                                   reduced_full_tend(j)%dkedlon, &
-                                   mesh, tend%dkedlon(:,j))
-        end do
-        call parallel_overlay_inner_halo(mesh, tend%dkedlon(:,j), left_halo=.true.)
-      else
-        do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
-          tend%dkedlon(i,j) = (state%ke(i+1,j) - state%ke(i,j)) / mesh%de_lon(j)
-        end do
-      end if
-    end do
-
     do j = mesh%half_lat_start_idx_no_pole, mesh%half_lat_end_idx_no_pole
       do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
 #ifdef STAGGER_V_ON_POLE
@@ -500,20 +525,18 @@ contains
           state %gd (i,j) - state %gd (i,j-1) + &
           static%ghs(i,j) - static%ghs(i,j-1)   &
         ) / mesh%de_lat(j)
-        tend%dkedlat(i,j) = (state%ke(i,j) - state%ke(i,j-1)) / mesh%de_lat(j)
 #else
         tend%dpedlat(i,j) = (                   &
           state %gd (i,j+1) - state %gd (i,j) + &
           static%ghs(i,j+1) - static%ghs(i,j)   &
         ) / mesh%de_lat(j)
-        tend%dkedlat(i,j) = (state%ke(i,j+1) - state%ke(i,j)) / mesh%de_lat(j)
 #endif
       end do
     end do
 
-  end subroutine energy_gradient_operator
+  end subroutine calc_dpedlon_dpedlat
 
-  subroutine mass_flux_divergence_operator(state, tend, dt)
+  subroutine calc_dmfdlon_dmfdlat(state, tend, dt)
 
     type(state_type), intent(in   ) :: state
     type(tend_type) , intent(inout) :: tend
@@ -595,6 +618,6 @@ contains
     end if
 #endif
 
-  end subroutine mass_flux_divergence_operator
+  end subroutine calc_dmfdlon_dmfdlat
 
 end module operators_mod

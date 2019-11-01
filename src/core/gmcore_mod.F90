@@ -67,11 +67,11 @@ contains
     call reduce_init()
 
     select case (time_scheme)
-    case ('predict_correct')
+    case ('pc2')
       integrator => predict_correct
     case default
       integrator => predict_correct
-      call log_notice('Use predict_correct integrator.')
+      call log_notice('Use pc2 integrator.')
     end select
 
     select case (split_scheme)
@@ -86,18 +86,18 @@ contains
 
   subroutine gmcore_run()
 
-    call calc_mass_on_edge(states(old))
-    call calc_mass_on_vertex(states(old))
+    call calc_m_lon_m_lat(states(old))
+    call calc_m_vtx(states(old))
     call operators_prepare(states(old))
     call diagnose(states(old))
-    call output  (states(old), tends(old))
+    call output(states(old), tends(old))
     call log_print_diag(curr_time%isoformat())
 
     do while (.not. time_is_finished())
       call time_integrate(dt, static, tends, states)
       call time_advance()
       call diagnose(states(old))
-      call output  (states(old), tends(old))
+      call output(states(old), tends(old))
       call log_print_diag(curr_time%isoformat())
     end do
 
@@ -188,9 +188,10 @@ contains
 
     select case (pass)
     case (all_pass)
-      call nonlinear_coriolis_operator(state, tend, dt)
-      call energy_gradient_operator(static, state, tend, dt)
-      call mass_flux_divergence_operator(state, tend, dt)
+      call calc_qhu_qhv(state, tend, dt)
+      call calc_dkedlon_dkedlat(static, state, tend, dt)
+      call calc_dpedlon_dpedlat(static, state, tend, dt)
+      call calc_dmfdlon_dmfdlat(state, tend, dt)
 
       do j = state%mesh%full_lat_start_idx_no_pole, state%mesh%full_lat_end_idx_no_pole
         do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
@@ -210,7 +211,7 @@ contains
         end do
       end do
     case (slow_pass)
-      call nonlinear_coriolis_operator(state, tend, dt)
+      call calc_qhu_qhv(state, tend, dt)
 
       do j = state%mesh%full_lat_start_idx_no_pole, state%mesh%full_lat_end_idx_no_pole
         do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
@@ -226,26 +227,38 @@ contains
 
       tend%dgd = 0.0_r8
     case (fast_pass)
-      call energy_gradient_operator(static, state, tend, dt)
-      call mass_flux_divergence_operator(state, tend, dt)
+!$omp sections
+!$omp section
+      call calc_dkedlon_dkedlat(static, state, tend, dt)
+!$omp section
+      call calc_dpedlon_dpedlat(static, state, tend, dt)
+!$omp section
+      call calc_dmfdlon_dmfdlat(state, tend, dt)
+!$omp end sections
 
+!$omp parallel do collapse(2)
       do j = state%mesh%full_lat_start_idx_no_pole, state%mesh%full_lat_end_idx_no_pole
         do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
           tend%du(i,j) = - tend%dpedlon(i,j) - tend%dkedlon(i,j)
         end do
       end do
+!$omp end parallel do
 
+!$omp parallel do collapse(2)
       do j = state%mesh%half_lat_start_idx_no_pole, state%mesh%half_lat_end_idx_no_pole
         do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
           tend%dv(i,j) = - tend%dpedlat(i,j) - tend%dkedlat(i,j)
         end do
       end do
+!$omp end parallel do
 
+!$omp parallel do collapse(2)
       do j = state%mesh%full_lat_start_idx, state%mesh%full_lat_end_idx
         do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
           tend%dgd(i,j) = - (tend%dmfdlon(i,j) + tend%dmfdlat(i,j)) * g
         end do
       end do
+!$omp end parallel do
     end select
 
     ! call debug_check_space_operators(static, state, tend)
@@ -358,8 +371,8 @@ contains
     call parallel_fill_halo(mesh, new_state%v (:,:))
 
     ! Do not forget to synchronize the mass on edge and vertex for diagnosing!
-    call calc_mass_on_edge(new_state)
-    call calc_mass_on_vertex(new_state)
+    call calc_m_lon_m_lat(new_state)
+    call calc_m_vtx(new_state)
 
     if (pv_scheme == 4) call diagnose(new_state)
 
