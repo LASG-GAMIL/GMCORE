@@ -652,9 +652,9 @@ contains
 #ifdef STAGGER_V_ON_POLE
     if (is_inf(reduced_mesh%half_lat(buf_j))) then
       return
-    else if (reduced_mesh%half_lat(buf_j) == -pi05) then
+    else if (raw_mesh%is_south_pole(j+buf_j)) then
       reduced_state%pv(:,buf_j,move) = raw_state%pv(raw_mesh%full_lon_start_idx,raw_mesh%half_lat_start_idx)
-    else if (reduced_mesh%half_lat(buf_j) ==  pi05) then
+    else if (raw_mesh%is_north_pole(j+buf_j)) then
       reduced_state%pv(:,buf_j,move) = raw_state%pv(raw_mesh%full_lon_start_idx,raw_mesh%half_lat_end_idx)
     else
       do i = reduced_mesh%half_lon_start_idx, reduced_mesh%half_lon_end_idx
