@@ -106,6 +106,7 @@ contains
   subroutine gmcore_final()
 
     call parallel_final()
+    call reduce_final()
 
   end subroutine gmcore_final
 
@@ -168,7 +169,6 @@ contains
 
     call log_add_diag('total_m' , state%total_m )
     call log_add_diag('total_e' , state%total_e )
-    call log_add_diag('total_av', state%total_av)
     call log_add_diag('total_pe', state%total_pe)
 
   end subroutine diagnose
@@ -364,7 +364,7 @@ contains
       end do
     end do
 
-    call damp_state(new_state)
+    ! call damp_state(new_state)
 
     call parallel_fill_halo(mesh, new_state%gd(:,:))
     call parallel_fill_halo(mesh, new_state%u (:,:))
