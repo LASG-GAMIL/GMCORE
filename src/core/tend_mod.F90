@@ -2,6 +2,7 @@ module tend_mod
 
   use const_mod
   use mesh_mod
+  use namelist_mod
   use allocator_mod
 
   implicit none
@@ -41,7 +42,14 @@ contains
     integer i
 
     if (.not. allocated(tends)) then
-      allocate(tends(0:2))
+      select case (trim(time_scheme))
+      case ('pc2', 'rk2')
+        allocate(tends(3))
+      case ('rk3')
+        allocate(tends(4))
+      case ('rk4')
+        allocate(tends(5))
+      end select
       do i = lbound(tends, 1), ubound(tends, 1)
         call tends(i)%init(mesh)
       end do

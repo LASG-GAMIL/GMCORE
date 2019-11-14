@@ -49,6 +49,7 @@ module namelist_mod
     pv_scheme                 , &
     pv_pole_stokes            , &
     split_scheme              , &
+    time_scheme               , &
     fast_cycles               , &
     reduce_factors            , &
     damp_order                , &

@@ -62,8 +62,11 @@ contains
     if (.not. allocated(states)) then
       select case (trim(time_scheme))
       case ('pc2', 'rk2')
-        allocate(states(0:2))
+        allocate(states(3))
       case ('rk3')
+        allocate(states(4))
+      case ('rk4')
+        allocate(states(5))
       end select
       do i = lbound(states, 1), ubound(states, 1)
         call states(i)%init(mesh)

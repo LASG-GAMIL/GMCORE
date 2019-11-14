@@ -33,8 +33,8 @@ module gmcore_mod
       import r8, static_type, tend_type, state_type
       real(r8)         , intent(in   ) :: dt
       type(static_type), intent(in   ) :: static
-      type(tend_type  ), intent(inout) :: tends (0:2)
-      type(state_type ), intent(inout) :: states(0:2)
+      type(tend_type  ), intent(inout) :: tends (:)
+      type(state_type ), intent(inout) :: states(:)
       integer          , intent(in   ) :: old
       integer          , intent(in   ) :: new
       integer          , intent(in   ) :: pass
@@ -44,8 +44,8 @@ module gmcore_mod
       import r8, static_type, tend_type, state_type
       real(r8)         , intent(in   ) :: dt
       type(static_type), intent(in   ) :: static
-      type(tend_type  ), intent(inout) :: tends (0:2)
-      type(state_type ), intent(inout) :: states(0:2)
+      type(tend_type  ), intent(inout) :: tends (:)
+      type(state_type ), intent(inout) :: states(:)
     end subroutine splitter_interface
   end interface
 
@@ -69,6 +69,10 @@ contains
     select case (time_scheme)
     case ('pc2')
       integrator => predict_correct
+    case ('rk3')
+      integrator => runge_kutta_3rd
+    case ('rk4')
+      integrator => runge_kutta_4th
     case default
       integrator => predict_correct
       call log_notice('Use pc2 integrator.')
@@ -269,8 +273,8 @@ contains
 
     real(r8)         , intent(in   ) :: dt
     type(static_type), intent(in   ) :: static
-    type(tend_type  ), intent(inout) :: tends (0:2)
-    type(state_type ), intent(inout) :: states(0:2)
+    type(tend_type  ), intent(inout) :: tends (:)
+    type(state_type ), intent(inout) :: states(:)
 
     call splitter(dt, static, tends, states)
 
@@ -280,14 +284,14 @@ contains
 
     real(r8)         , intent(in   ) :: dt
     type(static_type), intent(in   ) :: static
-    type(tend_type  ), intent(inout) :: tends (0:2)
-    type(state_type ), intent(inout) :: states(0:2)
+    type(tend_type  ), intent(inout) :: tends (:)
+    type(state_type ), intent(inout) :: states(:)
 
     real(r8) fast_dt
     integer subcycle, t1, t2
 
     fast_dt = dt / fast_cycles
-    t1 = 0 
+    t1 = 3
     t2 = old
 
     call integrator(0.5_r8 * dt, static, tends, states, old, t1, slow_pass)
@@ -303,8 +307,8 @@ contains
 
     real(r8)         , intent(in   ) :: dt
     type(static_type), intent(in   ) :: static
-    type(tend_type  ), intent(inout) :: tends (0:2)
-    type(state_type ), intent(inout) :: states(0:2)
+    type(tend_type  ), intent(inout) :: tends (:)
+    type(state_type ), intent(inout) :: states(:)
 
     call integrator(dt, static, tends, states, old, new, all_pass)
 
@@ -314,8 +318,8 @@ contains
 
     real(r8)         , intent(in   ) :: dt
     type(static_type), intent(in   ) :: static
-    type(tend_type  ), intent(inout) :: tends (0:2)
-    type(state_type ), intent(inout) :: states(0:2)
+    type(tend_type  ), intent(inout) :: tends (:)
+    type(state_type ), intent(inout) :: states(:)
     integer          , intent(in   ) :: old
     integer          , intent(in   ) :: new
     integer          , intent(in   ) :: pass
@@ -333,6 +337,71 @@ contains
     call update_state(         dt, tends(new), states(old), states(new))
 
   end subroutine predict_correct
+
+  subroutine runge_kutta_3rd(dt, static, tends, states, old, new, pass)
+
+    real(r8)         , intent(in   ) :: dt
+    type(static_type), intent(in   ) :: static
+    type(tend_type  ), intent(inout) :: tends (:) ! -1:2
+    type(state_type ), intent(inout) :: states(:) ! -1:2
+    integer          , intent(in   ) :: old
+    integer          , intent(in   ) :: new
+    integer          , intent(in   ) :: pass
+
+    integer s1, s2, s3
+
+    s1 = 3
+    s2 = 4
+    s3 = new
+
+    call space_operators(static, states(old), tends(s1), 0.5_r8 * dt, pass)
+    call update_state(0.5_r8 * dt, tends(s1), states(old), states(s1))
+
+    call space_operators(static, states(s1) , tends(s2), 2.0_r8 * dt, pass)
+    call update_state(        -dt, tends(s1), states(old), states(s2))
+    call update_state(2.0_r8 * dt, tends(s2), states(s2) , states(s2))
+
+    call space_operators(static, states(s2) , tends(s3),          dt, pass)
+    tends(old)%du  = (tends(s1)%du  + 4.0_r8 * tends(s2)%du  + tends(s3)%du ) / 6.0_r8
+    tends(old)%dv  = (tends(s1)%dv  + 4.0_r8 * tends(s2)%dv  + tends(s3)%dv ) / 6.0_r8
+    tends(old)%dgd = (tends(s1)%dgd + 4.0_r8 * tends(s2)%dgd + tends(s3)%dgd) / 6.0_r8
+    call update_state(         dt, tends(old), states(old), states(new))
+
+  end subroutine runge_kutta_3rd
+
+  subroutine runge_kutta_4th(dt, static, tends, states, old, new, pass)
+
+    real(r8)         , intent(in   ) :: dt
+    type(static_type), intent(in   ) :: static
+    type(tend_type  ), intent(inout) :: tends (:) ! -1:2
+    type(state_type ), intent(inout) :: states(:) ! -1:2
+    integer          , intent(in   ) :: old
+    integer          , intent(in   ) :: new
+    integer          , intent(in   ) :: pass
+
+    integer s1, s2, s3, s4
+
+    s1 = 3
+    s2 = 4
+    s3 = 5
+    s4 = new
+
+    call space_operators(static, states(old), tends(s1), 0.5_r8 * dt, pass)
+    call update_state(0.5_r8 * dt, tends(s1), states(old), states(s1))
+
+    call space_operators(static, states(s1) , tends(s2), 0.5_r8 * dt, pass)
+    call update_state(0.5_r8 * dt, tends(s2), states(old), states(s2))
+
+    call space_operators(static, states(s2) , tends(s3),          dt, pass)
+    call update_state(         dt, tends(s3), states(old), states(s3))
+
+    call space_operators(static, states(s3) , tends(s4),          dt, pass)
+    tends(old)%du  = (tends(s1)%du  + 2.0_r8 * tends(s2)%du  + 2.0_r8 * tends(s3)%du  + tends(s4)%du ) / 6.0_r8
+    tends(old)%dv  = (tends(s1)%dv  + 2.0_r8 * tends(s2)%dv  + 2.0_r8 * tends(s3)%dv  + tends(s4)%dv ) / 6.0_r8
+    tends(old)%dgd = (tends(s1)%dgd + 2.0_r8 * tends(s2)%dgd + 2.0_r8 * tends(s3)%dgd + tends(s4)%dgd) / 6.0_r8
+    call update_state(         dt, tends(old), states(old), states(new))
+
+  end subroutine runge_kutta_4th
 
   subroutine update_state(dt, tend, old_state, new_state)
 

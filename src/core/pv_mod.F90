@@ -205,31 +205,35 @@ contains
 
     mesh => state%mesh
 
-    do j = mesh%half_lat_start_idx, mesh%half_lat_end_idx
-      do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
-        ! beta = mesh%half_upwind_beta(j)
-        dpv = min(abs(state%dpv_lat_t(i,j)), abs(state%dpv_lat_n(i,j)))
-        beta = beta0 * exp(-(dpv0 / dpv)**2)
-        state%pvc_lat(i,j) = beta * 0.5_r8 * &
-          (state%dpv_lat_t(i,j) * sign(1.0_r8, state%mf_lon_t(i,j) + &
-           state%dpv_lat_n(i,j) * sign(1.0_r8, state%v(i,j))))
-        state%pv_lat(i,j) = 0.5_r8 * (state%pv(i,j) + state%pv(i-1,j)) - state%pvc_lat(i,j)
-      end do
-    end do
-    call parallel_fill_halo(mesh, state%pv_lat)
-
     do j = mesh%full_lat_start_idx_no_pole, mesh%full_lat_end_idx_no_pole 
       do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
         ! beta = mesh%full_upwind_beta(j)
         dpv = min(abs(state%dpv_lon_t(i,j)), abs(state%dpv_lon_n(i,j)))
         beta = beta0 * exp(-(dpv0 / dpv)**2)
         state%pvc_lon(i,j) = beta * 0.5_r8 * &
-          (state%dpv_lon_t(i,j) * sign(1.0_r8, state%mf_lat_t(i,j) + &
+          (state%dpv_lon_t(i,j) * sign(1.0_r8, state%mf_lon_t(i,j) + &
            state%dpv_lon_n(i,j) * sign(1.0_r8, state%u(i,j))))
+#ifdef STAGGER_V_ON_POLE
         state%pv_lon(i,j) = 0.5_r8 * (state%pv(i,j+1) + state%pv(i,j)) - state%pvc_lon(i,j)
+#else
+        state%pv_lon(i,j) = 0.5_r8 * (state%pv(i,j-1) + state%pv(i,j)) - state%pvc_lon(i,j)
+#endif
       end do
     end do
     call parallel_fill_halo(mesh, state%pv_lon)
+
+    do j = mesh%half_lat_start_idx, mesh%half_lat_end_idx
+      do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
+        ! beta = mesh%half_upwind_beta(j)
+        dpv = min(abs(state%dpv_lat_t(i,j)), abs(state%dpv_lat_n(i,j)))
+        beta = beta0 * exp(-(dpv0 / dpv)**2)
+        state%pvc_lat(i,j) = beta * 0.5_r8 * &
+          (state%dpv_lat_t(i,j) * sign(1.0_r8, state%mf_lat_t(i,j) + &
+           state%dpv_lat_n(i,j) * sign(1.0_r8, state%v(i,j))))
+        state%pv_lat(i,j) = 0.5_r8 * (state%pv(i,j) + state%pv(i-1,j)) - state%pvc_lat(i,j)
+      end do
+    end do
+    call parallel_fill_halo(mesh, state%pv_lat)
 
   end subroutine calc_pv_on_edge_upwind
 
