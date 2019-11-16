@@ -433,7 +433,7 @@ contains
       end do
     end do
 
-    ! call damp_state(new_state)
+    call damp_state(new_state)
 
     call parallel_fill_halo(mesh, new_state%gd(:,:))
     call parallel_fill_halo(mesh, new_state%u (:,:))
@@ -453,18 +453,24 @@ contains
 
     type(mesh_type), pointer :: mesh
     integer i, j
+    real(r8) s1, s2
 
     mesh => state%mesh
 
-    do j = mesh%full_lat_start_idx, mesh%full_lat_end_idx
-      if (reduced_full_mesh(j)%reduce_factor > 0) then
-        call damp_run(damp_order, dt, mesh%de_lon(j), mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%gd(:,j))
-      end if
-    end do
-
     do j = mesh%full_lat_start_idx_no_pole, mesh%full_lat_end_idx_no_pole
       if (reduced_full_mesh(j)%reduce_factor > 0) then
+        s1 = 0.0_r8
+        do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
+          s1 = s1 + state%m_lon(i,j) * state%u(i,j)**2 * state%mesh%lon_edge_area(j)
+        end do
         call damp_run(damp_order, dt, mesh%de_lon(j), mesh%half_lon_lb, mesh%half_lon_ub, mesh%num_full_lon, state%u(:,j))
+        if (s1 > eps) then
+          s2 = 0.0_r8
+          do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
+            s2 = s2 + state%m_lon(i,j) * state%u(i,j)**2 * state%mesh%lon_edge_area(j)
+          end do
+          state%u(:,j) = state%u(:,j) * sqrt(s1 / s2)
+        end if
       end if
     end do
 
@@ -472,7 +478,18 @@ contains
 #ifdef STAGGER_V_ON_POLE
       if ((mesh%half_lat(j) < 0.0 .and. reduced_full_mesh(j-1)%reduce_factor > 0) .or. &
           (mesh%half_lat(j) > 0.0 .and. reduced_full_mesh(j  )%reduce_factor > 0)) then
+        s1 = 0.0_r8
+        do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
+          s1 = s1 + state%m_lat(i,j) * state%v(i,j)**2 * state%mesh%lat_edge_area(j)
+        end do
         call damp_run(damp_order, dt, mesh%le_lat(j), mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%v(:,j))
+        if (s1 > eps) then
+          s2 = 0.0_r8
+          do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
+            s2 = s2 + state%m_lat(i,j) * state%v(i,j)**2 * state%mesh%lat_edge_area(j)
+          end do
+          state%v(:,j) = state%v(:,j) * sqrt(s1 / s2)
+        end if
       end if
 #else
       if (j == mesh%half_lat_start_idx) then

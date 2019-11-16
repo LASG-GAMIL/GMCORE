@@ -44,12 +44,12 @@ module reduce_mod
     real(r8), allocatable, dimension(  :) :: full_lon
     real(r8), allocatable, dimension(  :) :: half_lon
 #ifdef STAGGER_V_ON_POLE
-    real(r8), dimension(  -3:3) :: full_lat            = inf
-    real(r8), dimension(  -3:3) :: half_lat            = inf
-    real(r8), dimension(  -3:3) :: full_cos_lat        = inf
-    real(r8), dimension(  -3:3) :: half_cos_lat        = inf
-    real(r8), dimension(  -3:3) :: full_sin_lat        = inf
-    real(r8), dimension(  -3:3) :: half_sin_lat        = inf
+    real(r8), dimension(  -1:1) :: full_lat            = inf
+    real(r8), dimension(  -1:1) :: half_lat            = inf
+    real(r8), dimension(  -1:1) :: full_cos_lat        = inf
+    real(r8), dimension(  -1:1) :: half_cos_lat        = inf
+    real(r8), dimension(  -1:1) :: full_sin_lat        = inf
+    real(r8), dimension(  -1:1) :: half_sin_lat        = inf
     real(r8), dimension(  -1:1) :: cell_area           = 0
     real(r8), dimension(2,-2:2) :: subcell_area        = 0
     real(r8), dimension(  -2:2) :: lon_edge_area       = 0
@@ -68,12 +68,12 @@ module reduce_mod
     real(r8), dimension(  -1:1) :: full_f              = inf
     real(r8), dimension(  -1:2) :: half_f              = inf
 #else
-    real(r8), dimension(  -3:3) :: full_lat            = inf
-    real(r8), dimension(  -3:3) :: half_lat            = inf
-    real(r8), dimension(  -3:3) :: full_cos_lat        = inf
-    real(r8), dimension(  -3:3) :: half_cos_lat        = inf
-    real(r8), dimension(  -3:3) :: full_sin_lat        = inf
-    real(r8), dimension(  -3:3) :: half_sin_lat        = inf
+    real(r8), dimension(  -1:1) :: full_lat            = inf
+    real(r8), dimension(  -1:1) :: half_lat            = inf
+    real(r8), dimension(  -1:1) :: full_cos_lat        = inf
+    real(r8), dimension(  -1:1) :: half_cos_lat        = inf
+    real(r8), dimension(  -1:1) :: full_sin_lat        = inf
+    real(r8), dimension(  -1:1) :: half_sin_lat        = inf
     real(r8), dimension(  -1:1) :: cell_area           = 0
     real(r8), dimension(2,-2:2) :: subcell_area        = 0
     real(r8), dimension(  -2:2) :: lon_edge_area       = 0
@@ -258,103 +258,48 @@ contains
     reduced_mesh%full_f       = raw_mesh%full_f      (j+lbound(reduced_mesh%full_f      , 1):j+ubound(reduced_mesh%full_f      , 1))
     reduced_mesh%half_f       = raw_mesh%half_f      (j+lbound(reduced_mesh%half_f      , 1):j+ubound(reduced_mesh%half_f      , 1))
 
-#ifdef STAGGER_V_ON_POLE
     ! Cell area
     do buf_j = lbound(reduced_mesh%cell_area, 1), ubound(reduced_mesh%cell_area, 1)
-      if (.not. is_inf(reduced_mesh%half_sin_lat(buf_j+1)) .and. .not. is_inf(reduced_mesh%half_sin_lat(buf_j))) then
-        reduced_mesh%cell_area(buf_j) = radius**2 * reduced_mesh%dlon * (reduced_mesh%half_sin_lat(buf_j+1) - reduced_mesh%half_sin_lat(buf_j))
+      if (.not. is_inf(raw_mesh%cell_area(j+buf_j))) then
+        reduced_mesh%cell_area(buf_j) = raw_mesh%cell_area(j+buf_j) * reduce_factor
       end if
     end do
     do buf_j = lbound(reduced_mesh%subcell_area, 2), ubound(reduced_mesh%subcell_area, 2)
-      if (.not. is_inf(reduced_mesh%full_sin_lat(buf_j)) .and. .not. is_inf(reduced_mesh%half_sin_lat(buf_j))) then
-        reduced_mesh%subcell_area(1,buf_j) = radius**2 * 0.5_r8 * reduced_mesh%dlon * (reduced_mesh%full_sin_lat(buf_j) - reduced_mesh%half_sin_lat(buf_j))
+      if (.not. is_inf(raw_mesh%subcell_area(1,j+buf_j))) then
+        reduced_mesh%subcell_area(1,buf_j) = raw_mesh%subcell_area(1,j+buf_j) * reduce_factor
       end if
-      if (.not. is_inf(reduced_mesh%half_sin_lat(buf_j+1)) .and. .not. is_inf(reduced_mesh%full_sin_lat(buf_j))) then
-        reduced_mesh%subcell_area(2,buf_j) = radius**2 * 0.5_r8 * reduced_mesh%dlon * (reduced_mesh%half_sin_lat(buf_j+1) - reduced_mesh%full_sin_lat(buf_j))
+      if (.not. is_inf(raw_mesh%subcell_area(2,j+buf_j))) then
+        reduced_mesh%subcell_area(2,buf_j) = raw_mesh%subcell_area(2,j+buf_j) * reduce_factor
       end if
     end do
     do buf_j = lbound(reduced_mesh%lon_edge_area, 1), ubound(reduced_mesh%lon_edge_area, 1)
-      if (.not. is_inf(reduced_mesh%full_lat(buf_j)) .and. .not. is_inf(reduced_mesh%half_lat(buf_j)) .and. .not. is_inf(reduced_mesh%half_lat(buf_j+1))) then
-        call cartesian_transform(reduced_mesh%full_lon(1), reduced_mesh%full_lat(buf_j  ), x(1), y(1), z(1))
-        call cartesian_transform(reduced_mesh%half_lon(1), reduced_mesh%half_lat(buf_j  ), x(2), y(2), z(2))
-        call cartesian_transform(reduced_mesh%half_lon(1), reduced_mesh%half_lat(buf_j+1), x(3), y(3), z(3))
-        reduced_mesh%lon_edge_left_area(buf_j) = calc_area(x, y, z)
-        reduced_mesh%lon_edge_right_area(buf_j) = reduced_mesh%lon_edge_left_area(buf_j)
-        reduced_mesh%lon_edge_area(buf_j) = reduced_mesh%lon_edge_left_area(buf_j) + reduced_mesh%lon_edge_right_area(buf_j)
+      if (.not. is_inf(raw_mesh%lon_edge_left_area(j+buf_j))) then
+        reduced_mesh%lon_edge_left_area(buf_j) = raw_mesh%lon_edge_left_area(j+buf_j) * reduce_factor
+      end if
+      if (.not. is_inf(raw_mesh%lon_edge_right_area(j+buf_j))) then
+        reduced_mesh%lon_edge_right_area(buf_j) = raw_mesh%lon_edge_right_area(j+buf_j) * reduce_factor
+      end if
+      if (.not. is_inf(raw_mesh%lon_edge_area(buf_j))) then
+        reduced_mesh%lon_edge_area(buf_j) = raw_mesh%lon_edge_area(j+buf_j) * reduce_factor
       end if
     end do
     ! Vertex area
     do buf_j = lbound(reduced_mesh%vertex_area, 1), ubound(reduced_mesh%vertex_area, 1)
-      if (.not. is_inf(reduced_mesh%full_sin_lat(buf_j)) .and. .not. is_inf(reduced_mesh%full_sin_lat(buf_j-1))) then
-        reduced_mesh%vertex_area(buf_j) = radius**2 * reduced_mesh%dlon * (reduced_mesh%full_sin_lat(buf_j) - reduced_mesh%full_sin_lat(buf_j-1))
-      else if (.not. is_inf(reduced_mesh%full_sin_lat(buf_j))) then
-        reduced_mesh%vertex_area(buf_j) = radius**2 * reduced_mesh%dlon * (reduced_mesh%full_sin_lat(buf_j) + 1)
-      else if (reduced_mesh%full_sin_lat(buf_j-1) /= inf) then
-        reduced_mesh%vertex_area(buf_j) = radius**2 * reduced_mesh%dlon * (1 - reduced_mesh%full_sin_lat(buf_j-1))
+      if (.not. is_inf(raw_mesh%vertex_area(j+buf_j))) then
+        reduced_mesh%vertex_area(buf_j) = raw_mesh%vertex_area(j+buf_j) * reduce_factor
       end if
     end do
     do buf_j = lbound(reduced_mesh%lat_edge_area, 1), ubound(reduced_mesh%lat_edge_area, 1)
-      if (reduced_mesh%full_lat(buf_j) /= inf .and. reduced_mesh%half_lat(buf_j) /= inf .and. reduced_mesh%full_lat(buf_j-1) /= inf) then
-        call cartesian_transform(reduced_mesh%full_lon(2), reduced_mesh%full_lat(buf_j  ), x(1), y(1), z(1))
-        call cartesian_transform(reduced_mesh%half_lon(1), reduced_mesh%half_lat(buf_j  ), x(2), y(2), z(2))
-        call cartesian_transform(reduced_mesh%half_lon(2), reduced_mesh%half_lat(buf_j  ), x(3), y(3), z(3))
-        reduced_mesh%lat_edge_up_area(buf_j) = calc_area_with_last_small_arc(x, y, z)
-        call cartesian_transform(reduced_mesh%full_lon(2), reduced_mesh%full_lat(buf_j-1), x(1), y(1), z(1))
-        call cartesian_transform(reduced_mesh%half_lon(2), reduced_mesh%half_lat(buf_j  ), x(2), y(2), z(2))
-        call cartesian_transform(reduced_mesh%half_lon(1), reduced_mesh%half_lat(buf_j  ), x(3), y(3), z(3))
-        reduced_mesh%lat_edge_down_area(buf_j) = calc_area_with_last_small_arc(x, y, z)
-        reduced_mesh%lat_edge_area(buf_j) = reduced_mesh%lat_edge_up_area(buf_j) + reduced_mesh%lat_edge_down_area(buf_j)
+      if (.not. is_inf(raw_mesh%lat_edge_up_area(j+buf_j))) then
+        reduced_mesh%lat_edge_up_area(buf_j) = raw_mesh%lat_edge_up_area(j+buf_j) * reduce_factor
+      end if
+      if (.not. is_inf(raw_mesh%lat_edge_down_area(j+buf_j))) then
+        reduced_mesh%lat_edge_down_area(buf_j) = raw_mesh%lat_edge_down_area(j+buf_j) * reduce_factor
+      end if
+      if (.not. is_inf(raw_mesh%lat_edge_area(j+buf_j))) then
+        reduced_mesh%lat_edge_area(buf_j) = raw_mesh%lat_edge_area(j+buf_j) * reduce_factor
       end if
     end do
-#else
-    ! Cell area
-    do buf_j = lbound(reduced_mesh%cell_area, 1), ubound(reduced_mesh%cell_area, 1)
-      if (reduced_mesh%half_sin_lat(buf_j-1) /= inf .and. reduced_mesh%half_sin_lat(buf_j) /= inf) then
-        reduced_mesh%cell_area(buf_j) = radius**2 * reduced_mesh%dlon * (reduced_mesh%half_sin_lat(buf_j) - reduced_mesh%half_sin_lat(buf_j-1))
-      end if
-    end do
-    do buf_j = lbound(reduced_mesh%subcell_area, 2), ubound(reduced_mesh%subcell_area, 2)
-      if (reduced_mesh%full_sin_lat(buf_j) /= inf .and. reduced_mesh%half_sin_lat(buf_j-1) /= inf) then
-        reduced_mesh%subcell_area(1,buf_j) = radius**2 * 0.5_r8 * reduced_mesh%dlon * (reduced_mesh%full_sin_lat(buf_j) - reduced_mesh%half_sin_lat(buf_j-1))
-      end if
-      if (reduced_mesh%half_sin_lat(buf_j) /= inf .and. reduced_mesh%full_sin_lat(buf_j) /= inf) then
-        reduced_mesh%subcell_area(2,buf_j) = radius**2 * 0.5_r8 * reduced_mesh%dlon * (reduced_mesh%half_sin_lat(buf_j) - reduced_mesh%full_sin_lat(buf_j))
-      end if
-    end do
-    do buf_j = lbound(reduced_mesh%lon_edge_area, 1), ubound(reduced_mesh%lon_edge_area, 1)
-      if (reduced_mesh%full_lat(buf_j) /= inf .and. reduced_mesh%half_lat(buf_j) /= inf .and. reduced_mesh%half_lat(buf_j-1) /= inf) then
-        call cartesian_transform(reduced_mesh%full_lon(1), reduced_mesh%full_lat(buf_j  ), x(1), y(1), z(1))
-        call cartesian_transform(reduced_mesh%half_lon(1), reduced_mesh%half_lat(buf_j-1), x(2), y(2), z(2))
-        call cartesian_transform(reduced_mesh%half_lon(1), reduced_mesh%half_lat(buf_j  ), x(3), y(3), z(3))
-        reduced_mesh%lon_edge_left_area(buf_j) = calc_area(x, y, z)
-        reduced_mesh%lon_edge_right_area(buf_j) = reduced_mesh%lon_edge_left_area(buf_j)
-        reduced_mesh%lon_edge_area(buf_j) = reduced_mesh%lon_edge_left_area(buf_j) + reduced_mesh%lon_edge_right_area(buf_j)
-      end if
-    end do
-    ! Vertex area
-    do buf_j = lbound(reduced_mesh%vertex_area, 1), ubound(reduced_mesh%vertex_area, 1)
-      if (reduced_mesh%full_sin_lat(buf_j) /= inf .and. reduced_mesh%full_sin_lat(buf_j+1) /= inf) then
-        reduced_mesh%vertex_area(buf_j) = radius**2 * reduced_mesh%dlon * (reduced_mesh%full_sin_lat(buf_j+1) - reduced_mesh%full_sin_lat(buf_j))
-      else if (reduced_mesh%full_sin_lat(buf_j+1) /= inf) then
-        reduced_mesh%vertex_area(buf_j) = radius**2 * reduced_mesh%dlon * (reduced_mesh%full_sin_lat(buf_j+1) + 1)
-      else if (reduced_mesh%full_sin_lat(buf_j) /= inf) then
-        reduced_mesh%vertex_area(buf_j) = radius**2 * reduced_mesh%dlon * (1 - reduced_mesh%full_sin_lat(buf_j))
-      end if
-    end do
-    do buf_j = lbound(reduced_mesh%lat_edge_area, 1), ubound(reduced_mesh%lat_edge_area, 1)
-      if (reduced_mesh%full_lat(buf_j) /= inf .and. reduced_mesh%half_lat(buf_j) /= inf .and. reduced_mesh%full_lat(buf_j+1) /= inf) then
-        call cartesian_transform(reduced_mesh%full_lon(2), reduced_mesh%full_lat(buf_j+1), x(1), y(1), z(1))
-        call cartesian_transform(reduced_mesh%half_lon(1), reduced_mesh%half_lat(buf_j  ), x(2), y(2), z(2))
-        call cartesian_transform(reduced_mesh%half_lon(2), reduced_mesh%half_lat(buf_j  ), x(3), y(3), z(3))
-        reduced_mesh%lat_edge_up_area(buf_j) = calc_area_with_last_small_arc(x, y, z)
-        call cartesian_transform(reduced_mesh%full_lon(2), reduced_mesh%full_lat(buf_j  ), x(1), y(1), z(1))
-        call cartesian_transform(reduced_mesh%half_lon(2), reduced_mesh%half_lat(buf_j  ), x(2), y(2), z(2))
-        call cartesian_transform(reduced_mesh%half_lon(1), reduced_mesh%half_lat(buf_j  ), x(3), y(3), z(3))
-        reduced_mesh%lat_edge_down_area(buf_j) = calc_area_with_last_small_arc(x, y, z)
-        reduced_mesh%lat_edge_area(buf_j) = reduced_mesh%lat_edge_up_area(buf_j) + reduced_mesh%lat_edge_down_area(buf_j)
-      end if
-    end do
-#endif
     ! Edge lengths and cell distances
     do buf_j = lbound(reduced_mesh%le_lat, 1), ubound(reduced_mesh%le_lat, 1)
       if (raw_mesh%le_lat(j+buf_j) /= inf) then
@@ -362,8 +307,8 @@ contains
       end if
     end do
     do buf_j = lbound(reduced_mesh%de_lat, 1), ubound(reduced_mesh%de_lat, 1)
-      if (reduced_mesh%le_lat(buf_j) /= inf) then
-        reduced_mesh%de_lat(buf_j) = 2.0_r8 * reduced_mesh%lat_edge_area(buf_j) / reduced_mesh%le_lat(buf_j)
+      if (raw_mesh%de_lat(j+buf_j) /= inf) then
+        reduced_mesh%de_lat(buf_j) = raw_mesh%de_lat(j+buf_j)
       end if
     end do
     do buf_j = lbound(reduced_mesh%le_lon, 1), ubound(reduced_mesh%le_lon, 1)
@@ -372,8 +317,8 @@ contains
       end if
     end do
     do buf_j = lbound(reduced_mesh%de_lon, 1), ubound(reduced_mesh%de_lon, 1)
-      if (reduced_mesh%le_lon(buf_j) /= inf) then
-        reduced_mesh%de_lon(buf_j) = 2.0_r8 * reduced_mesh%lon_edge_area(buf_j) / reduced_mesh%le_lon(buf_j)
+      if (raw_mesh%de_lon(j+buf_j) /= inf) then
+        reduced_mesh%de_lon(buf_j) = raw_mesh%de_lon(j+buf_j) * reduce_factor
       end if
     end do
 
@@ -424,9 +369,15 @@ contains
     type(reduced_state_type), intent(inout) :: reduced_state
 
 #ifdef STAGGER_V_ON_POLE
+    allocate(reduced_state%mf_lon_n (reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub,-2:2,reduced_mesh%reduce_factor))
+    allocate(reduced_state%mf_lat_n (reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub,-1:2,reduced_mesh%reduce_factor))
+    allocate(reduced_state%mf_lon_t (reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub, 0:0,reduced_mesh%reduce_factor))
+    allocate(reduced_state%mf_lat_t (reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub, 0:1,reduced_mesh%reduce_factor))
+    allocate(reduced_state%gd       (reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub,-2:2,reduced_mesh%reduce_factor))
+    allocate(reduced_state%m_lon    (reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub,-2:2,reduced_mesh%reduce_factor))
+    allocate(reduced_state%m_lat    (reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub,-1:2,reduced_mesh%reduce_factor))
     allocate(reduced_state%u        (reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub,-2:2,reduced_mesh%reduce_factor))
     allocate(reduced_state%v        (reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub,-1:2,reduced_mesh%reduce_factor))
-    allocate(reduced_state%gd       (reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub,-2:2,reduced_mesh%reduce_factor))
     allocate(reduced_state%pv       (reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub,-1:2,reduced_mesh%reduce_factor))
     allocate(reduced_state%pv_lon   (reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub, 0:0,reduced_mesh%reduce_factor))
     allocate(reduced_state%pv_lat   (reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub, 0:1,reduced_mesh%reduce_factor))
@@ -434,17 +385,17 @@ contains
     allocate(reduced_state%dpv_lon_n(reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub, 0:0,reduced_mesh%reduce_factor))
     allocate(reduced_state%dpv_lat_t(reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub, 0:1,reduced_mesh%reduce_factor))
     allocate(reduced_state%dpv_lat_n(reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub, 0:1,reduced_mesh%reduce_factor))
-    allocate(reduced_state%m_lon    (reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub,-1:1,reduced_mesh%reduce_factor))
-    allocate(reduced_state%m_lat    (reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub, 0:1,reduced_mesh%reduce_factor))
-    allocate(reduced_state%mf_lon_n (reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub,-1:1,reduced_mesh%reduce_factor))
-    allocate(reduced_state%mf_lon_t (reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub, 0:0,reduced_mesh%reduce_factor))
-    allocate(reduced_state%mf_lat_n (reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub, 0:1,reduced_mesh%reduce_factor))
-    allocate(reduced_state%mf_lat_t (reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub, 0:1,reduced_mesh%reduce_factor))
     allocate(reduced_state%ke       (reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub, 0:0,reduced_mesh%reduce_factor))
 #else
+    allocate(reduced_state%mf_lon_n (reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub,-2:2,reduced_mesh%reduce_factor))
+    allocate(reduced_state%mf_lat_n (reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub,-2:1,reduced_mesh%reduce_factor))
+    allocate(reduced_state%mf_lon_t (reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub, 0:0,reduced_mesh%reduce_factor))
+    allocate(reduced_state%mf_lat_t (reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub,-1:0,reduced_mesh%reduce_factor))
+    allocate(reduced_state%gd       (reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub,-2:2,reduced_mesh%reduce_factor))
+    allocate(reduced_state%m_lon    (reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub,-2:2,reduced_mesh%reduce_factor))
+    allocate(reduced_state%m_lat    (reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub,-2:1,reduced_mesh%reduce_factor))
     allocate(reduced_state%u        (reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub,-2:2,reduced_mesh%reduce_factor))
     allocate(reduced_state%v        (reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub,-2:1,reduced_mesh%reduce_factor))
-    allocate(reduced_state%gd       (reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub,-2:2,reduced_mesh%reduce_factor))
     allocate(reduced_state%pv       (reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub,-2:1,reduced_mesh%reduce_factor))
     allocate(reduced_state%pv_lon   (reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub, 0:0,reduced_mesh%reduce_factor))
     allocate(reduced_state%pv_lat   (reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub,-1:0,reduced_mesh%reduce_factor))
@@ -452,12 +403,6 @@ contains
     allocate(reduced_state%dpv_lon_n(reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub, 0:0,reduced_mesh%reduce_factor))
     allocate(reduced_state%dpv_lat_t(reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub,-1:0,reduced_mesh%reduce_factor))
     allocate(reduced_state%dpv_lat_n(reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub,-1:0,reduced_mesh%reduce_factor))
-    allocate(reduced_state%m_lon    (reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub,-1:1,reduced_mesh%reduce_factor))
-    allocate(reduced_state%m_lat    (reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub,-1:0,reduced_mesh%reduce_factor))
-    allocate(reduced_state%mf_lon_n (reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub,-1:1,reduced_mesh%reduce_factor))
-    allocate(reduced_state%mf_lon_t (reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub, 0:0,reduced_mesh%reduce_factor))
-    allocate(reduced_state%mf_lat_n (reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub,-1:0,reduced_mesh%reduce_factor))
-    allocate(reduced_state%mf_lat_t (reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub,-1:0,reduced_mesh%reduce_factor))
     allocate(reduced_state%ke       (reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub, 0:0,reduced_mesh%reduce_factor))
 #endif
 
@@ -486,16 +431,16 @@ contains
     reduced_state%mf_lat_n (:,:,:) = inf
     reduced_state%mf_lat_t (:,:,:) = inf
 
-    call apply_reduce(lbound(reduced_state%u        , 2), ubound(reduced_state%u        , 2), j, raw_mesh, raw_state, reduced_mesh, reduced_state, reduce_u          , dt)
-    call apply_reduce(lbound(reduced_state%v        , 2), ubound(reduced_state%v        , 2), j, raw_mesh, raw_state, reduced_mesh, reduced_state, reduce_v          , dt)
-    call apply_reduce(lbound(reduced_state%gd       , 2), ubound(reduced_state%gd       , 2), j, raw_mesh, raw_state, reduced_mesh, reduced_state, reduce_gd         , dt)
-    call apply_reduce(lbound(reduced_state%pv       , 2), ubound(reduced_state%pv       , 2), j, raw_mesh, raw_state, reduced_mesh, reduced_state, reduce_pv         , dt)
-    call apply_reduce(lbound(reduced_state%m_lon    , 2), ubound(reduced_state%m_lon    , 2), j, raw_mesh, raw_state, reduced_mesh, reduced_state, reduce_m_lon      , dt)
     call apply_reduce(lbound(reduced_state%mf_lon_n , 2), ubound(reduced_state%mf_lon_n , 2), j, raw_mesh, raw_state, reduced_mesh, reduced_state, reduce_mf_lon_n   , dt)
-    call apply_reduce(lbound(reduced_state%mf_lat_t , 2), ubound(reduced_state%mf_lat_t , 2), j, raw_mesh, raw_state, reduced_mesh, reduced_state, reduce_mf_lat_t   , dt)
-    call apply_reduce(lbound(reduced_state%m_lat    , 2), ubound(reduced_state%m_lat    , 2), j, raw_mesh, raw_state, reduced_mesh, reduced_state, reduce_m_lat      , dt)
     call apply_reduce(lbound(reduced_state%mf_lat_n , 2), ubound(reduced_state%mf_lat_n , 2), j, raw_mesh, raw_state, reduced_mesh, reduced_state, reduce_mf_lat_n   , dt)
     call apply_reduce(lbound(reduced_state%mf_lon_t , 2), ubound(reduced_state%mf_lon_t , 2), j, raw_mesh, raw_state, reduced_mesh, reduced_state, reduce_mf_lon_t   , dt)
+    call apply_reduce(lbound(reduced_state%mf_lat_t , 2), ubound(reduced_state%mf_lat_t , 2), j, raw_mesh, raw_state, reduced_mesh, reduced_state, reduce_mf_lat_t   , dt)
+    call apply_reduce(lbound(reduced_state%gd       , 2), ubound(reduced_state%gd       , 2), j, raw_mesh, raw_state, reduced_mesh, reduced_state, reduce_gd         , dt)
+    call apply_reduce(lbound(reduced_state%m_lon    , 2), ubound(reduced_state%m_lon    , 2), j, raw_mesh, raw_state, reduced_mesh, reduced_state, reduce_m_lon      , dt)
+    call apply_reduce(lbound(reduced_state%m_lat    , 2), ubound(reduced_state%m_lat    , 2), j, raw_mesh, raw_state, reduced_mesh, reduced_state, reduce_m_lat      , dt)
+    call apply_reduce(lbound(reduced_state%u        , 2), ubound(reduced_state%u        , 2), j, raw_mesh, raw_state, reduced_mesh, reduced_state, reduce_u          , dt)
+    call apply_reduce(lbound(reduced_state%v        , 2), ubound(reduced_state%v        , 2), j, raw_mesh, raw_state, reduced_mesh, reduced_state, reduce_v          , dt)
+    call apply_reduce(lbound(reduced_state%pv       , 2), ubound(reduced_state%pv       , 2), j, raw_mesh, raw_state, reduced_mesh, reduced_state, reduce_pv         , dt)
     call apply_reduce(lbound(reduced_state%dpv_lon_t, 2), ubound(reduced_state%dpv_lon_t, 2), j, raw_mesh, raw_state, reduced_mesh, reduced_state, reduce_dpv_lon_t  , dt)
     call apply_reduce(lbound(reduced_state%dpv_lat_n, 2), ubound(reduced_state%dpv_lat_n, 2), j, raw_mesh, raw_state, reduced_mesh, reduced_state, reduce_dpv_lat_n  , dt)
     call apply_reduce(lbound(reduced_state%dpv_lat_t, 2), ubound(reduced_state%dpv_lat_t, 2), j, raw_mesh, raw_state, reduced_mesh, reduced_state, reduce_dpv_lat_t  , dt)
@@ -577,14 +522,11 @@ contains
     type(reduced_state_type), intent(inout) :: reduced_state
     real(r8), intent(in) :: dt
 
-    integer raw_i, i
+    integer i
 
-    raw_i = move
     do i = reduced_mesh%half_lon_start_idx, reduced_mesh%half_lon_end_idx
-      reduced_state%u(i,buf_j,move) = sum(raw_state%u(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j))
-      raw_i = raw_i + reduced_mesh%reduce_factor
+      reduced_state%u(i,buf_j,move) = reduced_state%mf_lon_n(i,buf_j,move) / reduced_state%m_lon(i,buf_j,move)
     end do
-    reduced_state%u(:,buf_j,move) = reduced_state%u(:,buf_j,move) / reduced_mesh%reduce_factor
     call parallel_fill_halo(reduced_mesh%halo_width, reduced_state%u(:,buf_j,move))
 
   end subroutine reduce_u
@@ -600,14 +542,11 @@ contains
     type(reduced_state_type), intent(inout) :: reduced_state
     real(r8), intent(in) :: dt
 
-    integer raw_i, i
+    integer i
 
-    raw_i = move
     do i = reduced_mesh%full_lon_start_idx, reduced_mesh%full_lon_end_idx
-      reduced_state%v(i,buf_j,move) = sum(raw_state%v(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j))
-      raw_i = raw_i + reduced_mesh%reduce_factor
+      reduced_state%v(i,buf_j,move) = reduced_state%mf_lat_n(i,buf_j,move) / reduced_state%m_lat(i,buf_j,move)
     end do
-    reduced_state%v(:,buf_j,move) = reduced_state%v(:,buf_j,move) / reduced_mesh%reduce_factor
     call parallel_fill_halo(reduced_mesh%halo_width, reduced_state%v(:,buf_j,move))
 
   end subroutine reduce_v
@@ -671,7 +610,6 @@ contains
           ) / reduced_mesh%vertex_area(buf_j) + reduced_mesh%half_f(buf_j)     &
         ) / m_vtx
       end do
-      call damp_run(damp_order, dt, reduced_mesh%le_lat(buf_j), reduced_mesh%half_lon_lb, reduced_mesh%half_lon_ub, reduced_mesh%num_half_lon, reduced_state%pv(:,buf_j,move))
     end if
 #else
     if (is_inf(reduced_mesh%full_lat(buf_j))) then
@@ -695,7 +633,6 @@ contains
           ) / reduced_mesh%vertex_area(buf_j) + reduced_mesh%half_f(buf_j)     &
         ) / m_vtx
       end do
-      call damp_run(damp_order, dt, reduced_mesh%le_lat(buf_j), reduced_mesh%half_lon_lb, reduced_mesh%half_lon_ub, reduced_mesh%num_half_lon, reduced_state%pv(:,buf_j,move))
     end if
 #endif
     call parallel_fill_halo(reduced_mesh%halo_width, reduced_state%pv(:,buf_j,move))
@@ -766,11 +703,14 @@ contains
     type(reduced_state_type), intent(inout) :: reduced_state
     real(r8), intent(in) :: dt
 
-    integer i
+    integer raw_i, i
 
+    raw_i = move
     do i = reduced_mesh%half_lon_start_idx, reduced_mesh%half_lon_end_idx
-      reduced_state%mf_lon_n(i,buf_j,move) = reduced_state%m_lon(i,buf_j,move) * reduced_state%u(i,buf_j,move)
+      reduced_state%mf_lon_n(i,buf_j,move) = sum(raw_state%mf_lon_n(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j))
+      raw_i = raw_i + reduced_mesh%reduce_factor
     end do
+    reduced_state%mf_lon_n(:,buf_j,move) = reduced_state%mf_lon_n(:,buf_j,move) / reduced_mesh%reduce_factor
     call parallel_fill_halo(reduced_mesh%halo_width, reduced_state%mf_lon_n(:,buf_j,move))
 
   end subroutine reduce_mf_lon_n
@@ -786,11 +726,14 @@ contains
     type(reduced_state_type), intent(inout) :: reduced_state
     real(r8), intent(in) :: dt
 
-    integer i
+    integer raw_i, i
 
+    raw_i = move
     do i = reduced_mesh%full_lon_start_idx, reduced_mesh%full_lon_end_idx
-      reduced_state%mf_lat_n(i,buf_j,move) = reduced_state%m_lat(i,buf_j,move) * reduced_state%v(i,buf_j,move)
+      reduced_state%mf_lat_n(i,buf_j,move) = sum(raw_state%mf_lat_n(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j))
+      raw_i = raw_i + reduced_mesh%reduce_factor
     end do
+    reduced_state%mf_lat_n(:,buf_j,move) = reduced_state%mf_lat_n(:,buf_j,move) / reduced_mesh%reduce_factor
     call parallel_fill_halo(reduced_mesh%halo_width, reduced_state%mf_lat_n(:,buf_j,move))
 
   end subroutine reduce_mf_lat_n
@@ -1101,8 +1044,8 @@ contains
     allocate(reduced_tend%qhu    (reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub))
     allocate(reduced_tend%qhv    (reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub))
     allocate(reduced_tend%dmfdlon(reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub))
-    allocate(reduced_tend%dpedlon(reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub))
-    allocate(reduced_tend%dkedlon(reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub))
+    allocate(reduced_tend%dpedlon(reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub))
+    allocate(reduced_tend%dkedlon(reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub))
 
   end subroutine allocate_reduced_full_tend
 
