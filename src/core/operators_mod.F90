@@ -436,9 +436,8 @@ contains
 
   end subroutine calc_qhu_qhv
 
-  subroutine calc_dkedlon_dkedlat(static, state, tend, dt)
+  subroutine calc_dkedlon_dkedlat(state, tend, dt)
 
-    type(static_type), intent(in   ) :: static
     type(state_type ), intent(inout) :: state
     type(tend_type  ), intent(inout) :: tend
     real(r8)         , intent(in   ) :: dt

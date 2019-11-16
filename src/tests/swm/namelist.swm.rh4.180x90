@@ -4,9 +4,12 @@ num_lat = 90
 ! mountain_zonal_flow, rossby_haurwitz_wave
 test_case = 'rossby_haurwitz_wave'
 run_days = 100
-dt_in_seconds = 10
+dt_in_seconds = 100
+! split_scheme = 'csp2'
+! fast_cycles = 6
 pv_scheme = 3
-split_scheme = ''
-case_name = 'rh4.180x90'
+case_name = 'rh4.u_pole.reduce.damp8_uv.180x90'
 history_interval = '1 days'
+reduce_factors = 4, 2, 2
+damp_order = 8
 /

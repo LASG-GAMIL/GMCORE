@@ -193,7 +193,7 @@ contains
     select case (pass)
     case (all_pass)
       call calc_qhu_qhv(state, tend, dt)
-      call calc_dkedlon_dkedlat(static, state, tend, dt)
+      call calc_dkedlon_dkedlat(state, tend, dt)
       call calc_dpedlon_dpedlat(static, state, tend, dt)
       call calc_dmfdlon_dmfdlat(state, tend, dt)
 
@@ -233,7 +233,7 @@ contains
     case (fast_pass)
 !$omp sections
 !$omp section
-      call calc_dkedlon_dkedlat(static, state, tend, dt)
+      call calc_dkedlon_dkedlat(state, tend, dt)
 !$omp section
       call calc_dpedlon_dpedlat(static, state, tend, dt)
 !$omp section
