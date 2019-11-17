@@ -21,8 +21,10 @@ module operators_mod
   public calc_dkedlon_dkedlat
   public calc_dpedlon_dpedlat
   public calc_dmfdlon_dmfdlat
-  public calc_m_lon_m_lat   ! Shold be called when mass is updated.
-  public calc_m_vtx ! Same as above.
+  public calc_m_lon_m_lat       ! Shold be called when mass is updated.
+  public calc_mf_lon_n_mf_lat_n ! Same as above.
+  public calc_mf_lon_t_mf_lat_t ! Same as above.
+  public calc_m_vtx             ! Same as above.
 
 contains
 

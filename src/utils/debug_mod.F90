@@ -51,6 +51,7 @@ contains
 
     do j = mesh%full_lat_start_idx, mesh%full_lat_end_idx
       do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
+        ip_dke = ip_dke + (tend%dmfdlon(i,j) + tend%dmfdlat(i,j)) * state%ke(i,j) * mesh%cell_area(j)
         ip_dpe = ip_dpe + (tend%dmfdlon(i,j) + tend%dmfdlat(i,j)) * (state%gd(i,j) + static%ghs(i,j)) * mesh%cell_area(j)
         ip_dmf = ip_dmf + (tend%dmfdlon(i,j) + tend%dmfdlat(i,j)) * mesh%cell_area(j)
       end do

@@ -142,12 +142,12 @@ contains
     state%total_ke = 0.0_r8
     do j = state%mesh%full_lat_start_idx_no_pole, state%mesh%full_lat_end_idx_no_pole
       do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
-        state%total_ke = state%total_ke + state%m_lon(i,j) * state%u(i,j)**2 * state%mesh%lon_edge_area(j)
+        state%total_ke = state%total_ke + state%mf_lon_n(i,j) * state%u(i,j) * state%mesh%lon_edge_area(j)
       end do
     end do
     do j = state%mesh%half_lat_start_idx_no_pole, state%mesh%half_lat_end_idx_no_pole
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-        state%total_ke = state%total_ke + state%m_lat(i,j) * state%v(i,j)**2 * state%mesh%lat_edge_area(j)
+        state%total_ke = state%total_ke + state%mf_lat_n(i,j) * state%v(i,j) * state%mesh%lat_edge_area(j)
       end do
     end do
     state%total_e = state%total_ke
@@ -441,6 +441,8 @@ contains
 
     ! Do not forget to synchronize the mass on edge and vertex for diagnosing!
     call calc_m_lon_m_lat(new_state)
+    call calc_mf_lon_n_mf_lat_n(new_state)
+    call calc_mf_lon_t_mf_lat_t(new_state)
     call calc_m_vtx(new_state)
 
     if (pv_scheme == 4) call diagnose(new_state)
