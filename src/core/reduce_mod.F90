@@ -22,10 +22,10 @@ module reduce_mod
   public reduce_append_array
   public reduce_final
 
-  public reduced_full_mesh
-  public reduced_full_static
-  public reduced_full_state
-  public reduced_full_tend
+  public reduced_mesh
+  public reduced_static
+  public reduced_state
+  public reduced_tend
 
   type reduced_mesh_type
     integer :: reduce_factor = 0
@@ -96,7 +96,7 @@ module reduce_mod
     final :: reduced_mesh_final
   end type reduced_mesh_type
 
-  type(reduced_mesh_type), allocatable :: reduced_full_mesh(:)
+  type(reduced_mesh_type), allocatable :: reduced_mesh(:)
 
   type reduced_static_type
     real(r8), allocatable, dimension(:,:,:) :: ghs
@@ -104,7 +104,7 @@ module reduce_mod
     final :: reduced_static_final
   end type reduced_static_type
 
-  type(reduced_static_type), allocatable :: reduced_full_static(:)
+  type(reduced_static_type), allocatable :: reduced_static(:)
 
   type reduced_state_type
     real(r8), allocatable, dimension(:,:,:) :: u
@@ -128,7 +128,7 @@ module reduce_mod
     final :: reduced_state_final
   end type reduced_state_type
 
-  type(reduced_state_type), allocatable :: reduced_full_state(:)
+  type(reduced_state_type), allocatable :: reduced_state(:)
 
   type reduced_tend_type
     real(r8), allocatable, dimension(:) :: qhv
@@ -140,7 +140,7 @@ module reduce_mod
     final :: reduced_tend_final
   end type reduced_tend_type
 
-  type(reduced_tend_type), allocatable :: reduced_full_tend(:)
+  type(reduced_tend_type), allocatable :: reduced_tend(:)
 
   interface
     subroutine reduce_sub_interface(j, buf_j, move, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
@@ -162,10 +162,10 @@ contains
 
     integer j, full_j
 
-    allocate(reduced_full_mesh  (mesh%full_lat_lb:mesh%full_lat_ub))
-    allocate(reduced_full_static(mesh%full_lat_start_idx:mesh%full_lat_end_idx))
-    allocate(reduced_full_state (mesh%full_lat_start_idx:mesh%full_lat_end_idx))
-    allocate(reduced_full_tend  (mesh%full_lat_start_idx:mesh%full_lat_end_idx))
+    allocate(reduced_mesh  (mesh%full_lat_lb:mesh%full_lat_ub))
+    allocate(reduced_static(mesh%full_lat_start_idx:mesh%full_lat_end_idx))
+    allocate(reduced_state (mesh%full_lat_start_idx:mesh%full_lat_end_idx))
+    allocate(reduced_tend  (mesh%full_lat_start_idx:mesh%full_lat_end_idx))
 
     do j = 1, size(reduce_factors)
       if (reduce_factors(j) == 0) exit
@@ -178,7 +178,7 @@ contains
 #else
         full_j = mesh%full_lat_start_idx+j
 #endif
-        call reduce_full_mesh(reduce_factors(j), full_j, mesh, reduced_full_mesh(full_j))
+        call reduce_mesh(reduce_factors(j), full_j, mesh, reduced_mesh(full_j))
       end if
       if (mesh%has_north_pole()) then
 #ifdef STAGGER_V_ON_POLE
@@ -186,16 +186,16 @@ contains
 #else
         full_j = mesh%full_lat_end_idx-j
 #endif
-        call reduce_full_mesh(reduce_factors(j), full_j, mesh, reduced_full_mesh(full_j))
+        call reduce_mesh(reduce_factors(j), full_j, mesh, reduced_mesh(full_j))
       end if
     end do
 
     do j = mesh%full_lat_start_idx, mesh%full_lat_end_idx
-      if (reduced_full_mesh(j)%reduce_factor > 0) then
-        call allocate_reduced_full_static(reduced_full_mesh(j), reduced_full_static(j))
-        call reduce_full_static(j, mesh, static, reduced_full_mesh(j), reduced_full_static(j))
-        call allocate_reduced_full_state(reduced_full_mesh(j), reduced_full_state(j))
-        call allocate_reduced_full_tend(reduced_full_mesh(j), reduced_full_tend(j))
+      if (reduced_mesh(j)%reduce_factor > 0) then
+        call allocate_reduced_static(reduced_mesh(j), reduced_static(j))
+        call reduce_static(j, mesh, static, reduced_mesh(j), reduced_static(j))
+        call allocate_reduced_state(reduced_mesh(j), reduced_state(j))
+        call allocate_reduced_tend(reduced_mesh(j), reduced_tend(j))
       end if
     end do
 
@@ -209,14 +209,14 @@ contains
     integer j
 
     do j = state%mesh%full_lat_start_idx, state%mesh%full_lat_end_idx
-      if (reduced_full_mesh(j)%reduce_factor > 0) then
-        call reduce_full_state(j, state%mesh, state, reduced_full_mesh(j), reduced_full_state(j), dt)
+      if (reduced_mesh(j)%reduce_factor > 0) then
+        call reduce_state(j, state%mesh, state, reduced_mesh(j), reduced_state(j), dt)
       end if
     end do
 
   end subroutine reduce_run
 
-  subroutine reduce_full_mesh(reduce_factor, j, raw_mesh, reduced_mesh)
+  subroutine reduce_mesh(reduce_factor, j, raw_mesh, reduced_mesh)
 
     integer, intent(in) :: reduce_factor
     integer, intent(in) :: j
@@ -361,9 +361,9 @@ contains
     end do
 #endif
 
-  end subroutine reduce_full_mesh
+  end subroutine reduce_mesh
 
-  subroutine allocate_reduced_full_state(reduced_mesh, reduced_state)
+  subroutine allocate_reduced_state(reduced_mesh, reduced_state)
 
     type(reduced_mesh_type), intent(in) :: reduced_mesh
     type(reduced_state_type), intent(inout) :: reduced_state
@@ -406,9 +406,9 @@ contains
     allocate(reduced_state%ke       (reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub, 0:0,reduced_mesh%reduce_factor))
 #endif
 
-  end subroutine allocate_reduced_full_state
+  end subroutine allocate_reduced_state
 
-  subroutine reduce_full_state(j, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
+  subroutine reduce_state(j, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     type(mesh_type), intent(in) :: raw_mesh
@@ -465,7 +465,7 @@ contains
     end if
 #endif
 
-  end subroutine reduce_full_state
+  end subroutine reduce_state
 
   subroutine reduce_ghs(j, buf_j, move, raw_mesh, raw_static, reduced_mesh, reduced_static)
 
@@ -1020,16 +1020,16 @@ contains
 
   end subroutine reduce_append_array
 
-  subroutine allocate_reduced_full_static(reduced_mesh, reduced_static)
+  subroutine allocate_reduced_static(reduced_mesh, reduced_static)
 
     type(reduced_mesh_type), intent(in) :: reduced_mesh
     type(reduced_static_type), intent(inout) :: reduced_static
 
     allocate(reduced_static%ghs(reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub, 0:0,reduced_mesh%reduce_factor))
 
-  end subroutine allocate_reduced_full_static
+  end subroutine allocate_reduced_static
 
-  subroutine allocate_reduced_full_tend(reduced_mesh, reduced_tend)
+  subroutine allocate_reduced_tend(reduced_mesh, reduced_tend)
 
     type(reduced_mesh_type), intent(in) :: reduced_mesh
     type(reduced_tend_type), intent(inout) :: reduced_tend
@@ -1040,9 +1040,9 @@ contains
     allocate(reduced_tend%dpedlon(reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub))
     allocate(reduced_tend%dkedlon(reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub))
 
-  end subroutine allocate_reduced_full_tend
+  end subroutine allocate_reduced_tend
 
-  subroutine reduce_full_static(j, raw_mesh, raw_static, reduced_mesh, reduced_static)
+  subroutine reduce_static(j, raw_mesh, raw_static, reduced_mesh, reduced_static)
 
     integer, intent(in) :: j
     type(mesh_type), intent(in) :: raw_mesh
@@ -1058,7 +1058,7 @@ contains
       end do
     end do
 
-  end subroutine reduce_full_static
+  end subroutine reduce_static
 
   subroutine reduced_mesh_final(this)
 
@@ -1115,10 +1115,10 @@ contains
 
   subroutine reduce_final()
 
-    if (allocated(reduced_full_mesh  )) deallocate(reduced_full_mesh  )
-    if (allocated(reduced_full_static)) deallocate(reduced_full_static)
-    if (allocated(reduced_full_state )) deallocate(reduced_full_state )
-    if (allocated(reduced_full_tend  )) deallocate(reduced_full_tend  )
+    if (allocated(reduced_mesh  )) deallocate(reduced_mesh  )
+    if (allocated(reduced_static)) deallocate(reduced_static)
+    if (allocated(reduced_state )) deallocate(reduced_state )
+    if (allocated(reduced_tend  )) deallocate(reduced_tend  )
 
   end subroutine reduce_final
 
