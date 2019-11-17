@@ -433,8 +433,6 @@ contains
       end do
     end do
 
-    call damp_state(new_state)
-
     call parallel_fill_halo(mesh, new_state%gd(:,:))
     call parallel_fill_halo(mesh, new_state%u (:,:))
     call parallel_fill_halo(mesh, new_state%v (:,:))

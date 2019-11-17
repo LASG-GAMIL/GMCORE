@@ -990,21 +990,14 @@ contains
     type(reduced_state_type), intent(inout) :: reduced_state
     real(r8), intent(in) :: dt
 
-    integer i
+    integer raw_i, i
 
+    raw_i = move
     do i = reduced_mesh%full_lon_start_idx, reduced_mesh%full_lon_end_idx
-      reduced_state%ke(i,buf_j,move) = (                                              &
-        reduced_mesh%lon_edge_right_area( 0) * reduced_state%u(i-1,buf_j  ,move)**2 + &
-        reduced_mesh%lon_edge_left_area ( 0) * reduced_state%u(i  ,buf_j  ,move)**2 + &
-#ifdef STAGGER_V_ON_POLE
-        reduced_mesh%lat_edge_up_area   ( 0) * reduced_state%v(i  ,buf_j  ,move)**2 + &
-        reduced_mesh%lat_edge_down_area ( 1) * reduced_state%v(i  ,buf_j+1,move)**2   &
-#else
-        reduced_mesh%lat_edge_up_area   (-1) * reduced_state%v(i  ,buf_j-1,move)**2 + &
-        reduced_mesh%lat_edge_down_area ( 0) * reduced_state%v(i  ,buf_j  ,move)**2   &
-#endif
-      ) / reduced_mesh%cell_area(0)
+      reduced_state%ke(i,buf_j,move) = sum(raw_state%ke(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j))
+      raw_i = raw_i + reduced_mesh%reduce_factor
     end do
+    reduced_state%ke(:,buf_j,move) = reduced_state%ke(:,buf_j,move) / reduced_mesh%reduce_factor
     call parallel_fill_halo(reduced_mesh%halo_width, reduced_state%ke(:,buf_j,move))
 
   end subroutine reduce_ke
