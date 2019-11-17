@@ -484,8 +484,8 @@ contains
       reduced_static%ghs(i,buf_j,move) = sum(raw_static%ghs(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j))
       raw_i = raw_i + reduced_mesh%reduce_factor
     end do
-    reduced_static%ghs(:,buf_j, move) = reduced_static%ghs(:,buf_j, move) / reduced_mesh%reduce_factor
-    call parallel_fill_halo(reduced_mesh%halo_width, reduced_static%ghs(:,buf_j, move))
+    reduced_static%ghs(:,buf_j,move) = reduced_static%ghs(:,buf_j,move) / reduced_mesh%reduce_factor
+    call parallel_fill_halo(reduced_mesh%halo_width, reduced_static%ghs(:,buf_j,move))
 
   end subroutine reduce_ghs
 
