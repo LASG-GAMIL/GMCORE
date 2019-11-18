@@ -145,18 +145,18 @@ contains
     state%total_ke = 0.0_r8
     do j = mesh%full_lat_start_idx_no_pole, mesh%full_lat_end_idx_no_pole
       do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
-        state%total_ke = state%total_ke + state%mf_lon_n(i,j) * state%u(i,j) * mesh%lon_edge_area(j)
+        state%total_ke = state%total_ke + state%mf_lon_n(i,j) * state%u(i,j) * mesh%lon_edge_area(j) * 2
       end do
     end do
     do j = mesh%half_lat_start_idx_no_pole, mesh%half_lat_end_idx_no_pole
       do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
-        state%total_ke = state%total_ke + state%mf_lat_n(i,j) * state%v(i,j) * mesh%lat_edge_area(j)
+        state%total_ke = state%total_ke + state%mf_lat_n(i,j) * state%v(i,j) * mesh%lat_edge_area(j) * 2
       end do
     end do
     state%total_e = state%total_ke
     do j = mesh%full_lat_start_idx, mesh%full_lat_end_idx
       do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
-        state%total_e = state%total_e + (state%gd(i,j)**2 / g * 0.5_r8 + state%gd(i,j) * static%ghs(i,j) / g) * mesh%cell_area(j)
+        state%total_e = state%total_e + (state%gd(i,j)**2 / g + state%gd(i,j) * static%ghs(i,j) / g) * mesh%cell_area(j)
       end do
     end do
 
