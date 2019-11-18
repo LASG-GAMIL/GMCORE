@@ -372,6 +372,12 @@ contains
       call cartesian_transform(this%half_lon(2), this%half_lat(j), x(2), y(2), z(2))
       call cartesian_transform(this%half_lon(1), this%half_lat(j), x(3), y(3), z(3))
       this%lat_edge_down_area(j) = calc_area_with_last_small_arc(x, y, z)
+      ! Reset up or down area to polar sector area.
+      if (this%is_south_pole(j)) then
+        this%lat_edge_down_area(j) = this%cell_area(j)
+      else if (this%is_north_pole(j+1)) then
+        this%lat_edge_up_area(j) = this%cell_area(j+1)
+      end if
       this%lat_edge_area(j) = this%lat_edge_up_area(j) + this%lat_edge_down_area(j)
     end do
 #endif
