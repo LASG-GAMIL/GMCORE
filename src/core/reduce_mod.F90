@@ -40,16 +40,9 @@ module reduce_mod
     integer full_lon_ub
     integer half_lon_lb
     integer half_lon_ub
-    real(r8) dlon
-    real(r8), allocatable, dimension(  :) :: full_lon
-    real(r8), allocatable, dimension(  :) :: half_lon
 #ifdef STAGGER_V_ON_POLE
     real(r8), dimension(  -1:1) :: full_lat            = inf
     real(r8), dimension(  -1:1) :: half_lat            = inf
-    real(r8), dimension(  -1:1) :: full_cos_lat        = inf
-    real(r8), dimension(  -1:1) :: half_cos_lat        = inf
-    real(r8), dimension(  -1:1) :: full_sin_lat        = inf
-    real(r8), dimension(  -1:1) :: half_sin_lat        = inf
     real(r8), dimension(  -1:1) :: cell_area           = 0
     real(r8), dimension(2,-2:2) :: subcell_area        = 0
     real(r8), dimension(  -2:2) :: lon_edge_area       = 0
@@ -70,10 +63,6 @@ module reduce_mod
 #else
     real(r8), dimension(  -1:1) :: full_lat            = inf
     real(r8), dimension(  -1:1) :: half_lat            = inf
-    real(r8), dimension(  -1:1) :: full_cos_lat        = inf
-    real(r8), dimension(  -1:1) :: half_cos_lat        = inf
-    real(r8), dimension(  -1:1) :: full_sin_lat        = inf
-    real(r8), dimension(  -1:1) :: half_sin_lat        = inf
     real(r8), dimension(  -1:1) :: cell_area           = 0
     real(r8), dimension(2,-2:2) :: subcell_area        = 0
     real(r8), dimension(  -2:2) :: lon_edge_area       = 0
@@ -92,8 +81,6 @@ module reduce_mod
     real(r8), dimension(  -1:1) :: full_f              = inf
     real(r8), dimension(  -2:1) :: half_f              = inf
 #endif
-  contains
-    final :: reduced_mesh_final
   end type reduced_mesh_type
 
   type(reduced_mesh_type), allocatable :: reduced_mesh(:)
@@ -238,25 +225,11 @@ contains
     reduced_mesh%full_lon_ub        = reduced_mesh%full_lon_end_idx + raw_mesh%halo_width
     reduced_mesh%half_lon_lb        = reduced_mesh%half_lon_start_idx - raw_mesh%halo_width
     reduced_mesh%half_lon_ub        = reduced_mesh%half_lon_end_idx + raw_mesh%halo_width
-    reduced_mesh%dlon               = raw_mesh%dlon * reduce_factor
 
-    allocate(reduced_mesh%full_lon(reduced_mesh%num_full_lon))
-    do i = reduced_mesh%full_lon_start_idx, reduced_mesh%full_lon_end_idx
-      reduced_mesh%full_lon(i) = raw_mesh%full_lon(raw_mesh%full_lon_start_idx) + (i - 1) * reduced_mesh%dlon
-    end do
-    allocate(reduced_mesh%half_lon(reduced_mesh%num_half_lon))
-    do i = reduced_mesh%half_lon_start_idx, reduced_mesh%half_lon_end_idx
-      reduced_mesh%half_lon(i) = reduced_mesh%full_lon(reduced_mesh%full_lon_start_idx) + (i - 0.5) * reduced_mesh%dlon
-    end do
-
-    reduced_mesh%full_lat     = raw_mesh%full_lat    (j+lbound(reduced_mesh%full_lat    , 1):j+ubound(reduced_mesh%full_lat    , 1))
-    reduced_mesh%half_lat     = raw_mesh%half_lat    (j+lbound(reduced_mesh%half_lat    , 1):j+ubound(reduced_mesh%half_lat    , 1))
-    reduced_mesh%full_cos_lat = raw_mesh%full_cos_lat(j+lbound(reduced_mesh%full_cos_lat, 1):j+ubound(reduced_mesh%full_cos_lat, 1))
-    reduced_mesh%half_cos_lat = raw_mesh%half_cos_lat(j+lbound(reduced_mesh%half_cos_lat, 1):j+ubound(reduced_mesh%half_cos_lat, 1))
-    reduced_mesh%full_sin_lat = raw_mesh%full_sin_lat(j+lbound(reduced_mesh%full_sin_lat, 1):j+ubound(reduced_mesh%full_sin_lat, 1))
-    reduced_mesh%half_sin_lat = raw_mesh%half_sin_lat(j+lbound(reduced_mesh%half_sin_lat, 1):j+ubound(reduced_mesh%half_sin_lat, 1))
-    reduced_mesh%full_f       = raw_mesh%full_f      (j+lbound(reduced_mesh%full_f      , 1):j+ubound(reduced_mesh%full_f      , 1))
-    reduced_mesh%half_f       = raw_mesh%half_f      (j+lbound(reduced_mesh%half_f      , 1):j+ubound(reduced_mesh%half_f      , 1))
+    reduced_mesh%full_lat = raw_mesh%full_lat(j+lbound(reduced_mesh%full_lat, 1):j+ubound(reduced_mesh%full_lat, 1))
+    reduced_mesh%half_lat = raw_mesh%half_lat(j+lbound(reduced_mesh%half_lat, 1):j+ubound(reduced_mesh%half_lat, 1))
+    reduced_mesh%full_f   = raw_mesh%full_f  (j+lbound(reduced_mesh%full_f  , 1):j+ubound(reduced_mesh%full_f  , 1))
+    reduced_mesh%half_f   = raw_mesh%half_f  (j+lbound(reduced_mesh%half_f  , 1):j+ubound(reduced_mesh%half_f  , 1))
 
     ! Cell area
     do buf_j = lbound(reduced_mesh%cell_area, 1), ubound(reduced_mesh%cell_area, 1)
@@ -1059,15 +1032,6 @@ contains
     end do
 
   end subroutine reduce_static
-
-  subroutine reduced_mesh_final(this)
-
-    type(reduced_mesh_type), intent(inout) :: this
-
-    if (allocated(this%full_lon)) deallocate(this%full_lon)
-    if (allocated(this%half_lon)) deallocate(this%half_lon)
-
-  end subroutine reduced_mesh_final
 
   subroutine reduced_static_final(this)
 
