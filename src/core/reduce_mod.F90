@@ -58,7 +58,6 @@ module reduce_mod
     real(r8), dimension(  -1:2) :: de_lat              = inf
     real(r8), dimension(2,-1:1) :: full_tangent_wgt    = inf
     real(r8), dimension(2,-1:1) :: half_tangent_wgt    = inf
-    real(r8), dimension(  -1:1) :: full_f              = inf
     real(r8), dimension(  -1:2) :: half_f              = inf
 #else
     real(r8), dimension(  -1:1) :: full_lat            = inf
@@ -78,7 +77,6 @@ module reduce_mod
     real(r8), dimension(  -2:1) :: de_lat              = inf
     real(r8), dimension(2,-1:1) :: full_tangent_wgt    = inf
     real(r8), dimension(2,-1:1) :: half_tangent_wgt    = inf
-    real(r8), dimension(  -1:1) :: full_f              = inf
     real(r8), dimension(  -2:1) :: half_f              = inf
 #endif
   end type reduced_mesh_type
@@ -228,7 +226,6 @@ contains
 
     reduced_mesh%full_lat = raw_mesh%full_lat(j+lbound(reduced_mesh%full_lat, 1):j+ubound(reduced_mesh%full_lat, 1))
     reduced_mesh%half_lat = raw_mesh%half_lat(j+lbound(reduced_mesh%half_lat, 1):j+ubound(reduced_mesh%half_lat, 1))
-    reduced_mesh%full_f   = raw_mesh%full_f  (j+lbound(reduced_mesh%full_f  , 1):j+ubound(reduced_mesh%full_f  , 1))
     reduced_mesh%half_f   = raw_mesh%half_f  (j+lbound(reduced_mesh%half_f  , 1):j+ubound(reduced_mesh%half_f  , 1))
 
     ! Cell area

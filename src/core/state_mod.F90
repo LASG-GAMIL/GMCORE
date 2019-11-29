@@ -38,8 +38,6 @@ module state_mod
     real(r8), allocatable, dimension(:,:) :: dpv_lat_t
     real(r8), allocatable, dimension(:,:) :: dpv_lat_n
     real(r8), allocatable, dimension(:,:) :: ke
-    real(r8), allocatable, dimension(:,:) :: pvc_lon ! Corrected PV on U grids
-    real(r8), allocatable, dimension(:,:) :: pvc_lat ! Corrected PV on V grids
     real(r8) total_m
     real(r8) total_ke
     real(r8) total_e
@@ -102,8 +100,6 @@ contains
     call allocate_array(mesh, this%dpv_lat_t, full_lon=.true., half_lat=.true.)
     call allocate_array(mesh, this%dpv_lat_n, full_lon=.true., half_lat=.true.)
     call allocate_array(mesh, this%ke       , full_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%pvc_lon  , half_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%pvc_lat  , full_lon=.true., half_lat=.true.)
 
   end subroutine state_init
 
@@ -129,8 +125,6 @@ contains
     if (allocated(this%dpv_lat_t)) deallocate(this%dpv_lat_t)
     if (allocated(this%dpv_lat_n)) deallocate(this%dpv_lat_n)
     if (allocated(this%ke       )) deallocate(this%ke       )
-    if (allocated(this%pvc_lon  )) deallocate(this%pvc_lon  )
-    if (allocated(this%pvc_lat  )) deallocate(this%pvc_lat  )
 
   end subroutine state_clear
 

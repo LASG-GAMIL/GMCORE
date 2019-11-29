@@ -86,6 +86,8 @@ contains
       call log_notice('No fast-slow split.')
     end select
 
+    call time_add_alert('print', hours=1.0_r8)
+
   end subroutine gmcore_init
 
   subroutine gmcore_run()
@@ -99,10 +101,10 @@ contains
 
     do while (.not. time_is_finished())
       call time_integrate(dt, static, tends, states)
+      if (time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
       call time_advance()
       call diagnose(states(old))
       call output(states(old), tends(old))
-      call log_print_diag(curr_time%isoformat())
     end do
 
   end subroutine gmcore_run
