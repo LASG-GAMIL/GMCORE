@@ -441,7 +441,7 @@ contains
       if (reduced_mesh(j)%reduce_factor > 0) then
         tend%dkedlon(:,j) = 0.0_r8
         do move = 1, reduced_mesh(j)%reduce_factor
-          do i = reduced_mesh(j)%full_lon_start_idx, reduced_mesh(j)%full_lon_end_idx
+          do i = reduced_mesh(j)%half_lon_start_idx, reduced_mesh(j)%half_lon_end_idx
             reduced_tend(j)%dkedlon(i) = (                                    &
               reduced_state(j)%ke(i+1,0,move) - reduced_state(j)%ke(i,0,move) &
             ) / reduced_mesh(j)%de_lon(0)

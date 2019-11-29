@@ -240,35 +240,25 @@ contains
 !$omp sections
 !$omp section
       call calc_dkedlon_dkedlat(state, tend, dt)
-!$omp section
       call calc_dpedlon_dpedlat(static, state, tend, dt)
-!$omp section
-      call calc_dmfdlon_dmfdlat(state, tend, dt)
-!$omp end sections
-
-!$omp parallel do collapse(2)
       do j = mesh%full_lat_start_idx_no_pole, mesh%full_lat_end_idx_no_pole
         do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
           tend%du(i,j) = - tend%dpedlon(i,j) - tend%dkedlon(i,j)
         end do
       end do
-!$omp end parallel do
-
-!$omp parallel do collapse(2)
       do j = mesh%half_lat_start_idx_no_pole, mesh%half_lat_end_idx_no_pole
         do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
           tend%dv(i,j) = - tend%dpedlat(i,j) - tend%dkedlat(i,j)
         end do
       end do
-!$omp end parallel do
-
-!$omp parallel do collapse(2)
+!$omp section
+      call calc_dmfdlon_dmfdlat(state, tend, dt)
       do j = mesh%full_lat_start_idx, mesh%full_lat_end_idx
         do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
           tend%dgd(i,j) = - (tend%dmfdlon(i,j) + tend%dmfdlat(i,j)) * g
         end do
       end do
-!$omp end parallel do
+!$omp end sections
     end select
 
     ! call debug_check_space_operators(static, state, tend)
@@ -438,6 +428,8 @@ contains
         new_state%v(i,j) = old_state%v(i,j) + dt * tend%dv(i,j)
       end do
     end do
+
+    call damp_state(new_state)
 
     call parallel_fill_halo(mesh, new_state%gd(:,:))
     call parallel_fill_halo(mesh, new_state%u (:,:))
