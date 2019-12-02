@@ -52,6 +52,8 @@ module gmcore_mod
   procedure(integrator_interface), pointer :: integrator
   procedure(splitter_interface), pointer :: splitter
 
+  real(r8) :: damp_t0 = -1
+
 contains
 
   subroutine gmcore_init()
@@ -104,6 +106,7 @@ contains
       if (time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
       call time_advance()
       call diagnose(states(old))
+      if (states(old)%total_pe > states(new)%total_pe) damp_t0 = elapsed_seconds
       call output(states(old), tends(old))
     end do
 
@@ -134,6 +137,7 @@ contains
 
     type(mesh_type), pointer :: mesh
     integer i, j
+    ! real(r8) cfl
 
     mesh => state%mesh
 
@@ -175,6 +179,22 @@ contains
         state%total_pe = state%total_pe + state%m_vtx(i,j) * state%pv(i,j)**2 * 0.5_r8 * mesh%vertex_area(j)
       end do
     end do
+
+    ! do j = mesh%full_lat_start_idx_no_pole, mesh%full_lat_end_idx_no_pole
+    !   cfl = 0.0_r8
+    !   if (reduced_mesh(j)%reduce_factor > 0) then
+    !     do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
+    !       cfl = max(dt / fast_cycles * sqrt(state%gd(i,j) + static%ghs(i,j)) / reduced_mesh(j)%de_lon(0), cfl)
+    !     end do
+    !   else
+    !     do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
+    !       cfl = max(dt / fast_cycles * sqrt(state%gd(i,j) + static%ghs(i,j)) / mesh%de_lon(j), cfl)
+    !     end do
+    !   end if
+    !   if (cfl > 0.5) then
+    !     print *, j, cfl
+    !   end if
+    ! end do
 
     call log_add_diag('total_m' , state%total_m )
     call log_add_diag('total_e' , state%total_e )
@@ -453,12 +473,20 @@ contains
 
     type(mesh_type), pointer :: mesh
     integer j
+    real(r8) wgt
 
     mesh => state%mesh
 
+    if (adaptive_damp) then
+      wgt = exp(- (elapsed_seconds - damp_t0) / 1800.0_r8)
+      call log_add_diag('damp_wgt', wgt)
+    else
+      wgt = 1.0_r8
+    end if
+
     do j = mesh%full_lat_start_idx_no_pole, mesh%full_lat_end_idx_no_pole
       if (reduced_mesh(j-1)%reduce_factor > 0 .or. reduced_mesh(j)%reduce_factor > 0 .or. reduced_mesh(j+1)%reduce_factor > 0) then
-        call damp_run(damp_order, dt, mesh%de_lon(j), mesh%half_lon_lb, mesh%half_lon_ub, mesh%num_full_lon, state%u(:,j))
+        call damp_run(damp_order, dt, mesh%de_lon(j), wgt, mesh%half_lon_lb, mesh%half_lon_ub, mesh%num_full_lon, state%u(:,j))
       end if
     end do
 
@@ -466,7 +494,7 @@ contains
 #ifdef STAGGER_V_ON_POLE
       if ((mesh%half_lat(j) < 0.0 .and. reduced_mesh(j-1)%reduce_factor > 0) .or. &
           (mesh%half_lat(j) > 0.0 .and. reduced_mesh(j  )%reduce_factor > 0)) then
-        call damp_run(damp_order, dt, mesh%le_lat(j), mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%v(:,j))
+        call damp_run(damp_order, dt, mesh%le_lat(j), wgt, mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%v(:,j))
       end if
 #else
       if (j == mesh%half_lat_start_idx .and. reduced_mesh(j+1)%reduce_factor > 0) then
@@ -474,7 +502,7 @@ contains
       else if (j == mesh%half_lat_end_idx .and. reduced_mesh(j)%reduce_factor > 0) then
         state%v(:,j) = 0.1 * state%v(:,j-1) + 0.9 * state%v(:,j)
       else if (reduced_mesh(j+1)%reduce_factor > 0 .or. reduced_mesh(j)%reduce_factor > 0) then
-        call damp_run(damp_order, dt, mesh%le_lat(j), mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%v(:,j))
+        call damp_run(damp_order, dt, mesh%le_lat(j), wgt, mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%v(:,j))
       end if
 #endif
     end do

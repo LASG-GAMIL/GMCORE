@@ -17,12 +17,13 @@ module namelist_mod
   integer :: pv_scheme = 2
   logical :: pv_pole_stokes = .true.
 
-  integer :: fast_cycles = 5
+  integer :: fast_cycles = 1
   character(30) :: split_scheme = ''
   character(30) :: time_scheme = 'pc2'
 
   integer :: reduce_factors(20) = 0
-  integer :: damp_order = 8
+  integer :: damp_order = 4
+  logical :: adaptive_damp = .true.
   
   ! Nest settings
   character(30) :: nest_time_scheme   = 'pc2'
@@ -53,6 +54,7 @@ module namelist_mod
     fast_cycles               , &
     reduce_factors            , &
     damp_order                , &
+    adaptive_damp             , &
     nest_time_scheme          , &
     nest_max_dom              , &
     nest_parent_id            , &
