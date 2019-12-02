@@ -1,6 +1,6 @@
 f = addfile(file_path, "r")
 
-time_step = 144
+time_step = 28
 
 figure_name = systemfunc("basename " + file_path + " .nc")
 

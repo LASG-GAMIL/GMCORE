@@ -443,7 +443,8 @@ contains
     do j = this%half_lat_start_idx_no_pole, this%half_lat_end_idx_no_pole
       total_area = total_area + this%lat_edge_area(j) * this%num_full_lon
     end do
-    if (abs((this%total_area - total_area) / this%total_area) > 1.0d-11) then
+    if (abs((this%total_area - total_area) / this%total_area) > 1.0d-10) then
+      print *, abs((this%total_area - total_area) / this%total_area)
       call log_error('Failed to calculate edge area!', __FILE__, __LINE__)
     end if
 

@@ -1,0 +1,15 @@
+&gmcore_swm_control
+num_lon = 360
+num_lat = 180
+! mountain_zonal_flow, rossby_haurwitz_wave
+test_case = 'jet_zonal_flow'
+run_days = 7
+dt_in_seconds = 300
+pv_scheme = 3
+split_scheme = 'csp2'
+fast_cycles = 8
+case_name = 'jz.u_pole.reduce.split.360x180'
+history_interval = '6 hours'
+reduce_factors = 8, 8, 6, 6, 4, 4, 2
+damp_order = 4
+/

@@ -486,7 +486,7 @@ contains
 
     do j = mesh%full_lat_start_idx_no_pole, mesh%full_lat_end_idx_no_pole
       if (reduced_mesh(j-1)%reduce_factor > 0 .or. reduced_mesh(j)%reduce_factor > 0 .or. reduced_mesh(j+1)%reduce_factor > 0) then
-        call damp_run(damp_order, dt, mesh%de_lon(j), wgt, mesh%half_lon_lb, mesh%half_lon_ub, mesh%num_full_lon, state%u(:,j))
+        call damp_run(damp_order, dt, mesh%de_lon(j), wgt, mesh%half_lon_lb, mesh%half_lon_ub, mesh%num_half_lon, state%u(:,j))
       end if
     end do
 
@@ -501,7 +501,7 @@ contains
         state%v(:,j) = 0.1 * state%v(:,j+1) + 0.9 * state%v(:,j)
       else if (j == mesh%half_lat_end_idx .and. reduced_mesh(j)%reduce_factor > 0) then
         state%v(:,j) = 0.1 * state%v(:,j-1) + 0.9 * state%v(:,j)
-      else if (reduced_mesh(j+1)%reduce_factor > 0 .or. reduced_mesh(j)%reduce_factor > 0) then
+      else if (reduced_mesh(j)%reduce_factor > 0 .or. reduced_mesh(j+1)%reduce_factor > 0) then
         call damp_run(damp_order, dt, mesh%le_lat(j), wgt, mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%v(:,j))
       end if
 #endif
