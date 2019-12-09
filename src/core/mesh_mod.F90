@@ -101,6 +101,8 @@ module mesh_mod
     procedure :: is_south_pole => mesh_is_south_pole
     procedure :: is_north_pole => mesh_is_north_pole
     procedure :: is_pole => mesh_is_pole
+    procedure :: is_outside_full_lat => mesh_is_outside_full_lat
+    procedure :: is_outside_half_lat => mesh_is_outside_half_lat
     final :: mesh_final
   end type mesh_type
 
@@ -585,6 +587,24 @@ contains
     res = this%is_south_pole(j) .or. this%is_north_pole(j)
 
   end function mesh_is_pole
+
+  logical function mesh_is_outside_full_lat(this, j) result(res)
+
+    class(mesh_type), intent(in) :: this
+    integer, intent(in) :: j
+
+    res = j < 1 .or. j > this%num_full_lat
+
+  end function mesh_is_outside_full_lat
+
+  logical function mesh_is_outside_half_lat(this, j) result(res)
+
+    class(mesh_type), intent(in) :: this
+    integer, intent(in) :: j
+
+    res = j < 1 .or. j > this%num_half_lat
+
+  end function mesh_is_outside_half_lat
 
   subroutine mesh_final(this)
 
