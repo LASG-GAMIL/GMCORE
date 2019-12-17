@@ -48,7 +48,7 @@ contains
         pole = pole + state%v(i,j)**2
       end do
       call parallel_zonal_sum(pole)
-      pole = pole / mesh%num_full_lon
+      pole = pole / mesh%num_full_lon * 0.5_r8
       do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
         state%ke(i,j) = pole
       end do
@@ -60,7 +60,7 @@ contains
         pole = pole + state%v(i,j-1)**2
       end do
       call parallel_zonal_sum(pole)
-      pole = pole / mesh%num_full_lon
+      pole = pole / mesh%num_full_lon * 0.5_r8
       do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
         state%ke(i,j) = pole
       end do
