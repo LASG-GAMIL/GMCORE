@@ -492,20 +492,26 @@ contains
 
     do j = mesh%half_lat_start_idx_no_pole, mesh%half_lat_end_idx_no_pole
 #ifdef STAGGER_V_ON_POLE
-      if ((mesh%half_lat(j) < 0.0 .and. reduced_mesh(j-1)%reduce_factor > 0) .or. &
-          (mesh%half_lat(j) > 0.0 .and. reduced_mesh(j  )%reduce_factor > 0)) then
+      if (reduced_mesh(j)%reduce_factor > 0 .or. reduced_mesh(j-1)%reduce_factor > 0) then
         call damp_run(damp_order, dt, mesh%le_lat(j), wgt, mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%v(:,j))
       end if
 #else
-      if (j == mesh%half_lat_start_idx .and. reduced_mesh(j+1)%reduce_factor > 0) then
-        state%v(:,j) = 0.1 * state%v(:,j+1) + 0.9 * state%v(:,j)
-      else if (j == mesh%half_lat_end_idx .and. reduced_mesh(j)%reduce_factor > 0) then
-        state%v(:,j) = 0.1 * state%v(:,j-1) + 0.9 * state%v(:,j)
-      else if (reduced_mesh(j)%reduce_factor > 0 .or. reduced_mesh(j+1)%reduce_factor > 0) then
+      if (reduced_mesh(j)%reduce_factor > 0 .or. reduced_mesh(j+1)%reduce_factor > 0) then
         call damp_run(damp_order, dt, mesh%le_lat(j), wgt, mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%v(:,j))
       end if
 #endif
     end do
+#ifndef STAGGER_V_ON_POLE
+    ! NOTE: These special treatment could be remove in future.
+    if (mesh%has_south_pole()) then
+      j = mesh%half_lat_start_idx_no_pole
+      state%v(:,j) = 0.5 * state%v(:,j+1) + 0.5 * state%v(:,j)
+    end if
+    if (mesh%has_north_pole()) then
+      j = mesh%half_lat_end_idx_no_pole
+      state%v(:,j) = 0.5 * state%v(:,j-1) + 0.5 * state%v(:,j)
+    end if
+#endif
 
   end subroutine damp_state
 

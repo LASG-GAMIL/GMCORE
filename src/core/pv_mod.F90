@@ -26,7 +26,6 @@ contains
 
     type(mesh_type), pointer :: mesh
     integer i, j
-    real(r8) pole
 
     mesh => state%mesh
 
@@ -52,26 +51,26 @@ contains
 #ifdef STAGGER_V_ON_POLE
     if (mesh%has_south_pole()) then
       j = mesh%half_lat_start_idx
-      pole = 0.0_r8
+      state%vor_sp = 0.0_r8
       do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
-        pole = pole - state%u(i,j) * mesh%de_lon(j)
+        state%vor_sp = state%vor_sp - state%u(i,j) * mesh%de_lon(j)
       end do
-      call parallel_zonal_sum(pole)
-      pole = pole / mesh%num_half_lon / mesh%vertex_area(j)
+      call parallel_zonal_sum(state%vor_sp)
+      state%vor_sp = state%vor_sp / mesh%num_half_lon / mesh%vertex_area(j)
       do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
-        state%pv(i,j) = (pole + mesh%half_f(j)) / state%m_vtx(i,j)
+        state%pv(i,j) = (state%vor_sp + mesh%half_f(j)) / state%m_vtx(i,j)
       end do
     end if
     if (mesh%has_north_pole()) then
       j = mesh%half_lat_end_idx
-      pole = 0.0_r8
+      state%vor_np = 0.0_r8
       do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
-        pole = pole + state%u(i,j-1) * mesh%de_lon(j-1)
+        state%vor_np = state%vor_np + state%u(i,j-1) * mesh%de_lon(j-1)
       end do
-      call parallel_zonal_sum(pole)
-      pole = pole / mesh%num_half_lon / mesh%vertex_area(j)
+      call parallel_zonal_sum(state%vor_np)
+      state%vor_np = state%vor_np / mesh%num_half_lon / mesh%vertex_area(j)
       do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
-        state%pv(i,j) = (pole + mesh%half_f(j)) / state%m_vtx(i,j)
+        state%pv(i,j) = (state%vor_np + mesh%half_f(j)) / state%m_vtx(i,j)
       end do
     end if
 #else
@@ -79,26 +78,26 @@ contains
       ! Special treatment of vorticity around Poles
       if (mesh%has_south_pole()) then
         j = mesh%half_lat_start_idx
-        pole = 0.0_r8
+        state%vor_sp = 0.0_r8
         do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
-          pole = pole - state%u(i,j+1) * mesh%de_lon(j+1)
+          state%vor_sp = state%vor_sp - state%u(i,j+1) * mesh%de_lon(j+1)
         end do
-        call parallel_zonal_sum(pole)
-        pole = pole / mesh%num_half_lon / mesh%vertex_area(j)
+        call parallel_zonal_sum(state%vor_sp)
+        state%vor_sp = state%vor_sp / mesh%num_half_lon / mesh%vertex_area(j)
         do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
-          state%pv(i,j) = (pole + mesh%half_f(j)) / state%m_vtx(i,j)
+          state%pv(i,j) = (state%vor_sp + mesh%half_f(j)) / state%m_vtx(i,j)
         end do
       end if
       if (mesh%has_north_pole()) then
         j = mesh%half_lat_end_idx
-        pole = 0.0_r8
+        state%vor_np = 0.0_r8
         do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
-          pole = pole + state%u(i,j) * mesh%de_lon(j)
+          state%vor_np = state%vor_np + state%u(i,j) * mesh%de_lon(j)
         end do
-        call parallel_zonal_sum(pole)
-        pole = pole / mesh%num_half_lon / mesh%vertex_area(j)
+        call parallel_zonal_sum(state%vor_np)
+        state%vor_np = state%vor_np / mesh%num_half_lon / mesh%vertex_area(j)
         do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
-          state%pv(i,j) = (pole + mesh%half_f(j)) / state%m_vtx(i,j)
+          state%pv(i,j) = (state%vor_np + mesh%half_f(j)) / state%m_vtx(i,j)
         end do
       end if
     end if

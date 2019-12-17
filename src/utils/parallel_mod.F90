@@ -23,6 +23,12 @@ module parallel_mod
 
   type(parallel_info_type) parallel_info
 
+  type parallel_block_type
+    type(mesh_type), pointer :: mesh => null()
+  end type parallel_block_type
+
+  type(parallel_block_type), allocatable :: parallel_blocks(:)
+
   interface parallel_fill_halo
     module procedure parallel_fill_halo_1d_r8_1
     module procedure parallel_fill_halo_1d_r8_2
@@ -46,11 +52,15 @@ contains
 
     parallel_info%comm = MPI_COMM_WORLD
 
-    ! call MPI_INIT(ierr)
-    ! call MPI_CART_CREATE(MPI_COMM_WORLD, 2, [2, 2], [.true., .false.], .true., parallel_info%comm, ierr)
-    ! call MPI_COMM_SIZE(parallel_info%comm, parallel_info%num_proc, ierr)
-    ! call MPI_COMM_RANK(parallel_info%comm, parallel_info%rank, ierr)
-    ! call MPI_GET_PROCESSOR_NAME(parallel_info%proc_name, n, ierr)
+    ! call mpi_init(ierr)
+    ! call mpi_comm_size(parallel_info%comm, parallel_info%num_proc, ierr)
+    ! call mpi_comm_rank(parallel_info%comm, parallel_info%rank, ierr)
+    ! call mpi_get_processor_name(parallel_info%proc_name, n, ierr)
+
+    ! print *, parallel_info%rank, parallel_info%proc_name
+    ! call mpi_barrier(parallel_info%comm, ierr)
+    ! call mpi_finalize(ierr)
+    ! stop
 
   end subroutine parallel_init
 
@@ -58,7 +68,7 @@ contains
 
     integer ierr
 
-    ! call MPI_FINALIZE(ierr)
+    ! call mpi_finalize(ierr)
 
   end subroutine parallel_final
 

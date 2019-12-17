@@ -38,6 +38,8 @@ module state_mod
     real(r8), allocatable, dimension(:,:) :: dpv_lat_t
     real(r8), allocatable, dimension(:,:) :: dpv_lat_n
     real(r8), allocatable, dimension(:,:) :: ke
+    real(r8) vor_sp
+    real(r8) vor_np
     real(r8) total_m
     real(r8) total_ke
     real(r8) total_e

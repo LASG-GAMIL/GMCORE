@@ -39,6 +39,7 @@ module reduce_mod
   public reduce_init
   public reduce_run
   public reduce_append_array
+  public reduce_replace_pv
   public reduce_final
 
   public reduced_mesh
@@ -217,6 +218,26 @@ contains
         call reduce_state(j, state%mesh, state, reduced_mesh(j), reduced_state(j), dt)
       end if
     end do
+
+#ifdef STAGGER_V_ON_POLE
+    if (state%mesh%has_south_pole()) then
+      j = state%mesh%half_lat_start_idx
+      reduced_state(j  )%pv_lat(:, 0,:) = state%pv(1,j)
+    end if
+    if (state%mesh%has_north_pole()) then
+      j = state%mesh%half_lat_end_idx
+      reduced_state(j-1)%pv_lat(:, 1,:) = state%pv(1,j)
+    end if
+#else
+    if (state%mesh%has_south_pole()) then
+      j = state%mesh%half_lat_start_idx
+      reduced_state(j+1)%pv_lat(:,-1,:) = state%pv(1,j)
+    end if
+    if (state%mesh%has_north_pole()) then
+      j = state%mesh%half_lat_end_idx
+      reduced_state(j  )%pv_lat(:, 0,:) = state%pv(1,j)
+    end if
+#endif
 
   end subroutine reduce_run
 
@@ -429,22 +450,6 @@ contains
     call apply_reduce(lbound(reduced_state%pv_lat   , 2), ubound(reduced_state%pv_lat   , 2), j, raw_mesh, raw_state, reduced_mesh, reduced_state, reduce_pv_lat_apvm, dt)
     call apply_reduce(lbound(reduced_state%ke       , 2), ubound(reduced_state%ke       , 2), j, raw_mesh, raw_state, reduced_mesh, reduced_state, reduce_ke         , dt)
 
-#ifdef STAGGER_V_ON_POLE
-    if (raw_mesh%is_south_pole(j)) then
-      reduced_state%pv_lat(:, 0,:) = raw_state%pv(1,j  )
-    end if
-    if (raw_mesh%is_north_pole(j+1)) then
-      reduced_state%pv_lat(:, 1,:) = raw_state%pv(1,j+1)
-    end if
-#else
-    if (raw_mesh%is_south_pole(j-1)) then
-      reduced_state%pv_lat(:,-1,:) = raw_state%pv(1,j-1)
-    end if
-    if (raw_mesh%is_north_pole(j+1)) then
-      reduced_state%pv_lat(:, 0,:) = raw_state%pv(1,j  )
-    end if
-#endif
-
   end subroutine reduce_state
 
   subroutine reduce_ghs(j, buf_j, move, raw_mesh, raw_static, reduced_mesh, reduced_static)
@@ -566,7 +571,7 @@ contains
     type(reduced_state_type), intent(inout) :: reduced_state
     real(r8), intent(in) :: dt
 
-    real(r8) m_vtx
+    real(r8) m_vtx, vor
     integer i
 
 #ifdef STAGGER_V_ON_POLE
@@ -595,10 +600,15 @@ contains
 #else
     if (raw_mesh%is_outside_half_lat(j+buf_j)) then
       return
-    else if (raw_mesh%is_south_pole(j+buf_j)) then
-      reduced_state%pv(:,buf_j,move) = raw_state%pv(raw_mesh%full_lon_start_idx,raw_mesh%half_lat_start_idx)
-    else if (raw_mesh%is_north_pole(j+buf_j+1)) then
-      reduced_state%pv(:,buf_j,move) = raw_state%pv(raw_mesh%full_lon_start_idx,raw_mesh%half_lat_end_idx)
+    else if (raw_mesh%is_south_pole(j+buf_j) .or. raw_mesh%is_north_pole(j+buf_j+1)) then
+      vor = merge(raw_state%vor_sp, raw_state%vor_np, raw_mesh%is_south_pole(j+buf_j))
+      do i = reduced_mesh%half_lon_start_idx, reduced_mesh%half_lon_end_idx
+        m_vtx = (                                                                                                          &
+          (reduced_state%gd(i,buf_j  ,move) + reduced_state%gd(i+1,buf_j  ,move)) * reduced_mesh%subcell_area(2,buf_j  ) + &
+          (reduced_state%gd(i,buf_j+1,move) + reduced_state%gd(i+1,buf_j+1,move)) * reduced_mesh%subcell_area(1,buf_j+1)   &
+        ) / reduced_mesh%vertex_area(buf_j) / g
+        reduced_state%pv(i,buf_j,move) = (vor + reduced_mesh%half_f(buf_j)) / m_vtx
+      end do 
     else
       do i = reduced_mesh%half_lon_start_idx, reduced_mesh%half_lon_end_idx
         m_vtx = (                                                                                                          &
@@ -733,7 +743,7 @@ contains
 
     integer i
 
-    do i = reduced_mesh%full_lon_start_idx, reduced_mesh%full_lon_end_idx
+    do i = reduced_mesh%half_lon_start_idx, reduced_mesh%half_lon_end_idx
 #ifdef STAGGER_V_ON_POLE
       reduced_state%mf_lon_t(i,buf_j,move) =                                                                                           &
         reduced_mesh%full_tangent_wgt(1,buf_j) * (reduced_state%mf_lat_n(i,buf_j  ,move) + reduced_state%mf_lat_n(i+1,buf_j  ,move)) + &
@@ -886,6 +896,71 @@ contains
     end do
 
   end subroutine reduce_dpv_lat_n
+
+  subroutine reduce_pv_lon_midpoint(j, buf_j, move, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
+
+    integer, intent(in) :: j
+    integer, intent(in) :: buf_j
+    integer, intent(in) :: move
+    type(mesh_type), intent(in) :: raw_mesh
+    type(state_type), intent(in) :: raw_state
+    type(reduced_mesh_type), intent(in) :: reduced_mesh
+    type(reduced_state_type), intent(inout) :: reduced_state
+    real(r8), intent(in) :: dt
+
+    real(r8) u, v, le, de
+    integer i
+
+    le = reduced_mesh%le_lon(buf_j)
+    de = reduced_mesh%de_lon(buf_j)
+    if (le == inf .or. de == inf) return
+    do i = reduced_mesh%half_lon_start_idx, reduced_mesh%half_lon_end_idx
+      u = reduced_state%u(i,buf_j,move)
+      v = reduced_state%mf_lon_t(i,buf_j,move) / reduced_state%m_lon(i,buf_j,move)
+#ifdef STAGGER_V_ON_POLE
+      reduced_state%pv_lon(i,buf_j,move) = 0.5_r8 * (    &
+        reduced_state%pv(i,buf_j+1,move) +               &
+        reduced_state%pv(i,buf_j  ,move)                 &
+      )
+#else
+      reduced_state%pv_lon(i,buf_j,move) = 0.5_r8 * (    &
+        reduced_state%pv(i,buf_j-1,move) +               &
+        reduced_state%pv(i,buf_j  ,move)                 &
+      )
+#endif
+    end do
+    call parallel_fill_halo(reduced_mesh%halo_width, reduced_state%pv_lon(:,buf_j,move))
+
+  end subroutine reduce_pv_lon_midpoint
+
+  subroutine reduce_pv_lat_midpoint(j, buf_j, move, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
+
+    integer, intent(in) :: j
+    integer, intent(in) :: buf_j
+    integer, intent(in) :: move
+    type(mesh_type), intent(in) :: raw_mesh
+    type(state_type), intent(in) :: raw_state
+    type(reduced_mesh_type), intent(in) :: reduced_mesh
+    type(reduced_state_type), intent(inout) :: reduced_state
+    real(r8), intent(in) :: dt
+
+    real(r8) u, v, le, de
+    integer i
+
+    le = reduced_mesh%le_lat(buf_j)
+    de = reduced_mesh%de_lat(buf_j)
+    if (le == inf .or. de == inf) return
+    do i = reduced_mesh%full_lon_start_idx, reduced_mesh%full_lon_end_idx
+      u = reduced_state%mf_lat_t(i,buf_j,move) / reduced_state%m_lat(i,buf_j,move)
+      v = reduced_state%v(i,buf_j,move)
+      reduced_state%pv_lat(i,buf_j,move) = 0.5_r8 * (    &
+        reduced_state%pv(i  ,buf_j,move) +               &
+        reduced_state%pv(i-1,buf_j,move)                 &
+      )
+    end do
+    call parallel_fill_halo(reduced_mesh%halo_width, reduced_state%pv_lat(:,buf_j,move))
+
+  end subroutine reduce_pv_lat_midpoint
 
   subroutine reduce_pv_lon_apvm(j, buf_j, move, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
@@ -1041,6 +1116,27 @@ contains
     end do
 
   end subroutine reduce_static
+
+  subroutine reduce_replace_pv(reduced_mesh, reduced_state, raw_state)
+
+    type(state_type), intent(inout) :: raw_state
+    type(reduced_mesh_type), intent(in) :: reduced_mesh(raw_state%mesh%full_lat_lb:raw_state%mesh%full_lat_ub)
+    type(reduced_state_type), intent(in) :: reduced_state(raw_state%mesh%full_lat_start_idx:raw_state%mesh%full_lat_end_idx)
+
+    type(mesh_type), pointer :: mesh
+    integer j, move
+
+    do j = raw_state%mesh%half_lat_start_idx_no_pole, raw_state%mesh%half_lat_end_idx_no_pole
+      if (reduced_mesh(j)%reduce_factor > 0) then
+        raw_state%pv(:,j) = 0.0
+        do move = 1, reduced_mesh(j)%reduce_factor
+          call reduce_append_array(move, reduced_mesh(j), reduced_state(j)%pv(:,0,move), raw_state%mesh, raw_state%pv(:,j))
+        end do
+        call parallel_overlay_inner_halo(raw_state%mesh, raw_state%pv(:,j), left_halo=.true.)
+      end if
+    end do
+
+  end subroutine reduce_replace_pv
 
   subroutine reduced_static_final(this)
 
