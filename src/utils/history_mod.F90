@@ -130,7 +130,7 @@ contains
     ! Convert wind from C grid to A grid.
     do j = state%mesh%full_lat_start_idx, state%mesh%full_lat_end_idx
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-#ifdef STAGGER_V_ON_POLE
+#ifdef V_POLE
         v(i,j) = 0.5_r8 * (state%v(i,j) + state%v(i,j+1))
 #else
         v(i,j) = 0.5_r8 * (state%v(i,j) + state%v(i,j-1))

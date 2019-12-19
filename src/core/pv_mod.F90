@@ -32,7 +32,7 @@ contains
 
     do j = mesh%half_lat_start_idx_no_pole, mesh%half_lat_end_idx_no_pole
       do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
-#ifdef STAGGER_V_ON_POLE
+#ifdef V_POLE
         state%pv(i,j) = (                                                               &
           (                                                                             &
             state%u(i  ,j-1) * mesh%de_lon(j-1) - state%u(i  ,j  ) * mesh%de_lon(j  ) + &
@@ -49,7 +49,7 @@ contains
 #endif
       end do
     end do
-#ifdef STAGGER_V_ON_POLE
+#ifdef V_POLE
     if (mesh%has_south_pole()) then
       j = mesh%half_lat_start_idx
       pole = 0.0_r8
@@ -126,7 +126,7 @@ contains
 
     do j = mesh%full_lat_start_idx_no_pole, mesh%full_lat_end_idx_no_pole
       do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
-#ifdef STAGGER_V_ON_POLE
+#ifdef V_POLE
         state%dpv_lon_t(i,j) = state%pv(i,j+1) - state%pv(i,j)
 #else
         state%dpv_lon_t(i,j) = state%pv(i,j) - state%pv(i,j-1)
@@ -138,7 +138,7 @@ contains
     ! Normal pv difference
     do j = mesh%half_lat_start_idx_no_pole, mesh%half_lat_end_idx_no_pole
       do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
-#ifdef STAGGER_V_ON_POLE
+#ifdef V_POLE
         state%dpv_lat_n(i,j) = 0.25_r8 * (state%dpv_lon_t(i-1,j-1) + state%dpv_lon_t(i,j-1) + &
                                           state%dpv_lon_t(i-1,j  ) + state%dpv_lon_t(i,j  ))
 #else
@@ -150,7 +150,7 @@ contains
 
     do j = mesh%full_lat_start_idx_no_pole, mesh%full_lat_end_idx_no_pole
       do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
-#ifdef STAGGER_V_ON_POLE
+#ifdef V_POLE
         state%dpv_lon_n(i,j) = 0.25_r8 * (state%dpv_lat_t(i,j  ) + state%dpv_lat_t(i+1,j  ) + &
                                           state%dpv_lat_t(i,j+1) + state%dpv_lat_t(i+1,j+1))
 #else
@@ -180,7 +180,7 @@ contains
 
     do j = mesh%full_lat_start_idx_no_pole, mesh%full_lat_end_idx_no_pole
       do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
-#ifdef STAGGER_V_ON_POLE
+#ifdef V_POLE
         state%pv_lon(i,j) = 0.5_r8 * (state%pv(i,j) + state%pv(i,j+1))
 #else
         state%pv_lon(i,j) = 0.5_r8 * (state%pv(i,j) + state%pv(i,j-1))
@@ -210,7 +210,7 @@ contains
         ! beta = mesh%full_upwind_beta(j)
         dpv = min(abs(state%dpv_lon_t(i,j)), abs(state%dpv_lon_n(i,j)))
         beta = beta0 * exp(-(dpv0 / dpv)**2)
-#ifdef STAGGER_V_ON_POLE
+#ifdef V_POLE
         state%pv_lon(i,j) = 0.5_r8 * (state%pv(i,j+1) + state%pv(i,j)) - &
           beta * 0.5_r8 * (                                              &
             state%dpv_lon_t(i,j) * sign(1.0_r8, state%mf_lon_t(i,j) +    &
@@ -266,7 +266,7 @@ contains
           0.5_r8 * (u * state%dpv_lat_t(i,j) / le + v * state%dpv_lat_n(i,j) / de) * dt
       end do
     end do
-#ifdef STAGGER_V_ON_POLE
+#ifdef V_POLE
     state%pv_lat(:,mesh%half_lat_start_idx) = state%pv(:,mesh%half_lat_start_idx)
     state%pv_lat(:,mesh%half_lat_end_idx  ) = state%pv(:,mesh%half_lat_end_idx  )
 #endif
@@ -278,7 +278,7 @@ contains
       do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
         u = state%u(i,j)
         v = state%mf_lon_t(i,j) / state%m_lon(i,j)
-#ifdef STAGGER_V_ON_POLE
+#ifdef V_POLE
         state%pv_lon(i,j) = 0.5_r8 * (state%pv(i,j+1) + state%pv(i,j)) - &
           0.5_r8 * (u * state%dpv_lon_n(i,j) / de + v * state%dpv_lon_t(i,j) / le) * dt
 #else
@@ -317,7 +317,7 @@ contains
         state%pv_lat (i,j) = 0.5_r8 * (state%pv(i,j) + state%pv(i-1,j)) - alpha * ke * h * de**3 * abs(pv_adv) * pv_adv
       end do
     end do
-#ifdef STAGGER_V_ON_POLE
+#ifdef V_POLE
     state%pv_lat(:,mesh%half_lon_start_idx) = state%pv(:,mesh%half_lon_start_idx)
     state%pv_lat(:,mesh%half_lon_end_idx  ) = state%pv(:,mesh%half_lon_end_idx  )
 #endif
@@ -329,7 +329,7 @@ contains
         u = state%u(i,j)
         v = state%mf_lon_t(i,j) / state%m_lon(i,j)
         pv_adv = u * state%dpv_lon_n(i,j) / de + v * state%dpv_lon_t(i,j) / le
-#ifdef STAGGER_V_ON_POLE
+#ifdef V_POLE
         state%pv_lon (i,j) = 0.5_r8 * (state%pv(i,j+1) + state%pv(i,j)) - alpha * ke * h * de**3 * abs(pv_adv) * pv_adv
 #else
         state%pv_lon (i,j) = 0.5_r8 * (state%pv(i,j-1) + state%pv(i,j)) - alpha * ke * h * de**3 * abs(pv_adv) * pv_adv

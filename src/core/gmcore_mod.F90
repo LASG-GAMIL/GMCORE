@@ -458,12 +458,12 @@ contains
 
     do j = mesh%full_lat_start_idx_no_pole, mesh%full_lat_end_idx_no_pole
       if (reduced_mesh(j-1)%reduce_factor > 0 .or. reduced_mesh(j)%reduce_factor > 0 .or. reduced_mesh(j+1)%reduce_factor > 0) then
-        call damp_run(damp_order, dt, mesh%de_lon(j), mesh%half_lon_lb, mesh%half_lon_ub, mesh%num_full_lon, state%u(:,j))
+        call damp_run(damp_order, dt, mesh%de_lon(j), mesh%half_lon_lb, mesh%half_lon_ub, mesh%num_half_lon, state%u(:,j))
       end if
     end do
 
     do j = mesh%half_lat_start_idx_no_pole, mesh%half_lat_end_idx_no_pole
-#ifdef STAGGER_V_ON_POLE
+#ifdef V_POLE
       if ((mesh%half_lat(j) < 0.0 .and. reduced_mesh(j-1)%reduce_factor > 0) .or. &
           (mesh%half_lat(j) > 0.0 .and. reduced_mesh(j  )%reduce_factor > 0)) then
         call damp_run(damp_order, dt, mesh%le_lat(j), mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%v(:,j))
