@@ -130,7 +130,7 @@ contains
     ! Convert wind from C grid to A grid.
     do j = state%mesh%full_lat_start_idx, state%mesh%full_lat_end_idx
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-#ifdef STAGGER_V_ON_POLE
+#ifdef V_POLE
         v(i,j) = 0.5_r8 * (state%v(i,j) + state%v(i,j+1))
 #else
         v(i,j) = 0.5_r8 * (state%v(i,j) + state%v(i,j-1))
@@ -141,7 +141,7 @@ contains
       end do
     end do
 
-    call fiona_start_output('h0', elapsed_seconds, new_file=.false.)
+    call fiona_start_output('h0', elapsed_seconds, new_file=time_step == 0)
     call fiona_output('h0', 'lon' , mesh%full_lon_deg(1:mesh%num_full_lon))
     call fiona_output('h0', 'lat' , mesh%full_lat_deg(1:mesh%num_full_lat))
     call fiona_output('h0', 'ilon', mesh%half_lon_deg(1:mesh%num_half_lon))
@@ -164,7 +164,7 @@ contains
     type(state_type ), intent(in) :: state
     type(tend_type  ), intent(in) :: tend
 
-    call fiona_start_output('h1', elapsed_seconds, new_file=.false.)
+    call fiona_start_output('h1', elapsed_seconds, new_file=time_step == 0)
     call fiona_output('h1', 'lon'      , mesh%full_lon_deg(1:mesh%num_full_lon))
     call fiona_output('h1', 'lat'      , mesh%full_lat_deg(1:mesh%num_full_lat))
     call fiona_output('h1', 'ilon'     , mesh%half_lon_deg(1:mesh%num_half_lon))

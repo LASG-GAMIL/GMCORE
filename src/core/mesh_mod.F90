@@ -127,7 +127,7 @@ contains
 
     this%num_full_lon = num_lon
     this%num_half_lon = num_lon
-#ifdef STAGGER_V_ON_POLE
+#ifdef V_POLE
     this%num_full_lat = num_lat - 1
     this%num_half_lat = num_lat
 #else
@@ -152,7 +152,7 @@ contains
     this%end_lat    = merge(end_lat   ,  pi05  , present(end_lat))
     this%total_area = radius**2 * (this%end_lon - this%start_lon) * (sin(this%end_lat) - sin(this%start_lat))
 
-#ifdef STAGGER_V_ON_POLE
+#ifdef V_POLE
     this%full_lat_start_idx_no_pole = this%full_lat_start_idx
     this%full_lat_end_idx_no_pole   = this%full_lat_end_idx
     this%half_lat_start_idx_no_pole = merge(this%half_lat_start_idx + 1, this%half_lat_start_idx, this%has_south_pole())
@@ -217,7 +217,7 @@ contains
       this%half_lon_deg(i) = this%half_lon(i) * deg
     end do
 
-#ifdef STAGGER_V_ON_POLE
+#ifdef V_POLE
     this%dlat = (this%end_lat - this%start_lat) / this%num_full_lat
     do j = this%half_lat_lb, this%half_lat_ub
       this%half_lat(j) = this%start_lat + (j - 1) * this%dlat
@@ -292,7 +292,7 @@ contains
     end do
 
     ! Ensure the values of cos_lat and sin_lat are expected at the Poles.
-#ifdef STAGGER_V_ON_POLE
+#ifdef V_POLE
     if (this%has_south_pole()) then
       this%half_cos_lat(this%half_lat_start_idx) =  0.0_r8
       this%half_sin_lat(this%half_lat_start_idx) = -1.0_r8
@@ -312,7 +312,7 @@ contains
     end if
 #endif
 
-#ifdef STAGGER_V_ON_POLE
+#ifdef V_POLE
     do j = this%full_lat_start_idx, this%full_lat_end_idx
       this%cell_area(j) = radius**2 * this%dlon * (this%half_sin_lat(j+1) - this%half_sin_lat(j))
       this%subcell_area(1,j) = radius**2 * 0.5d0 * this%dlon * (this%full_sin_lat(j) - this%half_sin_lat(j))
@@ -414,7 +414,7 @@ contains
       end if
     end do
 
-#ifdef STAGGER_V_ON_POLE
+#ifdef V_POLE
     do j = this%half_lat_start_idx, this%half_lat_end_idx
       if (this%is_south_pole(j)) then
         if (abs((this%vertex_area(j) - 2.0d0 * this%subcell_area(1,j)) / this%vertex_area(j)) > 1.0d-12) then
@@ -446,7 +446,6 @@ contains
       total_area = total_area + this%lat_edge_area(j) * this%num_full_lon
     end do
     if (abs((this%total_area - total_area) / this%total_area) > 1.0d-10) then
-      print *, abs((this%total_area - total_area) / this%total_area)
       call log_error('Failed to calculate edge area!', __FILE__, __LINE__)
     end if
 
@@ -483,7 +482,7 @@ contains
     select case (tangent_wgt_scheme)
     case ('classic')
       do j = this%full_lat_start_idx_no_pole, this%full_lat_end_idx_no_pole
-#ifdef STAGGER_V_ON_POLE
+#ifdef V_POLE
         this%full_tangent_wgt(1,j) = this%le_lat(j  ) / this%de_lon(j) * 0.25d0
         this%full_tangent_wgt(2,j) = this%le_lat(j+1) / this%de_lon(j) * 0.25d0
 #else
@@ -493,7 +492,7 @@ contains
       end do
 
       do j = this%half_lat_start_idx_no_pole, this%half_lat_end_idx_no_pole
-#ifdef STAGGER_V_ON_POLE
+#ifdef V_POLE
         this%half_tangent_wgt(1,j) = this%le_lon(j-1) / this%de_lat(j) * 0.25d0
         this%half_tangent_wgt(2,j) = this%le_lon(j  ) / this%de_lat(j) * 0.25d0
 #else
@@ -503,7 +502,7 @@ contains
       end do
     case ('thuburn09')
       do j = this%full_lat_start_idx_no_pole, this%full_lat_end_idx_no_pole
-#ifdef STAGGER_V_ON_POLE
+#ifdef V_POLE
         this%full_tangent_wgt(1,j) = this%le_lat(j  ) / this%de_lon(j) * this%subcell_area(2,j  ) / this%cell_area(j  )
         this%full_tangent_wgt(2,j) = this%le_lat(j+1) / this%de_lon(j) * this%subcell_area(1,j  ) / this%cell_area(j  )
 #else
@@ -513,7 +512,7 @@ contains
       end do
 
       do j = this%half_lat_start_idx_no_pole, this%half_lat_end_idx_no_pole
-#ifdef STAGGER_V_ON_POLE
+#ifdef V_POLE
         this%half_tangent_wgt(1,j) = this%le_lon(j-1) / this%de_lat(j) * this%subcell_area(1,j-1) / this%cell_area(j-1)
         this%half_tangent_wgt(2,j) = this%le_lon(j  ) / this%de_lat(j) * this%subcell_area(2,j  ) / this%cell_area(j  )
 #else
@@ -571,7 +570,7 @@ contains
     class(mesh_type), intent(in) :: this
     integer, intent(in) :: j
 
-#ifdef STAGGER_V_ON_POLE
+#ifdef V_POLE
     res = this%has_north_pole() .and. j == this%num_half_lat
 #else
     res = this%has_north_pole() .and. j == this%num_full_lat

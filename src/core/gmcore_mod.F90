@@ -491,8 +491,9 @@ contains
     end do
 
     do j = mesh%half_lat_start_idx_no_pole, mesh%half_lat_end_idx_no_pole
-#ifdef STAGGER_V_ON_POLE
-      if (reduced_mesh(j)%reduce_factor > 0 .or. reduced_mesh(j-1)%reduce_factor > 0) then
+#ifdef V_POLE
+      if ((mesh%half_lat(j) < 0.0 .and. reduced_mesh(j-1)%reduce_factor > 0) .or. &
+          (mesh%half_lat(j) > 0.0 .and. reduced_mesh(j  )%reduce_factor > 0)) then
         call damp_run(damp_order, dt, mesh%le_lat(j), wgt, mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%v(:,j))
       end if
 #else
@@ -501,7 +502,7 @@ contains
       end if
 #endif
     end do
-#ifndef STAGGER_V_ON_POLE
+#ifndef V_POLE
     ! NOTE: These special treatment could be remove in future.
     if (mesh%has_south_pole()) then
       j = mesh%half_lat_start_idx_no_pole

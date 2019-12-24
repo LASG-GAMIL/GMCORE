@@ -55,7 +55,7 @@ contains
 
     do j = state%mesh%half_lat_start_idx_no_pole, state%mesh%half_lat_end_idx_no_pole
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-#ifdef STAGGER_V_ON_POLE
+#ifdef V_POLE
         state%m_lat(i,j) = (state%mesh%lat_edge_up_area  (j) * state%gd(i,j  ) + &
                             state%mesh%lat_edge_down_area(j) * state%gd(i,j-1)   &
                            ) / state%mesh%lat_edge_area(j) / g
@@ -78,7 +78,7 @@ contains
 
     do j = state%mesh%half_lat_start_idx_no_pole, state%mesh%half_lat_end_idx_no_pole
       do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
-#ifdef STAGGER_V_ON_POLE
+#ifdef V_POLE
         state%m_vtx(i,j) = (                                                       &
           (state%gd(i,j-1) + state%gd(i+1,j-1)) * state%mesh%subcell_area(2,j-1) + &
           (state%gd(i,j  ) + state%gd(i+1,j  )) * state%mesh%subcell_area(1,j  )   &
@@ -91,7 +91,7 @@ contains
 #endif
       end do
     end do
-#ifdef STAGGER_V_ON_POLE
+#ifdef V_POLE
     if (state%mesh%has_south_pole()) then
       j = state%mesh%half_lat_start_idx
       pole = 0.0_r8
@@ -150,7 +150,7 @@ contains
 
     do j = state%mesh%full_lat_start_idx_no_pole, state%mesh%full_lat_end_idx_no_pole
       do i = state%mesh%half_lon_start_idx, state%mesh%half_lon_end_idx
-#ifdef STAGGER_V_ON_POLE
+#ifdef V_POLE
         state%mf_lon_t(i,j) = state%mesh%full_tangent_wgt(1,j) * (state%mf_lat_n(i,j  ) + state%mf_lat_n(i+1,j  )) + &
                               state%mesh%full_tangent_wgt(2,j) * (state%mf_lat_n(i,j+1) + state%mf_lat_n(i+1,j+1))
 #else
@@ -163,7 +163,7 @@ contains
 
     do j = state%mesh%half_lat_start_idx_no_pole, state%mesh%half_lat_end_idx_no_pole
       do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
-#ifdef STAGGER_V_ON_POLE
+#ifdef V_POLE
         state%mf_lat_t(i,j) = state%mesh%half_tangent_wgt(1,j) * (state%mf_lon_n(i-1,j-1) + state%mf_lon_n(i,j-1)) + &
                               state%mesh%half_tangent_wgt(2,j) * (state%mf_lon_n(i-1,j  ) + state%mf_lon_n(i,j  ))
 #else
@@ -200,7 +200,7 @@ contains
       call log_error('Unknown PV scheme!')
     end select
 
-#ifdef STAGGER_V_ON_POLE
+#ifdef V_POLE
     do j = mesh%full_lat_start_idx, mesh%full_lat_end_idx
       if (reduced_mesh(j)%reduce_factor > 0) then
         tend%qhv(:,j) = 0.0_r8
@@ -296,7 +296,7 @@ contains
     end do
 #endif
 
-#ifdef STAGGER_V_ON_POLE
+#ifdef V_POLE
     do j = mesh%half_lat_start_idx_no_pole, mesh%half_lat_end_idx_no_pole
       if (reduced_mesh(j-1)%reduce_factor > 0) then
         tend%qhu(:,j) = 0.0_r8
@@ -458,7 +458,7 @@ contains
 
     do j = mesh%half_lat_start_idx_no_pole, mesh%half_lat_end_idx_no_pole
       do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
-#ifdef STAGGER_V_ON_POLE
+#ifdef V_POLE
         tend%dkedlat(i,j) = (state%ke(i,j) - state%ke(i,j-1)) / mesh%de_lat(j)
 #else
         tend%dkedlat(i,j) = (state%ke(i,j+1) - state%ke(i,j)) / mesh%de_lat(j)
@@ -505,7 +505,7 @@ contains
 
     do j = mesh%half_lat_start_idx_no_pole, mesh%half_lat_end_idx_no_pole
       do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
-#ifdef STAGGER_V_ON_POLE
+#ifdef V_POLE
         tend%dpedlat(i,j) = (                   &
           state %gd (i,j) - state %gd (i,j-1) + &
           static%ghs(i,j) - static%ghs(i,j-1)   &
@@ -560,7 +560,7 @@ contains
     !                    Meridional mass flux divergence
     do j = mesh%full_lat_start_idx_no_pole, mesh%full_lat_end_idx_no_pole
       do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
-#ifdef STAGGER_V_ON_POLE
+#ifdef V_POLE
         tend%dmfdlat(i,j) = (                        &
           state%mf_lat_n(i,j+1) * mesh%le_lat(j+1) - &
           state%mf_lat_n(i,j  ) * mesh%le_lat(j  )   &
@@ -574,7 +574,7 @@ contains
       end do
     end do
 
-#ifndef STAGGER_V_ON_POLE
+#ifndef V_POLE
     if (mesh%has_south_pole()) then
       j = mesh%full_lat_start_idx
       pole = 0.0_r8
