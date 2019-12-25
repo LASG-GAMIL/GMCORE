@@ -151,18 +151,18 @@ contains
     state%total_ke = 0.0_r8
     do j = mesh%full_lat_start_idx_no_pole, mesh%full_lat_end_idx_no_pole
       do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
-        state%total_ke = state%total_ke + state%mf_lon_n(i,j) * state%u(i,j) * mesh%lon_edge_area(j) * 2
+        state%total_ke = state%total_ke + state%mf_lon_n(i,j) * 0.5_r8 * state%u(i,j) * mesh%lon_edge_area(j) * 2
       end do
     end do
     do j = mesh%half_lat_start_idx_no_pole, mesh%half_lat_end_idx_no_pole
       do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
-        state%total_ke = state%total_ke + state%mf_lat_n(i,j) * state%v(i,j) * mesh%lat_edge_area(j) * 2
+        state%total_ke = state%total_ke + state%mf_lat_n(i,j) * 0.5_r8 * state%v(i,j) * mesh%lat_edge_area(j) * 2
       end do
     end do
     state%total_e = state%total_ke
     do j = mesh%full_lat_start_idx, mesh%full_lat_end_idx
       do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
-        state%total_e = state%total_e + (state%gd(i,j)**2 / g + state%gd(i,j) * static%ghs(i,j) / g) * mesh%cell_area(j)
+        state%total_e = state%total_e + (state%gd(i,j)**2 / g * 0.5_r8 + state%gd(i,j) * static%ghs(i,j) / g) * mesh%cell_area(j)
       end do
     end do
 
@@ -472,7 +472,7 @@ contains
     type(state_type), intent(inout) :: state
 
     type(mesh_type), pointer :: mesh
-    integer j
+    integer j, damp_order
     real(r8) wgt
 
     mesh => state%mesh
@@ -485,34 +485,22 @@ contains
     end if
 
     do j = mesh%full_lat_start_idx_no_pole, mesh%full_lat_end_idx_no_pole
-      if (reduced_mesh(j-1)%reduce_factor > 0 .or. reduced_mesh(j)%reduce_factor > 0 .or. reduced_mesh(j+1)%reduce_factor > 0) then
+      damp_order = reduced_mesh(j)%damp_order
+      if (damp_order > 0) then
         call damp_run(damp_order, dt, mesh%de_lon(j), wgt, mesh%half_lon_lb, mesh%half_lon_ub, mesh%num_half_lon, state%u(:,j))
       end if
     end do
 
     do j = mesh%half_lat_start_idx_no_pole, mesh%half_lat_end_idx_no_pole
 #ifdef V_POLE
-      if ((mesh%half_lat(j) < 0.0 .and. reduced_mesh(j-1)%reduce_factor > 0) .or. &
-          (mesh%half_lat(j) > 0.0 .and. reduced_mesh(j  )%reduce_factor > 0)) then
-        call damp_run(damp_order, dt, mesh%le_lat(j), wgt, mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%v(:,j))
-      end if
+      damp_order = max(reduced_mesh(j)%damp_order, reduced_mesh(j-1)%damp_order)
 #else
-      if (reduced_mesh(j)%reduce_factor > 0 .or. reduced_mesh(j+1)%reduce_factor > 0) then
+      damp_order = max(reduced_mesh(j)%damp_order, reduced_mesh(j+1)%damp_order)
+#endif
+      if (damp_order > 0) then
         call damp_run(damp_order, dt, mesh%le_lat(j), wgt, mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%v(:,j))
       end if
-#endif
     end do
-#ifndef V_POLE
-    ! NOTE: These special treatment could be remove in future.
-    if (mesh%has_south_pole()) then
-      j = mesh%half_lat_start_idx_no_pole
-      state%v(:,j) = 0.5 * state%v(:,j+1) + 0.5 * state%v(:,j)
-    end if
-    if (mesh%has_north_pole()) then
-      j = mesh%half_lat_end_idx_no_pole
-      state%v(:,j) = 0.5 * state%v(:,j-1) + 0.5 * state%v(:,j)
-    end if
-#endif
 
   end subroutine damp_state
 

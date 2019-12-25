@@ -22,8 +22,8 @@ module namelist_mod
   character(30) :: time_scheme = 'pc2'
 
   integer :: reduce_factors(20) = 0
-  integer :: damp_order = 4
-  logical :: adaptive_damp = .true.
+  integer :: damp_orders(20) = 0
+  logical :: adaptive_damp = .false.
   
   ! Nest settings
   character(30) :: nest_time_scheme   = 'pc2'
@@ -53,7 +53,7 @@ module namelist_mod
     time_scheme               , &
     fast_cycles               , &
     reduce_factors            , &
-    damp_order                , &
+    damp_orders               , &
     adaptive_damp             , &
     nest_time_scheme          , &
     nest_max_dom              , &
