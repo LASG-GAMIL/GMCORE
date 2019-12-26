@@ -69,7 +69,7 @@ contains
         allocate(states(5))
       end select
       do i = lbound(states, 1), ubound(states, 1)
-        call states(i)%init(mesh)
+        call states(i)%init(global_mesh)
       end do
     end if
 

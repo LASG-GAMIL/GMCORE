@@ -27,7 +27,7 @@ contains
 
   subroutine static_init_root()
 
-    call static%init(mesh)
+    call static%init(global_mesh)
 
   end subroutine static_init_root
 

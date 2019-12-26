@@ -10,7 +10,8 @@ module mesh_mod
   private
 
   public mesh_type
-  public mesh
+  public global_mesh
+  public meshes
   public mesh_init_root
 
   type mesh_type
@@ -106,7 +107,8 @@ module mesh_mod
     final :: mesh_final
   end type mesh_type
 
-  type(mesh_type), target :: mesh
+  type(mesh_type), target :: global_mesh
+  type(mesh_type), allocatable, target :: meshes(:)
 
 contains
 
@@ -455,7 +457,7 @@ contains
     end do
 
     do j = this%half_lat_start_idx_no_pole, this%half_lat_end_idx_no_pole
-      this%le_lat(j) = radius * this%half_cos_lat(j) * mesh%dlon
+      this%le_lat(j) = radius * this%half_cos_lat(j) * this%dlon
       this%de_lat(j) = 2.0d0 * this%lat_edge_area(j) / this%le_lat(j)
     end do
 
@@ -649,7 +651,7 @@ contains
 
   subroutine mesh_init_root()
 
-    call mesh%init(num_lon, num_lat, halo_width=merge(maxval(reduce_factors), 1, maxval(reduce_factors) /= 0))
+    call global_mesh%init(num_lon, num_lat, halo_width=merge(maxval(reduce_factors), 1, maxval(reduce_factors) /= 0))
 
   end subroutine mesh_init_root
 

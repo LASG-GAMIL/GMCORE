@@ -56,7 +56,7 @@ contains
     if (.not. allocated(nested_meshes)) allocate(nested_meshes(nest_max_dom))
 
     if (parent_id == 0) then
-      parent_mesh => mesh
+      parent_mesh => global_mesh
       parent_states => states
     else
       do i = 1, size(nested_meshes)

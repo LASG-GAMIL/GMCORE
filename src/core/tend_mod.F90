@@ -51,7 +51,7 @@ contains
         allocate(tends(5))
       end select
       do i = lbound(tends, 1), ubound(tends, 1)
-        call tends(i)%init(mesh)
+        call tends(i)%init(global_mesh)
       end do
     end if
 

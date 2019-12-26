@@ -167,40 +167,40 @@ contains
 
     integer j, full_j
 
-    allocate(reduced_mesh  (mesh%full_lat_lb:mesh%full_lat_ub))
-    allocate(reduced_static(mesh%full_lat_start_idx:mesh%full_lat_end_idx))
-    allocate(reduced_state (mesh%full_lat_start_idx:mesh%full_lat_end_idx))
-    allocate(reduced_tend  (mesh%full_lat_start_idx:mesh%full_lat_end_idx))
+    allocate(reduced_mesh  (global_mesh%full_lat_lb:global_mesh%full_lat_ub))
+    allocate(reduced_static(global_mesh%full_lat_start_idx:global_mesh%full_lat_end_idx))
+    allocate(reduced_state (global_mesh%full_lat_start_idx:global_mesh%full_lat_end_idx))
+    allocate(reduced_tend  (global_mesh%full_lat_start_idx:global_mesh%full_lat_end_idx))
 
     do j = 1, size(reduce_factors)
       if (reduce_factors(j) == 0) exit
-      if (mod(mesh%num_full_lon, reduce_factors(j)) /= 0) then
-        call log_error('Zonal reduce factor ' // to_string(reduce_factors(j)) // ' cannot divide zonal grid number ' // to_string(mesh%num_full_lon) // '!')
+      if (mod(global_mesh%num_full_lon, reduce_factors(j)) /= 0) then
+        call log_error('Zonal reduce factor ' // to_string(reduce_factors(j)) // ' cannot divide zonal grid number ' // to_string(global_mesh%num_full_lon) // '!')
       end if
-      if (mesh%has_south_pole()) then
+      if (global_mesh%has_south_pole()) then
 #ifdef V_POLE
-        full_j = mesh%full_lat_start_idx+j-1
+        full_j = global_mesh%full_lat_start_idx+j-1
 #else
-        full_j = mesh%full_lat_start_idx+j
+        full_j = global_mesh%full_lat_start_idx+j
 #endif
-        call reduce_mesh(reduce_factors(j), full_j, mesh, reduced_mesh(full_j))
+        call reduce_mesh(reduce_factors(j), full_j, global_mesh, reduced_mesh(full_j))
         reduced_mesh(full_j)%damp_order = damp_orders(j)
       end if
-      if (mesh%has_north_pole()) then
+      if (global_mesh%has_north_pole()) then
 #ifdef V_POLE
-        full_j = mesh%full_lat_end_idx-j+1
+        full_j = global_mesh%full_lat_end_idx-j+1
 #else
-        full_j = mesh%full_lat_end_idx-j
+        full_j = global_mesh%full_lat_end_idx-j
 #endif
-        call reduce_mesh(reduce_factors(j), full_j, mesh, reduced_mesh(full_j))
+        call reduce_mesh(reduce_factors(j), full_j, global_mesh, reduced_mesh(full_j))
         reduced_mesh(full_j)%damp_order = damp_orders(j)
       end if
     end do
 
-    do j = mesh%full_lat_start_idx, mesh%full_lat_end_idx
+    do j = global_mesh%full_lat_start_idx, global_mesh%full_lat_end_idx
       if (reduced_mesh(j)%reduce_factor > 0) then
         call allocate_reduced_static(reduced_mesh(j), reduced_static(j))
-        call reduce_static(j, mesh, static, reduced_mesh(j), reduced_static(j))
+        call reduce_static(j, global_mesh, static, reduced_mesh(j), reduced_static(j))
         call allocate_reduced_state(reduced_mesh(j), reduced_state(j))
         call allocate_reduced_tend(reduced_mesh(j), reduced_tend(j))
       end if
@@ -1048,7 +1048,6 @@ contains
     type(reduced_mesh_type), intent(in) :: reduced_mesh(raw_state%mesh%full_lat_lb:raw_state%mesh%full_lat_ub)
     type(reduced_state_type), intent(in) :: reduced_state(raw_state%mesh%full_lat_start_idx:raw_state%mesh%full_lat_end_idx)
 
-    type(mesh_type), pointer :: mesh
     integer j, move
 
     do j = raw_state%mesh%half_lat_start_idx_no_pole, raw_state%mesh%half_lat_end_idx_no_pole
