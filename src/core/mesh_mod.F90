@@ -11,7 +11,7 @@ module mesh_mod
 
   public mesh_type
   public global_mesh
-  public meshes
+  public local_meshes
   public mesh_init_root
 
   type mesh_type
@@ -108,7 +108,7 @@ module mesh_mod
   end type mesh_type
 
   type(mesh_type), target :: global_mesh
-  type(mesh_type), allocatable, target :: meshes(:)
+  type(mesh_type), allocatable, target :: local_meshes(:)
 
 contains
 
