@@ -94,9 +94,7 @@ contains
 
   subroutine gmcore_run()
 
-    call calc_m_lon_m_lat(states(old))
-    call calc_m_vtx(states(old))
-    call operators_prepare(states(old))
+    call operators_prepare_all(states(old))
     call diagnose(states(old))
     call output(states(old), tends(old))
     call log_print_diag(curr_time%isoformat())
@@ -105,6 +103,7 @@ contains
       call time_integrate(dt, static, tends, states)
       if (time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
       call time_advance()
+      call operators_prepare_all(states(old))
       call diagnose(states(old))
       if (states(old)%total_pe > states(new)%total_pe) damp_t0 = elapsed_seconds
       call output(states(old), tends(old))
@@ -213,7 +212,7 @@ contains
     type(mesh_type), pointer :: mesh
     integer i, j
 
-    call operators_prepare(state)
+    call operators_prepare_all(state)
     call reduce_run(state, dt)
 
     mesh => state%mesh
@@ -316,7 +315,7 @@ contains
     do subcycle = 1, fast_cycles
       call integrator(fast_dt, static, tends, states, t1, t2, fast_pass)
       call time_swap_indices(t1, t2)
-    end do 
+    end do
     call integrator(0.5_r8 * dt, static, tends, states, t1, new, slow_pass)
 
   end subroutine csp2_splitting
@@ -456,14 +455,6 @@ contains
     call parallel_fill_halo(mesh, new_state%gd(:,:))
     call parallel_fill_halo(mesh, new_state%u (:,:))
     call parallel_fill_halo(mesh, new_state%v (:,:))
-
-    ! Do not forget to synchronize the mass on edge and vertex for diagnosing!
-    call calc_m_lon_m_lat(new_state)
-    call calc_mf_lon_n_mf_lat_n(new_state)
-    call calc_mf_lon_t_mf_lat_t(new_state)
-    call calc_m_vtx(new_state)
-
-    if (pv_scheme == 4) call diagnose(new_state)
 
   end subroutine update_state
 

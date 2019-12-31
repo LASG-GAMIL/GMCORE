@@ -16,7 +16,9 @@ module operators_mod
 
   private
 
-  public operators_prepare
+  public operators_prepare_mass
+  public operators_prepare_flow
+  public operators_prepare_all
   public calc_qhu_qhv
   public calc_dkedlon_dkedlat
   public calc_dpedlon_dpedlat
@@ -28,7 +30,18 @@ module operators_mod
 
 contains
 
-  subroutine operators_prepare(state)
+  subroutine operators_prepare_mass(state)
+
+    type(state_type), intent(inout) :: state
+
+    call calc_m_lon_m_lat(state)
+    call calc_m_vtx(state)
+    call calc_mf_lon_n_mf_lat_n(state)
+    call calc_mf_lon_t_mf_lat_t(state)
+
+  end subroutine operators_prepare_mass
+
+  subroutine operators_prepare_flow(state)
 
     type(state_type), intent(inout) :: state
 
@@ -37,7 +50,20 @@ contains
     call calc_pv_on_vertex(state)
     call calc_ke_on_cell(state)
 
-  end subroutine operators_prepare
+  end subroutine operators_prepare_flow
+
+  subroutine operators_prepare_all(state)
+
+    type(state_type), intent(inout) :: state
+
+    call calc_m_lon_m_lat(state)
+    call calc_m_vtx(state)
+    call calc_mf_lon_n_mf_lat_n(state)
+    call calc_mf_lon_t_mf_lat_t(state)
+    call calc_pv_on_vertex(state)
+    call calc_ke_on_cell(state)
+
+  end subroutine operators_prepare_all
 
   subroutine calc_m_lon_m_lat(state)
 
