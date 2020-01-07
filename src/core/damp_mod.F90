@@ -64,6 +64,7 @@ contains
         f(i) = f(i) - wgt * dt * (g(i) - g(i-1))
       end do
     end if
+    call parallel_fill_halo(1 - lb, f)
 
   end subroutine damp_run
 

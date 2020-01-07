@@ -258,10 +258,10 @@ contains
     reduced_mesh%halo_width         = raw_mesh%halo_width
     reduced_mesh%num_full_lon       = raw_mesh%num_full_lon / reduce_factor
     reduced_mesh%num_half_lon       = raw_mesh%num_half_lon / reduce_factor
-    reduced_mesh%full_lon_start_idx = raw_mesh%full_lon_start_idx
-    reduced_mesh%full_lon_end_idx   = raw_mesh%full_lon_start_idx + reduced_mesh%num_full_lon - 1
-    reduced_mesh%half_lon_start_idx = raw_mesh%half_lon_start_idx
-    reduced_mesh%half_lon_end_idx   = raw_mesh%half_lon_start_idx + reduced_mesh%num_half_lon - 1
+    reduced_mesh%full_lon_start_idx = raw_mesh%full_lon_start_idx                                 ! FIXME: This is wrong in parallel.
+    reduced_mesh%full_lon_end_idx   = raw_mesh%full_lon_start_idx + reduced_mesh%num_full_lon - 1 ! FIXME: This is wrong in parallel.
+    reduced_mesh%half_lon_start_idx = raw_mesh%half_lon_start_idx                                 ! FIXME: This is wrong in parallel.
+    reduced_mesh%half_lon_end_idx   = raw_mesh%half_lon_start_idx + reduced_mesh%num_half_lon - 1 ! FIXME: This is wrong in parallel.
     reduced_mesh%full_lon_lb        = reduced_mesh%full_lon_start_idx - raw_mesh%halo_width
     reduced_mesh%full_lon_ub        = reduced_mesh%full_lon_end_idx + raw_mesh%halo_width
     reduced_mesh%half_lon_lb        = reduced_mesh%half_lon_start_idx - raw_mesh%halo_width
@@ -459,7 +459,7 @@ contains
 
     integer raw_i, i
 
-    raw_i = move
+    raw_i = raw_mesh%full_lon_start_idx + move - 1
     do i = reduced_mesh%full_lon_start_idx, reduced_mesh%full_lon_end_idx
       reduced_static%ghs(i,buf_j,move) = sum(raw_static%ghs(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j))
       raw_i = raw_i + reduced_mesh%reduce_factor
@@ -545,7 +545,7 @@ contains
     integer raw_i, i
 
     if (raw_mesh%is_outside_full_lat(j+buf_j)) return
-    raw_i = move
+    raw_i = raw_mesh%full_lon_start_idx + move - 1
     do i = reduced_mesh%full_lon_start_idx, reduced_mesh%full_lon_end_idx
       reduced_state%gd(i,buf_j,move) = sum(raw_state%gd(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j))
       raw_i = raw_i + reduced_mesh%reduce_factor
@@ -687,7 +687,7 @@ contains
     integer raw_i, i
 
     if (raw_mesh%is_outside_full_lat(j+buf_j)) return
-    raw_i = move
+    raw_i = raw_mesh%full_lon_start_idx + move - 1
     do i = reduced_mesh%half_lon_start_idx, reduced_mesh%half_lon_end_idx
       reduced_state%mf_lon_n(i,buf_j,move) = sum(raw_state%mf_lon_n(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j))
       raw_i = raw_i + reduced_mesh%reduce_factor
@@ -974,7 +974,7 @@ contains
 
     integer raw_i, i
 
-    raw_i = move
+    raw_i = raw_mesh%full_lon_start_idx + move - 1
     do i = reduced_mesh%full_lon_start_idx, reduced_mesh%full_lon_end_idx
       reduced_state%ke(i,buf_j,move) = sum(raw_state%ke(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j))
       raw_i = raw_i + reduced_mesh%reduce_factor

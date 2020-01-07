@@ -437,24 +437,23 @@ contains
         new_state%gd(i,j) = old_state%gd(i,j) + dt * tend%dgd(i,j)
       end do
     end do
+    call parallel_fill_halo(mesh, new_state%gd)
 
     do j = mesh%full_lat_start_idx_no_pole, mesh%full_lat_end_idx_no_pole
       do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
         new_state%u(i,j) = old_state%u(i,j) + dt * tend%du(i,j)
       end do
     end do
+    call parallel_fill_halo(mesh, new_state%u)
 
     do j = mesh%half_lat_start_idx_no_pole, mesh%half_lat_end_idx_no_pole
       do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
         new_state%v(i,j) = old_state%v(i,j) + dt * tend%dv(i,j)
       end do
     end do
+    call parallel_fill_halo(mesh, new_state%v)
 
     call damp_state(new_state)
-
-    call parallel_fill_halo(mesh, new_state%gd(:,:))
-    call parallel_fill_halo(mesh, new_state%u (:,:))
-    call parallel_fill_halo(mesh, new_state%v (:,:))
 
   end subroutine update_state
 
