@@ -1,16 +1,15 @@
 &gmcore_swm_control
 num_lon = 360
 num_lat = 180
-! mountain_zonal_flow, rossby_haurwitz_wave
+! mountain_zonal_flow, rossby_haurwitz_wave, jet_zonal_flow, steady_geostrophic_flow, cross_pole_flow
 test_case = 'rossby_haurwitz_wave'
 run_days = 100
 dt_in_seconds = 300
 split_scheme = 'csp2'
 fast_cycles = 5
 pv_scheme = 3
-case_name = 'rh4.u_pole.midpoint.reduce.split.damp.dt360.360x180'
+case_name = 'rh4.u_pole.reduce.split.damp.dt300.360x180'
 history_interval = '1 days'
-reduce_factors = 8, 8, 6, 6, 4, 4, 2
-damp_order = 6
-adaptive_damp = .false.
+reduce_factors = 8, 8, 8, 6, 6, 4, 4, 2
+damp_orders    = 4, 4, 4, 6, 6, 6, 6, 6
 /
