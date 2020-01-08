@@ -221,27 +221,6 @@ contains
       end if
     end do
 
-#ifdef V_POLE
-    ! FIXME: Do we still need this?
-    j = state%mesh%half_lat_start_idx
-    if (state%mesh%has_south_pole() .and. reduced_mesh(j  )%reduce_factor > 0) then
-      reduced_state(j  )%pv_lat(:, 0,:) = state%pv(1,j)
-    end if
-    j = state%mesh%half_lat_end_idx
-    if (state%mesh%has_north_pole() .and. reduced_mesh(j-1)%reduce_factor > 0) then
-      reduced_state(j-1)%pv_lat(:, 1,:) = state%pv(1,j)
-    end if
-#else
-    j = state%mesh%half_lat_start_idx
-    if (state%mesh%has_south_pole() .and. reduced_mesh(j+1)%reduce_factor > 0) then
-      reduced_state(j+1)%pv_lat(:,-1,:) = state%pv(1,j)
-    end if
-    j = state%mesh%half_lat_end_idx
-    if (state%mesh%has_north_pole() .and. reduced_mesh(j  )%reduce_factor > 0) then
-      reduced_state(j  )%pv_lat(:, 0,:) = state%pv(1,j)
-    end if
-#endif
-
   end subroutine reduce_run
 
   subroutine reduce_mesh(reduce_factor, j, raw_mesh, reduced_mesh)
@@ -566,8 +545,8 @@ contains
     type(reduced_state_type), intent(inout) :: reduced_state
     real(r8), intent(in) :: dt
 
-    real(r8) m_vtx
-    integer i
+    real(r8) m_vtx, pole, sign
+    integer i, u_j
 
 #ifdef V_POLE
     if (raw_mesh%is_outside_half_lat(j+buf_j)) then
@@ -595,10 +574,22 @@ contains
 #else
     if (raw_mesh%is_outside_half_lat(j+buf_j)) then
       return
-    else if (raw_mesh%is_south_pole(j+buf_j)) then
-      reduced_state%pv(:,buf_j,move) = raw_state%pv(raw_mesh%full_lon_start_idx,raw_mesh%half_lat_start_idx)
-    else if (raw_mesh%is_north_pole(j+buf_j+1)) then
-      reduced_state%pv(:,buf_j,move) = raw_state%pv(raw_mesh%full_lon_start_idx,raw_mesh%half_lat_end_idx)
+    else if (raw_mesh%is_south_pole(j+buf_j) .or. raw_mesh%is_north_pole(j+buf_j+1)) then
+      sign = merge(-1.0_r8, 1.0_r8, raw_mesh%full_lat(j) < 0.0_r8)
+      u_j  = merge(buf_j+1, buf_j , raw_mesh%full_lat(j) < 0.0_r8)
+      pole = 0.0_r8
+      do i = reduced_mesh%half_lon_start_idx, reduced_mesh%half_lon_end_idx
+        pole = pole + sign * reduced_state%u(i,u_j,move) * reduced_mesh%de_lon(u_j)
+      end do
+      call parallel_zonal_sum(pole)
+      pole = pole / reduced_mesh%num_half_lon / reduced_mesh%vertex_area(buf_j)
+      do i = reduced_mesh%half_lon_start_idx, reduced_mesh%half_lon_end_idx
+        m_vtx = (                                                                                                          &
+          (reduced_state%gd(i,buf_j  ,move) + reduced_state%gd(i+1,buf_j  ,move)) * reduced_mesh%subcell_area(2,buf_j  ) + &
+          (reduced_state%gd(i,buf_j+1,move) + reduced_state%gd(i+1,buf_j+1,move)) * reduced_mesh%subcell_area(1,buf_j+1)   &
+        ) / reduced_mesh%vertex_area(buf_j) / g
+        reduced_state%pv(i,buf_j,move) = (pole + reduced_mesh%half_f(buf_j)) / m_vtx
+      end do
     else
       do i = reduced_mesh%half_lon_start_idx, reduced_mesh%half_lon_end_idx
         m_vtx = (                                                                                                          &

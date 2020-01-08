@@ -455,6 +455,16 @@ contains
       this%le_lon(j) = this%dlat * radius
       this%de_lon(j) = 2.0d0 * this%lon_edge_area(j) / this%le_lon(j)
     end do
+#ifndef V_POLE
+    if (this%has_south_pole()) then
+      this%le_lon(this%full_lat_start_idx) = 0.0_r8
+      this%de_lon(this%full_lat_start_idx) = 0.0_r8
+    end if
+    if (this%has_north_pole()) then
+      this%le_lon(this%full_lat_end_idx) = 0.0_r8
+      this%de_lon(this%full_lat_end_idx) = 0.0_r8
+    end if
+#endif
 
     do j = this%half_lat_start_idx_no_pole, this%half_lat_end_idx_no_pole
       this%le_lat(j) = radius * this%half_cos_lat(j) * this%dlon
