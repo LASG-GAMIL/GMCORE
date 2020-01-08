@@ -68,6 +68,7 @@ set(source_files
   src/tests/swm/mountain_zonal_flow_test_mod.F90
   src/tests/swm/jet_zonal_flow_test_mod.F90
   src/tests/swm/steady_geostrophic_flow_test_mod.F90
+  src/tests/swm/cross_pole_flow_test_mod.F90
   lib/quadpack.f90
 )
 
