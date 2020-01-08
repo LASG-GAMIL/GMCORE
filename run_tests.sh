@@ -21,6 +21,9 @@ if (( $# == 1 )); then
   cp src/tests/swm/namelist.swm.jz.360x180  $work_dir
   cp src/tests/swm/namelist.swm.cp.360x180  $work_dir
   cp build/gmcore_swm_driver.exe $work_dir
+else
+  echo '[Error]: You should set a work directory to run the model!'
+  exit 1
 fi
 
 cd $work_dir
