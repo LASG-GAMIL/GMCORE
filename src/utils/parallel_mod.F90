@@ -1,7 +1,7 @@
 module parallel_mod
 
   use mpi
-  use mesh_mod
+  use block_mod
 
   implicit none
 
@@ -14,20 +14,13 @@ module parallel_mod
   public parallel_overlay_inner_halo
   public parallel_zonal_sum
 
-  type parallel_info_type
+  type process_type
     integer comm
-    integer num_proc
-    integer rank
-    character(30) proc_name
-  end type parallel_info_type
+    integer id
+    type(block_type), allocatable :: blocks(:)
+  end type process_type
 
-  type(parallel_info_type) parallel_info
-
-  type parallel_block_type
-    type(mesh_type), pointer :: mesh => null()
-  end type parallel_block_type
-
-  type(parallel_block_type), allocatable :: parallel_blocks(:)
+  type(process_type) process
 
   interface parallel_fill_halo
     module procedure parallel_fill_halo_1d_r8_1
@@ -49,8 +42,6 @@ contains
 
     integer ierr
     integer n
-
-    parallel_info%comm = MPI_COMM_WORLD
 
     ! call mpi_init(ierr)
     ! call mpi_comm_size(parallel_info%comm, parallel_info%num_proc, ierr)
