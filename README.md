@@ -10,6 +10,9 @@ Check barotropic test results [here](https://github.com/gmcore-project/gmcore/wi
 - [ ] Nesting at middle and low latitudes (~2020.04).
 - [ ] Acceleration using GPU (~?).
 - [ ] Baroclinic version (~2020.10).
+- [ ] Advection module (~2021).
+- [ ] Incorporation with physics parameterisation (~?).
+- [ ] Data assimilation (~?).
 
 # Usage
 
