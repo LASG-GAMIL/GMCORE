@@ -4,6 +4,13 @@ Grid-point Multiple-Conservation dynamical cORE
 
 Check barotropic test results [here](https://github.com/gmcore-project/gmcore/wiki/Test-Archive).
 
+# Status
+
+- [ ] Parallelization using MPI, see branch [parallel](https://github.com/LASG-GAMIL/GMCORE/tree/parallel) (~2020.03).
+- [ ] Nesting at middle and low latitudes (~2020.04).
+- [ ] Acceleration using GPU (~?).
+- [ ] Baroclinic version (~2020.10).
+
 # Usage
 
 First make sure you have installed netCDF library, and set `NETCDF_ROOT` environment variable to it. Then clone the repository:
