@@ -9,8 +9,6 @@ module static_mod
   private
 
   public static_type
-  public static
-  public static_init_root
 
   type static_type
     type(mesh_type), pointer :: mesh => null()
@@ -21,15 +19,7 @@ module static_mod
     final :: static_final
   end type static_type
 
-  type(static_type), target :: static
-
 contains
-
-  subroutine static_init_root()
-
-    call static%init(global_mesh)
-
-  end subroutine static_init_root
 
   subroutine static_init(this, mesh)
 

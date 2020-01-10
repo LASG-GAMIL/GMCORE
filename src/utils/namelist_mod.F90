@@ -12,6 +12,9 @@ module namelist_mod
   integer num_lon
   integer num_lat
 
+  integer num_proc_lon(20)
+  integer num_proc_lat(20)
+
   character(30) :: tangent_wgt_scheme = 'classic'
 
   integer :: pv_scheme = 2
@@ -40,6 +43,8 @@ module namelist_mod
     case_desc                 , &
     num_lon                   , &
     num_lat                   , &
+    num_proc_lon              , &
+    num_proc_lat              , &
     start_time                , &
     end_time                  , &
     dt_in_seconds             , &

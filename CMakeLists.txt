@@ -51,6 +51,7 @@ set(source_files
   src/utils/time_mod.F90
   src/utils/sphere_geometry_mod.F90
   src/utils/block_mod.F90
+  src/utils/process_mod.F90
   src/utils/allocator_mod.F90
   src/utils/parallel_mod.F90
   src/utils/debug_mod.F90
@@ -59,8 +60,8 @@ set(source_files
   src/core/static_mod.F90
   src/core/tend_mod.F90
   src/core/pv_mod.F90
-  src/core/ke_mod.F90
   src/core/operators_mod.F90
+  src/core/reduced_types_mod.F90
   src/core/reduce_mod.F90
   src/core/nest_mod.F90
   src/core/damp_mod.F90

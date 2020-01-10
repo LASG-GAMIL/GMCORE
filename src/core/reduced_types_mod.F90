@@ -1,0 +1,146 @@
+module reduced_types_mod
+
+  use const_mod
+
+  implicit none
+
+  type reduced_mesh_type
+    integer :: reduce_factor = 0
+    integer :: damp_order = 0
+    integer halo_width
+    integer num_full_lon
+    integer num_half_lon
+    integer full_lon_start_idx
+    integer full_lon_end_idx
+    integer half_lon_start_idx
+    integer half_lon_end_idx
+    integer full_lon_lb
+    integer full_lon_ub
+    integer half_lon_lb
+    integer half_lon_ub
+#ifdef V_POLE
+    real(r8), dimension(  -1:1) :: full_lat            = inf
+    real(r8), dimension(  -1:1) :: half_lat            = inf
+    real(r8), dimension(  -1:1) :: cell_area           = 0
+    real(r8), dimension(2,-2:2) :: subcell_area        = 0
+    real(r8), dimension(  -2:2) :: lon_edge_area       = 0
+    real(r8), dimension(  -2:2) :: lon_edge_left_area  = 0
+    real(r8), dimension(  -2:2) :: lon_edge_right_area = 0
+    real(r8), dimension(  -1:2) :: vertex_area         = 0
+    real(r8), dimension(  -1:2) :: lat_edge_area       = 0
+    real(r8), dimension(  -1:2) :: lat_edge_up_area    = 0
+    real(r8), dimension(  -1:2) :: lat_edge_down_area  = 0
+    real(r8), dimension(  -1:1) :: le_lon              = inf
+    real(r8), dimension(  -2:2) :: de_lon              = inf
+    real(r8), dimension(  -1:2) :: le_lat              = inf
+    real(r8), dimension(  -1:2) :: de_lat              = inf
+    real(r8), dimension(2,-1:1) :: full_tangent_wgt    = inf
+    real(r8), dimension(2, 0:1) :: half_tangent_wgt    = inf
+    real(r8), dimension(  -1:2) :: half_f              = inf
+#else
+    real(r8), dimension(  -1:1) :: full_lat            = inf
+    real(r8), dimension(  -1:1) :: half_lat            = inf
+    real(r8), dimension(  -1:1) :: cell_area           = 0
+    real(r8), dimension(2,-2:2) :: subcell_area        = 0
+    real(r8), dimension(  -2:2) :: lon_edge_area       = 0
+    real(r8), dimension(  -2:2) :: lon_edge_left_area  = 0
+    real(r8), dimension(  -2:2) :: lon_edge_right_area = 0
+    real(r8), dimension(  -2:1) :: vertex_area         = 0
+    real(r8), dimension(  -2:1) :: lat_edge_area       = 0
+    real(r8), dimension(  -2:1) :: lat_edge_up_area    = 0
+    real(r8), dimension(  -2:1) :: lat_edge_down_area  = 0
+    real(r8), dimension(  -1:1) :: le_lon              = inf
+    real(r8), dimension(  -2:2) :: de_lon              = inf
+    real(r8), dimension(  -2:1) :: le_lat              = inf
+    real(r8), dimension(  -2:1) :: de_lat              = inf
+    real(r8), dimension(2,-1:1) :: full_tangent_wgt    = inf
+    real(r8), dimension(2,-1:0) :: half_tangent_wgt    = inf
+    real(r8), dimension(  -2:1) :: half_f              = inf
+#endif
+  end type reduced_mesh_type
+
+  type reduced_static_type
+    real(r8), allocatable, dimension(:,:,:) :: ghs
+  contains
+    final :: reduced_static_final
+  end type reduced_static_type
+
+  type reduced_state_type
+    real(r8), allocatable, dimension(:,:,:) :: u
+    real(r8), allocatable, dimension(:,:,:) :: v
+    real(r8), allocatable, dimension(:,:,:) :: gd
+    real(r8), allocatable, dimension(:,:,:) :: pv
+    real(r8), allocatable, dimension(:,:,:) :: pv_lon
+    real(r8), allocatable, dimension(:,:,:) :: pv_lat
+    real(r8), allocatable, dimension(:,:,:) :: dpv_lon_t
+    real(r8), allocatable, dimension(:,:,:) :: dpv_lat_t
+    real(r8), allocatable, dimension(:,:,:) :: dpv_lon_n
+    real(r8), allocatable, dimension(:,:,:) :: dpv_lat_n
+    real(r8), allocatable, dimension(:,:,:) :: m_lon
+    real(r8), allocatable, dimension(:,:,:) :: m_lat
+    real(r8), allocatable, dimension(:,:,:) :: mf_lon_n
+    real(r8), allocatable, dimension(:,:,:) :: mf_lon_t
+    real(r8), allocatable, dimension(:,:,:) :: mf_lat_n
+    real(r8), allocatable, dimension(:,:,:) :: mf_lat_t
+    real(r8), allocatable, dimension(:,:,:) :: ke
+  contains
+    final :: reduced_state_final
+  end type reduced_state_type
+
+  type reduced_tend_type
+    real(r8), allocatable, dimension(:) :: qhv
+    real(r8), allocatable, dimension(:) :: qhu
+    real(r8), allocatable, dimension(:) :: dmfdlon
+    real(r8), allocatable, dimension(:) :: dpedlon
+    real(r8), allocatable, dimension(:) :: dkedlon
+  contains
+    final :: reduced_tend_final
+  end type reduced_tend_type
+
+contains
+
+  subroutine reduced_static_final(this)
+
+    type(reduced_static_type), intent(inout) :: this
+
+    if (allocated(this%ghs)) deallocate(this%ghs)
+
+  end subroutine reduced_static_final
+
+  subroutine reduced_state_final(this)
+
+    type(reduced_state_type), intent(inout) :: this
+
+    if (allocated(this%u        )) deallocate(this%u        )
+    if (allocated(this%v        )) deallocate(this%v        )
+    if (allocated(this%gd       )) deallocate(this%gd       )
+    if (allocated(this%pv       )) deallocate(this%pv       )
+    if (allocated(this%pv_lon   )) deallocate(this%pv_lon   )
+    if (allocated(this%pv_lat   )) deallocate(this%pv_lat   )
+    if (allocated(this%dpv_lon_n)) deallocate(this%dpv_lon_n)
+    if (allocated(this%dpv_lat_n)) deallocate(this%dpv_lat_n)
+    if (allocated(this%dpv_lon_t)) deallocate(this%dpv_lon_t)
+    if (allocated(this%dpv_lat_t)) deallocate(this%dpv_lat_t)
+    if (allocated(this%m_lon    )) deallocate(this%m_lon    )
+    if (allocated(this%m_lat    )) deallocate(this%m_lat    )
+    if (allocated(this%mf_lon_n )) deallocate(this%mf_lon_n )
+    if (allocated(this%mf_lon_t )) deallocate(this%mf_lon_t )
+    if (allocated(this%mf_lat_n )) deallocate(this%mf_lat_n )
+    if (allocated(this%mf_lat_t )) deallocate(this%mf_lat_t )
+    if (allocated(this%ke       )) deallocate(this%ke       )
+
+  end subroutine reduced_state_final
+
+  subroutine reduced_tend_final(this)
+
+    type(reduced_tend_type), intent(inout) :: this
+
+    if (allocated(this%qhv    )) deallocate(this%qhv    )
+    if (allocated(this%qhu    )) deallocate(this%qhu    )
+    if (allocated(this%dmfdlon)) deallocate(this%dmfdlon)
+    if (allocated(this%dpedlon)) deallocate(this%dpedlon)
+    if (allocated(this%dkedlon)) deallocate(this%dkedlon)
+
+  end subroutine reduced_tend_final
+
+end module reduced_types_mod

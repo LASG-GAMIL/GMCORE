@@ -4,9 +4,7 @@ module jet_zonal_flow_test_mod
   use string
   use const_mod
   use parallel_mod
-  use mesh_mod
-  use state_mod
-  use static_mod
+  use block_mod
 
   implicit none
 
@@ -26,48 +24,47 @@ module jet_zonal_flow_test_mod
 
 contains
 
-  subroutine jet_zonal_flow_test_set_initial_condition(static, state)
+  subroutine jet_zonal_flow_test_set_initial_condition(block)
 
-    type(static_type), intent(inout) :: static
-    type(state_type) , intent(inout) :: state
+    type(block_type), intent(inout), target :: block
 
     integer i, j, neval, ierr
     real(r8) abserr, lon
     type(mesh_type), pointer :: mesh
 
-    mesh => state%mesh
+    mesh => block%mesh
 
-    static%ghs = 0.0_r8
+    block%static%ghs = 0.0_r8
 
     do j = mesh%full_lat_start_idx, mesh%full_lat_end_idx
       do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
-        state%u(i,j) = u_function(mesh%full_lat(j))
+        block%state(1)%u(i,j) = u_function(mesh%full_lat(j))
       end do
     end do
-    call parallel_fill_halo(mesh, state%u)
+    call fill_halo(mesh, block%state(1)%u)
 
-    state%v = 0.0_r8
+    block%state(1)%v = 0.0_r8
 
     do j = mesh%full_lat_start_idx, mesh%full_lat_end_idx
       if (j == mesh%full_lat_start_idx) then
-        state%gd(0,j) = gh0
+        block%state(1)%gd(0,j) = gh0
       else
-        call qags(gh_integrand, -0.5*pi, mesh%full_lat(j), 1.0e-10, 1.0e-3, state%gd(0,j), abserr, neval, ierr)
+        call qags(gh_integrand, -0.5*pi, mesh%full_lat(j), 1.0e-10, 1.0e-3, block%state(1)%gd(0,j), abserr, neval, ierr)
         if (ierr /= 0) then
           call log_error('Failed to calculate integration at (' // to_string(i) // ',' // to_string(j) // ')!')
         end if
-        state%gd(0,j) = gh0 - state%gd(0,j)
+        block%state(1)%gd(0,j) = gh0 - block%state(1)%gd(0,j)
       end if
       do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
-        state%gd(i,j) = state%gd(0,j)
+        block%state(1)%gd(i,j) = block%state(1)%gd(0,j)
         ! Add perturbation.
-        state%gd(i,j) = state%gd(i,j) + ghd * &
+        block%state(1)%gd(i,j) = block%state(1)%gd(i,j) + ghd * &
           cos(mesh%full_lat(j)) * &
           exp(-(merge(mesh%full_lon(i) - 2.0_r8 * pi, mesh%full_lon(i), mesh%full_lon(i) > pi)  / alpha)**2) * &
           exp(-((lat2 - mesh%full_lat(j)) / beta)**2)
       end do
     end do
-    call parallel_fill_halo(mesh, state%gd)
+    call fill_halo(mesh, block%state(1)%gd)
 
   end subroutine jet_zonal_flow_test_set_initial_condition
 

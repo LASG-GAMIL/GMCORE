@@ -12,6 +12,7 @@ module history_mod
   use state_mod
   use static_mod
   use tend_mod
+  use block_mod
 
   implicit none
 
@@ -120,16 +121,23 @@ contains
 
   end subroutine history_final
 
-  subroutine history_write_state(static, state)
+  subroutine history_write_state(blocks, itime)
 
-    type(static_type), intent(in) :: static
-    type(state_type ), intent(in) :: state
+    type(block_type), intent(in), target :: blocks(:)
+    integer, intent(in) :: itime
 
+    type(mesh_type), pointer :: mesh
+    type(state_type), pointer :: state
+    type(static_type), pointer :: static
     integer i, j
 
+    mesh => blocks(1)%mesh
+    state => blocks(1)%state(itime)
+    static => blocks(1)%static
+
     ! Convert wind from C grid to A grid.
-    do j = state%mesh%full_lat_start_idx, state%mesh%full_lat_end_idx
-      do i = state%mesh%full_lon_start_idx, state%mesh%full_lon_end_idx
+    do j = mesh%full_lat_start_idx, mesh%full_lat_end_idx
+      do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
 #ifdef V_POLE
         v(i,j) = 0.5_r8 * (state%v(i,j) + state%v(i,j+1))
 #else
@@ -158,11 +166,16 @@ contains
 
   end subroutine history_write_state
 
-  subroutine history_write_debug(static, state, tend)
+  subroutine history_write_debug(blocks, itime)
 
-    type(static_type), intent(in) :: static
-    type(state_type ), intent(in) :: state
-    type(tend_type  ), intent(in) :: tend
+    type(block_type), intent(in), target :: blocks(:)
+    integer, intent(in) :: itime
+
+    type(state_type), pointer :: state
+    type(tend_type), pointer :: tend
+
+    state => blocks(1)%state(itime)
+    tend => blocks(1)%tend(itime)
 
     call fiona_start_output('h1', elapsed_seconds, new_file=time_step == 0)
     call fiona_output('h1', 'lon'      , global_mesh%full_lon_deg(1:global_mesh%num_full_lon))

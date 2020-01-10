@@ -1,69 +1,26 @@
 module parallel_mod
 
-  use mpi
-  use block_mod
+  use mesh_mod
 
   implicit none
 
-  private
+  interface fill_halo
+    module procedure fill_halo_1d_r8_1
+    module procedure fill_halo_1d_r8_2
+    module procedure fill_halo_2d_r8
+  end interface fill_halo
 
-  public parallel_init
-  public parallel_final
-  public parallel_fill_halo
-  public parallel_zero_halo
-  public parallel_overlay_inner_halo
-  public parallel_zonal_sum
+  interface zero_halo
+    module procedure zero_halo_1d_r8
+  end interface zero_halo
 
-  type process_type
-    integer comm
-    integer id
-    type(block_type), allocatable :: blocks(:)
-  end type process_type
-
-  type(process_type) process
-
-  interface parallel_fill_halo
-    module procedure parallel_fill_halo_1d_r8_1
-    module procedure parallel_fill_halo_1d_r8_2
-    module procedure parallel_fill_halo_2d_r8
-  end interface parallel_fill_halo
-
-  interface parallel_zero_halo
-    module procedure parallel_zero_halo_1d_r8
-  end interface parallel_zero_halo
-
-  interface parallel_zonal_sum
-    module procedure paralle_zonal_sum_0d_r8
-  end interface parallel_zonal_sum
+  interface zonal_sum
+    module procedure zonal_sum_0d_r8
+  end interface zonal_sum
 
 contains
 
-  subroutine parallel_init()
-
-    integer ierr
-    integer n
-
-    ! call mpi_init(ierr)
-    ! call mpi_comm_size(parallel_info%comm, parallel_info%num_proc, ierr)
-    ! call mpi_comm_rank(parallel_info%comm, parallel_info%rank, ierr)
-    ! call mpi_get_processor_name(parallel_info%proc_name, n, ierr)
-
-    ! print *, parallel_info%rank, parallel_info%proc_name
-    ! call mpi_barrier(parallel_info%comm, ierr)
-    ! call mpi_finalize(ierr)
-    ! stop
-
-  end subroutine parallel_init
-
-  subroutine parallel_final()
-
-    integer ierr
-
-    ! call mpi_finalize(ierr)
-
-  end subroutine parallel_final
-
-  subroutine parallel_fill_halo_1d_r8_1(halo_width, array, left_halo, right_halo)
+  subroutine fill_halo_1d_r8_1(halo_width, array, left_halo, right_halo)
 
     integer, intent(in   )           :: halo_width
     real(8), intent(inout)           :: array(:)
@@ -88,9 +45,9 @@ contains
       end do
     end if
 
-  end subroutine parallel_fill_halo_1d_r8_1
+  end subroutine fill_halo_1d_r8_1
 
-  subroutine parallel_fill_halo_1d_r8_2(mesh, array, left_halo, right_halo)
+  subroutine fill_halo_1d_r8_2(mesh, array, left_halo, right_halo)
 
     type(mesh_type), intent(in   )           :: mesh
     real(8)        , intent(inout)           :: array(:)
@@ -101,23 +58,23 @@ contains
 
     if (merge(left_halo, .true., present(left_halo))) then
       m = lbound(array, 1) - 1
-      n = ubound(array, 1) - 2 * mesh%halo_width
-      do i = 1, mesh%halo_width
+      n = ubound(array, 1) - 2 * mesh%lon_halo_width
+      do i = 1, mesh%lon_halo_width
         array(m+i) = array(n+i)
       end do
     end if
 
     if (merge(right_halo, .true., present(right_halo))) then
-      m = ubound(array, 1) - mesh%halo_width
-      n = lbound(array, 1) + mesh%halo_width - 1
-      do i = 1, mesh%halo_width
+      m = ubound(array, 1) - mesh%lon_halo_width
+      n = lbound(array, 1) + mesh%lon_halo_width - 1
+      do i = 1, mesh%lon_halo_width
         array(m+i) = array(n+i)
       end do
     end if
 
-  end subroutine parallel_fill_halo_1d_r8_2
+  end subroutine fill_halo_1d_r8_2
 
-  subroutine parallel_fill_halo_2d_r8(mesh, array, left_halo, right_halo, top_halo, bottom_halo)
+  subroutine fill_halo_2d_r8(mesh, array, left_halo, right_halo, top_halo, bottom_halo)
 
     type(mesh_type), intent(in   )           :: mesh
     real(8)        , intent(inout)           :: array(:,:)
@@ -130,27 +87,27 @@ contains
 
     if (merge(left_halo, .true., present(left_halo))) then
       m = lbound(array, 1) - 1
-      n = ubound(array, 1) - 2 * mesh%halo_width
+      n = ubound(array, 1) - 2 * mesh%lon_halo_width
       do j = lbound(array, 2), ubound(array, 2)
-        do i = 1, mesh%halo_width
+        do i = 1, mesh%lon_halo_width
           array(m+i,j) = array(n+i,j)
         end do
       end do
     end if
 
     if (merge(right_halo, .true., present(right_halo))) then
-      m = ubound(array, 1) - mesh%halo_width
-      n = lbound(array, 1) + mesh%halo_width - 1
+      m = ubound(array, 1) - mesh%lon_halo_width
+      n = lbound(array, 1) + mesh%lon_halo_width - 1
       do j = lbound(array, 2), ubound(array, 2)
-        do i = 1, mesh%halo_width
+        do i = 1, mesh%lon_halo_width
           array(m+i,j) = array(n+i,j)
         end do
       end do
     end if
 
-  end subroutine parallel_fill_halo_2d_r8
+  end subroutine fill_halo_2d_r8
 
-  subroutine parallel_zero_halo_1d_r8(mesh, array, left_halo, right_halo)
+  subroutine zero_halo_1d_r8(mesh, array, left_halo, right_halo)
 
     type(mesh_type), intent(in   )           :: mesh
     real(8)        , intent(inout)           :: array(mesh%full_lon_lb:mesh%full_lon_ub)
@@ -165,9 +122,9 @@ contains
       array(mesh%full_lon_end_idx+1:mesh%full_lon_ub) = 0.0d0
     end if
 
-  end subroutine parallel_zero_halo_1d_r8
+  end subroutine zero_halo_1d_r8
 
-  subroutine parallel_overlay_inner_halo(mesh, array, left_halo, right_halo)
+  subroutine overlay_inner_halo(mesh, array, left_halo, right_halo)
 
     type(mesh_type), intent(in   )           :: mesh
     real(8)        , intent(inout)           :: array(mesh%full_lon_lb:mesh%full_lon_ub)
@@ -177,17 +134,17 @@ contains
     integer i
 
     if (merge(left_halo, .false., present(left_halo))) then
-      do i = mesh%full_lon_start_idx, mesh%full_lon_start_idx + mesh%halo_width - 2
+      do i = mesh%full_lon_start_idx, mesh%full_lon_start_idx + mesh%lon_halo_width - 2
         array(i) = array(i) + array(mesh%full_lon_end_idx+i-mesh%full_lon_start_idx+1)
       end do
     end if
 
-  end subroutine parallel_overlay_inner_halo
+  end subroutine overlay_inner_halo
 
-  subroutine paralle_zonal_sum_0d_r8(value)
+  subroutine zonal_sum_0d_r8(value)
 
     real(8), intent(inout) :: value
 
-  end subroutine paralle_zonal_sum_0d_r8
+  end subroutine zonal_sum_0d_r8
 
 end module parallel_mod

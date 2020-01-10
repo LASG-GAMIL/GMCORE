@@ -37,7 +37,7 @@ contains
 
     a  = (dx / 2.0_r8)**order / dt
 
-    call parallel_fill_halo(1 - lb, f)
+    call fill_halo(1 - lb, f)
     if (order == 2) then
       ns = diff_halo_width(order)
       w  = diff_weights(:,order)
@@ -59,12 +59,12 @@ contains
       do i = 1, n
         g(i) = g(i) * max(0.0_r8, sign(1.0_r8, -g(i) * df(i)))
       end do
-      call parallel_fill_halo(1 - lb, g)
+      call fill_halo(1 - lb, g)
       do i = 1, n
         f(i) = f(i) - wgt * dt * (g(i) - g(i-1))
       end do
     end if
-    call parallel_fill_halo(1 - lb, f)
+    call fill_halo(1 - lb, f)
 
   end subroutine damp_run
 

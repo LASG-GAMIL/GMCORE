@@ -1,33 +1,85 @@
 module block_mod
 
+  use namelist_mod
   use mesh_mod
   use state_mod
   use static_mod
   use tend_mod
+  use reduced_types_mod
 
   implicit none
 
+  private
+
+  public block_type
+
   type block_type
-    type(mesh_type), pointer :: mesh => null()
-    type(state_type), pointer :: state => null()
-    type(static_type), pointer :: static => null()
-    type(tend_type), pointer :: tend => null()
+    integer id
+    type(mesh_type) mesh
+    type(state_type), allocatable :: state(:)
+    type(static_type) static
+    type(tend_type), allocatable :: tend(:)
+    type(reduced_mesh_type), allocatable :: reduced_mesh(:)
+    type(reduced_state_type), allocatable :: reduced_state(:)
+    type(reduced_static_type), allocatable :: reduced_static(:)
+    type(reduced_tend_type), allocatable :: reduced_tend(:)
   contains
     procedure :: init => block_init
     final :: block_final
   end type block_type
 
+  integer :: next_id = 0
+
 contains
 
-  subroutine block_init(this)
+  subroutine block_init(this, lon_halo_width, lat_halo_width, lon_start_idx, lon_end_idx, lat_start_idx, lat_end_idx)
 
     class(block_type), intent(inout) :: this
+    integer, intent(in) :: lon_halo_width
+    integer, intent(in) :: lat_halo_width
+    integer, intent(in) :: lon_start_idx
+    integer, intent(in) :: lon_end_idx
+    integer, intent(in) :: lat_start_idx
+    integer, intent(in) :: lat_end_idx
+
+    integer i
+
+    next_id = next_id + 1
+    this%id = next_id
+
+    call this%mesh%init(num_lon, num_lat, this%id, lon_halo_width, lat_halo_width, lon_start_idx, lon_end_idx, lat_start_idx, lat_end_idx)
+
+    if (.not. allocated(this%state)) then
+      select case (trim(time_scheme))
+      case ('pc2', 'rk2')
+        allocate(this%state(3))
+        allocate(this%tend (3))
+      case ('rk3')
+        allocate(this%state(4))
+        allocate(this%tend (4))
+      case ('rk4')
+        allocate(this%state(5))
+        allocate(this%tend (5))
+      end select
+      do i = 1, size(this%state)
+        call this%state(i)%init(this%mesh)
+        call this%tend (i)%init(this%mesh)
+      end do
+      call this%static%init(this%mesh)
+    end if
 
   end subroutine block_init
 
   subroutine block_final(this)
 
     type(block_type), intent(inout) :: this
+
+    if (allocated(this%state         )) deallocate(this%state         )
+    if (allocated(this%tend          )) deallocate(this%tend          )
+    if (allocated(this%reduced_mesh  )) deallocate(this%reduced_mesh  )
+    if (allocated(this%reduced_state )) deallocate(this%reduced_state )
+    if (allocated(this%reduced_static)) deallocate(this%reduced_static)
+    if (allocated(this%reduced_tend  )) deallocate(this%reduced_tend  )
 
   end subroutine block_final
 

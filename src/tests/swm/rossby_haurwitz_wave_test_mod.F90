@@ -3,9 +3,7 @@ module rossby_haurwitz_wave_test_mod
   use flogger
   use const_mod
   use parallel_mod
-  use mesh_mod
-  use state_mod
-  use static_mod
+  use block_mod
 
   implicit none
 
@@ -30,19 +28,18 @@ contains
   ! C(φ) = 1/4 ω² cos²ᴿφ ((R + 1) cos²φ - (R + 2))
 
 
-  subroutine rossby_haurwitz_wave_test_set_initial_condition(static, state)
+  subroutine rossby_haurwitz_wave_test_set_initial_condition(block)
 
-    type(static_type), intent(inout) :: static
-    type(state_type) , intent(inout) :: state
+    type(block_type), intent(inout), target :: block
 
     real(r8) lon, cos_lat, sin_lat
     real(r8) a, b, c
     integer i, j
     type(mesh_type), pointer :: mesh
 
-    mesh => state%mesh
+    mesh => block%mesh
 
-    static%ghs(:,:) = 0.0
+    block%static%ghs(:,:) = 0.0
 
     do j = mesh%full_lat_start_idx, mesh%full_lat_end_idx
       cos_lat = mesh%full_cos_lat(j)
@@ -52,10 +49,10 @@ contains
         a = cos_lat
         b = R * cos_lat**(R - 1) * sin_lat**2 * cos(R * lon)
         c = cos_lat**(R + 1) * cos(R * lon)
-        state%u(i,j) = radius * omg * (a + b - c)
+        block%state(1)%u(i,j) = radius * omg * (a + b - c)
       end do
     end do
-    call parallel_fill_halo(mesh, state%u)
+    call fill_halo(mesh, block%state(1)%u)
 
     do j = mesh%half_lat_start_idx, mesh%half_lat_end_idx
       cos_lat = mesh%half_cos_lat(j)
@@ -63,10 +60,10 @@ contains
       do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
         lon = mesh%full_lon(i)
         a = R * cos_lat**(R - 1) * sin_lat * sin(R * lon)
-        state%v(i,j) = - radius * omg * a
+        block%state(1)%v(i,j) = - radius * omg * a
       end do
     end do
-    call parallel_fill_halo(mesh, state%v)
+    call fill_halo(mesh, block%state(1)%v)
 
     do j = mesh%full_lat_start_idx, mesh%full_lat_end_idx
       cos_lat = mesh%full_cos_lat(j)
@@ -77,10 +74,10 @@ contains
       c = 0.25 * omg**2 * cos_lat**(2 * R) * ((R + 1) * cos_lat**2 - R - 2)
       do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
         lon = mesh%full_lon(i)
-        state%gd(i,j) = gd0 + radius**2 * (a + b * cos(R * lon) + c * cos(2 * R * lon))
+        block%state(1)%gd(i,j) = gd0 + radius**2 * (a + b * cos(R * lon) + c * cos(2 * R * lon))
       end do
     end do
-    call parallel_fill_halo(mesh, state%gd)
+    call fill_halo(mesh, block%state(1)%gd)
 
   end subroutine rossby_haurwitz_wave_test_set_initial_condition
 

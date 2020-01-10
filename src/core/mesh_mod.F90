@@ -11,8 +11,6 @@ module mesh_mod
 
   public mesh_type
   public global_mesh
-  public local_meshes
-  public mesh_init_root
 
   type mesh_type
     ! For nesting
@@ -22,7 +20,8 @@ module mesh_mod
     integer :: parent_lon_end_idx   = 0
     integer :: parent_lat_start_idx = 0
     integer :: parent_lat_end_idx   = 0
-    integer halo_width
+    integer lon_halo_width
+    integer lat_halo_width
     integer num_full_lon
     integer num_half_lon
     integer num_full_lat
@@ -108,51 +107,60 @@ module mesh_mod
   end type mesh_type
 
   type(mesh_type), target :: global_mesh
-  type(mesh_type), allocatable, target :: local_meshes(:)
 
 contains
 
-  subroutine mesh_init(this, num_lon, num_lat, id, halo_width, start_lon, end_lon, start_lat, end_lat)
+  subroutine mesh_init(this, num_lon, num_lat, id, lon_halo_width, lat_halo_width, lon_start_idx, lon_end_idx, lat_start_idx, lat_end_idx)
 
     class(mesh_type), intent(inout)           :: this
     integer         , intent(in   )           :: num_lon
     integer         , intent(in   )           :: num_lat
     integer         , intent(in   ), optional :: id
-    integer         , intent(in   ), optional :: halo_width
-    real(r8)        , intent(in   ), optional :: start_lon
-    real(r8)        , intent(in   ), optional :: end_lon
-    real(r8)        , intent(in   ), optional :: start_lat
-    real(r8)        , intent(in   ), optional :: end_lat
+    integer         , intent(in   ), optional :: lon_halo_width
+    integer         , intent(in   ), optional :: lat_halo_width
+    integer         , intent(in   ), optional :: lon_start_idx
+    integer         , intent(in   ), optional :: lon_end_idx
+    integer         , intent(in   ), optional :: lat_start_idx
+    integer         , intent(in   ), optional :: lat_end_idx
 
     real(r8) x(3), y(3), z(3), total_area
     integer i, j
 
-    this%num_full_lon = num_lon
-    this%num_half_lon = num_lon
+    this%num_full_lon       = num_lon
+    this%num_half_lon       = num_lon
+    this%full_lon_start_idx = merge(lon_start_idx, 1, present(lon_start_idx))
+    this%full_lon_end_idx   = merge(lon_end_idx, this%num_full_lon, present(lon_end_idx))
+    this%half_lon_start_idx = this%full_lon_start_idx
+    this%half_lon_end_idx   = this%full_lon_end_idx
 #ifdef V_POLE
-    this%num_full_lat = num_lat - 1
-    this%num_half_lat = num_lat
+    this%num_full_lat       = num_lat - 1
+    this%num_half_lat       = num_lat
+    this%half_lat_start_idx = merge(lat_start_idx, 1, present(lat_start_idx))
+    this%half_lat_end_idx   = merge(lat_end_idx, this%num_full_lat, present(lat_end_idx))
+    this%full_lat_start_idx = this%half_lat_start_idx
+    this%full_lat_end_idx   = merge(this%num_full_lat, this%half_lat_end_idx, this%half_lat_end_idx == this%num_half_lat)
 #else
     this%num_full_lat = num_lat
     this%num_half_lat = num_lat - 1
+    this%full_lat_start_idx = merge(lat_start_idx, 1, present(lat_start_idx))
+    this%full_lat_end_idx   = merge(lat_end_idx, this%num_full_lat, present(lat_end_idx))
+    this%half_lat_start_idx = this%full_lat_start_idx
+    this%half_lat_end_idx   = merge(this%num_half_lat, this%full_lat_end_idx, this%full_lat_end_idx == this%num_full_lat)
 #endif
 
-    this%full_lon_start_idx = 1
-    this%full_lon_end_idx = this%num_full_lon
-    this%full_lat_start_idx = 1
-    this%full_lat_end_idx = this%num_full_lat
-    this%half_lon_start_idx = 1
-    this%half_lon_end_idx = this%num_half_lon
-    this%half_lat_start_idx = 1
-    this%half_lat_end_idx = this%num_half_lat
-
-    this%id         = merge(id        ,  0     , present(id))
-    this%halo_width = merge(halo_width,  1     , present(halo_width))
-    this%start_lon  = merge(start_lon ,  0.0_r8, present(start_lon))
-    this%end_lon    = merge(end_lon   ,  pi2   , present(end_lon))
-    this%start_lat  = merge(start_lat , -pi05  , present(start_lat))
-    this%end_lat    = merge(end_lat   ,  pi05  , present(end_lat))
-    this%total_area = radius**2 * (this%end_lon - this%start_lon) * (sin(this%end_lat) - sin(this%start_lat))
+    this%id             = merge(id            ,  0     , present(id))
+    this%lon_halo_width = merge(lon_halo_width,  1     , present(lon_halo_width))
+    this%lat_halo_width = merge(lat_halo_width,  1     , present(lat_halo_width))
+    this%start_lon      = merge(global_mesh%full_lon(lon_start_idx),  0.0_r8, present(lon_start_idx)) ! This should be parent_mesh?
+    this%end_lon        = merge(global_mesh%full_lon(lon_end_idx)+global_mesh%dlon, pi2, present(lon_end_idx))
+#ifdef V_POLE
+    this%start_lat      = merge(global_mesh%half_lat(lat_start_idx), -pi05  , present(lat_start_idx))
+    this%end_lat        = merge(global_mesh%half_lat(lat_end_idx  ),  pi05  , present(lat_end_idx  ))
+#else
+    this%start_lat      = merge(global_mesh%full_lat(lat_start_idx), -pi05  , present(lat_start_idx))
+    this%end_lat        = merge(global_mesh%full_lat(lat_end_idx  ),  pi05  , present(lat_end_idx  ))
+#endif
+    this%total_area     = radius**2 * (this%end_lon - this%start_lon) * (sin(this%end_lat) - sin(this%start_lat))
 
 #ifdef V_POLE
     this%full_lat_start_idx_no_pole = this%full_lat_start_idx
@@ -166,14 +174,14 @@ contains
     this%half_lat_end_idx_no_pole   = this%half_lat_end_idx
 #endif
 
-    this%full_lon_lb = this%full_lon_start_idx - this%halo_width
-    this%full_lon_ub = this%full_lon_end_idx   + this%halo_width
-    this%full_lat_lb = this%full_lat_start_idx - 1
-    this%full_lat_ub = this%full_lat_end_idx   + 1
-    this%half_lon_lb = this%half_lon_start_idx - this%halo_width
-    this%half_lon_ub = this%half_lon_end_idx   + this%halo_width
-    this%half_lat_lb = this%half_lat_start_idx - 1
-    this%half_lat_ub = this%half_lat_end_idx   + 1
+    this%full_lon_lb = this%full_lon_start_idx - this%lon_halo_width
+    this%full_lon_ub = this%full_lon_end_idx   + this%lon_halo_width
+    this%full_lat_lb = this%full_lat_start_idx - this%lat_halo_width
+    this%full_lat_ub = this%full_lat_end_idx   + this%lat_halo_width
+    this%half_lon_lb = this%half_lon_start_idx - this%lon_halo_width
+    this%half_lon_ub = this%half_lon_end_idx   + this%lon_halo_width
+    this%half_lat_lb = this%half_lat_start_idx - this%lat_halo_width
+    this%half_lat_ub = this%half_lat_end_idx   + this%lat_halo_width
 
     allocate(this%full_lon           (this%full_lon_lb:this%full_lon_ub)); this%full_lon            = inf
     allocate(this%half_lon           (this%half_lon_lb:this%half_lon_ub)); this%half_lon            = inf
@@ -548,8 +556,6 @@ contains
       this%half_f(j) = 2.0_r8 * omega * this%half_sin_lat(j)
     end do
 
-    call log_notice('Mesh module is initialized.')
-
   end subroutine mesh_init
 
   logical function mesh_has_south_pole(this) result(res)
@@ -658,11 +664,5 @@ contains
     if (allocated(this%half_f             )) deallocate(this%half_f             )
 
   end subroutine mesh_final
-
-  subroutine mesh_init_root()
-
-    call global_mesh%init(num_lon, num_lat, halo_width=merge(maxval(reduce_factors), 1, maxval(reduce_factors) /= 0))
-
-  end subroutine mesh_init_root
 
 end module mesh_mod

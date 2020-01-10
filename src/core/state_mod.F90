@@ -4,14 +4,13 @@ module state_mod
   use mesh_mod
   use namelist_mod
   use allocator_mod
+  use parallel_mod
 
   implicit none
 
   private
 
   public state_type
-  public states
-  public state_init_root
 
   type state_type
     type(mesh_type), pointer :: mesh => null()
@@ -38,8 +37,6 @@ module state_mod
     real(r8), allocatable, dimension(:,:) :: dpv_lat_t
     real(r8), allocatable, dimension(:,:) :: dpv_lat_n
     real(r8), allocatable, dimension(:,:) :: ke
-    real(r8) vor_sp
-    real(r8) vor_np
     real(r8) total_m
     real(r8) total_ke
     real(r8) total_e
@@ -47,33 +44,18 @@ module state_mod
     real(r8) total_pe
   contains
     procedure :: init => state_init
+    procedure :: update_m_lon_m_lat => state_update_m_lon_m_lat
+    procedure :: update_m_vtx => state_update_m_vtx
+    procedure :: update_mf_lon_n_mf_lat_n => state_update_mf_lon_n_mf_lat_n
+    procedure :: update_mf_lon_t_mf_lat_t => state_update_mf_lon_t_mf_lat_t
+    procedure :: update_pv_vtx => state_update_pv_vtx
+    procedure :: update_ke => state_update_ke
+    procedure :: update_all => state_update_all
     procedure :: clear => state_clear
     final :: state_final
   end type state_type
 
-  type(state_type), allocatable, target :: states(:)
-
 contains
-
-  subroutine state_init_root()
-
-    integer i
-
-    if (.not. allocated(states)) then
-      select case (trim(time_scheme))
-      case ('pc2', 'rk2')
-        allocate(states(3))
-      case ('rk3')
-        allocate(states(4))
-      case ('rk4')
-        allocate(states(5))
-      end select
-      do i = lbound(states, 1), ubound(states, 1)
-        call states(i)%init(global_mesh)
-      end do
-    end if
-
-  end subroutine state_init_root
 
   subroutine state_init(this, mesh)
 
@@ -104,6 +86,298 @@ contains
     call allocate_array(mesh, this%ke       , full_lon=.true., full_lat=.true.)
 
   end subroutine state_init
+
+  subroutine state_update_m_lon_m_lat(this)
+
+    class(state_type), intent(inout) :: this
+
+    integer i, j
+
+    do j = this%mesh%full_lat_start_idx_no_pole, this%mesh%full_lat_end_idx_no_pole
+      do i = this%mesh%half_lon_start_idx, this%mesh%half_lon_end_idx
+        this%m_lon(i,j) = (this%mesh%lon_edge_left_area (j) * this%gd(i,  j) + &
+                            this%mesh%lon_edge_right_area(j) * this%gd(i+1,j)   &
+                           ) / this%mesh%lon_edge_area(j) / g
+      end do
+    end do
+
+    do j = this%mesh%half_lat_start_idx_no_pole, this%mesh%half_lat_end_idx_no_pole
+      do i = this%mesh%full_lon_start_idx, this%mesh%full_lon_end_idx
+#ifdef V_POLE
+        this%m_lat(i,j) = (this%mesh%lat_edge_up_area  (j) * this%gd(i,j  ) + &
+                            this%mesh%lat_edge_down_area(j) * this%gd(i,j-1)   &
+                           ) / this%mesh%lat_edge_area(j) / g
+#else
+        this%m_lat(i,j) = (this%mesh%lat_edge_up_area  (j) * this%gd(i,j+1) + &
+                            this%mesh%lat_edge_down_area(j) * this%gd(i,j  )   &
+                           ) / this%mesh%lat_edge_area(j) / g
+#endif
+      end do
+    end do
+
+  end subroutine state_update_m_lon_m_lat
+
+  subroutine state_update_m_vtx(this)
+
+    class(state_type), intent(inout) :: this
+
+    integer i, j
+    real(r8) pole
+
+    do j = this%mesh%half_lat_start_idx_no_pole, this%mesh%half_lat_end_idx_no_pole
+      do i = this%mesh%half_lon_start_idx, this%mesh%half_lon_end_idx
+#ifdef V_POLE
+        this%m_vtx(i,j) = (                                                       &
+          (this%gd(i,j-1) + this%gd(i+1,j-1)) * this%mesh%subcell_area(2,j-1) + &
+          (this%gd(i,j  ) + this%gd(i+1,j  )) * this%mesh%subcell_area(1,j  )   &
+        ) / this%mesh%vertex_area(j) / g
+#else
+        this%m_vtx(i,j) = (                                                       &
+          (this%gd(i,j  ) + this%gd(i+1,j  )) * this%mesh%subcell_area(2,j  ) + &
+          (this%gd(i,j+1) + this%gd(i+1,j+1)) * this%mesh%subcell_area(1,j+1)   &
+        ) / this%mesh%vertex_area(j) / g
+#endif
+      end do
+    end do
+#ifdef V_POLE
+    if (this%mesh%has_south_pole()) then
+      j = this%mesh%half_lat_start_idx
+      pole = 0.0_r8
+      do i = this%mesh%full_lon_start_idx, this%mesh%full_lon_end_idx
+        pole = pole + this%gd(i,j)
+      end do
+      call zonal_sum(pole)
+      pole = pole / this%mesh%num_half_lon / g
+      do i = this%mesh%half_lon_start_idx, this%mesh%half_lon_end_idx
+        this%m_vtx(i,j) = pole
+      end do
+    end if
+    if (this%mesh%has_north_pole()) then
+      j = this%mesh%half_lat_end_idx
+      pole = 0.0_r8
+      do i = this%mesh%full_lon_start_idx, this%mesh%full_lon_end_idx
+        pole = pole + this%gd(i,j-1)
+      end do
+      call zonal_sum(pole)
+      pole = pole / this%mesh%num_half_lon / g
+      do i = this%mesh%half_lon_start_idx, this%mesh%half_lon_end_idx
+        this%m_vtx(i,j) = pole
+      end do
+    end if
+#endif
+
+  end subroutine state_update_m_vtx
+
+  subroutine state_update_mf_lon_n_mf_lat_n(this)
+
+    class(state_type), intent(inout) :: this
+
+    integer i, j
+
+    do j = this%mesh%full_lat_start_idx_no_pole, this%mesh%full_lat_end_idx_no_pole
+      do i = this%mesh%half_lon_start_idx, this%mesh%half_lon_end_idx
+        this%mf_lon_n(i,j) = this%m_lon(i,j) * this%u(i,j)
+      end do
+    end do
+    call fill_halo(this%mesh, this%mf_lon_n)
+
+    do j = this%mesh%half_lat_start_idx_no_pole, this%mesh%half_lat_end_idx_no_pole
+      do i = this%mesh%full_lon_start_idx, this%mesh%full_lon_end_idx
+        this%mf_lat_n(i,j) = this%m_lat(i,j) * this%v(i,j)
+      end do
+    end do
+    call fill_halo(this%mesh, this%mf_lat_n)
+
+  end subroutine state_update_mf_lon_n_mf_lat_n
+
+  subroutine state_update_mf_lon_t_mf_lat_t(this)
+
+    class(state_type), intent(inout) :: this
+
+    integer i, j
+
+    do j = this%mesh%full_lat_start_idx_no_pole, this%mesh%full_lat_end_idx_no_pole
+      do i = this%mesh%half_lon_start_idx, this%mesh%half_lon_end_idx
+#ifdef V_POLE
+        this%mf_lon_t(i,j) = this%mesh%full_tangent_wgt(1,j) * (this%mf_lat_n(i,j  ) + this%mf_lat_n(i+1,j  )) + &
+                              this%mesh%full_tangent_wgt(2,j) * (this%mf_lat_n(i,j+1) + this%mf_lat_n(i+1,j+1))
+#else
+        this%mf_lon_t(i,j) = this%mesh%full_tangent_wgt(1,j) * (this%mf_lat_n(i,j-1) + this%mf_lat_n(i+1,j-1)) + &
+                              this%mesh%full_tangent_wgt(2,j) * (this%mf_lat_n(i,j  ) + this%mf_lat_n(i+1,j  ))
+#endif
+      end do
+    end do
+    call fill_halo(this%mesh, this%mf_lon_t)
+
+    do j = this%mesh%half_lat_start_idx_no_pole, this%mesh%half_lat_end_idx_no_pole
+      do i = this%mesh%full_lon_start_idx, this%mesh%full_lon_end_idx
+#ifdef V_POLE
+        this%mf_lat_t(i,j) = this%mesh%half_tangent_wgt(1,j) * (this%mf_lon_n(i-1,j-1) + this%mf_lon_n(i,j-1)) + &
+                              this%mesh%half_tangent_wgt(2,j) * (this%mf_lon_n(i-1,j  ) + this%mf_lon_n(i,j  ))
+#else
+        this%mf_lat_t(i,j) = this%mesh%half_tangent_wgt(1,j) * (this%mf_lon_n(i-1,j  ) + this%mf_lon_n(i,j  )) + &
+                              this%mesh%half_tangent_wgt(2,j) * (this%mf_lon_n(i-1,j+1) + this%mf_lon_n(i,j+1))
+#endif
+      end do
+    end do
+    call fill_halo(this%mesh, this%mf_lat_t)
+
+  end subroutine state_update_mf_lon_t_mf_lat_t
+
+  subroutine state_update_pv_vtx(this)
+
+    class(state_type), intent(inout) :: this
+
+    type(mesh_type), pointer :: mesh
+    real(r8) pole
+    integer i, j
+
+    mesh => this%mesh
+
+    do j = mesh%half_lat_start_idx_no_pole, mesh%half_lat_end_idx_no_pole
+      do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
+#ifdef V_POLE
+        this%pv(i,j) = (                                                              &
+          (                                                                           &
+            this%u(i  ,j-1) * mesh%de_lon(j-1) - this%u(i  ,j  ) * mesh%de_lon(j  ) + &
+            this%v(i+1,j  ) * mesh%de_lat(j  ) - this%v(i  ,j  ) * mesh%de_lat(j  )   &
+          ) / mesh%vertex_area(j) + mesh%half_f(j)                                    &
+        ) / this%m_vtx(i,j)
+#else
+        this%pv(i,j) = (                                                              &
+          (                                                                           &
+            this%u(i  ,j  ) * mesh%de_lon(j  ) - this%u(i  ,j+1) * mesh%de_lon(j+1) + &
+            this%v(i+1,j  ) * mesh%de_lat(j  ) - this%v(i  ,j  ) * mesh%de_lat(j  )   &
+          ) / mesh%vertex_area(j) + mesh%half_f(j)                                    &
+        ) / this%m_vtx(i,j)
+#endif
+      end do
+    end do
+#ifdef V_POLE
+    if (mesh%has_south_pole()) then
+      j = mesh%half_lat_start_idx
+      pole = 0.0_r8
+      do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
+        pole = pole - this%u(i,j) * mesh%de_lon(j)
+      end do
+      call zonal_sum(pole)
+      pole = pole / mesh%num_half_lon / mesh%vertex_area(j)
+      do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
+        this%pv(i,j) = (pole + mesh%half_f(j)) / this%m_vtx(i,j)
+      end do
+    end if
+    if (mesh%has_north_pole()) then
+      j = mesh%half_lat_end_idx
+      pole = 0.0_r8
+      do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
+        pole = pole + this%u(i,j-1) * mesh%de_lon(j-1)
+      end do
+      call zonal_sum(pole)
+      pole = pole / mesh%num_half_lon / mesh%vertex_area(j)
+      do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
+        this%pv(i,j) = (pole + mesh%half_f(j)) / this%m_vtx(i,j)
+      end do
+    end if
+#else
+    if (pv_pole_stokes) then
+      ! Special treatment of vorticity around Poles
+      if (mesh%has_south_pole()) then
+        j = mesh%half_lat_start_idx
+        pole = 0.0_r8
+        do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
+          pole = pole - this%u(i,j+1) * mesh%de_lon(j+1)
+        end do
+        call zonal_sum(pole)
+        pole = pole / mesh%num_half_lon / mesh%vertex_area(j)
+        do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
+          this%pv(i,j) = (pole + mesh%half_f(j)) / this%m_vtx(i,j)
+        end do
+      end if
+      if (mesh%has_north_pole()) then
+        j = mesh%half_lat_end_idx
+        pole = 0.0_r8
+        do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
+          pole = pole + this%u(i,j) * mesh%de_lon(j)
+        end do
+        call zonal_sum(pole)
+        pole = pole / mesh%num_half_lon / mesh%vertex_area(j)
+        do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
+          this%pv(i,j) = (pole + mesh%half_f(j)) / this%m_vtx(i,j)
+        end do
+      end if
+    end if
+#endif
+    call fill_halo(mesh, this%pv)
+
+  end subroutine state_update_pv_vtx
+
+  subroutine state_update_ke(this)
+
+    class(state_type), intent(inout) :: this
+
+    type(mesh_type), pointer :: mesh
+    integer i, j
+    real(r8) pole
+
+    mesh => this%mesh
+
+    do j = mesh%full_lat_start_idx_no_pole, mesh%full_lat_end_idx_no_pole
+      do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
+        this%ke(i,j) = (mesh%lon_edge_right_area(j  ) * this%u(i-1,j  )**2 + &
+                         mesh%lon_edge_left_area (j  ) * this%u(i  ,j  )**2 + &
+#ifdef V_POLE
+                         mesh%lat_edge_up_area   (j  ) * this%v(i  ,j  )**2 + &
+                         mesh%lat_edge_down_area (j+1) * this%v(i  ,j+1)**2   &
+#else
+                         mesh%lat_edge_up_area   (j-1) * this%v(i  ,j-1)**2 + &
+                         mesh%lat_edge_down_area (j  ) * this%v(i  ,j  )**2   &
+#endif
+                        ) / mesh%cell_area(j)
+      end do
+    end do
+#ifndef V_POLE
+    ! Note: lat_edge_down_area and lat_edge_up_area at the Poles is the same as cell_area.
+    if (mesh%has_south_pole()) then
+      j = mesh%full_lat_start_idx
+      pole = 0.0d0
+      do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
+        pole = pole + this%v(i,j)**2
+      end do
+      call zonal_sum(pole)
+      pole = pole / mesh%num_full_lon * 0.5_r8
+      do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
+        this%ke(i,j) = pole
+      end do
+    end if
+    if (mesh%has_north_pole()) then
+      j = mesh%full_lat_end_idx
+      pole = 0.0d0
+      do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
+        pole = pole + this%v(i,j-1)**2
+      end do
+      call zonal_sum(pole)
+      pole = pole / mesh%num_full_lon * 0.5_r8
+      do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
+        this%ke(i,j) = pole
+      end do
+    end if
+#endif
+    call fill_halo(mesh, this%ke)
+
+  end subroutine state_update_ke
+
+  subroutine state_update_all(this)
+
+    class(state_type), intent(inout) :: this
+
+    call this%update_m_lon_m_lat()
+    call this%update_m_vtx()
+    call this%update_mf_lon_n_mf_lat_n()
+    call this%update_mf_lon_t_mf_lat_t()
+    call this%update_pv_vtx()
+    call this%update_ke()
+
+  end subroutine state_update_all
 
   subroutine state_clear(this)
 
