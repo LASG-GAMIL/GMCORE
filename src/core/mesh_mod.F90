@@ -123,7 +123,7 @@ contains
     integer         , intent(in   ), optional :: lat_ibeg
     integer         , intent(in   ), optional :: lat_iend
 
-    real(r8) x(3), y(3), z(3), total_area
+    real(r8) x(3), y(3), z(3)
     integer i, j
 
     this%num_full_lon       = num_lon
@@ -393,71 +393,6 @@ contains
       this%lat_edge_area(j) = this%lat_edge_up_area(j) + this%lat_edge_down_area(j)
     end do
 #endif
-
-    total_area = 0.0d0
-    do j = this%full_lat_ibeg, this%full_lat_iend
-      total_area = total_area + this%cell_area(j) * this%num_full_lon
-    end do
-    if (abs((this%total_area - total_area) / this%total_area) > 1.0d-12) then
-      call log_error('Failed to calculate cell area!', __FILE__, __LINE__)
-    end if
-
-    total_area = 0.0d0
-    do j = this%half_lat_ibeg, this%half_lat_iend
-      total_area = total_area + this%vertex_area(j) * this%num_full_lon
-    end do
-    if (abs((this%total_area - total_area) / this%total_area) > 1.0d-12) then
-      call log_error('Failed to calculate vertex area!', __FILE__, __LINE__)
-    end if
-
-    total_area = 0.0d0
-    do j = this%full_lat_ibeg, this%full_lat_iend
-      total_area = total_area + sum(this%subcell_area(:,j)) * this%num_full_lon * 2
-    end do
-    if (abs((this%total_area - total_area) / this%total_area) > 1.0d-12) then
-      call log_error('Failed to calculate subcell area!', __FILE__, __LINE__)
-    end if
-
-    do j = this%full_lat_ibeg, this%full_lat_iend
-      if (abs((this%cell_area(j) - 2.0d0 * sum(this%subcell_area(:,j))) / this%cell_area(j)) > 1.0d-12) then
-        call log_error('Failed to calculate subcell area!', __FILE__, __LINE__)
-      end if
-    end do
-
-#ifdef V_POLE
-    do j = this%half_lat_ibeg, this%half_lat_iend
-      if (this%is_south_pole(j)) then
-        if (abs((this%vertex_area(j) - 2.0d0 * this%subcell_area(1,j)) / this%vertex_area(j)) > 1.0d-12) then
-          call log_error('Failed to calculate subcell area!', __FILE__, __LINE__)
-        end if
-      else if (this%is_north_pole(j)) then
-        if (abs((this%vertex_area(j) - 2.0d0 * this%subcell_area(2,j-1)) / this%vertex_area(j)) > 1.0d-12) then
-          call log_error('Failed to calculate subcell area!', __FILE__, __LINE__)
-        end if
-      else
-        if (abs((this%vertex_area(j) - 2.0d0 * (this%subcell_area(2,j-1) + this%subcell_area(1,j))) / this%vertex_area(j)) > 1.0d-12) then
-          call log_error('Failed to calculate subcell area!', __FILE__, __LINE__)
-        end if
-      end if
-    end do
-#else
-    do j = this%half_lat_ibeg, this%half_lat_iend
-      if (abs((this%vertex_area(j) - 2.0d0 * (this%subcell_area(2,j) + this%subcell_area(1,j+1))) / this%vertex_area(j)) > 1.0d-12) then
-        call log_error('Failed to calculate subcell area!', __FILE__, __LINE__)
-      end if
-    end do
-#endif
-
-    total_area = 0.0d0
-    do j = this%full_lat_ibeg_no_pole, this%full_lat_iend_no_pole
-      total_area = total_area + this%lon_edge_area(j) * this%num_full_lon
-    end do
-    do j = this%half_lat_ibeg_no_pole, this%half_lat_iend_no_pole
-      total_area = total_area + this%lat_edge_area(j) * this%num_full_lon
-    end do
-    if (abs((this%total_area - total_area) / this%total_area) > 1.0d-10) then
-      call log_error('Failed to calculate edge area!', __FILE__, __LINE__)
-    end if
 
     do j = this%full_lat_ibeg_no_pole, this%full_lat_iend_no_pole
       this%le_lon(j) = this%dlat * radius

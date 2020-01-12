@@ -6,13 +6,92 @@ module debug_mod
   use static_mod
   use state_mod
   use tend_mod
+  use block_mod
+  use parallel_mod
+  use process_mod
 
   private
 
+  public debug_check_areas
   public debug_check_space_operators
   public debug_print_min_max
 
 contains
+
+  subroutine debug_check_areas()
+
+    type(mesh_type), pointer :: mesh
+    real(r8) total_area
+    integer j
+
+    mesh => global_mesh
+
+    total_area = 0.0_r8
+    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+      total_area = total_area + mesh%cell_area(j) * mesh%num_full_lon
+    end do
+    if (abs(global_mesh%total_area - total_area) / global_mesh%total_area > 1.0d-12) then
+      call log_error('Failed to calculate cell area!', __FILE__, __LINE__)
+    end if
+
+    total_area = 0.0_r8
+    do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+      total_area = total_area + mesh%vertex_area(j) * mesh%num_half_lon
+    end do
+    if (abs(global_mesh%total_area - total_area) / global_mesh%total_area > 1.0d-12) then
+      call log_error('Failed to calculate vertex area!', __FILE__, __LINE__)
+    end if
+
+    total_area = 0.0d0
+    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+      total_area = total_area + sum(mesh%subcell_area(:,j)) * mesh%num_full_lon * 2
+    end do
+    if (abs(global_mesh%total_area - total_area) / global_mesh%total_area > 1.0d-12) then
+      call log_error('Failed to calculate subcell area!', __FILE__, __LINE__)
+    end if
+
+    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+      if (abs(mesh%cell_area(j) - 2.0d0 * sum(mesh%subcell_area(:,j))) / mesh%cell_area(j) > 1.0d-12) then
+        call log_error('Failed to calculate subcell area!', __FILE__, __LINE__)
+      end if
+    end do
+
+#ifdef V_POLE
+    do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+      if (mesh%is_south_pole(j)) then
+        if (abs(mesh%vertex_area(j) - 2.0d0 * mesh%subcell_area(1,j)) / mesh%vertex_area(j) > 1.0d-12) then
+          call log_error('Failed to calculate subcell area!', __FILE__, __LINE__)
+        end if
+      else if (mesh%is_north_pole(j)) then
+        if (abs(mesh%vertex_area(j) - 2.0d0 * mesh%subcell_area(2,j-1)) / mesh%vertex_area(j) > 1.0d-12) then
+          call log_error('Failed to calculate subcell area!', __FILE__, __LINE__)
+        end if
+      else
+        if (abs(mesh%vertex_area(j) - 2.0d0 * (mesh%subcell_area(2,j-1) + mesh%subcell_area(1,j))) / mesh%vertex_area(j) > 1.0d-12) then
+          call log_error('Failed to calculate subcell area!', __FILE__, __LINE__)
+        end if
+      end if
+    end do
+#else
+    do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+      if (abs(mesh%vertex_area(j) - 2.0_r8 * (mesh%subcell_area(2,j) + mesh%subcell_area(1,j+1))) / mesh%vertex_area(j) > 1.0d-12) then
+        call log_error('Failed to calculate subcell area!', __FILE__, __LINE__)
+      end if
+    end do
+#endif
+
+    total_area = 0.0d0
+    do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+      total_area = total_area + mesh%lon_edge_area(j) * mesh%num_full_lon
+    end do
+    do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+      total_area = total_area + mesh%lat_edge_area(j) * mesh%num_full_lon
+    end do
+    if (abs(global_mesh%total_area - total_area) / global_mesh%total_area > 1.0d-10) then
+      call log_error('Failed to calculate edge area!', __FILE__, __LINE__)
+    end if
+
+  end subroutine debug_check_areas
 
   subroutine debug_check_space_operators(static, state, tend)
 

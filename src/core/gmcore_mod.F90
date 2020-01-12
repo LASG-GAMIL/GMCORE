@@ -58,6 +58,7 @@ contains
 
     call log_init()
     call global_mesh%init(num_lon, num_lat)
+    call debug_check_areas()
     call process_init()
     call time_init()
     call history_init()
