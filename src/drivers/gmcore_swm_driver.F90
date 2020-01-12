@@ -47,8 +47,8 @@ program gmcore_swm_driver
     call log_error('Unknown test case ' // trim(test_case) // '!')
   end select
 
-  do iblk = 1, size(process%blocks)
-    call set_initial_condition(process%blocks(iblk))
+  do iblk = 1, size(proc%blocks)
+    call set_initial_condition(proc%blocks(iblk))
   end do
 
   call gmcore_run()

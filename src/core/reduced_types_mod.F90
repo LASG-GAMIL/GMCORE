@@ -10,10 +10,10 @@ module reduced_types_mod
     integer halo_width
     integer num_full_lon
     integer num_half_lon
-    integer full_lon_start_idx
-    integer full_lon_end_idx
-    integer half_lon_start_idx
-    integer half_lon_end_idx
+    integer full_lon_ibeg
+    integer full_lon_iend
+    integer half_lon_ibeg
+    integer half_lon_iend
     integer full_lon_lb
     integer full_lon_ub
     integer half_lon_lb

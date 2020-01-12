@@ -31,28 +31,28 @@ contains
     sin_alpha = sin(alpha)
     block%static%ghs(:,:) = 0.0
 
-    do j = block%state(1)%mesh%full_lat_start_idx, block%state(1)%mesh%full_lat_end_idx
+    do j = block%state(1)%mesh%full_lat_ibeg, block%state(1)%mesh%full_lat_iend
       cos_lat = mesh%full_cos_lat(j)
       sin_lat = mesh%full_sin_lat(j)
-      do i = block%state(1)%mesh%half_lon_start_idx, block%state(1)%mesh%half_lon_end_idx
+      do i = block%state(1)%mesh%half_lon_ibeg, block%state(1)%mesh%half_lon_iend
         cos_lon = mesh%half_cos_lon(i)
         block%state(1)%u(i,j) = u0 * (cos_lat * cos_alpha + cos_lon * sin_lat * sin_alpha)
       end do
     end do
     call fill_halo(mesh, block%state(1)%u)
 
-    do j = mesh%half_lat_start_idx, mesh%half_lat_end_idx
-      do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
+    do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         sin_lon = mesh%full_cos_lon(i)
         block%state(1)%v(i,j) = - u0 * sin_lon * sin_alpha
       end do
     end do
     call fill_halo(mesh, block%state(1)%v)
 
-    do j = mesh%full_lat_start_idx, mesh%full_lat_end_idx
+    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       cos_lat = mesh%full_cos_lat(j)
       sin_lat = mesh%full_sin_lat(j)
-      do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
+      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         cos_lon = mesh%full_cos_lon(i)
         block%state(1)%gd(i,j) = gd0 - (radius * omega * u0 + u0**2 * 0.5) * (sin_lat * cos_alpha - cos_lon * cos_lat * sin_alpha)**2
       end do

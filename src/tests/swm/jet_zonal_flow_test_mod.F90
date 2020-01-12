@@ -36,8 +36,8 @@ contains
 
     block%static%ghs = 0.0_r8
 
-    do j = mesh%full_lat_start_idx, mesh%full_lat_end_idx
-      do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
+    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+      do i = mesh%half_lon_ibeg, mesh%half_lon_iend
         block%state(1)%u(i,j) = u_function(mesh%full_lat(j))
       end do
     end do
@@ -45,8 +45,8 @@ contains
 
     block%state(1)%v = 0.0_r8
 
-    do j = mesh%full_lat_start_idx, mesh%full_lat_end_idx
-      if (j == mesh%full_lat_start_idx) then
+    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+      if (j == mesh%full_lat_ibeg) then
         block%state(1)%gd(0,j) = gh0
       else
         call qags(gh_integrand, -0.5*pi, mesh%full_lat(j), 1.0e-10, 1.0e-3, block%state(1)%gd(0,j), abserr, neval, ierr)
@@ -55,7 +55,7 @@ contains
         end if
         block%state(1)%gd(0,j) = gh0 - block%state(1)%gd(0,j)
       end if
-      do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
+      do i = mesh%half_lon_ibeg, mesh%half_lon_iend
         block%state(1)%gd(i,j) = block%state(1)%gd(0,j)
         ! Add perturbation.
         block%state(1)%gd(i,j) = block%state(1)%gd(i,j) + ghd * &

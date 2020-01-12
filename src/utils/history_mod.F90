@@ -136,8 +136,8 @@ contains
     static => blocks(1)%static
 
     ! Convert wind from C grid to A grid.
-    do j = mesh%full_lat_start_idx, mesh%full_lat_end_idx
-      do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
+    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
 #ifdef V_POLE
         v(i,j) = 0.5_r8 * (state%v(i,j) + state%v(i,j+1))
 #else

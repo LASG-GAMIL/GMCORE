@@ -32,22 +32,22 @@ module block_mod
 
 contains
 
-  subroutine block_init(this, lon_halo_width, lat_halo_width, lon_start_idx, lon_end_idx, lat_start_idx, lat_end_idx)
+  subroutine block_init(this, lon_halo_width, lat_halo_width, lon_ibeg, lon_iend, lat_ibeg, lat_iend)
 
     class(block_type), intent(inout) :: this
     integer, intent(in) :: lon_halo_width
     integer, intent(in) :: lat_halo_width
-    integer, intent(in) :: lon_start_idx
-    integer, intent(in) :: lon_end_idx
-    integer, intent(in) :: lat_start_idx
-    integer, intent(in) :: lat_end_idx
+    integer, intent(in) :: lon_ibeg
+    integer, intent(in) :: lon_iend
+    integer, intent(in) :: lat_ibeg
+    integer, intent(in) :: lat_iend
 
     integer i
 
     next_id = next_id + 1
     this%id = next_id
 
-    call this%mesh%init(num_lon, num_lat, this%id, lon_halo_width, lat_halo_width, lon_start_idx, lon_end_idx, lat_start_idx, lat_end_idx)
+    call this%mesh%init(num_lon, num_lat, this%id, lon_halo_width, lat_halo_width, lon_ibeg, lon_iend, lat_ibeg, lat_iend)
 
     if (.not. allocated(this%state)) then
       select case (trim(time_scheme))

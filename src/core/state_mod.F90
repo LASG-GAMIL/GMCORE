@@ -93,16 +93,16 @@ contains
 
     integer i, j
 
-    do j = this%mesh%full_lat_start_idx_no_pole, this%mesh%full_lat_end_idx_no_pole
-      do i = this%mesh%half_lon_start_idx, this%mesh%half_lon_end_idx
+    do j = this%mesh%full_lat_ibeg_no_pole, this%mesh%full_lat_iend_no_pole
+      do i = this%mesh%half_lon_ibeg, this%mesh%half_lon_iend
         this%m_lon(i,j) = (this%mesh%lon_edge_left_area (j) * this%gd(i,  j) + &
                             this%mesh%lon_edge_right_area(j) * this%gd(i+1,j)   &
                            ) / this%mesh%lon_edge_area(j) / g
       end do
     end do
 
-    do j = this%mesh%half_lat_start_idx_no_pole, this%mesh%half_lat_end_idx_no_pole
-      do i = this%mesh%full_lon_start_idx, this%mesh%full_lon_end_idx
+    do j = this%mesh%half_lat_ibeg_no_pole, this%mesh%half_lat_iend_no_pole
+      do i = this%mesh%full_lon_ibeg, this%mesh%full_lon_iend
 #ifdef V_POLE
         this%m_lat(i,j) = (this%mesh%lat_edge_up_area  (j) * this%gd(i,j  ) + &
                             this%mesh%lat_edge_down_area(j) * this%gd(i,j-1)   &
@@ -124,8 +124,8 @@ contains
     integer i, j
     real(r8) pole
 
-    do j = this%mesh%half_lat_start_idx_no_pole, this%mesh%half_lat_end_idx_no_pole
-      do i = this%mesh%half_lon_start_idx, this%mesh%half_lon_end_idx
+    do j = this%mesh%half_lat_ibeg_no_pole, this%mesh%half_lat_iend_no_pole
+      do i = this%mesh%half_lon_ibeg, this%mesh%half_lon_iend
 #ifdef V_POLE
         this%m_vtx(i,j) = (                                                       &
           (this%gd(i,j-1) + this%gd(i+1,j-1)) * this%mesh%subcell_area(2,j-1) + &
@@ -141,26 +141,26 @@ contains
     end do
 #ifdef V_POLE
     if (this%mesh%has_south_pole()) then
-      j = this%mesh%half_lat_start_idx
+      j = this%mesh%half_lat_ibeg
       pole = 0.0_r8
-      do i = this%mesh%full_lon_start_idx, this%mesh%full_lon_end_idx
+      do i = this%mesh%full_lon_ibeg, this%mesh%full_lon_iend
         pole = pole + this%gd(i,j)
       end do
       call zonal_sum(pole)
       pole = pole / this%mesh%num_half_lon / g
-      do i = this%mesh%half_lon_start_idx, this%mesh%half_lon_end_idx
+      do i = this%mesh%half_lon_ibeg, this%mesh%half_lon_iend
         this%m_vtx(i,j) = pole
       end do
     end if
     if (this%mesh%has_north_pole()) then
-      j = this%mesh%half_lat_end_idx
+      j = this%mesh%half_lat_iend
       pole = 0.0_r8
-      do i = this%mesh%full_lon_start_idx, this%mesh%full_lon_end_idx
+      do i = this%mesh%full_lon_ibeg, this%mesh%full_lon_iend
         pole = pole + this%gd(i,j-1)
       end do
       call zonal_sum(pole)
       pole = pole / this%mesh%num_half_lon / g
-      do i = this%mesh%half_lon_start_idx, this%mesh%half_lon_end_idx
+      do i = this%mesh%half_lon_ibeg, this%mesh%half_lon_iend
         this%m_vtx(i,j) = pole
       end do
     end if
@@ -174,15 +174,15 @@ contains
 
     integer i, j
 
-    do j = this%mesh%full_lat_start_idx_no_pole, this%mesh%full_lat_end_idx_no_pole
-      do i = this%mesh%half_lon_start_idx, this%mesh%half_lon_end_idx
+    do j = this%mesh%full_lat_ibeg_no_pole, this%mesh%full_lat_iend_no_pole
+      do i = this%mesh%half_lon_ibeg, this%mesh%half_lon_iend
         this%mf_lon_n(i,j) = this%m_lon(i,j) * this%u(i,j)
       end do
     end do
     call fill_halo(this%mesh, this%mf_lon_n)
 
-    do j = this%mesh%half_lat_start_idx_no_pole, this%mesh%half_lat_end_idx_no_pole
-      do i = this%mesh%full_lon_start_idx, this%mesh%full_lon_end_idx
+    do j = this%mesh%half_lat_ibeg_no_pole, this%mesh%half_lat_iend_no_pole
+      do i = this%mesh%full_lon_ibeg, this%mesh%full_lon_iend
         this%mf_lat_n(i,j) = this%m_lat(i,j) * this%v(i,j)
       end do
     end do
@@ -196,8 +196,8 @@ contains
 
     integer i, j
 
-    do j = this%mesh%full_lat_start_idx_no_pole, this%mesh%full_lat_end_idx_no_pole
-      do i = this%mesh%half_lon_start_idx, this%mesh%half_lon_end_idx
+    do j = this%mesh%full_lat_ibeg_no_pole, this%mesh%full_lat_iend_no_pole
+      do i = this%mesh%half_lon_ibeg, this%mesh%half_lon_iend
 #ifdef V_POLE
         this%mf_lon_t(i,j) = this%mesh%full_tangent_wgt(1,j) * (this%mf_lat_n(i,j  ) + this%mf_lat_n(i+1,j  )) + &
                               this%mesh%full_tangent_wgt(2,j) * (this%mf_lat_n(i,j+1) + this%mf_lat_n(i+1,j+1))
@@ -209,8 +209,8 @@ contains
     end do
     call fill_halo(this%mesh, this%mf_lon_t)
 
-    do j = this%mesh%half_lat_start_idx_no_pole, this%mesh%half_lat_end_idx_no_pole
-      do i = this%mesh%full_lon_start_idx, this%mesh%full_lon_end_idx
+    do j = this%mesh%half_lat_ibeg_no_pole, this%mesh%half_lat_iend_no_pole
+      do i = this%mesh%full_lon_ibeg, this%mesh%full_lon_iend
 #ifdef V_POLE
         this%mf_lat_t(i,j) = this%mesh%half_tangent_wgt(1,j) * (this%mf_lon_n(i-1,j-1) + this%mf_lon_n(i,j-1)) + &
                               this%mesh%half_tangent_wgt(2,j) * (this%mf_lon_n(i-1,j  ) + this%mf_lon_n(i,j  ))
@@ -234,8 +234,8 @@ contains
 
     mesh => this%mesh
 
-    do j = mesh%half_lat_start_idx_no_pole, mesh%half_lat_end_idx_no_pole
-      do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
+    do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+      do i = mesh%half_lon_ibeg, mesh%half_lon_iend
 #ifdef V_POLE
         this%pv(i,j) = (                                                              &
           (                                                                           &
@@ -255,26 +255,26 @@ contains
     end do
 #ifdef V_POLE
     if (mesh%has_south_pole()) then
-      j = mesh%half_lat_start_idx
+      j = mesh%half_lat_ibeg
       pole = 0.0_r8
-      do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
+      do i = mesh%half_lon_ibeg, mesh%half_lon_iend
         pole = pole - this%u(i,j) * mesh%de_lon(j)
       end do
       call zonal_sum(pole)
       pole = pole / mesh%num_half_lon / mesh%vertex_area(j)
-      do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
+      do i = mesh%half_lon_ibeg, mesh%half_lon_iend
         this%pv(i,j) = (pole + mesh%half_f(j)) / this%m_vtx(i,j)
       end do
     end if
     if (mesh%has_north_pole()) then
-      j = mesh%half_lat_end_idx
+      j = mesh%half_lat_iend
       pole = 0.0_r8
-      do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
+      do i = mesh%half_lon_ibeg, mesh%half_lon_iend
         pole = pole + this%u(i,j-1) * mesh%de_lon(j-1)
       end do
       call zonal_sum(pole)
       pole = pole / mesh%num_half_lon / mesh%vertex_area(j)
-      do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
+      do i = mesh%half_lon_ibeg, mesh%half_lon_iend
         this%pv(i,j) = (pole + mesh%half_f(j)) / this%m_vtx(i,j)
       end do
     end if
@@ -282,26 +282,26 @@ contains
     if (pv_pole_stokes) then
       ! Special treatment of vorticity around Poles
       if (mesh%has_south_pole()) then
-        j = mesh%half_lat_start_idx
+        j = mesh%half_lat_ibeg
         pole = 0.0_r8
-        do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
+        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           pole = pole - this%u(i,j+1) * mesh%de_lon(j+1)
         end do
         call zonal_sum(pole)
         pole = pole / mesh%num_half_lon / mesh%vertex_area(j)
-        do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
+        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           this%pv(i,j) = (pole + mesh%half_f(j)) / this%m_vtx(i,j)
         end do
       end if
       if (mesh%has_north_pole()) then
-        j = mesh%half_lat_end_idx
+        j = mesh%half_lat_iend
         pole = 0.0_r8
-        do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
+        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           pole = pole + this%u(i,j) * mesh%de_lon(j)
         end do
         call zonal_sum(pole)
         pole = pole / mesh%num_half_lon / mesh%vertex_area(j)
-        do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
+        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           this%pv(i,j) = (pole + mesh%half_f(j)) / this%m_vtx(i,j)
         end do
       end if
@@ -321,8 +321,8 @@ contains
 
     mesh => this%mesh
 
-    do j = mesh%full_lat_start_idx_no_pole, mesh%full_lat_end_idx_no_pole
-      do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
+    do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         this%ke(i,j) = (mesh%lon_edge_right_area(j  ) * this%u(i-1,j  )**2 + &
                          mesh%lon_edge_left_area (j  ) * this%u(i  ,j  )**2 + &
 #ifdef V_POLE
@@ -338,26 +338,26 @@ contains
 #ifndef V_POLE
     ! Note: lat_edge_down_area and lat_edge_up_area at the Poles is the same as cell_area.
     if (mesh%has_south_pole()) then
-      j = mesh%full_lat_start_idx
+      j = mesh%full_lat_ibeg
       pole = 0.0d0
-      do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
+      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         pole = pole + this%v(i,j)**2
       end do
       call zonal_sum(pole)
       pole = pole / mesh%num_full_lon * 0.5_r8
-      do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
+      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         this%ke(i,j) = pole
       end do
     end if
     if (mesh%has_north_pole()) then
-      j = mesh%full_lat_end_idx
+      j = mesh%full_lat_iend
       pole = 0.0d0
-      do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
+      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         pole = pole + this%v(i,j-1)**2
       end do
       call zonal_sum(pole)
       pole = pole / mesh%num_full_lon * 0.5_r8
-      do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
+      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         this%ke(i,j) = pole
       end do
     end if

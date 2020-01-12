@@ -62,9 +62,9 @@ contains
 
     do iblk = 1, size(blocks)
       allocate(blocks(iblk)%reduced_mesh  (blocks(iblk)%mesh%full_lat_lb:blocks(iblk)%mesh%full_lat_ub))
-      allocate(blocks(iblk)%reduced_static(blocks(iblk)%mesh%full_lat_start_idx:blocks(iblk)%mesh%full_lat_end_idx))
-      allocate(blocks(iblk)%reduced_state (blocks(iblk)%mesh%full_lat_start_idx:blocks(iblk)%mesh%full_lat_end_idx))
-      allocate(blocks(iblk)%reduced_tend  (blocks(iblk)%mesh%full_lat_start_idx:blocks(iblk)%mesh%full_lat_end_idx))
+      allocate(blocks(iblk)%reduced_static(blocks(iblk)%mesh%full_lat_ibeg:blocks(iblk)%mesh%full_lat_iend))
+      allocate(blocks(iblk)%reduced_state (blocks(iblk)%mesh%full_lat_ibeg:blocks(iblk)%mesh%full_lat_iend))
+      allocate(blocks(iblk)%reduced_tend  (blocks(iblk)%mesh%full_lat_ibeg:blocks(iblk)%mesh%full_lat_iend))
 
       do j = 1, size(reduce_factors)
         if (reduce_factors(j) == 0) cycle
@@ -74,25 +74,25 @@ contains
         end if
         if (blocks(iblk)%mesh%has_south_pole()) then
 #ifdef V_POLE
-          full_j = blocks(iblk)%mesh%full_lat_start_idx+j-1
+          full_j = blocks(iblk)%mesh%full_lat_ibeg+j-1
 #else
-          full_j = blocks(iblk)%mesh%full_lat_start_idx+j
+          full_j = blocks(iblk)%mesh%full_lat_ibeg+j
 #endif
           call reduce_mesh(reduce_factors(j), full_j, blocks(iblk)%mesh, blocks(iblk)%reduced_mesh(full_j))
           blocks(iblk)%reduced_mesh(full_j)%damp_order = damp_orders(j)
         end if
         if (blocks(iblk)%mesh%has_north_pole()) then
 #ifdef V_POLE
-          full_j = blocks(iblk)%mesh%full_lat_end_idx-j+1
+          full_j = blocks(iblk)%mesh%full_lat_iend-j+1
 #else
-          full_j = blocks(iblk)%mesh%full_lat_end_idx-j
+          full_j = blocks(iblk)%mesh%full_lat_iend-j
 #endif
           call reduce_mesh(reduce_factors(j), full_j, blocks(iblk)%mesh, blocks(iblk)%reduced_mesh(full_j))
           blocks(iblk)%reduced_mesh(full_j)%damp_order = damp_orders(j)
         end if
       end do
 
-      do j = blocks(iblk)%mesh%full_lat_start_idx, blocks(iblk)%mesh%full_lat_end_idx
+      do j = blocks(iblk)%mesh%full_lat_ibeg, blocks(iblk)%mesh%full_lat_iend
         if (blocks(iblk)%reduced_mesh(j)%reduce_factor > 0) then
           call allocate_reduced_static(blocks(iblk)%reduced_mesh(j), blocks(iblk)%reduced_static(j))
           call reduce_static(j, blocks(iblk)%mesh, blocks(iblk)%static, blocks(iblk)%reduced_mesh(j), blocks(iblk)%reduced_static(j))
@@ -112,7 +112,7 @@ contains
 
     integer j
 
-    do j = block%mesh%full_lat_start_idx, block%mesh%full_lat_end_idx
+    do j = block%mesh%full_lat_ibeg, block%mesh%full_lat_iend
       if (block%reduced_mesh(j)%reduce_factor > 0) then
         call reduce_state(j, block%mesh, state, block%reduced_mesh(j), block%reduced_state(j), dt)
       end if
@@ -134,14 +134,14 @@ contains
     reduced_mesh%halo_width         = raw_mesh%lon_halo_width
     reduced_mesh%num_full_lon       = raw_mesh%num_full_lon / reduce_factor
     reduced_mesh%num_half_lon       = raw_mesh%num_half_lon / reduce_factor
-    reduced_mesh%full_lon_start_idx = raw_mesh%full_lon_start_idx                                 ! FIXME: This is wrong in parallel.
-    reduced_mesh%full_lon_end_idx   = raw_mesh%full_lon_start_idx + reduced_mesh%num_full_lon - 1 ! FIXME: This is wrong in parallel.
-    reduced_mesh%half_lon_start_idx = raw_mesh%half_lon_start_idx                                 ! FIXME: This is wrong in parallel.
-    reduced_mesh%half_lon_end_idx   = raw_mesh%half_lon_start_idx + reduced_mesh%num_half_lon - 1 ! FIXME: This is wrong in parallel.
-    reduced_mesh%full_lon_lb        = reduced_mesh%full_lon_start_idx - raw_mesh%lon_halo_width
-    reduced_mesh%full_lon_ub        = reduced_mesh%full_lon_end_idx + raw_mesh%lon_halo_width
-    reduced_mesh%half_lon_lb        = reduced_mesh%half_lon_start_idx - raw_mesh%lon_halo_width
-    reduced_mesh%half_lon_ub        = reduced_mesh%half_lon_end_idx + raw_mesh%lon_halo_width
+    reduced_mesh%full_lon_ibeg = raw_mesh%full_lon_ibeg                                 ! FIXME: This is wrong in parallel.
+    reduced_mesh%full_lon_iend   = raw_mesh%full_lon_ibeg + reduced_mesh%num_full_lon - 1 ! FIXME: This is wrong in parallel.
+    reduced_mesh%half_lon_ibeg = raw_mesh%half_lon_ibeg                                 ! FIXME: This is wrong in parallel.
+    reduced_mesh%half_lon_iend   = raw_mesh%half_lon_ibeg + reduced_mesh%num_half_lon - 1 ! FIXME: This is wrong in parallel.
+    reduced_mesh%full_lon_lb        = reduced_mesh%full_lon_ibeg - raw_mesh%lon_halo_width
+    reduced_mesh%full_lon_ub        = reduced_mesh%full_lon_iend + raw_mesh%lon_halo_width
+    reduced_mesh%half_lon_lb        = reduced_mesh%half_lon_ibeg - raw_mesh%lon_halo_width
+    reduced_mesh%half_lon_ub        = reduced_mesh%half_lon_iend + raw_mesh%lon_halo_width
 
     reduced_mesh%full_lat = raw_mesh%full_lat(j+lbound(reduced_mesh%full_lat, 1):j+ubound(reduced_mesh%full_lat, 1))
     reduced_mesh%half_lat = raw_mesh%half_lat(j+lbound(reduced_mesh%half_lat, 1):j+ubound(reduced_mesh%half_lat, 1))
@@ -335,8 +335,8 @@ contains
 
     integer raw_i, i
 
-    raw_i = raw_mesh%full_lon_start_idx + move - 1
-    do i = reduced_mesh%full_lon_start_idx, reduced_mesh%full_lon_end_idx
+    raw_i = raw_mesh%full_lon_ibeg + move - 1
+    do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
       reduced_static%ghs(i,buf_j,move) = sum(raw_static%ghs(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j))
       raw_i = raw_i + reduced_mesh%reduce_factor
     end do
@@ -380,7 +380,7 @@ contains
 
     integer i
 
-    do i = reduced_mesh%half_lon_start_idx, reduced_mesh%half_lon_end_idx
+    do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
       reduced_state%u(i,buf_j,move) = reduced_state%mf_lon_n(i,buf_j,move) / reduced_state%m_lon(i,buf_j,move)
     end do
     call fill_halo(reduced_mesh%halo_width, reduced_state%u(:,buf_j,move))
@@ -400,7 +400,7 @@ contains
 
     integer i
 
-    do i = reduced_mesh%full_lon_start_idx, reduced_mesh%full_lon_end_idx
+    do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
       reduced_state%v(i,buf_j,move) = reduced_state%mf_lat_n(i,buf_j,move) / reduced_state%m_lat(i,buf_j,move)
     end do
     call fill_halo(reduced_mesh%halo_width, reduced_state%v(:,buf_j,move))
@@ -421,8 +421,8 @@ contains
     integer raw_i, i
 
     if (raw_mesh%is_outside_full_lat(j+buf_j)) return
-    raw_i = raw_mesh%full_lon_start_idx + move - 1
-    do i = reduced_mesh%full_lon_start_idx, reduced_mesh%full_lon_end_idx
+    raw_i = raw_mesh%full_lon_ibeg + move - 1
+    do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
       reduced_state%gd(i,buf_j,move) = sum(raw_state%gd(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j))
       raw_i = raw_i + reduced_mesh%reduce_factor
     end do
@@ -449,11 +449,11 @@ contains
     if (raw_mesh%is_outside_half_lat(j+buf_j)) then
       return
     else if (raw_mesh%is_south_pole(j+buf_j)) then
-      reduced_state%pv(:,buf_j,move) = raw_state%pv(raw_mesh%full_lon_start_idx,raw_mesh%half_lat_start_idx)
+      reduced_state%pv(:,buf_j,move) = raw_state%pv(raw_mesh%full_lon_ibeg,raw_mesh%half_lat_ibeg)
     else if (raw_mesh%is_north_pole(j+buf_j)) then
-      reduced_state%pv(:,buf_j,move) = raw_state%pv(raw_mesh%full_lon_start_idx,raw_mesh%half_lat_end_idx)
+      reduced_state%pv(:,buf_j,move) = raw_state%pv(raw_mesh%full_lon_ibeg,raw_mesh%half_lat_iend)
     else
-      do i = reduced_mesh%half_lon_start_idx, reduced_mesh%half_lon_end_idx
+      do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
         m_vtx = (                                                                                                          &
           (reduced_state%gd(i,buf_j-1,move) + reduced_state%gd(i+1,buf_j-1,move)) * reduced_mesh%subcell_area(2,buf_j-1) + &
           (reduced_state%gd(i,buf_j  ,move) + reduced_state%gd(i+1,buf_j  ,move)) * reduced_mesh%subcell_area(1,buf_j  )   &
@@ -475,12 +475,12 @@ contains
       sign = merge(-1.0_r8, 1.0_r8, raw_mesh%full_lat(j) < 0.0_r8)
       u_j  = merge(buf_j+1, buf_j , raw_mesh%full_lat(j) < 0.0_r8)
       pole = 0.0_r8
-      do i = reduced_mesh%half_lon_start_idx, reduced_mesh%half_lon_end_idx
+      do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
         pole = pole + sign * reduced_state%u(i,u_j,move) * reduced_mesh%de_lon(u_j)
       end do
       call zonal_sum(pole)
       pole = pole / reduced_mesh%num_half_lon / reduced_mesh%vertex_area(buf_j)
-      do i = reduced_mesh%half_lon_start_idx, reduced_mesh%half_lon_end_idx
+      do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
         m_vtx = (                                                                                                          &
           (reduced_state%gd(i,buf_j  ,move) + reduced_state%gd(i+1,buf_j  ,move)) * reduced_mesh%subcell_area(2,buf_j  ) + &
           (reduced_state%gd(i,buf_j+1,move) + reduced_state%gd(i+1,buf_j+1,move)) * reduced_mesh%subcell_area(1,buf_j+1)   &
@@ -488,7 +488,7 @@ contains
         reduced_state%pv(i,buf_j,move) = (pole + reduced_mesh%half_f(buf_j)) / m_vtx
       end do
     else
-      do i = reduced_mesh%half_lon_start_idx, reduced_mesh%half_lon_end_idx
+      do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
         m_vtx = (                                                                                                          &
           (reduced_state%gd(i,buf_j  ,move) + reduced_state%gd(i+1,buf_j  ,move)) * reduced_mesh%subcell_area(2,buf_j  ) + &
           (reduced_state%gd(i,buf_j+1,move) + reduced_state%gd(i+1,buf_j+1,move)) * reduced_mesh%subcell_area(1,buf_j+1)   &
@@ -522,7 +522,7 @@ contains
     integer i
 
     if (raw_mesh%is_outside_full_lat(j+buf_j)) return
-    do i = reduced_mesh%half_lon_start_idx, reduced_mesh%half_lon_end_idx
+    do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
       reduced_state%m_lon(i,buf_j,move) = (                                          &
         reduced_mesh%lon_edge_left_area (buf_j) * reduced_state%gd(i  ,buf_j,move) + &
         reduced_mesh%lon_edge_right_area(buf_j) * reduced_state%gd(i+1,buf_j,move)   &
@@ -545,7 +545,7 @@ contains
     integer i
 
     if (reduced_mesh%lat_edge_area(buf_j) == 0) return
-    do i = reduced_mesh%full_lon_start_idx, reduced_mesh%full_lon_end_idx
+    do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
 #ifdef V_POLE
       reduced_state%m_lat(i,buf_j,move) = (                                         &
         reduced_mesh%lat_edge_up_area  (buf_j) * reduced_state%gd(i,buf_j  ,move) + &
@@ -575,8 +575,8 @@ contains
     integer raw_i, i
 
     if (raw_mesh%is_outside_full_lat(j+buf_j)) return
-    raw_i = raw_mesh%full_lon_start_idx + move - 1
-    do i = reduced_mesh%half_lon_start_idx, reduced_mesh%half_lon_end_idx
+    raw_i = raw_mesh%full_lon_ibeg + move - 1
+    do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
       reduced_state%mf_lon_n(i,buf_j,move) = sum(raw_state%mf_lon_n(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j))
       raw_i = raw_i + reduced_mesh%reduce_factor
     end do
@@ -599,7 +599,7 @@ contains
     integer raw_i, i
 
     raw_i = move
-    do i = reduced_mesh%full_lon_start_idx, reduced_mesh%full_lon_end_idx
+    do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
       reduced_state%mf_lat_n(i,buf_j,move) = sum(raw_state%mf_lat_n(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j))
       raw_i = raw_i + reduced_mesh%reduce_factor
     end do
@@ -621,7 +621,7 @@ contains
 
     integer i
 
-    do i = reduced_mesh%half_lon_start_idx, reduced_mesh%half_lon_end_idx
+    do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
 #ifdef V_POLE
       reduced_state%mf_lon_t(i,buf_j,move) =                                                                                           &
         reduced_mesh%full_tangent_wgt(1,buf_j) * (reduced_state%mf_lat_n(i,buf_j  ,move) + reduced_state%mf_lat_n(i+1,buf_j  ,move)) + &
@@ -650,7 +650,7 @@ contains
     integer i
 
     if (is_inf(reduced_mesh%half_tangent_wgt(1,buf_j)) .or. is_inf(reduced_mesh%half_tangent_wgt(2,buf_j))) return
-    do i = reduced_mesh%full_lon_start_idx, reduced_mesh%full_lon_end_idx
+    do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
 #ifdef V_POLE
       reduced_state%mf_lat_t(i,buf_j,move) =                                                                                           &
         reduced_mesh%half_tangent_wgt(1,buf_j) * (reduced_state%mf_lon_n(i-1,buf_j-1,move) + reduced_state%mf_lon_n(i,buf_j-1,move)) + &
@@ -678,7 +678,7 @@ contains
 
     integer i
 
-    do i = reduced_mesh%half_lon_start_idx, reduced_mesh%half_lon_end_idx
+    do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
 #ifdef V_POLE
       reduced_state%dpv_lon_t(i,buf_j,move) = reduced_state%pv(i,buf_j+1,move) - reduced_state%pv(i,buf_j  ,move)
 #else
@@ -702,7 +702,7 @@ contains
 
     integer i
 
-    do i = reduced_mesh%full_lon_start_idx, reduced_mesh%full_lon_end_idx
+    do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
       reduced_state%dpv_lat_t(i,buf_j,move) = reduced_state%pv(i+1,buf_j,move) - reduced_state%pv(i,buf_j,move)
     end do
     call fill_halo(reduced_mesh%halo_width, reduced_state%dpv_lat_t(:,buf_j,move))
@@ -722,7 +722,7 @@ contains
 
     integer i
 
-    do i = reduced_mesh%half_lon_start_idx, reduced_mesh%half_lon_end_idx
+    do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
 #ifdef V_POLE
       reduced_state%dpv_lon_n(i,buf_j,move) = 0.25_r8 * ( &
         reduced_state%dpv_lat_t(i  ,buf_j  ,move) +       &
@@ -755,7 +755,7 @@ contains
 
     integer i
 
-    do i = reduced_mesh%full_lon_start_idx, reduced_mesh%full_lon_end_idx
+    do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
 #ifdef V_POLE
       reduced_state%dpv_lat_n(i,buf_j,move) = 0.25_r8 * ( &
         reduced_state%dpv_lon_t(i-1,buf_j-1,move) +       &
@@ -792,7 +792,7 @@ contains
     le = reduced_mesh%le_lon(buf_j)
     de = reduced_mesh%de_lon(buf_j)
     if (le == inf .or. de == inf) return
-    do i = reduced_mesh%half_lon_start_idx, reduced_mesh%half_lon_end_idx
+    do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
       u = reduced_state%u(i,buf_j,move)
       v = reduced_state%mf_lon_t(i,buf_j,move) / reduced_state%m_lon(i,buf_j,move)
 #ifdef V_POLE
@@ -834,7 +834,7 @@ contains
     le = reduced_mesh%le_lat(buf_j)
     de = reduced_mesh%de_lat(buf_j)
     if (le == inf .or. de == inf) return
-    do i = reduced_mesh%full_lon_start_idx, reduced_mesh%full_lon_end_idx
+    do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
       u = reduced_state%mf_lat_t(i,buf_j,move) / reduced_state%m_lat(i,buf_j,move)
       v = reduced_state%v(i,buf_j,move)
       reduced_state%pv_lat(i,buf_j,move) = 0.5_r8 * (    &
@@ -862,8 +862,8 @@ contains
 
     integer raw_i, i
 
-    raw_i = raw_mesh%full_lon_start_idx + move - 1
-    do i = reduced_mesh%full_lon_start_idx, reduced_mesh%full_lon_end_idx
+    raw_i = raw_mesh%full_lon_ibeg + move - 1
+    do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
       reduced_state%ke(i,buf_j,move) = sum(raw_state%ke(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j))
       raw_i = raw_i + reduced_mesh%reduce_factor
     end do
@@ -882,8 +882,8 @@ contains
 
     integer i, raw_i
 
-    raw_i = raw_mesh%full_lon_start_idx + move - 1
-    do i = reduced_mesh%full_lon_start_idx, reduced_mesh%full_lon_end_idx
+    raw_i = raw_mesh%full_lon_ibeg + move - 1
+    do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
       raw_array(raw_i:raw_i+reduced_mesh%reduce_factor-1) = raw_array(raw_i:raw_i+reduced_mesh%reduce_factor-1) + reduced_array(i) / reduced_mesh%reduce_factor
       raw_i = raw_i + reduced_mesh%reduce_factor
     end do

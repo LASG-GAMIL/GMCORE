@@ -115,11 +115,11 @@ contains
     logical        , intent(in   ), optional :: right_halo
 
     if (merge(left_halo, .false., present(left_halo))) then
-      array(mesh%full_lon_lb:mesh%full_lon_start_idx-1) = 0.0d0
+      array(mesh%full_lon_lb:mesh%full_lon_ibeg-1) = 0.0d0
     end if
 
     if (merge(right_halo, .false., present(right_halo))) then
-      array(mesh%full_lon_end_idx+1:mesh%full_lon_ub) = 0.0d0
+      array(mesh%full_lon_iend+1:mesh%full_lon_ub) = 0.0d0
     end if
 
   end subroutine zero_halo_1d_r8
@@ -134,8 +134,8 @@ contains
     integer i
 
     if (merge(left_halo, .false., present(left_halo))) then
-      do i = mesh%full_lon_start_idx, mesh%full_lon_start_idx + mesh%lon_halo_width - 2
-        array(i) = array(i) + array(mesh%full_lon_end_idx+i-mesh%full_lon_start_idx+1)
+      do i = mesh%full_lon_ibeg, mesh%full_lon_ibeg + mesh%lon_halo_width - 2
+        array(i) = array(i) + array(mesh%full_lon_iend+i-mesh%full_lon_ibeg+1)
       end do
     end if
 

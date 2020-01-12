@@ -33,24 +33,24 @@ contains
     ip_dpe = 0.0_r8
     ip_dmf = 0.0_r8
 
-    do j = mesh%full_lat_start_idx_no_pole, mesh%full_lat_end_idx_no_pole
-      do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
+    do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+      do i = mesh%half_lon_ibeg, mesh%half_lon_iend
         ip_cf = ip_cf + tend%qhv(i,j) * state%mf_lon_n(i,j) * mesh%lon_edge_area(j)
         ip_dke = ip_dke + tend%dkedlon(i,j) * state%mf_lon_n(i,j) * mesh%lon_edge_area(j) * 2
         ip_dpe = ip_dpe + tend%dpedlon(i,j) * state%mf_lon_n(i,j) * mesh%lon_edge_area(j) * 2
       end do
     end do
 
-    do j = mesh%half_lat_start_idx_no_pole, mesh%half_lat_end_idx_no_pole
-      do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
+    do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         ip_cf = ip_cf - tend%qhu(i,j) * state%mf_lat_n(i,j) * mesh%lat_edge_area(j)
         ip_dke = ip_dke + tend%dkedlat(i,j) * state%mf_lat_n(i,j) * mesh%lat_edge_area(j) * 2
         ip_dpe = ip_dpe + tend%dpedlat(i,j) * state%mf_lat_n(i,j) * mesh%lat_edge_area(j) * 2
       end do
     end do
 
-    do j = mesh%full_lat_start_idx, mesh%full_lat_end_idx
-      do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
+    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         ip_dke = ip_dke + (tend%dmfdlon(i,j) + tend%dmfdlat(i,j)) * state%ke(i,j) * mesh%cell_area(j)
         ip_dpe = ip_dpe + (tend%dmfdlon(i,j) + tend%dmfdlat(i,j)) * (state%gd(i,j) + static%ghs(i,j)) * mesh%cell_area(j)
         ip_dmf = ip_dmf + (tend%dmfdlon(i,j) + tend%dmfdlat(i,j)) * mesh%cell_area(j)
