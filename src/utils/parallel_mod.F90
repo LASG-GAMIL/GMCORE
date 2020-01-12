@@ -1,8 +1,17 @@
 module parallel_mod
 
+  use mpi
   use mesh_mod
 
   implicit none
+
+  private
+
+  public fill_halo
+  public zero_halo
+  public zonal_sum
+  public global_sum
+  public overlay_inner_halo
 
   interface fill_halo
     module procedure fill_halo_1d_r8_1
@@ -17,6 +26,10 @@ module parallel_mod
   interface zonal_sum
     module procedure zonal_sum_0d_r8
   end interface zonal_sum
+
+  interface global_sum
+    module procedure global_sum_0d_r8
+  end interface global_sum
 
 contains
 
@@ -146,5 +159,18 @@ contains
     real(8), intent(inout) :: value
 
   end subroutine zonal_sum_0d_r8
+
+  subroutine global_sum_0d_r8(comm, value)
+
+    integer, intent(in) :: comm
+    real(8), intent(inout) :: value
+
+    integer ierr
+    real(8) res
+
+    call MPI_ALLREDUCE(value, res, 1, MPI_DOUBLE, MPI_SUM, comm, ierr)
+    value = res
+
+  end subroutine global_sum_0d_r8
 
 end module parallel_mod

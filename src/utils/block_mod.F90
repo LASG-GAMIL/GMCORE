@@ -28,13 +28,12 @@ module block_mod
     final :: block_final
   end type block_type
 
-  integer :: next_id = 0
-
 contains
 
-  subroutine block_init(this, lon_halo_width, lat_halo_width, lon_ibeg, lon_iend, lat_ibeg, lat_iend)
+  subroutine block_init(this, id, lon_halo_width, lat_halo_width, lon_ibeg, lon_iend, lat_ibeg, lat_iend)
 
     class(block_type), intent(inout) :: this
+    integer, intent(in) :: id
     integer, intent(in) :: lon_halo_width
     integer, intent(in) :: lat_halo_width
     integer, intent(in) :: lon_ibeg
@@ -44,8 +43,7 @@ contains
 
     integer i
 
-    next_id = next_id + 1
-    this%id = next_id
+    this%id = id
 
     call this%mesh%init(num_lon, num_lat, this%id, lon_halo_width, lat_halo_width, lon_ibeg, lon_iend, lat_ibeg, lat_iend)
 

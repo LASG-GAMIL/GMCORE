@@ -2,6 +2,7 @@ module rossby_haurwitz_wave_test_mod
 
   use flogger
   use const_mod
+  use mesh_mod
   use parallel_mod
   use block_mod
 
