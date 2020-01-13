@@ -26,6 +26,7 @@ module reduce_mod
   use mesh_mod
   use static_mod
   use state_mod
+  use process_mod
   use parallel_mod
   use block_mod
   use reduced_types_mod
@@ -61,7 +62,7 @@ contains
     integer iblk, j, full_j
 
     do iblk = 1, size(blocks)
-      allocate(blocks(iblk)%reduced_mesh  (blocks(iblk)%mesh%full_lat_lb:blocks(iblk)%mesh%full_lat_ub))
+      allocate(blocks(iblk)%reduced_mesh  (blocks(iblk)%mesh%full_lat_lb  :blocks(iblk)%mesh%full_lat_ub  ))
       allocate(blocks(iblk)%reduced_static(blocks(iblk)%mesh%full_lat_ibeg:blocks(iblk)%mesh%full_lat_iend))
       allocate(blocks(iblk)%reduced_state (blocks(iblk)%mesh%full_lat_ibeg:blocks(iblk)%mesh%full_lat_iend))
       allocate(blocks(iblk)%reduced_tend  (blocks(iblk)%mesh%full_lat_ibeg:blocks(iblk)%mesh%full_lat_iend))
@@ -130,18 +131,23 @@ contains
     real(r8) x(3), y(3), z(3)
     integer i, buf_j
 
-    reduced_mesh%reduce_factor      = reduce_factor
-    reduced_mesh%halo_width         = raw_mesh%lon_halo_width
-    reduced_mesh%num_full_lon       = raw_mesh%num_full_lon / reduce_factor
-    reduced_mesh%num_half_lon       = raw_mesh%num_half_lon / reduce_factor
-    reduced_mesh%full_lon_ibeg = raw_mesh%full_lon_ibeg                                 ! FIXME: This is wrong in parallel.
-    reduced_mesh%full_lon_iend   = raw_mesh%full_lon_ibeg + reduced_mesh%num_full_lon - 1 ! FIXME: This is wrong in parallel.
-    reduced_mesh%half_lon_ibeg = raw_mesh%half_lon_ibeg                                 ! FIXME: This is wrong in parallel.
-    reduced_mesh%half_lon_iend   = raw_mesh%half_lon_ibeg + reduced_mesh%num_half_lon - 1 ! FIXME: This is wrong in parallel.
-    reduced_mesh%full_lon_lb        = reduced_mesh%full_lon_ibeg - raw_mesh%lon_halo_width
-    reduced_mesh%full_lon_ub        = reduced_mesh%full_lon_iend + raw_mesh%lon_halo_width
-    reduced_mesh%half_lon_lb        = reduced_mesh%half_lon_ibeg - raw_mesh%lon_halo_width
-    reduced_mesh%half_lon_ub        = reduced_mesh%half_lon_iend + raw_mesh%lon_halo_width
+    ! Check if decomposition is OK for reduce.
+    if (mod(raw_mesh%num_full_lon / reduce_factor, proc%dims(1)) /= 0) then
+      call log_error('Parallel zonal decomposition cannot divide reduced zonal grids!')
+    end if
+
+    reduced_mesh%reduce_factor = reduce_factor
+    reduced_mesh%halo_width    = 1
+    reduced_mesh%num_full_lon  = raw_mesh%num_full_lon / reduce_factor
+    reduced_mesh%num_half_lon  = raw_mesh%num_half_lon / reduce_factor
+    reduced_mesh%full_lon_ibeg = raw_mesh%full_lon_ibeg / reduce_factor + 1
+    reduced_mesh%full_lon_iend = reduced_mesh%full_lon_ibeg + reduced_mesh%num_full_lon - 1
+    reduced_mesh%half_lon_ibeg = reduced_mesh%full_lon_ibeg
+    reduced_mesh%half_lon_iend = reduced_mesh%half_lon_ibeg + reduced_mesh%num_half_lon - 1
+    reduced_mesh%full_lon_lb   = reduced_mesh%full_lon_ibeg - reduced_mesh%halo_width
+    reduced_mesh%full_lon_ub   = reduced_mesh%full_lon_iend + reduced_mesh%halo_width
+    reduced_mesh%half_lon_lb   = reduced_mesh%half_lon_ibeg - reduced_mesh%halo_width
+    reduced_mesh%half_lon_ub   = reduced_mesh%half_lon_iend + reduced_mesh%halo_width
 
     reduced_mesh%full_lat = raw_mesh%full_lat(j+lbound(reduced_mesh%full_lat, 1):j+ubound(reduced_mesh%full_lat, 1))
     reduced_mesh%half_lat = raw_mesh%half_lat(j+lbound(reduced_mesh%half_lat, 1):j+ubound(reduced_mesh%half_lat, 1))

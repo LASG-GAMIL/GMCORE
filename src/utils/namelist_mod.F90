@@ -12,8 +12,8 @@ module namelist_mod
   integer num_lon
   integer num_lat
 
-  integer num_proc_lon(20)
-  integer num_proc_lat(20)
+  integer :: num_proc_lon(20) = 0
+  integer :: num_proc_lat(20) = 0
 
   character(30) :: tangent_wgt_scheme = 'classic'
 
