@@ -57,7 +57,7 @@ contains
   subroutine gmcore_init()
 
     call log_init()
-    call global_mesh%init(num_lon, num_lat)
+    call global_mesh%init_global(num_lon, num_lat, lon_halo_width=max(1, maxval(reduce_factors)), lat_halo_width=1)
     call debug_check_areas()
     call process_init()
     call time_init()

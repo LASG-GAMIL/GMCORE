@@ -16,10 +16,6 @@ module mesh_mod
     ! For nesting
     integer :: id = 0
     type(mesh_type), pointer :: parent => null()
-    integer :: parent_lon_ibeg = 0
-    integer :: parent_lon_iend   = 0
-    integer :: parent_lat_ibeg = 0
-    integer :: parent_lat_iend   = 0
     integer lon_halo_width
     integer lat_halo_width
     integer num_full_lon
@@ -88,14 +84,13 @@ module mesh_mod
     ! Weight for constructing tangential wind
     real(r8), allocatable :: full_tangent_wgt(:,:)
     real(r8), allocatable :: half_tangent_wgt(:,:)
-    ! Weight for dissipating potential enstrophy
-    real(r8), allocatable :: full_upwind_beta(:)
-    real(r8), allocatable :: half_upwind_beta(:)
     ! Coriolis parameters
     real(r8), allocatable :: full_f(:)
     real(r8), allocatable :: half_f(:)
   contains
-    procedure :: init => mesh_init
+    procedure :: init_global => mesh_init_global
+    procedure :: init_from_parent => mesh_init_from_parent
+    procedure :: common_init => mesh_common_init
     procedure :: has_south_pole => mesh_has_south_pole
     procedure :: has_north_pole => mesh_has_north_pole
     procedure :: is_south_pole => mesh_is_south_pole
@@ -110,7 +105,7 @@ module mesh_mod
 
 contains
 
-  subroutine mesh_init(this, num_lon, num_lat, id, lon_halo_width, lat_halo_width, lon_ibeg, lon_iend, lat_ibeg, lat_iend)
+  subroutine mesh_init_global(this, num_lon, num_lat, id, lon_halo_width, lat_halo_width)
 
     class(mesh_type), intent(inout)           :: this
     integer         , intent(in   )           :: num_lon
@@ -118,106 +113,41 @@ contains
     integer         , intent(in   ), optional :: id
     integer         , intent(in   ), optional :: lon_halo_width
     integer         , intent(in   ), optional :: lat_halo_width
-    integer         , intent(in   ), optional :: lon_ibeg
-    integer         , intent(in   ), optional :: lon_iend
-    integer         , intent(in   ), optional :: lat_ibeg
-    integer         , intent(in   ), optional :: lat_iend
 
     real(r8) x(3), y(3), z(3)
     integer i, j
 
-    this%num_full_lon       = num_lon
-    this%num_half_lon       = num_lon
-    this%full_lon_ibeg = merge(lon_ibeg, 1, present(lon_ibeg))
-    this%full_lon_iend   = merge(lon_iend, this%num_full_lon, present(lon_iend))
-    this%half_lon_ibeg = this%full_lon_ibeg
-    this%half_lon_iend   = this%full_lon_iend
+    this%num_full_lon  = num_lon
+    this%num_half_lon  = num_lon
+    this%full_lon_ibeg = 1
+    this%full_lon_iend = this%num_full_lon
+    this%half_lon_ibeg = 1
+    this%half_lon_iend = this%num_half_lon
 #ifdef V_POLE
-    this%num_full_lat       = num_lat - 1
-    this%num_half_lat       = num_lat
-    this%half_lat_ibeg = merge(lat_ibeg, 1, present(lat_ibeg))
-    this%half_lat_iend   = merge(lat_iend, this%num_full_lat, present(lat_iend))
-    this%full_lat_ibeg = this%half_lat_ibeg
-    this%full_lat_iend   = merge(this%num_full_lat, this%half_lat_iend, this%half_lat_iend == this%num_half_lat)
+    this%num_full_lat  = num_lat - 1
+    this%num_half_lat  = num_lat
+    this%half_lat_ibeg = 1
+    this%half_lat_iend = this%num_half_lat
+    this%full_lat_ibeg = 1
+    this%full_lat_iend = this%num_full_lat
 #else
-    this%num_full_lat = num_lat
-    this%num_half_lat = num_lat - 1
-    this%full_lat_ibeg = merge(lat_ibeg, 1, present(lat_ibeg))
-    this%full_lat_iend   = merge(lat_iend, this%num_full_lat, present(lat_iend))
-    this%half_lat_ibeg = this%full_lat_ibeg
-    this%half_lat_iend   = merge(this%num_half_lat, this%full_lat_iend, this%full_lat_iend == this%num_full_lat)
+    this%num_full_lat  = num_lat
+    this%num_half_lat  = num_lat - 1
+    this%full_lat_ibeg = 1
+    this%full_lat_iend = this%num_full_lat
+    this%half_lat_ibeg = 1
+    this%half_lat_iend = this%num_half_lat
 #endif
 
-    this%id             = merge(id            ,  0     , present(id))
-    this%lon_halo_width = merge(lon_halo_width,  1     , present(lon_halo_width))
-    this%lat_halo_width = merge(lat_halo_width,  1     , present(lat_halo_width))
-    this%start_lon      = merge(global_mesh%full_lon(lon_ibeg),  0.0_r8, present(lon_ibeg)) ! This should be parent_mesh?
-    this%end_lon        = merge(global_mesh%full_lon(lon_iend)+global_mesh%dlon, pi2, present(lon_iend))
-#ifdef V_POLE
-    this%start_lat      = merge(global_mesh%half_lat(lat_ibeg), -pi05  , present(lat_ibeg))
-    this%end_lat        = merge(global_mesh%half_lat(lat_iend  ),  pi05  , present(lat_iend  ))
-#else
-    this%start_lat      = merge(global_mesh%full_lat(lat_ibeg), -pi05  , present(lat_ibeg))
-    this%end_lat        = merge(global_mesh%full_lat(lat_iend  ),  pi05  , present(lat_iend  ))
-#endif
-    this%total_area     = radius**2 * (this%end_lon - this%start_lon) * (sin(this%end_lat) - sin(this%start_lat))
+    this%id             = merge(id            , -1, present(id))
+    this%lon_halo_width = merge(lon_halo_width,  1, present(lon_halo_width))
+    this%lat_halo_width = merge(lat_halo_width,  1, present(lat_halo_width))
+    this%start_lon      = 0.0_r8
+    this%end_lon        =  pi2
+    this%start_lat      = -pi05
+    this%end_lat        =  pi05
 
-#ifdef V_POLE
-    this%full_lat_ibeg_no_pole = this%full_lat_ibeg
-    this%full_lat_iend_no_pole   = this%full_lat_iend
-    this%half_lat_ibeg_no_pole = merge(this%half_lat_ibeg + 1, this%half_lat_ibeg, this%has_south_pole())
-    this%half_lat_iend_no_pole   = merge(this%half_lat_iend   - 1, this%half_lat_iend  , this%has_north_pole())
-#else
-    this%full_lat_ibeg_no_pole = merge(this%full_lat_ibeg + 1, this%full_lat_ibeg, this%has_south_pole())
-    this%full_lat_iend_no_pole   = merge(this%full_lat_iend   - 1, this%full_lat_iend  , this%has_north_pole())
-    this%half_lat_ibeg_no_pole = this%half_lat_ibeg
-    this%half_lat_iend_no_pole   = this%half_lat_iend
-#endif
-
-    this%full_lon_lb = this%full_lon_ibeg - this%lon_halo_width
-    this%full_lon_ub = this%full_lon_iend   + this%lon_halo_width
-    this%full_lat_lb = this%full_lat_ibeg - this%lat_halo_width
-    this%full_lat_ub = this%full_lat_iend   + this%lat_halo_width
-    this%half_lon_lb = this%half_lon_ibeg - this%lon_halo_width
-    this%half_lon_ub = this%half_lon_iend   + this%lon_halo_width
-    this%half_lat_lb = this%half_lat_ibeg - this%lat_halo_width
-    this%half_lat_ub = this%half_lat_iend   + this%lat_halo_width
-
-    allocate(this%full_lon           (this%full_lon_lb:this%full_lon_ub)); this%full_lon            = inf
-    allocate(this%half_lon           (this%half_lon_lb:this%half_lon_ub)); this%half_lon            = inf
-    allocate(this%full_lat           (this%full_lat_lb:this%full_lat_ub)); this%full_lat            = inf
-    allocate(this%half_lat           (this%half_lat_lb:this%half_lat_ub)); this%half_lat            = inf
-    allocate(this%full_cos_lon       (this%full_lon_lb:this%full_lon_ub)); this%full_cos_lon        = inf
-    allocate(this%half_cos_lon       (this%half_lon_lb:this%half_lon_ub)); this%half_cos_lon        = inf
-    allocate(this%full_sin_lon       (this%full_lon_lb:this%full_lon_ub)); this%full_sin_lon        = inf
-    allocate(this%half_sin_lon       (this%half_lon_lb:this%half_lon_ub)); this%half_sin_lon        = inf
-    allocate(this%full_cos_lat       (this%full_lat_lb:this%full_lat_ub)); this%full_cos_lat        = inf
-    allocate(this%half_cos_lat       (this%half_lat_lb:this%half_lat_ub)); this%half_cos_lat        = inf
-    allocate(this%full_sin_lat       (this%full_lat_lb:this%full_lat_ub)); this%full_sin_lat        = inf
-    allocate(this%half_sin_lat       (this%half_lat_lb:this%half_lat_ub)); this%half_sin_lat        = inf
-    allocate(this%full_lon_deg       (this%full_lon_lb:this%full_lon_ub)); this%full_lon_deg        = inf
-    allocate(this%half_lon_deg       (this%half_lon_lb:this%half_lon_ub)); this%half_lon_deg        = inf
-    allocate(this%full_lat_deg       (this%full_lat_lb:this%full_lat_ub)); this%full_lat_deg        = inf
-    allocate(this%half_lat_deg       (this%half_lat_lb:this%half_lat_ub)); this%half_lat_deg        = inf
-    allocate(this%cell_area          (this%full_lat_lb:this%full_lat_ub)); this%cell_area           = 0.0_r8
-    allocate(this%lon_edge_area      (this%full_lat_lb:this%full_lat_ub)); this%lon_edge_area       = 0.0_r8
-    allocate(this%lon_edge_left_area (this%full_lat_lb:this%full_lat_ub)); this%lon_edge_left_area  = 0.0_r8
-    allocate(this%lon_edge_right_area(this%full_lat_lb:this%full_lat_ub)); this%lon_edge_right_area = 0.0_r8
-    allocate(this%lat_edge_area      (this%half_lat_lb:this%half_lat_ub)); this%lat_edge_area       = 0.0_r8
-    allocate(this%lat_edge_up_area   (this%half_lat_lb:this%half_lat_ub)); this%lat_edge_up_area    = 0.0_r8
-    allocate(this%lat_edge_down_area (this%half_lat_lb:this%half_lat_ub)); this%lat_edge_down_area  = 0.0_r8
-    allocate(this%vertex_area        (this%half_lat_lb:this%half_lat_ub)); this%vertex_area         = 0.0_r8
-    allocate(this%subcell_area     (2,this%full_lat_lb:this%full_lat_ub)); this%subcell_area        = 0.0_r8
-    allocate(this%de_lon             (this%full_lat_lb:this%full_lat_ub)); this%de_lon              = inf
-    allocate(this%de_lat             (this%half_lat_lb:this%half_lat_ub)); this%de_lat              = inf
-    allocate(this%le_lat             (this%half_lat_lb:this%half_lat_ub)); this%le_lat              = inf
-    allocate(this%le_lon             (this%full_lat_lb:this%full_lat_ub)); this%le_lon              = inf
-    allocate(this%full_tangent_wgt (2,this%full_lat_lb:this%full_lat_ub)); this%full_tangent_wgt    = inf
-    allocate(this%half_tangent_wgt (2,this%half_lat_lb:this%half_lat_ub)); this%half_tangent_wgt    = inf
-    allocate(this%full_upwind_beta   (this%full_lat_lb:this%full_lat_ub)); this%full_upwind_beta    = inf
-    allocate(this%half_upwind_beta   (this%half_lat_lb:this%half_lat_ub)); this%half_upwind_beta    = inf
-    allocate(this%full_f             (this%full_lat_lb:this%full_lat_ub)); this%full_f              = inf
-    allocate(this%half_f             (this%half_lat_lb:this%half_lat_ub)); this%half_f              = inf
+    call this%common_init()
 
     this%dlon = (this%end_lon - this%start_lon) / this%num_full_lon
     do i = this%full_lon_lb, this%full_lon_ub
@@ -303,23 +233,15 @@ contains
 
     ! Ensure the values of cos_lat and sin_lat are expected at the Poles.
 #ifdef V_POLE
-    if (this%has_south_pole()) then
-      this%half_cos_lat(this%half_lat_ibeg) =  0.0_r8
-      this%half_sin_lat(this%half_lat_ibeg) = -1.0_r8
-    end if
-    if (this%has_north_pole()) then
-      this%half_cos_lat(this%half_lat_iend) = 0.0_r8
-      this%half_sin_lat(this%half_lat_iend) = 1.0_r8
-    end if
+    this%half_cos_lat(this%half_lat_ibeg) =  0.0_r8
+    this%half_sin_lat(this%half_lat_ibeg) = -1.0_r8
+    this%half_cos_lat(this%half_lat_iend) =  0.0_r8
+    this%half_sin_lat(this%half_lat_iend) =  1.0_r8
 #else
-    if (this%has_south_pole()) then
-      this%full_cos_lat(this%full_lat_ibeg) =  0.0_r8
-      this%full_sin_lat(this%full_lat_ibeg) = -1.0_r8
-    end if
-    if (this%has_north_pole()) then
-      this%full_cos_lat(this%full_lat_iend) = 0.0_r8
-      this%full_sin_lat(this%full_lat_iend) = 1.0_r8
-    end if
+    this%full_cos_lat(this%full_lat_ibeg) =  0.0_r8
+    this%full_sin_lat(this%full_lat_ibeg) = -1.0_r8
+    this%full_cos_lat(this%full_lat_iend) =  0.0_r8
+    this%full_sin_lat(this%full_lat_iend) =  1.0_r8
 #endif
 
 #ifdef V_POLE
@@ -478,26 +400,184 @@ contains
     end select
 
     do j = this%full_lat_ibeg, this%full_lat_iend
-      this%full_upwind_beta(j) = 4 / pi**2 * this%full_lat(j)**2
-    end do
-    do j = this%half_lat_ibeg, this%half_lat_iend
-      this%half_upwind_beta(j) = 4 / pi**2 * this%half_lat(j)**2
-    end do
-
-    do j = this%full_lat_ibeg, this%full_lat_iend
       this%full_f(j) = 2.0_r8 * omega * this%full_sin_lat(j)
     end do
     do j = this%half_lat_ibeg, this%half_lat_iend
       this%half_f(j) = 2.0_r8 * omega * this%half_sin_lat(j)
     end do
 
-  end subroutine mesh_init
+  end subroutine mesh_init_global
+
+  subroutine mesh_init_from_parent(this, parent, id,               &
+                                   lon_halo_width, lat_halo_width, &
+                                   lon_ibeg, lon_iend, lat_ibeg, lat_iend)
+
+    class(mesh_type), intent(inout) :: this
+    class(mesh_type), intent(in) :: parent
+    integer, intent(in) :: id
+    integer, intent(in) :: lon_halo_width
+    integer, intent(in) :: lat_halo_width
+    integer, intent(in) :: lon_ibeg
+    integer, intent(in) :: lon_iend
+    integer, intent(in) :: lat_ibeg
+    integer, intent(in) :: lat_iend
+
+    integer i, j
+
+    this%num_full_lon  = lon_iend - lon_ibeg + 1
+    this%num_half_lon  = this%num_full_lon
+    this%full_lon_ibeg = lon_ibeg
+    this%full_lon_iend = lon_iend
+    this%half_lon_ibeg = lon_ibeg
+    this%half_lon_iend = lon_iend
+#ifdef V_POLE
+    this%num_half_lat  = lat_iend - lat_ibeg + 1
+    this%num_full_lat  = this%num_half_lat - 1
+    this%half_lat_ibeg = lat_ibeg
+    this%half_lat_iend = lat_iend
+    this%full_lat_ibeg = lat_ibeg
+    this%full_lat_iend = merge(lat_iend - 1, lat_iend, this%has_north_pole())
+#else
+    this%num_full_lat  = lat_iend - lat_ibeg + 1
+    this%num_half_lat  = this%num_full_lat - 1
+    this%full_lat_ibeg = lat_ibeg
+    this%full_lat_iend = lat_iend
+    this%half_lat_ibeg = lat_ibeg
+    this%half_lat_iend = merge(lat_iend - 1, lat_iend, this%has_north_pole())
+#endif
+
+    this%id             = id
+    this%lon_halo_width = lon_halo_width
+    this%lat_halo_width = lat_halo_width
+    this%start_lon      = parent%full_lon(lon_ibeg)
+    this%end_lon        = parent%full_lon(lon_iend) + parent%dlon
+#ifdef V_POLE
+    this%start_lat      = merge(parent%full_lat(lat_ibeg-1), -pi05, .not. this%has_south_pole())
+    this%end_lat        = merge(parent%full_lat(lat_iend  ),  pi05, .not. this%has_north_pole())
+#else
+    this%start_lat      = merge(parent%half_lat(lat_ibeg-1), -pi05, .not. this%has_south_pole())
+    this%end_lat        = merge(parent%half_lat(lat_iend  ),  pi05, .not. this%has_north_pole())
+#endif
+
+    call this%common_init()
+
+    this%dlon = parent%dlon
+    do i = this%full_lon_lb, this%full_lon_ub
+      this%full_lon(i) = parent%full_lon(i)
+      this%half_lon(i) = parent%half_lon(i)
+      this%full_lon_deg(i) = parent%full_lon_deg(i)
+      this%half_lon_deg(i) = parent%half_lon_deg(i)
+      this%full_sin_lon(i) = parent%full_sin_lon(i)
+      this%half_sin_lon(i) = parent%half_sin_lon(i)
+      this%full_cos_lon(i) = parent%full_cos_lon(i)
+      this%half_cos_lon(i) = parent%half_cos_lon(i)
+    end do
+
+    this%dlat = parent%dlat
+    do j = this%full_lat_lb, this%full_lat_ub
+      this%full_lat(j) = parent%full_lat(j)
+      this%full_lat_deg(j) = parent%full_lat_deg(j)
+      this%full_sin_lat(j) = parent%full_sin_lat(j)
+      this%full_cos_lat(j) = parent%full_cos_lat(j)
+      this%cell_area(j) = parent%cell_area(j)
+      this%subcell_area(:,j) = parent%subcell_area(:,j)
+      this%lon_edge_left_area(j) = parent%lon_edge_left_area(j)
+      this%lon_edge_right_area(j) = parent%lon_edge_right_area(j)
+      this%lon_edge_area(j) = parent%lon_edge_area(j)
+      this%le_lon(j) = parent%le_lon(j)
+      this%de_lon(j) = parent%de_lon(j)
+      this%full_tangent_wgt(:,j) = parent%full_tangent_wgt(:,j)
+      this%full_f(j) = parent%full_f(j)
+    end do
+    do j = this%half_lat_lb, this%half_lat_ub
+      this%half_lat(j) = parent%half_lat(j)
+      this%half_lat_deg(j) = parent%half_lat_deg(j)
+      this%half_sin_lat(j) = parent%half_sin_lat(j)
+      this%half_cos_lat(j) = parent%half_cos_lat(j)
+      this%vertex_area(j) = parent%vertex_area(j)
+      this%lat_edge_up_area(j) = parent%lat_edge_up_area(j)
+      this%lat_edge_down_area(j) = parent%lat_edge_down_area(j)
+      this%lat_edge_area(j) = parent%lat_edge_area(j)
+      this%le_lat(j) = parent%le_lat(j)
+      this%de_lat(j) = parent%de_lat(j)
+      this%half_tangent_wgt(:,j) = parent%half_tangent_wgt(:,j)
+      this%half_f(j) = parent%half_f(j)
+    end do
+
+  end subroutine mesh_init_from_parent
+
+  subroutine mesh_common_init(this)
+
+    class(mesh_type), intent(inout) :: this
+
+    this%total_area = radius**2 * (this%end_lon - this%start_lon) * (sin(this%end_lat) - sin(this%start_lat))
+
+#ifdef V_POLE
+    this%full_lat_ibeg_no_pole = this%full_lat_ibeg
+    this%full_lat_iend_no_pole = this%full_lat_iend
+    this%half_lat_ibeg_no_pole = this%half_lat_ibeg + 1
+    this%half_lat_iend_no_pole = this%half_lat_iend - 1
+#else
+    this%full_lat_ibeg_no_pole = this%full_lat_ibeg + 1
+    this%full_lat_iend_no_pole = this%full_lat_iend - 1
+    this%half_lat_ibeg_no_pole = this%half_lat_ibeg
+    this%half_lat_iend_no_pole = this%half_lat_iend
+#endif
+
+    this%full_lon_lb = this%full_lon_ibeg - this%lon_halo_width
+    this%full_lon_ub = this%full_lon_iend + this%lon_halo_width
+    this%full_lat_lb = this%full_lat_ibeg - this%lat_halo_width
+    this%full_lat_ub = this%full_lat_iend + this%lat_halo_width
+    this%half_lon_lb = this%half_lon_ibeg - this%lon_halo_width
+    this%half_lon_ub = this%half_lon_iend + this%lon_halo_width
+    this%half_lat_lb = this%half_lat_ibeg - this%lat_halo_width
+    this%half_lat_ub = this%half_lat_iend + this%lat_halo_width
+
+    allocate(this%full_lon           (this%full_lon_lb:this%full_lon_ub)); this%full_lon            = inf
+    allocate(this%half_lon           (this%half_lon_lb:this%half_lon_ub)); this%half_lon            = inf
+    allocate(this%full_lat           (this%full_lat_lb:this%full_lat_ub)); this%full_lat            = inf
+    allocate(this%half_lat           (this%half_lat_lb:this%half_lat_ub)); this%half_lat            = inf
+    allocate(this%full_cos_lon       (this%full_lon_lb:this%full_lon_ub)); this%full_cos_lon        = inf
+    allocate(this%half_cos_lon       (this%half_lon_lb:this%half_lon_ub)); this%half_cos_lon        = inf
+    allocate(this%full_sin_lon       (this%full_lon_lb:this%full_lon_ub)); this%full_sin_lon        = inf
+    allocate(this%half_sin_lon       (this%half_lon_lb:this%half_lon_ub)); this%half_sin_lon        = inf
+    allocate(this%full_cos_lat       (this%full_lat_lb:this%full_lat_ub)); this%full_cos_lat        = inf
+    allocate(this%half_cos_lat       (this%half_lat_lb:this%half_lat_ub)); this%half_cos_lat        = inf
+    allocate(this%full_sin_lat       (this%full_lat_lb:this%full_lat_ub)); this%full_sin_lat        = inf
+    allocate(this%half_sin_lat       (this%half_lat_lb:this%half_lat_ub)); this%half_sin_lat        = inf
+    allocate(this%full_lon_deg       (this%full_lon_lb:this%full_lon_ub)); this%full_lon_deg        = inf
+    allocate(this%half_lon_deg       (this%half_lon_lb:this%half_lon_ub)); this%half_lon_deg        = inf
+    allocate(this%full_lat_deg       (this%full_lat_lb:this%full_lat_ub)); this%full_lat_deg        = inf
+    allocate(this%half_lat_deg       (this%half_lat_lb:this%half_lat_ub)); this%half_lat_deg        = inf
+    allocate(this%cell_area          (this%full_lat_lb:this%full_lat_ub)); this%cell_area           = 0.0_r8
+    allocate(this%lon_edge_area      (this%full_lat_lb:this%full_lat_ub)); this%lon_edge_area       = 0.0_r8
+    allocate(this%lon_edge_left_area (this%full_lat_lb:this%full_lat_ub)); this%lon_edge_left_area  = 0.0_r8
+    allocate(this%lon_edge_right_area(this%full_lat_lb:this%full_lat_ub)); this%lon_edge_right_area = 0.0_r8
+    allocate(this%lat_edge_area      (this%half_lat_lb:this%half_lat_ub)); this%lat_edge_area       = 0.0_r8
+    allocate(this%lat_edge_up_area   (this%half_lat_lb:this%half_lat_ub)); this%lat_edge_up_area    = 0.0_r8
+    allocate(this%lat_edge_down_area (this%half_lat_lb:this%half_lat_ub)); this%lat_edge_down_area  = 0.0_r8
+    allocate(this%vertex_area        (this%half_lat_lb:this%half_lat_ub)); this%vertex_area         = 0.0_r8
+    allocate(this%subcell_area     (2,this%full_lat_lb:this%full_lat_ub)); this%subcell_area        = 0.0_r8
+    allocate(this%de_lon             (this%full_lat_lb:this%full_lat_ub)); this%de_lon              = inf
+    allocate(this%de_lat             (this%half_lat_lb:this%half_lat_ub)); this%de_lat              = inf
+    allocate(this%le_lat             (this%half_lat_lb:this%half_lat_ub)); this%le_lat              = inf
+    allocate(this%le_lon             (this%full_lat_lb:this%full_lat_ub)); this%le_lon              = inf
+    allocate(this%full_tangent_wgt (2,this%full_lat_lb:this%full_lat_ub)); this%full_tangent_wgt    = inf
+    allocate(this%half_tangent_wgt (2,this%half_lat_lb:this%half_lat_ub)); this%half_tangent_wgt    = inf
+    allocate(this%full_f             (this%full_lat_lb:this%full_lat_ub)); this%full_f              = inf
+    allocate(this%half_f             (this%half_lat_lb:this%half_lat_ub)); this%half_f              = inf
+
+  end subroutine mesh_common_init
 
   logical function mesh_has_south_pole(this) result(res)
 
     class(mesh_type), intent(in) :: this
 
-    res = this%start_lat == -0.5_r8 * pi
+#ifdef V_POLE
+    res = this%half_lat_ibeg == 1
+#else
+    res = this%full_lat_ibeg == 1
+#endif
 
   end function mesh_has_south_pole
 
@@ -505,7 +585,11 @@ contains
 
     class(mesh_type), intent(in) :: this
 
-    res = this%end_lat == 0.5_r8 * pi
+#ifdef V_POLE
+    res = this%half_lat_iend == global_mesh%num_half_lat
+#else
+    res = this%full_lat_iend == global_mesh%num_full_lat
+#endif
 
   end function mesh_has_north_pole
 
@@ -524,9 +608,9 @@ contains
     integer, intent(in) :: j
 
 #ifdef V_POLE
-    res = this%has_north_pole() .and. j == this%num_half_lat
+    res = this%has_north_pole() .and. j == global_mesh%num_half_lat
 #else
-    res = this%has_north_pole() .and. j == this%num_full_lat
+    res = this%has_north_pole() .and. j == global_mesh%num_full_lat
 #endif
 
   end function mesh_is_north_pole
@@ -593,8 +677,6 @@ contains
     if (allocated(this%le_lon             )) deallocate(this%le_lon             )
     if (allocated(this%full_tangent_wgt   )) deallocate(this%full_tangent_wgt   )
     if (allocated(this%half_tangent_wgt   )) deallocate(this%half_tangent_wgt   )
-    if (allocated(this%full_upwind_beta   )) deallocate(this%full_upwind_beta   )
-    if (allocated(this%half_upwind_beta   )) deallocate(this%half_upwind_beta   )
     if (allocated(this%full_f             )) deallocate(this%full_f             )
     if (allocated(this%half_f             )) deallocate(this%half_f             )
 

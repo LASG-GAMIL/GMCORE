@@ -45,7 +45,7 @@ contains
 
     this%id = id
 
-    call this%mesh%init(num_lon, num_lat, this%id, lon_halo_width, lat_halo_width, lon_ibeg, lon_iend, lat_ibeg, lat_iend)
+    call this%mesh%init_from_parent(global_mesh, this%id, lon_halo_width, lat_halo_width, lon_ibeg, lon_iend, lat_ibeg, lat_iend)
 
     if (.not. allocated(this%state)) then
       select case (trim(time_scheme))

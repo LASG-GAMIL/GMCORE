@@ -200,10 +200,10 @@ contains
       do i = this%mesh%half_lon_ibeg, this%mesh%half_lon_iend
 #ifdef V_POLE
         this%mf_lon_t(i,j) = this%mesh%full_tangent_wgt(1,j) * (this%mf_lat_n(i,j  ) + this%mf_lat_n(i+1,j  )) + &
-                              this%mesh%full_tangent_wgt(2,j) * (this%mf_lat_n(i,j+1) + this%mf_lat_n(i+1,j+1))
+                             this%mesh%full_tangent_wgt(2,j) * (this%mf_lat_n(i,j+1) + this%mf_lat_n(i+1,j+1))
 #else
         this%mf_lon_t(i,j) = this%mesh%full_tangent_wgt(1,j) * (this%mf_lat_n(i,j-1) + this%mf_lat_n(i+1,j-1)) + &
-                              this%mesh%full_tangent_wgt(2,j) * (this%mf_lat_n(i,j  ) + this%mf_lat_n(i+1,j  ))
+                             this%mesh%full_tangent_wgt(2,j) * (this%mf_lat_n(i,j  ) + this%mf_lat_n(i+1,j  ))
 #endif
       end do
     end do
@@ -213,10 +213,10 @@ contains
       do i = this%mesh%full_lon_ibeg, this%mesh%full_lon_iend
 #ifdef V_POLE
         this%mf_lat_t(i,j) = this%mesh%half_tangent_wgt(1,j) * (this%mf_lon_n(i-1,j-1) + this%mf_lon_n(i,j-1)) + &
-                              this%mesh%half_tangent_wgt(2,j) * (this%mf_lon_n(i-1,j  ) + this%mf_lon_n(i,j  ))
+                             this%mesh%half_tangent_wgt(2,j) * (this%mf_lon_n(i-1,j  ) + this%mf_lon_n(i,j  ))
 #else
         this%mf_lat_t(i,j) = this%mesh%half_tangent_wgt(1,j) * (this%mf_lon_n(i-1,j  ) + this%mf_lon_n(i,j  )) + &
-                              this%mesh%half_tangent_wgt(2,j) * (this%mf_lon_n(i-1,j+1) + this%mf_lon_n(i,j+1))
+                             this%mesh%half_tangent_wgt(2,j) * (this%mf_lon_n(i-1,j+1) + this%mf_lon_n(i,j+1))
 #endif
       end do
     end do
