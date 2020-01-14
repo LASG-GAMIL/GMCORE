@@ -1,12 +1,11 @@
 module pv_mod
 
   use const_mod
-  use allocator_mod
   use namelist_mod
-  use parallel_mod
   use mesh_mod
   use state_mod
   use block_mod
+  use parallel_mod
 
   implicit none
 
@@ -55,7 +54,7 @@ contains
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
         pole = pole - state%u(i,j) * mesh%de_lon(j)
       end do
-      call zonal_sum(pole)
+      call zonal_sum(proc%comm_sp, pole)
       pole = pole / mesh%num_half_lon / mesh%vertex_area(j)
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
         state%pv(i,j) = (pole + mesh%half_f(j)) / state%m_vtx(i,j)
@@ -67,7 +66,7 @@ contains
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
         pole = pole + state%u(i,j-1) * mesh%de_lon(j-1)
       end do
-      call zonal_sum(pole)
+      call zonal_sum(proc%comm_np, pole)
       pole = pole / mesh%num_half_lon / mesh%vertex_area(j)
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
         state%pv(i,j) = (pole + mesh%half_f(j)) / state%m_vtx(i,j)
@@ -82,7 +81,7 @@ contains
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           pole = pole - state%u(i,j+1) * mesh%de_lon(j+1)
         end do
-        call zonal_sum(pole)
+        call zonal_sum(proc%comm_sp, pole)
         pole = pole / mesh%num_half_lon / mesh%vertex_area(j)
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           state%pv(i,j) = (pole + mesh%half_f(j)) / state%m_vtx(i,j)
@@ -94,7 +93,7 @@ contains
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           pole = pole + state%u(i,j) * mesh%de_lon(j)
         end do
-        call zonal_sum(pole)
+        call zonal_sum(proc%comm_np, pole)
         pole = pole / mesh%num_half_lon / mesh%vertex_area(j)
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           state%pv(i,j) = (pole + mesh%half_f(j)) / state%m_vtx(i,j)

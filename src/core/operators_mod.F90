@@ -611,7 +611,7 @@ contains
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         pole = pole + state%mf_lat_n(i,j)
       end do
-      call zonal_sum(pole)
+      call zonal_sum(proc%comm_sp, pole)
       pole = pole * mesh%le_lat(j) / mesh%num_full_lon / mesh%cell_area(j)
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         tend%dmfdlat(i,j) = pole
@@ -623,7 +623,7 @@ contains
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         pole = pole - state%mf_lat_n(i,j-1)
       end do
-      call zonal_sum(pole)
+      call zonal_sum(proc%comm_np, pole)
       pole = pole * mesh%le_lat(j-1) / mesh%num_full_lon / mesh%cell_area(j)
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         tend%dmfdlat(i,j) = pole

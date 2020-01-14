@@ -484,7 +484,11 @@ contains
       do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
         pole = pole + sign * reduced_state%u(i,u_j,move) * reduced_mesh%de_lon(u_j)
       end do
-      call zonal_sum(pole)
+      if (raw_mesh%full_lat(j) < 0.0_r8) then
+        call zonal_sum(proc%comm_sp, pole)
+      else
+        call zonal_sum(proc%comm_np, pole)
+      end if
       pole = pole / reduced_mesh%num_half_lon / reduced_mesh%vertex_area(buf_j)
       do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
         m_vtx = (                                                                                                          &

@@ -9,6 +9,7 @@ module parallel_mod
 
   private
 
+  public proc
   public fill_halo
   public zero_halo
   public zonal_sum
@@ -186,9 +187,16 @@ contains
 
   end subroutine overlay_inner_halo
 
-  subroutine zonal_sum_0d_r8(value)
+  subroutine zonal_sum_0d_r8(comm, value)
 
+    integer, intent(in) :: comm
     real(8), intent(inout) :: value
+
+    integer ierr
+    real(8) res
+
+    call MPI_ALLREDUCE(value, res, 1, MPI_DOUBLE, MPI_SUM, comm, ierr)
+    value = res
 
   end subroutine zonal_sum_0d_r8
 

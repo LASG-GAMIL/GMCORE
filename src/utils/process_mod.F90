@@ -16,6 +16,10 @@ module process_mod
 
   type process_type
     integer comm
+    integer :: comm_sp = MPI_COMM_NULL
+    integer :: comm_np = MPI_COMM_NULL
+    integer :: grp_sp = MPI_GROUP_NULL
+    integer :: grp_np = MPI_GROUP_NULL
     integer dims(2)
     integer id
     integer :: ngb(4) = MPI_PROC_NULL
@@ -32,6 +36,7 @@ contains
     integer nproc, proc_coords(2)
     integer num_lon, num_lat, res_num, half_num
     integer lon_ibeg, lon_iend, lat_ibeg, lat_iend
+    integer, allocatable :: polar_proc_id(:)
 
     call MPI_INIT(ierr)
     call MPI_COMM_SIZE(MPI_COMM_WORLD, nproc, ierr)
@@ -86,6 +91,23 @@ contains
     end if
     lat_iend = lat_ibeg + num_lat - 1
 #endif
+
+    allocate(polar_proc_id(proc%dims(1)))
+    if (global_mesh%is_south_pole(lat_ibeg)) then
+      do i = 1, proc%dims(1)
+        call MPI_CART_RANK(proc%comm, [i-1,0], polar_proc_id(i), ierr)
+      end do
+      call MPI_GROUP_INCL(proc%comm, proc%dims(1), polar_proc_id, proc%grp_sp, ierr)
+      call MPI_COMM_CREATE(proc%comm, proc%grp_sp, proc%comm_sp, ierr)
+    end if
+    if (global_mesh%is_north_pole(lat_iend)) then
+      do i = 1, proc%dims(1)
+        call MPI_CART_RANK(proc%comm, [i-1,proc%dims(2)-1], polar_proc_id(i), ierr)
+      end do
+      call MPI_GROUP_INCL(proc%comm, proc%dims(1), polar_proc_id, proc%grp_np, ierr)
+      call MPI_COMM_CREATE(proc%comm, proc%grp_np, proc%comm_np, ierr)
+    end if
+    deallocate(polar_proc_id)
 
     if (.not. allocated(proc%blocks)) allocate(proc%blocks(1))
 

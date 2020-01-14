@@ -4,6 +4,7 @@ module ke_mod
   use mesh_mod
   use state_mod
   use block_mod
+  use process_mod
   use parallel_mod
 
   implicit none
@@ -47,7 +48,7 @@ contains
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         pole = pole + state%v(i,j)**2
       end do
-      call zonal_sum(pole)
+      call zonal_sum(proc%comm_sp, pole)
       pole = pole / mesh%num_full_lon * 0.5_r8
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         state%ke(i,j) = pole
@@ -59,7 +60,7 @@ contains
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         pole = pole + state%v(i,j-1)**2
       end do
-      call zonal_sum(pole)
+      call zonal_sum(proc%comm_np, pole)
       pole = pole / mesh%num_full_lon * 0.5_r8
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         state%ke(i,j) = pole
