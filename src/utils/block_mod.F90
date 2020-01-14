@@ -1,17 +1,33 @@
 module block_mod
 
+  use mpi
   use namelist_mod
   use mesh_mod
   use state_mod
   use static_mod
   use tend_mod
   use reduced_types_mod
+  use halo_mod
 
   implicit none
 
   private
 
   public block_type
+
+  !      |         |         |
+  !  ____|_________|_________|_____
+  !      |                   |
+  !      |                   |
+  !      |                   |
+  !      |                   |
+  !      |       BLOCK       |
+  !      |                   |
+  !      |                   |
+  !      |                   |
+  !  ____|___________________|_____
+  !      |                   |
+  !      |                   |
 
   type block_type
     integer id
@@ -23,6 +39,7 @@ module block_mod
     type(reduced_state_type), allocatable :: reduced_state(:)
     type(reduced_static_type), allocatable :: reduced_static(:)
     type(reduced_tend_type), allocatable :: reduced_tend(:)
+    type(halo_type), allocatable :: halo(:)
   contains
     procedure :: init => block_init
     final :: block_final
@@ -72,6 +89,7 @@ contains
 
     type(block_type), intent(inout) :: this
 
+    if (allocated(this%halo          )) deallocate(this%halo          )
     if (allocated(this%state         )) deallocate(this%state         )
     if (allocated(this%tend          )) deallocate(this%tend          )
     if (allocated(this%reduced_mesh  )) deallocate(this%reduced_mesh  )

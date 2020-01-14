@@ -52,6 +52,7 @@ set(source_files
   src/utils/sphere_geometry_mod.F90
   src/utils/block_mod.F90
   src/utils/process_mod.F90
+  src/utils/halo_mod.F90
   src/utils/allocator_mod.F90
   src/utils/parallel_mod.F90
   src/utils/debug_mod.F90

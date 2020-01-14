@@ -18,10 +18,7 @@ module process_mod
     integer comm
     integer dims(2)
     integer id
-    integer ngb_id_w
-    integer ngb_id_e
-    integer ngb_id_s
-    integer ngb_id_n
+    integer :: ngb(4) = MPI_PROC_NULL
     type(block_type), allocatable :: blocks(:)
   end type process_type
 
@@ -50,8 +47,8 @@ contains
     call MPI_CART_CREATE(MPI_COMM_WORLD, 2, proc%dims, [.true.,.false.], .true., proc%comm, ierr)
     call MPI_COMM_RANK(proc%comm, proc%id, ierr)
     call MPI_CART_COORDS(proc%comm, proc%id, 2, proc_coords, ierr)
-    call MPI_CART_SHIFT(proc%comm, 0, 1, proc%ngb_id_w, proc%ngb_id_e, ierr)
-    call MPI_CART_SHIFT(proc%comm, 1, 1, proc%ngb_id_s, proc%ngb_id_n, ierr)
+    call MPI_CART_SHIFT(proc%comm, 0, 1, proc%ngb(1), proc%ngb(2), ierr)
+    call MPI_CART_SHIFT(proc%comm, 1, 1, proc%ngb(3), proc%ngb(4), ierr)
 
     res_num = mod(global_mesh%num_full_lon, proc%dims(1))
     lon_ibeg = 1
@@ -94,6 +91,12 @@ contains
 
     call proc%blocks(1)%init(proc%id, max(global_mesh%lon_halo_width, maxval(reduce_factors)), &
       global_mesh%lat_halo_width, lon_ibeg, lon_iend, lat_ibeg, lat_iend)
+
+    allocate(proc%blocks(1)%halo(4))
+    call proc%blocks(1)%halo(1)%init(proc%blocks(1)%mesh, proc_id=proc%ngb(1), west_lat_ibeg=lat_ibeg, west_lat_iend=lat_iend)
+    call proc%blocks(1)%halo(2)%init(proc%blocks(1)%mesh, proc_id=proc%ngb(2), east_lat_ibeg=lat_ibeg, east_lat_iend=lat_iend)
+    call proc%blocks(1)%halo(3)%init(proc%blocks(1)%mesh, proc_id=proc%ngb(3), south_lon_ibeg=lon_ibeg, south_lon_iend=lon_iend)
+    call proc%blocks(1)%halo(4)%init(proc%blocks(1)%mesh, proc_id=proc%ngb(4), north_lon_ibeg=lon_ibeg, north_lon_iend=lon_iend)
 
   end subroutine process_init
 
