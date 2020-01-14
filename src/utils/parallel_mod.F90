@@ -170,19 +170,27 @@ contains
 
   end subroutine zero_halo_1d_r8
 
-  subroutine overlay_inner_halo(mesh, array, west_halo, east_halo)
+  subroutine overlay_inner_halo(block, array, west_halo, east_halo)
 
-    type(mesh_type), intent(in   )           :: mesh
-    real(8)        , intent(inout)           :: array(mesh%full_lon_lb:mesh%full_lon_ub)
-    logical        , intent(in   ), optional :: west_halo
-    logical        , intent(in   ), optional :: east_halo
+    type(block_type), intent(in) :: block
+    real(8), intent(inout) :: array(block%mesh%full_lon_lb:block%mesh%full_lon_ub)
+    logical, intent(in), optional :: west_halo
+    logical, intent(in), optional :: east_halo
 
-    integer i
+    integer i1, i2, i3, i4
+    integer status(MPI_STATUS_SIZE), ierr
+    real(8) buffer(block%mesh%lon_halo_width)
 
     if (merge(west_halo, .false., present(west_halo))) then
-      do i = mesh%full_lon_ibeg, mesh%full_lon_ibeg + mesh%lon_halo_width - 2
-        array(i) = array(i) + array(mesh%full_lon_iend+i-mesh%full_lon_ibeg+1)
-      end do
+      i1 = block%mesh%full_lon_iend + 1
+      i2 = block%mesh%full_lon_iend + block%mesh%lon_halo_width
+      i3 = block%mesh%full_lon_ibeg
+      i4 = block%mesh%full_lon_ibeg + block%mesh%lon_halo_width - 1
+      buffer = 0
+      call MPI_SENDRECV(array(i1:i2), block%mesh%lon_halo_width, MPI_DOUBLE, block%halo(2)%proc_id, 1, &
+                        buffer, block%mesh%lon_halo_width, MPI_DOUBLE, block%halo(1)%proc_id, 1, &
+                        proc%comm, status, ierr)
+      array(i3:i4) = array(i3:i4) + buffer
     end if
 
   end subroutine overlay_inner_halo

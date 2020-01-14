@@ -259,7 +259,7 @@ contains
           end do
           call reduce_append_array(move, block%reduced_mesh(j), block%reduced_tend(j)%qhv, mesh, tend%qhv(:,j))
         end do
-        call overlay_inner_halo(mesh, tend%qhv(:,j), west_halo=.true.)
+        call overlay_inner_halo(block, tend%qhv(:,j), west_halo=.true.)
       else
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           tend%qhv(i,j) = (                                                           &
@@ -306,7 +306,7 @@ contains
           end do
           call reduce_append_array(move, block%reduced_mesh(j), block%reduced_tend(j)%qhv, mesh, tend%qhv(:,j))
         end do
-        call overlay_inner_halo(mesh, tend%qhv(:,j), west_halo=.true.)
+        call overlay_inner_halo(block, tend%qhv(:,j), west_halo=.true.)
       else
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           tend%qhv(i,j) = (                                                           &
@@ -345,7 +345,7 @@ contains
           end do
           call reduce_append_array(move, block%reduced_mesh(j-1), block%reduced_tend(j-1)%qhu, mesh, tend%qhu(:,j))
         end do
-        call overlay_inner_halo(mesh, tend%qhu(:,j), west_halo=.true.)
+        call overlay_inner_halo(block, tend%qhu(:,j), west_halo=.true.)
       else
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           tend%qhu(i,j) = ( &
@@ -375,7 +375,7 @@ contains
           end do
           call reduce_append_array(move, block%reduced_mesh(j), block%reduced_tend(j)%qhu, mesh, tend%qhu(:,j))
         end do
-        call overlay_inner_halo(mesh, tend%qhu(:,j), west_halo=.true.)
+        call overlay_inner_halo(block, tend%qhu(:,j), west_halo=.true.)
       else
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           tend%qhu(i,j) = tend%qhu(i,j) + (                                           &
@@ -408,7 +408,7 @@ contains
           end do
           call reduce_append_array(move, block%reduced_mesh(j), block%reduced_tend(j)%qhu, mesh, tend%qhu(:,j))
         end do
-        call overlay_inner_halo(mesh, tend%qhu(:,j), west_halo=.true.)
+        call overlay_inner_halo(block, tend%qhu(:,j), west_halo=.true.)
       else
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           tend%qhu(i,j) = (                                                         &
@@ -438,7 +438,7 @@ contains
           end do
           call reduce_append_array(move, block%reduced_mesh(j+1), block%reduced_tend(j+1)%qhu, mesh, tend%qhu(:,j))
         end do
-        call overlay_inner_halo(mesh, tend%qhu(:,j), west_halo=.true.)
+        call overlay_inner_halo(block, tend%qhu(:,j), west_halo=.true.)
       else
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           tend%qhu(i,j) = tend%qhu(i,j) + (                                           &
@@ -477,7 +477,7 @@ contains
           end do
           call reduce_append_array(move, block%reduced_mesh(j), block%reduced_tend(j)%dkedlon, mesh, tend%dkedlon(:,j))
         end do
-        call overlay_inner_halo(mesh, tend%dkedlon(:,j), west_halo=.true.)
+        call overlay_inner_halo(block, tend%dkedlon(:,j), west_halo=.true.)
       else
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           tend%dkedlon(i,j) = (state%ke(i+1,j) - state%ke(i,j)) / mesh%de_lon(j)
@@ -521,7 +521,7 @@ contains
           end do
           call reduce_append_array(move, block%reduced_mesh(j), block%reduced_tend(j)%dpedlon, mesh, tend%dpedlon(:,j))
         end do
-        call overlay_inner_halo(mesh, tend%dpedlon(:,j), west_halo=.true.)
+        call overlay_inner_halo(block, tend%dpedlon(:,j), west_halo=.true.)
       else
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           tend%dpedlon(i,j) = (                   &
@@ -576,7 +576,7 @@ contains
           end do
           call reduce_append_array(move, block%reduced_mesh(j), block%reduced_tend(j)%dmfdlon, mesh, tend%dmfdlon(:,j))
         end do
-        call overlay_inner_halo(mesh, tend%dmfdlon(:,j), west_halo=.true.)
+        call overlay_inner_halo(block, tend%dmfdlon(:,j), west_halo=.true.)
       else
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           tend%dmfdlon(i,j) = (                         &
