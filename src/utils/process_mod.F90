@@ -1,6 +1,8 @@
 module process_mod
 
   use mpi
+  use flogger
+  use string
   use namelist_mod
   use mesh_mod
   use block_mod
@@ -16,10 +18,8 @@ module process_mod
 
   type process_type
     integer comm
-    integer :: comm_sp = MPI_COMM_NULL
-    integer :: comm_np = MPI_COMM_NULL
-    integer :: grp_sp = MPI_GROUP_NULL
-    integer :: grp_np = MPI_GROUP_NULL
+    integer :: zonal_comm = MPI_COMM_NULL
+    integer :: zonal_group = MPI_GROUP_NULL
     integer dims(2)
     integer id
     integer :: ngb(4) = MPI_PROC_NULL
@@ -32,11 +32,11 @@ contains
 
   subroutine process_init()
 
-    integer ierr, i, j
+    integer ierr, i, j, jr
     integer nproc, proc_coords(2)
     integer num_lon, num_lat, res_num, half_num
     integer lon_ibeg, lon_iend, lat_ibeg, lat_iend
-    integer, allocatable :: polar_proc_id(:)
+    integer, allocatable :: zonal_proc_id(:)
 
     call MPI_INIT(ierr)
     call MPI_COMM_SIZE(MPI_COMM_WORLD, nproc, ierr)
@@ -92,22 +92,25 @@ contains
     lat_iend = lat_ibeg + num_lat - 1
 #endif
 
-    allocate(polar_proc_id(proc%dims(1)))
-    if (global_mesh%is_south_pole(lat_ibeg)) then
+    jr = 0
+    do j = 1, size(reduce_factors)
+      if (reduce_factors(j) > 0) then
+        jr = j
+      else if (jr /= 0) then
+        exit
+      end if
+    end do
+    allocate(zonal_proc_id(proc%dims(1)))
+    if (global_mesh%is_south_pole(lat_ibeg) .or. global_mesh%is_north_pole(lat_iend) .or. &
+        lat_ibeg <= jr .or. lat_iend > global_mesh%num_full_lat - jr) then
+      call log_notice('Create zonal communicator on process ' // to_string(proc%id) // '.')
       do i = 1, proc%dims(1)
-        call MPI_CART_RANK(proc%comm, [i-1,0], polar_proc_id(i), ierr)
+        call MPI_CART_RANK(proc%comm, [i-1,proc_coords(2)], zonal_proc_id(i), ierr)
       end do
-      call MPI_GROUP_INCL(proc%comm, proc%dims(1), polar_proc_id, proc%grp_sp, ierr)
-      call MPI_COMM_CREATE(proc%comm, proc%grp_sp, proc%comm_sp, ierr)
+      call MPI_GROUP_INCL(proc%comm, proc%dims(1), zonal_proc_id, proc%zonal_group, ierr)
+      call MPI_COMM_CREATE(proc%comm, proc%zonal_group, proc%zonal_comm, ierr)
     end if
-    if (global_mesh%is_north_pole(lat_iend)) then
-      do i = 1, proc%dims(1)
-        call MPI_CART_RANK(proc%comm, [i-1,proc%dims(2)-1], polar_proc_id(i), ierr)
-      end do
-      call MPI_GROUP_INCL(proc%comm, proc%dims(1), polar_proc_id, proc%grp_np, ierr)
-      call MPI_COMM_CREATE(proc%comm, proc%grp_np, proc%comm_np, ierr)
-    end if
-    deallocate(polar_proc_id)
+    deallocate(zonal_proc_id)
 
     if (.not. allocated(proc%blocks)) allocate(proc%blocks(1))
 
