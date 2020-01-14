@@ -3,6 +3,7 @@ module parallel_mod
   use mpi
   use mesh_mod
   use block_mod
+  use process_mod
 
   implicit none
 
@@ -88,35 +89,65 @@ contains
 
   end subroutine fill_halo_1d_r8_2
 
-  subroutine fill_halo_2d_r8(block, array, west_halo, east_halo, top_halo, bottom_halo)
+  subroutine fill_halo_2d_r8(block, array, full_lon, full_lat, west_halo, east_halo, south_halo, north_halo)
 
     type(block_type), intent(in) :: block
     real(8), intent(inout) :: array(:,:)
+    logical, intent(in) :: full_lon
+    logical, intent(in) :: full_lat
     logical, intent(in), optional :: west_halo
     logical, intent(in), optional :: east_halo
-    logical, intent(in), optional :: top_halo
-    logical, intent(in), optional :: bottom_halo
+    logical, intent(in), optional :: south_halo
+    logical, intent(in), optional :: north_halo
 
-    integer i, j, m, n
+    integer status(MPI_STATUS_SIZE), ierr
 
     if (merge(west_halo, .true., present(west_halo))) then
-      m = lbound(array, 1) - 1
-      n = ubound(array, 1) - 2 * block%mesh%lon_halo_width
-      do j = lbound(array, 2), ubound(array, 2)
-        do i = 1, block%mesh%lon_halo_width
-          array(m+i,j) = array(n+i,j)
-        end do
-      end do
+      if (full_lat) then
+        call MPI_SENDRECV(array, 1, block%halo(1)%full_send_type, block%halo(1)%proc_id, 0, &
+                          array, 1, block%halo(2)%full_recv_type, block%halo(2)%proc_id, 0, &
+                          proc%comm, status, ierr)
+      else
+        call MPI_SENDRECV(array, 1, block%halo(1)%half_send_type, block%halo(1)%proc_id, 0, &
+                          array, 1, block%halo(2)%half_recv_type, block%halo(2)%proc_id, 0, &
+                          proc%comm, status, ierr)
+      end if
     end if
 
     if (merge(east_halo, .true., present(east_halo))) then
-      m = ubound(array, 1) - block%mesh%lon_halo_width
-      n = lbound(array, 1) + block%mesh%lon_halo_width - 1
-      do j = lbound(array, 2), ubound(array, 2)
-        do i = 1, block%mesh%lon_halo_width
-          array(m+i,j) = array(n+i,j)
-        end do
-      end do
+      if (full_lat) then
+        call MPI_SENDRECV(array, 1, block%halo(2)%full_send_type, block%halo(2)%proc_id, 0, &
+                          array, 1, block%halo(1)%full_recv_type, block%halo(1)%proc_id, 0, &
+                          proc%comm, status, ierr)
+      else
+        call MPI_SENDRECV(array, 1, block%halo(2)%half_send_type, block%halo(2)%proc_id, 0, &
+                          array, 1, block%halo(1)%half_recv_type, block%halo(1)%proc_id, 0, &
+                          proc%comm, status, ierr)
+      end if
+    end if
+
+    if (merge(south_halo, .true., present(south_halo))) then
+      if (full_lon) then
+        call MPI_SENDRECV(array, 1, block%halo(3)%full_send_type, block%halo(3)%proc_id, 0, &
+                          array, 1, block%halo(4)%full_recv_type, block%halo(4)%proc_id, 0, &
+                          proc%comm, status, ierr)
+      else
+        call MPI_SENDRECV(array, 1, block%halo(3)%half_send_type, block%halo(3)%proc_id, 0, &
+                          array, 1, block%halo(4)%half_recv_type, block%halo(4)%proc_id, 0, &
+                          proc%comm, status, ierr)
+      end if
+    end if
+
+    if (merge(north_halo, .true., present(north_halo))) then
+      if (full_lon) then
+        call MPI_SENDRECV(array, 1, block%halo(4)%full_send_type, block%halo(4)%proc_id, 0, &
+                          array, 1, block%halo(3)%full_recv_type, block%halo(3)%proc_id, 0, &
+                          proc%comm, status, ierr)
+      else
+        call MPI_SENDRECV(array, 1, block%halo(4)%half_send_type, block%halo(4)%proc_id, 0, &
+                          array, 1, block%halo(3)%half_recv_type, block%halo(3)%proc_id, 0, &
+                          proc%comm, status, ierr)
+      end if
     end if
 
   end subroutine fill_halo_2d_r8

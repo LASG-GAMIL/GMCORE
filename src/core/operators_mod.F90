@@ -161,14 +161,14 @@ contains
         state%mf_lon_n(i,j) = state%m_lon(i,j) * state%u(i,j)
       end do
     end do
-    call fill_halo(block, state%mf_lon_n)
+    call fill_halo(block, state%mf_lon_n, full_lon=.false., full_lat=.true.)
 
     do j = state%mesh%half_lat_ibeg_no_pole, state%mesh%half_lat_iend_no_pole
       do i = state%mesh%full_lon_ibeg, state%mesh%full_lon_iend
         state%mf_lat_n(i,j) = state%m_lat(i,j) * state%v(i,j)
       end do
     end do
-    call fill_halo(block, state%mf_lat_n)
+    call fill_halo(block, state%mf_lat_n, full_lon=.true., full_lat=.false.)
 
   end subroutine calc_mf_lon_n_mf_lat_n
 
@@ -190,7 +190,7 @@ contains
 #endif
       end do
     end do
-    call fill_halo(block, state%mf_lon_t)
+    call fill_halo(block, state%mf_lon_t, full_lon=.false., full_lat=.true.)
 
     do j = state%mesh%half_lat_ibeg_no_pole, state%mesh%half_lat_iend_no_pole
       do i = state%mesh%full_lon_ibeg, state%mesh%full_lon_iend
@@ -203,7 +203,7 @@ contains
 #endif
       end do
     end do
-    call fill_halo(block, state%mf_lat_t)
+    call fill_halo(block, state%mf_lat_t, full_lon=.true., full_lat=.false.)
 
   end subroutine calc_mf_lon_t_mf_lat_t
 

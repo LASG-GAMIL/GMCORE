@@ -102,7 +102,7 @@ contains
       end if
     end if
 #endif
-    call fill_halo(block, state%pv)
+    call fill_halo(block, state%pv, full_lon=.false., full_lat=.false.)
 
   end subroutine calc_pv_vtx
 
@@ -122,7 +122,7 @@ contains
         state%dpv_lat_t(i,j) = state%pv(i,j) - state%pv(i-1,j)
       end do
     end do
-    call fill_halo(block, state%dpv_lat_t)
+    call fill_halo(block, state%dpv_lat_t, full_lon=.true., full_lat=.false.)
 
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
@@ -133,7 +133,7 @@ contains
 #endif
       end do
     end do
-    call fill_halo(block, state%dpv_lon_t)
+    call fill_halo(block, state%dpv_lon_t, full_lon=.false., full_lat=.true.)
 
     ! Normal pv difference
     do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
@@ -177,7 +177,7 @@ contains
         state%pv_lat(i,j) = 0.5_r8 * (state%pv(i-1,j) + state%pv(i,j))
       end do 
     end do 
-    call fill_halo(block, state%pv_lon)
+    call fill_halo(block, state%pv_lon, full_lon=.false., full_lat=.true.)
 
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
@@ -188,7 +188,7 @@ contains
 #endif
       end do 
     end do 
-    call fill_halo(block, state%pv_lat)
+    call fill_halo(block, state%pv_lat, full_lon=.true., full_lat=.false.)
 
   end subroutine calc_pv_edge_midpoint
 
@@ -220,7 +220,7 @@ contains
     state%pv_lat(:,mesh%half_lat_ibeg) = state%pv(:,mesh%half_lat_ibeg)
     state%pv_lat(:,mesh%half_lat_iend  ) = state%pv(:,mesh%half_lat_iend  )
 #endif
-    call fill_halo(block, state%pv_lat)
+    call fill_halo(block, state%pv_lat, full_lon=.true., full_lat=.false.)
 
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       le = mesh%le_lon(j)
@@ -237,7 +237,7 @@ contains
 #endif
       end do
     end do
-    call fill_halo(block, state%pv_lon)
+    call fill_halo(block, state%pv_lon, full_lon=.false., full_lat=.true.)
 
   end subroutine calc_pv_edge_apvm
 

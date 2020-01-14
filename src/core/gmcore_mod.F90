@@ -414,21 +414,21 @@ contains
         new_state%gd(i,j) = old_state%gd(i,j) + dt * tend%dgd(i,j)
       end do
     end do
-    call fill_halo(block, new_state%gd)
+    call fill_halo(block, new_state%gd, full_lon=.true., full_lat=.true.)
 
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
         new_state%u(i,j) = old_state%u(i,j) + dt * tend%du(i,j)
       end do
     end do
-    call fill_halo(block, new_state%u)
+    call fill_halo(block, new_state%u, full_lon=.false., full_lat=.true.)
 
     do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         new_state%v(i,j) = old_state%v(i,j) + dt * tend%dv(i,j)
       end do
     end do
-    call fill_halo(block, new_state%v)
+    call fill_halo(block, new_state%v, full_lon=.true., full_lat=.false.)
 
     call damp_state(block, new_state)
 

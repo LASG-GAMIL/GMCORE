@@ -119,6 +119,7 @@ contains
       subarray_start = [mesh%num_full_lon+1+lon_offset,1+lat_offset]
       call MPI_TYPE_CREATE_SUBARRAY(2, full_array_size, subarray_size, subarray_start, &
                                     MPI_ORDER_FORTRAN, MPI_DOUBLE, this%full_recv_type, ierr)
+      call MPI_TYPE_COMMIT(this%full_recv_type, ierr)
       subarray_size = [mesh%lon_halo_width,mesh%num_half_lat]
       subarray_start = [mesh%num_half_lon-mesh%lon_halo_width+1+lon_offset,1+lat_offset]
       call MPI_TYPE_CREATE_SUBARRAY(2, half_array_size, subarray_size, subarray_start, &
