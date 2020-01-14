@@ -69,11 +69,11 @@ module mesh_mod
     ! Area for weighting
     real(r8), allocatable :: cell_area(:)
     real(r8), allocatable :: lon_edge_area(:)
-    real(r8), allocatable :: lon_edge_left_area(:)
-    real(r8), allocatable :: lon_edge_right_area(:)
+    real(r8), allocatable :: lon_edge_west_area(:)
+    real(r8), allocatable :: lon_edge_east_area(:)
     real(r8), allocatable :: lat_edge_area(:)
-    real(r8), allocatable :: lat_edge_up_area(:)
-    real(r8), allocatable :: lat_edge_down_area(:)
+    real(r8), allocatable :: lat_edge_north_area(:)
+    real(r8), allocatable :: lat_edge_south_area(:)
     real(r8), allocatable :: vertex_area(:)
     real(r8), allocatable :: subcell_area(:,:)
     ! Edge length
@@ -252,9 +252,9 @@ contains
       call cartesian_transform(this%full_lon(1), this%full_lat(j  ), x(1), y(1), z(1))
       call cartesian_transform(this%half_lon(1), this%half_lat(j  ), x(2), y(2), z(2))
       call cartesian_transform(this%half_lon(1), this%half_lat(j+1), x(3), y(3), z(3))
-      this%lon_edge_left_area(j) = calc_area(x, y, z)
-      this%lon_edge_right_area(j) = this%lon_edge_left_area(j)
-      this%lon_edge_area(j) = this%lon_edge_left_area(j) + this%lon_edge_right_area(j)
+      this%lon_edge_west_area(j) = calc_area(x, y, z)
+      this%lon_edge_east_area(j) = this%lon_edge_west_area(j)
+      this%lon_edge_area(j) = this%lon_edge_west_area(j) + this%lon_edge_east_area(j)
     end do
 
     do j = this%half_lat_ibeg, this%half_lat_iend
@@ -267,12 +267,12 @@ contains
         call cartesian_transform(this%full_lon(2), this%full_lat(j  ), x(1), y(1), z(1))
         call cartesian_transform(this%half_lon(1), this%half_lat(j  ), x(2), y(2), z(2))
         call cartesian_transform(this%half_lon(2), this%half_lat(j  ), x(3), y(3), z(3))
-        this%lat_edge_up_area(j) = calc_area_with_last_small_arc(x, y, z)
+        this%lat_edge_north_area(j) = calc_area_with_last_small_arc(x, y, z)
         call cartesian_transform(this%full_lon(2), this%full_lat(j-1), x(1), y(1), z(1))
         call cartesian_transform(this%half_lon(2), this%half_lat(j  ), x(2), y(2), z(2))
         call cartesian_transform(this%half_lon(1), this%half_lat(j  ), x(3), y(3), z(3))
-        this%lat_edge_down_area(j) = calc_area_with_last_small_arc(x, y, z)
-        this%lat_edge_area(j) = this%lat_edge_up_area(j) + this%lat_edge_down_area(j)
+        this%lat_edge_south_area(j) = calc_area_with_last_small_arc(x, y, z)
+        this%lat_edge_area(j) = this%lat_edge_north_area(j) + this%lat_edge_south_area(j)
       end if
     end do
 #else
@@ -290,9 +290,9 @@ contains
         call cartesian_transform(this%full_lon(1), this%full_lat(j  ), x(1), y(1), z(1))
         call cartesian_transform(this%half_lon(1), this%half_lat(j-1), x(2), y(2), z(2))
         call cartesian_transform(this%half_lon(1), this%half_lat(j  ), x(3), y(3), z(3))
-        this%lon_edge_left_area(j) = calc_area(x, y, z)
-        this%lon_edge_right_area(j) = this%lon_edge_left_area(j)
-        this%lon_edge_area(j) = this%lon_edge_left_area(j) + this%lon_edge_right_area(j)
+        this%lon_edge_west_area(j) = calc_area(x, y, z)
+        this%lon_edge_east_area(j) = this%lon_edge_west_area(j)
+        this%lon_edge_area(j) = this%lon_edge_west_area(j) + this%lon_edge_east_area(j)
       end if
     end do
 
@@ -301,18 +301,18 @@ contains
       call cartesian_transform(this%full_lon(2), this%full_lat(j+1), x(1), y(1), z(1))
       call cartesian_transform(this%half_lon(1), this%half_lat(j  ), x(2), y(2), z(2))
       call cartesian_transform(this%half_lon(2), this%half_lat(j  ), x(3), y(3), z(3))
-      this%lat_edge_up_area(j) = calc_area_with_last_small_arc(x, y, z)
+      this%lat_edge_north_area(j) = calc_area_with_last_small_arc(x, y, z)
       call cartesian_transform(this%full_lon(2), this%full_lat(j), x(1), y(1), z(1))
       call cartesian_transform(this%half_lon(2), this%half_lat(j), x(2), y(2), z(2))
       call cartesian_transform(this%half_lon(1), this%half_lat(j), x(3), y(3), z(3))
-      this%lat_edge_down_area(j) = calc_area_with_last_small_arc(x, y, z)
+      this%lat_edge_south_area(j) = calc_area_with_last_small_arc(x, y, z)
       ! Reset up or down area to polar sector area.
       if (this%is_south_pole(j)) then
-        this%lat_edge_down_area(j) = this%cell_area(j)
+        this%lat_edge_south_area(j) = this%cell_area(j)
       else if (this%is_north_pole(j+1)) then
-        this%lat_edge_up_area(j) = this%cell_area(j+1)
+        this%lat_edge_north_area(j) = this%cell_area(j+1)
       end if
-      this%lat_edge_area(j) = this%lat_edge_up_area(j) + this%lat_edge_down_area(j)
+      this%lat_edge_area(j) = this%lat_edge_north_area(j) + this%lat_edge_south_area(j)
     end do
 #endif
 
@@ -481,8 +481,8 @@ contains
       this%full_cos_lat(j) = parent%full_cos_lat(j)
       this%cell_area(j) = parent%cell_area(j)
       this%subcell_area(:,j) = parent%subcell_area(:,j)
-      this%lon_edge_left_area(j) = parent%lon_edge_left_area(j)
-      this%lon_edge_right_area(j) = parent%lon_edge_right_area(j)
+      this%lon_edge_west_area(j) = parent%lon_edge_west_area(j)
+      this%lon_edge_east_area(j) = parent%lon_edge_east_area(j)
       this%lon_edge_area(j) = parent%lon_edge_area(j)
       this%le_lon(j) = parent%le_lon(j)
       this%de_lon(j) = parent%de_lon(j)
@@ -495,8 +495,8 @@ contains
       this%half_sin_lat(j) = parent%half_sin_lat(j)
       this%half_cos_lat(j) = parent%half_cos_lat(j)
       this%vertex_area(j) = parent%vertex_area(j)
-      this%lat_edge_up_area(j) = parent%lat_edge_up_area(j)
-      this%lat_edge_down_area(j) = parent%lat_edge_down_area(j)
+      this%lat_edge_north_area(j) = parent%lat_edge_north_area(j)
+      this%lat_edge_south_area(j) = parent%lat_edge_south_area(j)
       this%lat_edge_area(j) = parent%lat_edge_area(j)
       this%le_lat(j) = parent%le_lat(j)
       this%de_lat(j) = parent%de_lat(j)
@@ -551,11 +551,11 @@ contains
     allocate(this%half_lat_deg       (this%half_lat_lb:this%half_lat_ub)); this%half_lat_deg        = inf
     allocate(this%cell_area          (this%full_lat_lb:this%full_lat_ub)); this%cell_area           = 0.0_r8
     allocate(this%lon_edge_area      (this%full_lat_lb:this%full_lat_ub)); this%lon_edge_area       = 0.0_r8
-    allocate(this%lon_edge_left_area (this%full_lat_lb:this%full_lat_ub)); this%lon_edge_left_area  = 0.0_r8
-    allocate(this%lon_edge_right_area(this%full_lat_lb:this%full_lat_ub)); this%lon_edge_right_area = 0.0_r8
+    allocate(this%lon_edge_west_area (this%full_lat_lb:this%full_lat_ub)); this%lon_edge_west_area  = 0.0_r8
+    allocate(this%lon_edge_east_area (this%full_lat_lb:this%full_lat_ub)); this%lon_edge_east_area  = 0.0_r8
     allocate(this%lat_edge_area      (this%half_lat_lb:this%half_lat_ub)); this%lat_edge_area       = 0.0_r8
-    allocate(this%lat_edge_up_area   (this%half_lat_lb:this%half_lat_ub)); this%lat_edge_up_area    = 0.0_r8
-    allocate(this%lat_edge_down_area (this%half_lat_lb:this%half_lat_ub)); this%lat_edge_down_area  = 0.0_r8
+    allocate(this%lat_edge_north_area(this%half_lat_lb:this%half_lat_ub)); this%lat_edge_north_area = 0.0_r8
+    allocate(this%lat_edge_south_area(this%half_lat_lb:this%half_lat_ub)); this%lat_edge_south_area = 0.0_r8
     allocate(this%vertex_area        (this%half_lat_lb:this%half_lat_ub)); this%vertex_area         = 0.0_r8
     allocate(this%subcell_area     (2,this%full_lat_lb:this%full_lat_ub)); this%subcell_area        = 0.0_r8
     allocate(this%de_lon             (this%full_lat_lb:this%full_lat_ub)); this%de_lon              = inf
@@ -664,11 +664,11 @@ contains
     if (allocated(this%half_lat_deg       )) deallocate(this%half_lat_deg       )
     if (allocated(this%cell_area          )) deallocate(this%cell_area          )
     if (allocated(this%lon_edge_area      )) deallocate(this%lon_edge_area      )
-    if (allocated(this%lon_edge_left_area )) deallocate(this%lon_edge_left_area )
-    if (allocated(this%lon_edge_right_area)) deallocate(this%lon_edge_right_area)
+    if (allocated(this%lon_edge_west_area )) deallocate(this%lon_edge_west_area )
+    if (allocated(this%lon_edge_east_area )) deallocate(this%lon_edge_east_area )
     if (allocated(this%lat_edge_area      )) deallocate(this%lat_edge_area      )
-    if (allocated(this%lat_edge_up_area   )) deallocate(this%lat_edge_up_area   )
-    if (allocated(this%lat_edge_down_area )) deallocate(this%lat_edge_down_area )
+    if (allocated(this%lat_edge_north_area)) deallocate(this%lat_edge_north_area)
+    if (allocated(this%lat_edge_south_area)) deallocate(this%lat_edge_south_area)
     if (allocated(this%vertex_area        )) deallocate(this%vertex_area        )
     if (allocated(this%subcell_area       )) deallocate(this%subcell_area       )
     if (allocated(this%de_lon             )) deallocate(this%de_lon             )

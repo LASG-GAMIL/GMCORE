@@ -40,7 +40,7 @@ contains
         block%state(1)%u(i,j) = u0 * (cos_lat * cos_alpha + cos_lon * sin_lat * sin_alpha)
       end do
     end do
-    call fill_halo(mesh, block%state(1)%u)
+    call fill_halo(block, block%state(1)%u)
 
     do j = mesh%half_lat_ibeg, mesh%half_lat_iend
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -48,7 +48,7 @@ contains
         block%state(1)%v(i,j) = - u0 * sin_lon * sin_alpha
       end do
     end do
-    call fill_halo(mesh, block%state(1)%v)
+    call fill_halo(block, block%state(1)%v)
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       cos_lat = mesh%full_cos_lat(j)
@@ -58,7 +58,7 @@ contains
         block%state(1)%gd(i,j) = gd0 - (radius * omega * u0 + u0**2 * 0.5) * (sin_lat * cos_alpha - cos_lon * cos_lat * sin_alpha)**2
       end do
     end do
-    call fill_halo(mesh, block%state(1)%gd)
+    call fill_halo(block, block%state(1)%gd)
 
   end subroutine steady_geostrophic_flow_test_set_initial_condition
 

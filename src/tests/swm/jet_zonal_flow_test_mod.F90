@@ -42,7 +42,7 @@ contains
         block%state(1)%u(i,j) = u_function(mesh%full_lat(j))
       end do
     end do
-    call fill_halo(mesh, block%state(1)%u)
+    call fill_halo(block, block%state(1)%u)
 
     block%state(1)%v = 0.0_r8
 
@@ -65,7 +65,7 @@ contains
           exp(-((lat2 - mesh%full_lat(j)) / beta)**2)
       end do
     end do
-    call fill_halo(mesh, block%state(1)%gd)
+    call fill_halo(block, block%state(1)%gd)
 
   end subroutine jet_zonal_flow_test_set_initial_condition
 

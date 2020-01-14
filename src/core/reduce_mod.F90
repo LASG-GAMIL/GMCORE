@@ -166,9 +166,9 @@ contains
     end do
     do buf_j = lbound(reduced_mesh%lon_edge_area, 1), ubound(reduced_mesh%lon_edge_area, 1)
       if (raw_mesh%is_outside_full_lat(j+buf_j)) cycle
-      reduced_mesh%lon_edge_left_area (buf_j) = raw_mesh%lon_edge_left_area (j+buf_j) * reduce_factor
-      reduced_mesh%lon_edge_right_area(buf_j) = raw_mesh%lon_edge_right_area(j+buf_j) * reduce_factor
-      reduced_mesh%lon_edge_area      (buf_j) = raw_mesh%lon_edge_area      (j+buf_j) * reduce_factor
+      reduced_mesh%lon_edge_west_area(buf_j) = raw_mesh%lon_edge_west_area (j+buf_j) * reduce_factor
+      reduced_mesh%lon_edge_east_area(buf_j) = raw_mesh%lon_edge_east_area(j+buf_j) * reduce_factor
+      reduced_mesh%lon_edge_area     (buf_j) = raw_mesh%lon_edge_area      (j+buf_j) * reduce_factor
     end do
     ! Vertex area
     do buf_j = lbound(reduced_mesh%vertex_area, 1), ubound(reduced_mesh%vertex_area, 1)
@@ -177,9 +177,9 @@ contains
     end do
     do buf_j = lbound(reduced_mesh%lat_edge_area, 1), ubound(reduced_mesh%lat_edge_area, 1)
       if (raw_mesh%is_outside_half_lat(j+buf_j)) cycle
-      reduced_mesh%lat_edge_up_area  (buf_j) = raw_mesh%lat_edge_up_area  (j+buf_j) * reduce_factor
-      reduced_mesh%lat_edge_down_area(buf_j) = raw_mesh%lat_edge_down_area(j+buf_j) * reduce_factor
-      reduced_mesh%lat_edge_area     (buf_j) = raw_mesh%lat_edge_area     (j+buf_j) * reduce_factor
+      reduced_mesh%lat_edge_north_area(buf_j) = raw_mesh%lat_edge_north_area  (j+buf_j) * reduce_factor
+      reduced_mesh%lat_edge_south_area(buf_j) = raw_mesh%lat_edge_south_area(j+buf_j) * reduce_factor
+      reduced_mesh%lat_edge_area      (buf_j) = raw_mesh%lat_edge_area     (j+buf_j) * reduce_factor
     end do
     ! Edge lengths and cell distances
     do buf_j = lbound(reduced_mesh%le_lat, 1), ubound(reduced_mesh%le_lat, 1)
@@ -529,9 +529,9 @@ contains
 
     if (raw_mesh%is_outside_full_lat(j+buf_j)) return
     do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
-      reduced_state%m_lon(i,buf_j,move) = (                                          &
-        reduced_mesh%lon_edge_left_area (buf_j) * reduced_state%gd(i  ,buf_j,move) + &
-        reduced_mesh%lon_edge_right_area(buf_j) * reduced_state%gd(i+1,buf_j,move)   &
+      reduced_state%m_lon(i,buf_j,move) = (                                         &
+        reduced_mesh%lon_edge_west_area(buf_j) * reduced_state%gd(i  ,buf_j,move) + &
+        reduced_mesh%lon_edge_east_area(buf_j) * reduced_state%gd(i+1,buf_j,move)   &
       ) / reduced_mesh%lon_edge_area(buf_j) / g
     end do
 
@@ -553,14 +553,14 @@ contains
     if (reduced_mesh%lat_edge_area(buf_j) == 0) return
     do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
 #ifdef V_POLE
-      reduced_state%m_lat(i,buf_j,move) = (                                         &
-        reduced_mesh%lat_edge_up_area  (buf_j) * reduced_state%gd(i,buf_j  ,move) + &
-        reduced_mesh%lat_edge_down_area(buf_j) * reduced_state%gd(i,buf_j-1,move)   &
+      reduced_state%m_lat(i,buf_j,move) = (                                          &
+        reduced_mesh%lat_edge_north_area(buf_j) * reduced_state%gd(i,buf_j  ,move) + &
+        reduced_mesh%lat_edge_south_area(buf_j) * reduced_state%gd(i,buf_j-1,move)   &
       ) / reduced_mesh%lat_edge_area(buf_j) / g
 #else
-      reduced_state%m_lat(i,buf_j,move) = (                                         &
-        reduced_mesh%lat_edge_up_area  (buf_j) * reduced_state%gd(i,buf_j+1,move) + &
-        reduced_mesh%lat_edge_down_area(buf_j) * reduced_state%gd(i,buf_j  ,move)   &
+      reduced_state%m_lat(i,buf_j,move) = (                                          &
+        reduced_mesh%lat_edge_north_area(buf_j) * reduced_state%gd(i,buf_j+1,move) + &
+        reduced_mesh%lat_edge_south_area(buf_j) * reduced_state%gd(i,buf_j  ,move)   &
       ) / reduced_mesh%lat_edge_area(buf_j) / g
 #endif
     end do

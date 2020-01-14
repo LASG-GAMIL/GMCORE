@@ -1,24 +1,114 @@
 module pv_mod
 
   use const_mod
-  use mesh_mod
   use allocator_mod
   use namelist_mod
   use parallel_mod
+  use mesh_mod
   use state_mod
-  use tend_mod
+  use block_mod
 
   implicit none
 
   private
 
-  public calc_pv_on_edge_midpoint
-  public calc_pv_on_edge_apvm
+  public calc_pv_vtx
+  public calc_pv_edge_midpoint
+  public calc_pv_edge_apvm
 
 contains
 
-  subroutine calc_dpv_on_edge(state)
+  subroutine calc_pv_vtx(block, state)
 
+    type(block_type), intent(in) :: block
+    type(state_type), intent(inout) :: state
+
+    type(mesh_type), pointer :: mesh
+    real(r8) pole
+    integer i, j
+
+    mesh => state%mesh
+
+    do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+      do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+#ifdef V_POLE
+        state%pv(i,j) = (                                                              &
+          (                                                                           &
+            state%u(i  ,j-1) * mesh%de_lon(j-1) - state%u(i  ,j  ) * mesh%de_lon(j  ) + &
+            state%v(i+1,j  ) * mesh%de_lat(j  ) - state%v(i  ,j  ) * mesh%de_lat(j  )   &
+          ) / mesh%vertex_area(j) + mesh%half_f(j)                                    &
+        ) / state%m_vtx(i,j)
+#else
+        state%pv(i,j) = (                                                              &
+          (                                                                           &
+            state%u(i  ,j  ) * mesh%de_lon(j  ) - state%u(i  ,j+1) * mesh%de_lon(j+1) + &
+            state%v(i+1,j  ) * mesh%de_lat(j  ) - state%v(i  ,j  ) * mesh%de_lat(j  )   &
+          ) / mesh%vertex_area(j) + mesh%half_f(j)                                    &
+        ) / state%m_vtx(i,j)
+#endif
+      end do
+    end do
+#ifdef V_POLE
+    if (mesh%has_south_pole()) then
+      j = mesh%half_lat_ibeg
+      pole = 0.0_r8
+      do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+        pole = pole - state%u(i,j) * mesh%de_lon(j)
+      end do
+      call zonal_sum(pole)
+      pole = pole / mesh%num_half_lon / mesh%vertex_area(j)
+      do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+        state%pv(i,j) = (pole + mesh%half_f(j)) / state%m_vtx(i,j)
+      end do
+    end if
+    if (mesh%has_north_pole()) then
+      j = mesh%half_lat_iend
+      pole = 0.0_r8
+      do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+        pole = pole + state%u(i,j-1) * mesh%de_lon(j-1)
+      end do
+      call zonal_sum(pole)
+      pole = pole / mesh%num_half_lon / mesh%vertex_area(j)
+      do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+        state%pv(i,j) = (pole + mesh%half_f(j)) / state%m_vtx(i,j)
+      end do
+    end if
+#else
+    if (pv_pole_stokes) then
+      ! Special treatment of vorticity around Poles
+      if (mesh%has_south_pole()) then
+        j = mesh%half_lat_ibeg
+        pole = 0.0_r8
+        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+          pole = pole - state%u(i,j+1) * mesh%de_lon(j+1)
+        end do
+        call zonal_sum(pole)
+        pole = pole / mesh%num_half_lon / mesh%vertex_area(j)
+        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+          state%pv(i,j) = (pole + mesh%half_f(j)) / state%m_vtx(i,j)
+        end do
+      end if
+      if (mesh%has_north_pole()) then
+        j = mesh%half_lat_iend
+        pole = 0.0_r8
+        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+          pole = pole + state%u(i,j) * mesh%de_lon(j)
+        end do
+        call zonal_sum(pole)
+        pole = pole / mesh%num_half_lon / mesh%vertex_area(j)
+        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+          state%pv(i,j) = (pole + mesh%half_f(j)) / state%m_vtx(i,j)
+        end do
+      end if
+    end if
+#endif
+    call fill_halo(block, state%pv)
+
+  end subroutine calc_pv_vtx
+
+  subroutine calc_dpv_edge(block, state)
+
+    type(block_type), intent(in) :: block
     type(state_type), intent(inout) :: state
 
     type(mesh_type), pointer :: mesh
@@ -32,7 +122,7 @@ contains
         state%dpv_lat_t(i,j) = state%pv(i,j) - state%pv(i-1,j)
       end do
     end do
-    call fill_halo(mesh, state%dpv_lat_t)
+    call fill_halo(block, state%dpv_lat_t)
 
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
@@ -43,7 +133,7 @@ contains
 #endif
       end do
     end do
-    call fill_halo(mesh, state%dpv_lon_t)
+    call fill_halo(block, state%dpv_lon_t)
 
     ! Normal pv difference
     do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
@@ -70,10 +160,11 @@ contains
       end do
     end do
 
-  end subroutine calc_dpv_on_edge
+  end subroutine calc_dpv_edge
 
-  subroutine calc_pv_on_edge_midpoint(state)
+  subroutine calc_pv_edge_midpoint(block, state)
 
+    type(block_type), intent(in) :: block
     type(state_type), intent(inout) :: state
 
     type(mesh_type), pointer :: mesh
@@ -86,7 +177,7 @@ contains
         state%pv_lat(i,j) = 0.5_r8 * (state%pv(i-1,j) + state%pv(i,j))
       end do 
     end do 
-    call fill_halo(mesh, state%pv_lon)
+    call fill_halo(block, state%pv_lon)
 
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
@@ -97,20 +188,21 @@ contains
 #endif
       end do 
     end do 
-    call fill_halo(mesh, state%pv_lat)
+    call fill_halo(block, state%pv_lat)
 
-  end subroutine calc_pv_on_edge_midpoint
+  end subroutine calc_pv_edge_midpoint
 
-  subroutine calc_pv_on_edge_apvm(state, dt)
+  subroutine calc_pv_edge_apvm(block, state, dt)
 
+    type(block_type), intent(in) :: block
     type(state_type), intent(inout) :: state
-    real(r8)        , intent(in   ) :: dt
+    real(r8), intent(in) :: dt
 
     type(mesh_type), pointer :: mesh
     real(r8) u, v, le, de
     integer i, j
 
-    call calc_dpv_on_edge(state)
+    call calc_dpv_edge(block, state)
 
     mesh => state%mesh
 
@@ -128,7 +220,7 @@ contains
     state%pv_lat(:,mesh%half_lat_ibeg) = state%pv(:,mesh%half_lat_ibeg)
     state%pv_lat(:,mesh%half_lat_iend  ) = state%pv(:,mesh%half_lat_iend  )
 #endif
-    call fill_halo(mesh, state%pv_lat)
+    call fill_halo(block, state%pv_lat)
 
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       le = mesh%le_lon(j)
@@ -145,8 +237,8 @@ contains
 #endif
       end do
     end do
-    call fill_halo(mesh, state%pv_lon)
+    call fill_halo(block, state%pv_lon)
 
-  end subroutine calc_pv_on_edge_apvm
+  end subroutine calc_pv_edge_apvm
 
 end module pv_mod
