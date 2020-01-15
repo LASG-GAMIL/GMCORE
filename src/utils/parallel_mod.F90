@@ -147,24 +147,44 @@ contains
   subroutine zero_halo_1d_r8(block, array, west_halo, east_halo)
 
     type(block_type), intent(in) :: block
-    real(8), intent(inout) :: array(block%mesh%full_lon_lb:block%mesh%full_lon_ub)
+    real(8), intent(inout) :: array(:)
     logical, intent(in), optional :: west_halo
     logical, intent(in), optional :: east_halo
 
+    integer i1, i2
+
     if (merge(west_halo, .false., present(west_halo))) then
-      array(block%mesh%full_lon_lb:block%mesh%full_lon_ibeg-1) = 0.0d0
+      !   west halo |                                   | east_halo
+      !  ___________|___________________________________|___________
+      ! |     |     |     |     |     |     |     |     |     |     |
+      ! | i1  | i2  |     |     |     |     |     |     |     |     |
+      ! |_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|
+      !    |     |
+      !    1  1 + w - 1
+      i1 = 1
+      i2 = 1 + block%mesh%lon_halo_width - 1
     end if
 
     if (merge(east_halo, .false., present(east_halo))) then
-      array(block%mesh%full_lon_iend+1:block%mesh%full_lon_ub) = 0.0d0
+      !   west halo |                                   | east_halo
+      !  ___________|___________________________________|___________
+      ! |     |     |     |     |     |     |     |     |     |     |
+      ! |     |     |     |     |     |     |     |     | i1  | i2  |
+      ! |_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|
+      !                                                    |     |
+      !                                                n - w + 1 n
+      i1 = size(array) - block%mesh%lon_halo_width + 1
+      i2 = size(array)
     end if
+
+    array(i1:i2) = 0.0d0
 
   end subroutine zero_halo_1d_r8
 
   subroutine overlay_inner_halo(block, array, west_halo, east_halo)
 
     type(block_type), intent(in) :: block
-    real(8), intent(inout) :: array(block%mesh%full_lon_lb:block%mesh%full_lon_ub)
+    real(8), intent(inout) :: array(:)
     logical, intent(in), optional :: west_halo
     logical, intent(in), optional :: east_halo
 
@@ -173,10 +193,17 @@ contains
     real(8) buffer(block%mesh%lon_halo_width)
 
     if (merge(west_halo, .false., present(west_halo))) then
-      i1 = block%mesh%full_lon_iend + 1
-      i2 = block%mesh%full_lon_iend + block%mesh%lon_halo_width
-      i3 = block%mesh%full_lon_ibeg
-      i4 = block%mesh%full_lon_ibeg + block%mesh%lon_halo_width - 1
+      !   west halo |           |                       | east_halo
+      !  ___________|___________|_______________________|___________
+      ! |     |     |     |     |     |     |     |     |     |     |
+      ! |     |     | i3  | i4  |     |     |     |     | i1  | i2  |
+      ! |_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|
+      !                |                                   |
+      !              1 + w                              n - w + 1
+      i1 = size(array) - block%mesh%lon_halo_width + 1
+      i2 = i1 + block%mesh%lon_halo_width - 1
+      i3 = 1 + block%mesh%lon_halo_width
+      i4 = i3 + block%mesh%lon_halo_width - 1
       buffer = 0
       call MPI_SENDRECV(array(i1:i2), block%mesh%lon_halo_width, MPI_DOUBLE, block%halo(2)%proc_id, 1, &
                         buffer, block%mesh%lon_halo_width, MPI_DOUBLE, block%halo(1)%proc_id, 1, &
