@@ -357,7 +357,7 @@ contains
         end do
       end if
       if (block%reduced_mesh(j)%reduce_factor > 0) then
-        call zero_halo(mesh, tend%qhu(:,j), east_halo=.true.)
+        call zero_halo(block, tend%qhu(:,j), east_halo=.true.)
         do move = 1, block%reduced_mesh(j)%reduce_factor
           do i = block%reduced_mesh(j)%full_lon_ibeg, block%reduced_mesh(j)%full_lon_iend
             block%reduced_tend(j)%qhu(i) = (                    &
@@ -420,7 +420,7 @@ contains
         end do
       end if
       if (block%reduced_mesh(j+1)%reduce_factor > 0) then
-        call zero_halo(mesh, tend%qhu(:,j), east_halo=.true.)
+        call zero_halo(block, tend%qhu(:,j), east_halo=.true.)
         do move = 1, block%reduced_mesh(j+1)%reduce_factor
           do i = block%reduced_mesh(j+1)%full_lon_ibeg, block%reduced_mesh(j+1)%full_lon_iend
             block%reduced_tend(j+1)%qhu(i) = (                     &

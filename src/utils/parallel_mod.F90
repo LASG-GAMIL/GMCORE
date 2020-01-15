@@ -17,8 +17,7 @@ module parallel_mod
   public overlay_inner_halo
 
   interface fill_halo
-    module procedure fill_halo_1d_r8_1
-    module procedure fill_halo_1d_r8_2
+    module procedure fill_halo_1d_r8
     module procedure fill_halo_2d_r8
   end interface fill_halo
 
@@ -36,59 +35,51 @@ module parallel_mod
 
 contains
 
-  subroutine fill_halo_1d_r8_1(halo_width, array, west_halo, east_halo)
-
-    integer, intent(in   )           :: halo_width
-    real(8), intent(inout)           :: array(:)
-    logical, intent(in   ), optional :: west_halo
-    logical, intent(in   ), optional :: east_halo
-
-    integer i, m, n
-
-    if (merge(west_halo, .true., present(west_halo))) then
-      m = lbound(array, 1) - 1
-      n = ubound(array, 1) - 2 * halo_width
-      do i = 1, halo_width
-        array(m+i) = array(n+i)
-      end do
-    end if
-
-    if (merge(east_halo, .true., present(east_halo))) then
-      m = ubound(array, 1) - halo_width
-      n = lbound(array, 1) + halo_width - 1
-      do i = 1, halo_width
-        array(m+i) = array(n+i)
-      end do
-    end if
-
-  end subroutine fill_halo_1d_r8_1
-
-  subroutine fill_halo_1d_r8_2(block, array, west_halo, east_halo)
+  subroutine fill_halo_1d_r8(block, halo_width, array, west_halo, east_halo)
 
     type(block_type), intent(in) :: block
-    real(8), intent(inout) :: array(:)
+    integer, intent(in) :: halo_width
+    real(8), intent(inout)  :: array(:)
     logical, intent(in), optional :: west_halo
     logical, intent(in), optional :: east_halo
 
-    integer i, m, n
+    integer status(MPI_STATUS_SIZE), ierr
+    integer i1, i2, i3, i4
 
     if (merge(west_halo, .true., present(west_halo))) then
-      m = lbound(array, 1) - 1
-      n = ubound(array, 1) - 2 * block%mesh%lon_halo_width
-      do i = 1, block%mesh%lon_halo_width
-        array(m+i) = array(n+i)
-      end do
+      !   west halo |                                   | east_halo
+      !  ___________|___________________________________|___________
+      ! |     |     |     |     |     |     |     |     |     |     |
+      ! | i3  | i4  |     |     |     |     | i1  | i2  |     |  n  |
+      ! |_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|
+      !    |                                   |
+      !    1                              n - 2 w + 1
+      i1 = size(array) - 2 * halo_width + 1
+      i2 = i1 + halo_width - 1
+      i3 = 1
+      i4 = i3 + halo_width - 1
+      call MPI_SENDRECV(array(i1:i2), halo_width, MPI_DOUBLE, block%halo(2)%proc_id, 3, &
+                        array(i3:i4), halo_width, MPI_DOUBLE, block%halo(1)%proc_id, 3, &
+                        proc%comm, status, ierr)
     end if
-
     if (merge(east_halo, .true., present(east_halo))) then
-      m = ubound(array, 1) - block%mesh%lon_halo_width
-      n = lbound(array, 1) + block%mesh%lon_halo_width - 1
-      do i = 1, block%mesh%lon_halo_width
-        array(m+i) = array(n+i)
-      end do
+      !   west halo |                                   | east_halo
+      !  ___________|___________________________________|___________
+      ! |     |     |     |     |     |     |     |     |     |     |
+      ! |     |     | i1  | i2  |     |     |     |     | i3  | i4  |
+      ! |_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|
+      !                |                                   |
+      !              1 + w                              n - w + 1
+      i1 = 1 + halo_width
+      i2 = i1 + halo_width - 1
+      i3 = size(array) - halo_width + 1
+      i4 = i3 + halo_width - 1
+      call MPI_SENDRECV(array(i1:i2), halo_width, MPI_DOUBLE, block%halo(1)%proc_id, 3, &
+                        array(i3:i4), halo_width, MPI_DOUBLE, block%halo(2)%proc_id, 3, &
+                        proc%comm, status, ierr)
     end if
 
-  end subroutine fill_halo_1d_r8_2
+  end subroutine fill_halo_1d_r8
 
   subroutine fill_halo_2d_r8(block, array, full_lon, full_lat, west_halo, east_halo, south_halo, north_halo)
 
@@ -153,19 +144,19 @@ contains
 
   end subroutine fill_halo_2d_r8
 
-  subroutine zero_halo_1d_r8(mesh, array, west_halo, east_halo)
+  subroutine zero_halo_1d_r8(block, array, west_halo, east_halo)
 
-    type(mesh_type), intent(in   )           :: mesh
-    real(8)        , intent(inout)           :: array(mesh%full_lon_lb:mesh%full_lon_ub)
-    logical        , intent(in   ), optional :: west_halo
-    logical        , intent(in   ), optional :: east_halo
+    type(block_type), intent(in) :: block
+    real(8), intent(inout) :: array(block%mesh%full_lon_lb:block%mesh%full_lon_ub)
+    logical, intent(in), optional :: west_halo
+    logical, intent(in), optional :: east_halo
 
     if (merge(west_halo, .false., present(west_halo))) then
-      array(mesh%full_lon_lb:mesh%full_lon_ibeg-1) = 0.0d0
+      array(block%mesh%full_lon_lb:block%mesh%full_lon_ibeg-1) = 0.0d0
     end if
 
     if (merge(east_halo, .false., present(east_halo))) then
-      array(mesh%full_lon_iend+1:mesh%full_lon_ub) = 0.0d0
+      array(block%mesh%full_lon_iend+1:block%mesh%full_lon_ub) = 0.0d0
     end if
 
   end subroutine zero_halo_1d_r8

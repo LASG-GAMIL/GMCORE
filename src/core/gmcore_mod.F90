@@ -455,7 +455,7 @@ contains
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       damp_order = block%reduced_mesh(j)%damp_order
       if (damp_order > 0) then
-        call damp_run(damp_order, dt, mesh%de_lon(j), wgt, mesh%half_lon_lb, mesh%half_lon_ub, mesh%num_half_lon, state%u(:,j))
+        call zonal_damp(block, damp_order, dt, mesh%de_lon(j), wgt, mesh%half_lon_lb, mesh%half_lon_ub, mesh%num_half_lon, state%u(:,j))
       end if
     end do
 
@@ -466,7 +466,7 @@ contains
       damp_order = max(block%reduced_mesh(j)%damp_order, block%reduced_mesh(j+1)%damp_order)
 #endif
       if (damp_order > 0) then
-        call damp_run(damp_order, dt, mesh%le_lat(j), wgt, mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%v(:,j))
+        call zonal_damp(block, damp_order, dt, mesh%le_lat(j), wgt, mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%v(:,j))
       end if
     end do
 
