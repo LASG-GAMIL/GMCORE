@@ -114,8 +114,7 @@ contains
 
     if (.not. allocated(proc%blocks)) allocate(proc%blocks(1))
 
-    call proc%blocks(1)%init(proc%id, max(global_mesh%lon_halo_width, maxval(reduce_factors)), &
-      global_mesh%lat_halo_width, lon_ibeg, lon_iend, lat_ibeg, lat_iend)
+    call proc%blocks(1)%init(proc%id, global_mesh%lon_halo_width, global_mesh%lat_halo_width, lon_ibeg, lon_iend, lat_ibeg, lat_iend)
 
     allocate(proc%blocks(1)%halo(4))
     call proc%blocks(1)%halo(1)%init(proc%blocks(1)%mesh, proc_id=proc%ngb(1), west_lat_ibeg=lat_ibeg, west_lat_iend=lat_iend)
