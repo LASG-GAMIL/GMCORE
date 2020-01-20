@@ -18,6 +18,7 @@ module process_mod
 
   type process_type
     integer comm
+    integer group
     integer :: zonal_comm = MPI_COMM_NULL
     integer :: zonal_group = MPI_GROUP_NULL
     integer dims(2)
@@ -50,6 +51,7 @@ contains
       call MPI_DIMS_CREATE(nproc, 2, proc%dims, ierr)
     end if
     call MPI_CART_CREATE(MPI_COMM_WORLD, 2, proc%dims, [.true.,.false.], .true., proc%comm, ierr)
+    call MPI_COMM_GROUP(proc%comm, proc%group, ierr)
     call MPI_COMM_RANK(proc%comm, proc%id, ierr)
     call MPI_CART_COORDS(proc%comm, proc%id, 2, proc_coords, ierr)
     call MPI_CART_SHIFT(proc%comm, 0, 1, proc%ngb(1), proc%ngb(2), ierr)
@@ -107,8 +109,8 @@ contains
       do i = 1, proc%dims(1)
         call MPI_CART_RANK(proc%comm, [i-1,proc_coords(2)], zonal_proc_id(i), ierr)
       end do
-      call MPI_GROUP_INCL(proc%comm, proc%dims(1), zonal_proc_id, proc%zonal_group, ierr)
-      call MPI_COMM_CREATE(proc%comm, proc%zonal_group, proc%zonal_comm, ierr)
+      call MPI_GROUP_INCL(proc%group, size(zonal_proc_id), zonal_proc_id, proc%zonal_group, ierr)
+      call MPI_COMM_CREATE_GROUP(proc%comm, proc%zonal_group, sum(zonal_proc_id), proc%zonal_comm, ierr)
     end if
     deallocate(zonal_proc_id)
 

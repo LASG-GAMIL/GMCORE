@@ -114,7 +114,7 @@ contains
     integer         , intent(in   ), optional :: lon_halo_width
     integer         , intent(in   ), optional :: lat_halo_width
 
-    real(r8) x(3), y(3), z(3)
+    real(16) x(3), y(3), z(3)
     integer i, j
 
     this%num_full_lon  = num_lon
@@ -432,18 +432,18 @@ contains
     this%half_lon_iend = lon_iend
 #ifdef V_POLE
     this%num_half_lat  = lat_iend - lat_ibeg + 1
-    this%num_full_lat  = this%num_half_lat - 1
     this%half_lat_ibeg = lat_ibeg
     this%half_lat_iend = lat_iend
     this%full_lat_ibeg = lat_ibeg
     this%full_lat_iend = merge(lat_iend - 1, lat_iend, this%has_north_pole())
+    this%num_full_lat  = this%full_lat_iend - this%full_lat_ibeg + 1
 #else
     this%num_full_lat  = lat_iend - lat_ibeg + 1
-    this%num_half_lat  = this%num_full_lat - 1
     this%full_lat_ibeg = lat_ibeg
     this%full_lat_iend = lat_iend
     this%half_lat_ibeg = lat_ibeg
     this%half_lat_iend = merge(lat_iend - 1, lat_iend, this%has_north_pole())
+    this%num_half_lat  = this%half_lat_iend - this%half_lat_ibeg + 1
 #endif
 
     this%id             = id
@@ -515,11 +515,11 @@ contains
 #ifdef V_POLE
     this%full_lat_ibeg_no_pole = this%full_lat_ibeg
     this%full_lat_iend_no_pole = this%full_lat_iend
-    this%half_lat_ibeg_no_pole = this%half_lat_ibeg + 1
-    this%half_lat_iend_no_pole = this%half_lat_iend - 1
+    this%half_lat_ibeg_no_pole = merge(this%half_lat_ibeg + 1, this%half_lat_ibeg, this%has_south_pole())
+    this%half_lat_iend_no_pole = merge(this%half_lat_iend - 1, this%half_lat_iend, this%has_north_pole())
 #else
-    this%full_lat_ibeg_no_pole = this%full_lat_ibeg + 1
-    this%full_lat_iend_no_pole = this%full_lat_iend - 1
+    this%full_lat_ibeg_no_pole = merge(this%full_lat_ibeg + 1, this%full_lat_ibeg, this%has_south_pole())
+    this%full_lat_iend_no_pole = merge(this%full_lat_iend - 1, this%full_lat_iend, this%has_north_pole())
     this%half_lat_ibeg_no_pole = this%half_lat_ibeg
     this%half_lat_iend_no_pole = this%half_lat_iend
 #endif
@@ -629,7 +629,7 @@ contains
     class(mesh_type), intent(in) :: this
     integer, intent(in) :: j
 
-    res = j < 1 .or. j > this%num_full_lat
+    res = j < 1 .or. j > global_mesh%num_full_lat
 
   end function mesh_is_outside_full_lat
 
@@ -638,7 +638,7 @@ contains
     class(mesh_type), intent(in) :: this
     integer, intent(in) :: j
 
-    res = j < 1 .or. j > this%num_half_lat
+    res = j < 1 .or. j > global_mesh%num_half_lat
 
   end function mesh_is_outside_half_lat
 

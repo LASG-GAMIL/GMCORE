@@ -87,7 +87,7 @@ contains
     do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
       total_area = total_area + mesh%lat_edge_area(j) * mesh%num_full_lon
     end do
-    if (abs(global_mesh%total_area - total_area) / global_mesh%total_area > 1.0d-10) then
+    if (abs(global_mesh%total_area - total_area) / global_mesh%total_area > 1.0d-9) then
       call log_error('Failed to calculate edge area!', __FILE__, __LINE__)
     end if
 

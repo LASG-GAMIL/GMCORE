@@ -93,11 +93,11 @@ contains
     call operators_prepare(proc%blocks, old)
     call diagnose(proc%blocks, old)
     call output(proc%blocks, old)
-    call log_print_diag(curr_time%isoformat())
+    if (proc%id == 0) call log_print_diag(curr_time%isoformat())
 
     do while (.not. time_is_finished())
       call time_integrate(dt, proc%blocks)
-      if (time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
+      if (proc%id == 0 .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
       call time_advance()
       call operators_prepare(proc%blocks, old)
       call diagnose(proc%blocks, old)
@@ -108,6 +108,7 @@ contains
 
   subroutine gmcore_final()
 
+    call history_final()
     call process_final()
 
   end subroutine gmcore_final
@@ -135,19 +136,21 @@ contains
     integer i, j, iblk
     real(r8) tm, te, tav, tpe
 
+    tm = 0.0_r8
+    te = 0.0_r8
+    tav = 0.0_r8
+    tpe = 0.0_r8
     do iblk = 1, size(blocks)
       mesh => blocks(iblk)%mesh
       state => blocks(iblk)%state(itime)
       static => blocks(iblk)%static
 
-      tm = 0.0_r8
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           tm = tm + state%gd(i,j) * mesh%cell_area(j)
         end do
       end do
 
-      te = 0.0_r8
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           te = te + state%mf_lon_n(i,j) * 0.5_r8 * state%u(i,j) * mesh%lon_edge_area(j) * 2
@@ -164,20 +167,22 @@ contains
         end do
       end do
 
-      tav = 0.0_r8
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           tav = tav + state%m_vtx(i,j) * state%pv(i,j) * mesh%vertex_area(j)
         end do
       end do
 
-      tpe = 0.0_r8
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           tpe = tpe + state%m_vtx(i,j) * state%pv(i,j)**2 * 0.5_r8 * mesh%vertex_area(j)
         end do
       end do
     end do
+    call global_sum(proc%comm, tm)
+    call global_sum(proc%comm, te)
+    call global_sum(proc%comm, tav)
+    call global_sum(proc%comm, tpe)
 
     call log_add_diag('total_m' , tm )
     call log_add_diag('total_e' , te )

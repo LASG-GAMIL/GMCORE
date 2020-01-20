@@ -24,8 +24,8 @@ module namelist_mod
   character(30) :: split_scheme = ''
   character(30) :: time_scheme = 'pc2'
 
-  integer :: reduce_factors(20) = 0
-  integer :: damp_orders(20) = 0
+  integer :: reduce_factors(100) = 0
+  integer :: damp_orders(100) = 0
   logical :: adaptive_damp = .false.
   
   ! Nest settings
