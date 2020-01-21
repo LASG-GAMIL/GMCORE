@@ -216,8 +216,8 @@ contains
       end do
     end do
 #ifdef V_POLE
-    state%pv_lat(:,mesh%half_lat_ibeg) = state%pv(:,mesh%half_lat_ibeg)
-    state%pv_lat(:,mesh%half_lat_iend) = state%pv(:,mesh%half_lat_iend)
+    if (mesh%has_south_pole()) state%pv_lat(:,mesh%half_lat_ibeg) = state%pv(:,mesh%half_lat_ibeg)
+    if (mesh%has_north_pole()) state%pv_lat(:,mesh%half_lat_iend) = state%pv(:,mesh%half_lat_iend)
 #endif
     call fill_halo(block, state%pv_lat, full_lon=.true., full_lat=.false.)
 
