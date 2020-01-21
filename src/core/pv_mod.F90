@@ -175,7 +175,7 @@ contains
         state%pv_lat(i,j) = 0.5_r8 * (state%pv(i-1,j) + state%pv(i,j))
       end do 
     end do 
-    call parallel_fill_halo(mesh, state%pv_lon)
+    call parallel_fill_halo(mesh, state%pv_lat)
 
     do j = mesh%full_lat_start_idx_no_pole, mesh%full_lat_end_idx_no_pole
       do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
@@ -186,7 +186,7 @@ contains
 #endif
       end do 
     end do 
-    call parallel_fill_halo(mesh, state%pv_lat)
+    call parallel_fill_halo(mesh, state%pv_lon)
 
   end subroutine calc_pv_on_edge_midpoint
 
