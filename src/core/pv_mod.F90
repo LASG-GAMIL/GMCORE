@@ -28,25 +28,27 @@ contains
 
     mesh => state%mesh
 
+!$OMP PARALLEL DO COLLAPSE(2)
     do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
 #ifdef V_POLE
-        state%pv(i,j) = (                                                              &
-          (                                                                           &
+        state%pv(i,j) = (                                                               &
+          (                                                                             &
             state%u(i  ,j-1) * mesh%de_lon(j-1) - state%u(i  ,j  ) * mesh%de_lon(j  ) + &
             state%v(i+1,j  ) * mesh%de_lat(j  ) - state%v(i  ,j  ) * mesh%de_lat(j  )   &
-          ) / mesh%vertex_area(j) + mesh%half_f(j)                                    &
+          ) / mesh%area_vtx(j) + mesh%half_f(j)                                         &
         ) / state%m_vtx(i,j)
 #else
-        state%pv(i,j) = (                                                              &
-          (                                                                           &
+        state%pv(i,j) = (                                                               &
+          (                                                                             &
             state%u(i  ,j  ) * mesh%de_lon(j  ) - state%u(i  ,j+1) * mesh%de_lon(j+1) + &
             state%v(i+1,j  ) * mesh%de_lat(j  ) - state%v(i  ,j  ) * mesh%de_lat(j  )   &
-          ) / mesh%vertex_area(j) + mesh%half_f(j)                                    &
+          ) / mesh%area_vtx(j) + mesh%half_f(j)                                         &
         ) / state%m_vtx(i,j)
 #endif
       end do
     end do
+!$OMP END PARALLEL DO
 #ifdef V_POLE
     if (mesh%has_south_pole()) then
       j = mesh%half_lat_ibeg
@@ -55,7 +57,7 @@ contains
         pole = pole - state%u(i,j) * mesh%de_lon(j)
       end do
       call zonal_sum(proc%zonal_comm, pole)
-      pole = pole / mesh%num_half_lon / mesh%vertex_area(j)
+      pole = pole / mesh%num_half_lon / mesh%area_vtx(j)
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
         state%pv(i,j) = (pole + mesh%half_f(j)) / state%m_vtx(i,j)
       end do
@@ -67,7 +69,7 @@ contains
         pole = pole + state%u(i,j-1) * mesh%de_lon(j-1)
       end do
       call zonal_sum(proc%zonal_comm, pole)
-      pole = pole / mesh%num_half_lon / mesh%vertex_area(j)
+      pole = pole / mesh%num_half_lon / mesh%area_vtx(j)
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
         state%pv(i,j) = (pole + mesh%half_f(j)) / state%m_vtx(i,j)
       end do
@@ -82,7 +84,7 @@ contains
           pole = pole - state%u(i,j+1) * mesh%de_lon(j+1)
         end do
         call zonal_sum(proc%zonal_comm, pole)
-        pole = pole / mesh%num_half_lon / mesh%vertex_area(j)
+        pole = pole / mesh%num_half_lon / mesh%area_vtx(j)
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           state%pv(i,j) = (pole + mesh%half_f(j)) / state%m_vtx(i,j)
         end do
@@ -94,7 +96,7 @@ contains
           pole = pole + state%u(i,j) * mesh%de_lon(j)
         end do
         call zonal_sum(proc%zonal_comm, pole)
-        pole = pole / mesh%num_half_lon / mesh%vertex_area(j)
+        pole = pole / mesh%num_half_lon / mesh%area_vtx(j)
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           state%pv(i,j) = (pole + mesh%half_f(j)) / state%m_vtx(i,j)
         end do
@@ -116,13 +118,16 @@ contains
     mesh => state%mesh
 
     ! Tangent pv difference
+!$OMP PARALLEL DO COLLAPSE(2)
     do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         state%dpv_lat_t(i,j) = state%pv(i,j) - state%pv(i-1,j)
       end do
     end do
+!$OMP END PARALLEL DO
     call fill_halo(block, state%dpv_lat_t, full_lon=.true., full_lat=.false.)
 
+!$OMP PARALLEL DO COLLAPSE(2)
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
 #ifdef V_POLE
@@ -132,9 +137,11 @@ contains
 #endif
       end do
     end do
+!$OMP END PARALLEL DO
     call fill_halo(block, state%dpv_lon_t, full_lon=.false., full_lat=.true.)
 
     ! Normal pv difference
+!$OMP PARALLEL DO COLLAPSE(2)
     do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
 #ifdef V_POLE
@@ -146,7 +153,9 @@ contains
 #endif
       end do
     end do
+!$OMP END PARALLEL DO
 
+!$OMP PARALLEL DO COLLAPSE(2)
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
 #ifdef V_POLE
@@ -158,6 +167,7 @@ contains
 #endif
       end do
     end do
+!$OMP END PARALLEL DO
 
   end subroutine calc_dpv_edge
 
@@ -171,13 +181,16 @@ contains
 
     mesh => state%mesh
 
+!$OMP PARALLEL DO COLLAPSE(2)
     do j = mesh%half_lat_ibeg, mesh%half_lat_iend
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         state%pv_lat(i,j) = 0.5_r8 * (state%pv(i-1,j) + state%pv(i,j))
       end do 
     end do 
+!$OMP END PARALLEL DO
     call fill_halo(block, state%pv_lat, full_lon=.false., full_lat=.true.)
 
+!$OMP PARALLEL DO COLLAPSE(2)
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
 #ifdef V_POLE
@@ -187,6 +200,7 @@ contains
 #endif
       end do 
     end do 
+!$OMP END PARALLEL DO
     call fill_halo(block, state%pv_lon, full_lon=.true., full_lat=.false.)
 
   end subroutine calc_pv_edge_midpoint
@@ -198,44 +212,44 @@ contains
     real(r8), intent(in) :: dt
 
     type(mesh_type), pointer :: mesh
-    real(r8) u, v, le, de
+    real(r8) u, v
     integer i, j
 
     call calc_dpv_edge(block, state)
 
     mesh => state%mesh
 
+!$OMP PARALLEL DO COLLAPSE(2)
     do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
-      le = mesh%le_lat(j)
-      de = mesh%de_lat(j)
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         u = state%mf_lat_t(i,j) / state%m_lat(i,j)
         v = state%v(i,j)
         state%pv_lat(i,j) = 0.5_r8 * (state%pv(i,j) + state%pv(i-1,j)) - &
-          0.5_r8 * (u * state%dpv_lat_t(i,j) / le + v * state%dpv_lat_n(i,j) / de) * dt
+          0.5_r8 * (u * state%dpv_lat_t(i,j) / mesh%le_lat(j) + v * state%dpv_lat_n(i,j) / mesh%de_lat(j)) * dt
       end do
     end do
+!$OMP END PARALLEL DO
 #ifdef V_POLE
     if (mesh%has_south_pole()) state%pv_lat(:,mesh%half_lat_ibeg) = state%pv(:,mesh%half_lat_ibeg)
     if (mesh%has_north_pole()) state%pv_lat(:,mesh%half_lat_iend) = state%pv(:,mesh%half_lat_iend)
 #endif
     call fill_halo(block, state%pv_lat, full_lon=.true., full_lat=.false.)
 
+!$OMP PARALLEL DO COLLAPSE(2)
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-      le = mesh%le_lon(j)
-      de = mesh%de_lon(j)
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
         u = state%u(i,j)
         v = state%mf_lon_t(i,j) / state%m_lon(i,j)
 #ifdef V_POLE
         state%pv_lon(i,j) = 0.5_r8 * (state%pv(i,j+1) + state%pv(i,j)) - &
-          0.5_r8 * (u * state%dpv_lon_n(i,j) / de + v * state%dpv_lon_t(i,j) / le) * dt
+          0.5_r8 * (u * state%dpv_lon_n(i,j) / mesh%de_lon(j) + v * state%dpv_lon_t(i,j) / mesh%le_lon(j)) * dt
 #else
         state%pv_lon(i,j) = 0.5_r8 * (state%pv(i,j-1) + state%pv(i,j)) - &
-          0.5_r8 * (u * state%dpv_lon_n(i,j) / de + v * state%dpv_lon_t(i,j) / le) * dt
+          0.5_r8 * (u * state%dpv_lon_n(i,j) / mesh%de_lon(j) + v * state%dpv_lon_t(i,j) / mesh%le_lon(j)) * dt
 #endif
       end do
     end do
+!$OMP END PARALLEL DO
     call fill_halo(block, state%pv_lon, full_lon=.false., full_lat=.true.)
 
   end subroutine calc_pv_edge_apvm

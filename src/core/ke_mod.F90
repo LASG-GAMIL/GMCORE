@@ -26,22 +26,24 @@ contains
 
     mesh => state%mesh
 
+!$OMP PARALLEL DO COLLAPSE(2)
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        state%ke(i,j) = (mesh%lon_edge_east_area(j  ) * state%u(i-1,j  )**2 + &
-                         mesh%lon_edge_west_area(j  ) * state%u(i  ,j  )**2 + &
+        state%ke(i,j) = (mesh%area_lon_east (j  ) * state%u(i-1,j  )**2 + &
+                         mesh%area_lon_west (j  ) * state%u(i  ,j  )**2 + &
 #ifdef V_POLE
-                         mesh%lat_edge_north_area(j  ) * state%v(i  ,j  )**2 + &
-                         mesh%lat_edge_south_area(j+1) * state%v(i  ,j+1)**2   &
+                         mesh%area_lat_north(j  ) * state%v(i  ,j  )**2 + &
+                         mesh%area_lat_south(j+1) * state%v(i  ,j+1)**2   &
 #else
-                         mesh%lat_edge_north_area(j-1) * state%v(i  ,j-1)**2 + &
-                         mesh%lat_edge_south_area(j  ) * state%v(i  ,j  )**2   &
+                         mesh%area_lat_north(j-1) * state%v(i  ,j-1)**2 + &
+                         mesh%area_lat_south(j  ) * state%v(i  ,j  )**2   &
 #endif
-                        ) / mesh%cell_area(j)
+                        ) / mesh%area_cell(j)
       end do
     end do
+!$OMP END PARALLEL DO
 #ifndef V_POLE
-    ! Note: lat_edge_south_area and lat_edge_north_area at the Poles is the same as cell_area.
+    ! Note: area_lat_south and area_lat_north at the Poles is the same as area_cell.
     if (mesh%has_south_pole()) then
       j = mesh%full_lat_ibeg
       pole = 0.0d0

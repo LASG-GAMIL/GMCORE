@@ -147,35 +147,35 @@ contains
 
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          tm = tm + state%gd(i,j) * mesh%cell_area(j)
+          tm = tm + state%gd(i,j) * mesh%area_cell(j)
         end do
       end do
 
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          te = te + state%mf_lon_n(i,j) * 0.5_r8 * state%u(i,j) * mesh%lon_edge_area(j) * 2
+          te = te + state%mf_lon_n(i,j) * 0.5_r8 * state%u(i,j) * mesh%area_lon(j) * 2
         end do
       end do
       do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          te = te + state%mf_lat_n(i,j) * 0.5_r8 * state%v(i,j) * mesh%lat_edge_area(j) * 2
+          te = te + state%mf_lat_n(i,j) * 0.5_r8 * state%v(i,j) * mesh%area_lat(j) * 2
         end do
       end do
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          te = te + (state%gd(i,j)**2 / g * 0.5_r8 + state%gd(i,j) * static%ghs(i,j) / g) * mesh%cell_area(j)
+          te = te + (state%gd(i,j)**2 / g * 0.5_r8 + state%gd(i,j) * static%ghs(i,j) / g) * mesh%area_cell(j)
         end do
       end do
 
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          tav = tav + state%m_vtx(i,j) * state%pv(i,j) * mesh%vertex_area(j)
+          tav = tav + state%m_vtx(i,j) * state%pv(i,j) * mesh%area_vtx(j)
         end do
       end do
 
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          tpe = tpe + state%m_vtx(i,j) * state%pv(i,j)**2 * 0.5_r8 * mesh%vertex_area(j)
+          tpe = tpe + state%m_vtx(i,j) * state%pv(i,j)**2 * 0.5_r8 * mesh%area_vtx(j)
         end do
       end do
     end do

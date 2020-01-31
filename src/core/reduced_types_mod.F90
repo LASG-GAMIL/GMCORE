@@ -19,43 +19,43 @@ module reduced_types_mod
     integer half_lon_lb
     integer half_lon_ub
 #ifdef V_POLE
-    real(r8), dimension(  -1:1) :: full_lat            = inf
-    real(r8), dimension(  -1:1) :: half_lat            = inf
-    real(r8), dimension(  -1:1) :: cell_area           = 0
-    real(r8), dimension(2,-2:2) :: subcell_area        = 0
-    real(r8), dimension(  -2:2) :: lon_edge_area       = 0
-    real(r8), dimension(  -2:2) :: lon_edge_west_area  = 0
-    real(r8), dimension(  -2:2) :: lon_edge_east_area  = 0
-    real(r8), dimension(  -1:2) :: vertex_area         = 0
-    real(r8), dimension(  -1:2) :: lat_edge_area       = 0
-    real(r8), dimension(  -1:2) :: lat_edge_north_area = 0
-    real(r8), dimension(  -1:2) :: lat_edge_south_area = 0
-    real(r8), dimension(  -1:1) :: le_lon              = inf
-    real(r8), dimension(  -2:2) :: de_lon              = inf
-    real(r8), dimension(  -1:2) :: le_lat              = inf
-    real(r8), dimension(  -1:2) :: de_lat              = inf
-    real(r8), dimension(2,-1:1) :: full_tangent_wgt    = inf
-    real(r8), dimension(2, 0:1) :: half_tangent_wgt    = inf
-    real(r8), dimension(  -1:2) :: half_f              = inf
+    real(r8), dimension(  -1:1) :: full_lat         = inf
+    real(r8), dimension(  -1:1) :: half_lat         = inf
+    real(r8), dimension(  -1:1) :: area_cell        = 0
+    real(r8), dimension(2,-2:2) :: area_subcell     = 0
+    real(r8), dimension(  -2:2) :: area_lon         = 0
+    real(r8), dimension(  -2:2) :: area_lon_west    = 0
+    real(r8), dimension(  -2:2) :: area_lon_east    = 0
+    real(r8), dimension(  -1:2) :: area_vtx         = 0
+    real(r8), dimension(  -1:2) :: area_lat         = 0
+    real(r8), dimension(  -1:2) :: area_lat_north   = 0
+    real(r8), dimension(  -1:2) :: area_lat_south   = 0
+    real(r8), dimension(  -1:1) :: le_lon           = inf
+    real(r8), dimension(  -2:2) :: de_lon           = inf
+    real(r8), dimension(  -1:2) :: le_lat           = inf
+    real(r8), dimension(  -1:2) :: de_lat           = inf
+    real(r8), dimension(2,-1:1) :: full_tangent_wgt = inf
+    real(r8), dimension(2, 0:1) :: half_tangent_wgt = inf
+    real(r8), dimension(  -1:2) :: half_f           = inf
 #else
-    real(r8), dimension(  -1:1) :: full_lat            = inf
-    real(r8), dimension(  -1:1) :: half_lat            = inf
-    real(r8), dimension(  -1:1) :: cell_area           = 0
-    real(r8), dimension(2,-2:2) :: subcell_area        = 0
-    real(r8), dimension(  -2:2) :: lon_edge_area       = 0
-    real(r8), dimension(  -2:2) :: lon_edge_west_area  = 0
-    real(r8), dimension(  -2:2) :: lon_edge_east_area  = 0
-    real(r8), dimension(  -2:1) :: vertex_area         = 0
-    real(r8), dimension(  -2:1) :: lat_edge_area       = 0
-    real(r8), dimension(  -2:1) :: lat_edge_north_area = 0
-    real(r8), dimension(  -2:1) :: lat_edge_south_area = 0
-    real(r8), dimension(  -1:1) :: le_lon              = inf
-    real(r8), dimension(  -2:2) :: de_lon              = inf
-    real(r8), dimension(  -2:1) :: le_lat              = inf
-    real(r8), dimension(  -2:1) :: de_lat              = inf
-    real(r8), dimension(2,-1:1) :: full_tangent_wgt    = inf
-    real(r8), dimension(2,-1:0) :: half_tangent_wgt    = inf
-    real(r8), dimension(  -2:1) :: half_f              = inf
+    real(r8), dimension(  -1:1) :: full_lat         = inf
+    real(r8), dimension(  -1:1) :: half_lat         = inf
+    real(r8), dimension(  -1:1) :: area_cell        = 0
+    real(r8), dimension(2,-2:2) :: area_subcell     = 0
+    real(r8), dimension(  -2:2) :: area_lon         = 0
+    real(r8), dimension(  -2:2) :: area_lon_west    = 0
+    real(r8), dimension(  -2:2) :: area_lon_east    = 0
+    real(r8), dimension(  -2:1) :: area_vtx         = 0
+    real(r8), dimension(  -2:1) :: area_lat         = 0
+    real(r8), dimension(  -2:1) :: area_lat_north   = 0
+    real(r8), dimension(  -2:1) :: area_lat_south   = 0
+    real(r8), dimension(  -1:1) :: le_lon           = inf
+    real(r8), dimension(  -2:2) :: de_lon           = inf
+    real(r8), dimension(  -2:1) :: le_lat           = inf
+    real(r8), dimension(  -2:1) :: de_lat           = inf
+    real(r8), dimension(2,-1:1) :: full_tangent_wgt = inf
+    real(r8), dimension(2,-1:0) :: half_tangent_wgt = inf
+    real(r8), dimension(  -2:1) :: half_f           = inf
 #endif
   end type reduced_mesh_type
 
