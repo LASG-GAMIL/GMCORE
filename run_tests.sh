@@ -28,7 +28,7 @@ fi
 
 cd $work_dir
 
-mpirun='mpiexec -np 1'
+mpirun='mpiexec -np 2'
 
 echo '=========================================================================='
 echo 'Rossby-Haurwitz wave test'

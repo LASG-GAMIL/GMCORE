@@ -148,9 +148,9 @@ contains
     call fiona_output('h0', 'h'   , h , decomp_ibegs=[mesh%full_lon_ibeg,mesh%full_lat_ibeg], decomp_iends=[mesh%full_lon_iend,mesh%full_lat_iend])
     call fiona_output('h0', 'hs'  , hs, decomp_ibegs=[mesh%full_lon_ibeg,mesh%full_lat_ibeg], decomp_iends=[mesh%full_lon_iend,mesh%full_lat_iend])
     call fiona_output('h0', 'pv'  , pv, decomp_ibegs=[mesh%half_lon_ibeg,mesh%half_lat_ibeg], decomp_iends=[mesh%half_lon_iend,mesh%half_lat_iend])
-    call fiona_output('h0', 'tm'  , state%total_m)
-    call fiona_output('h0', 'te'  , state%total_e)
-    call fiona_output('h0', 'tpe' , state%total_pe)
+    call fiona_output('h0', 'tm'  , state%tm)
+    call fiona_output('h0', 'te'  , state%te)
+    call fiona_output('h0', 'tpe' , state%tpe)
     call fiona_end_output('h0')
 
     deallocate(u)

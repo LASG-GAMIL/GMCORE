@@ -84,7 +84,7 @@ contains
           pole = pole - state%u(i,j+1) * mesh%de_lon(j+1)
         end do
         call zonal_sum(proc%zonal_comm, pole)
-        pole = pole / mesh%num_half_lon / mesh%area_vtx(j)
+        pole = pole / global_mesh%num_half_lon / mesh%area_vtx(j)
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           state%pv(i,j) = (pole + mesh%half_f(j)) / state%m_vtx(i,j)
         end do
@@ -96,7 +96,7 @@ contains
           pole = pole + state%u(i,j) * mesh%de_lon(j)
         end do
         call zonal_sum(proc%zonal_comm, pole)
-        pole = pole / mesh%num_half_lon / mesh%area_vtx(j)
+        pole = pole / global_mesh%num_half_lon / mesh%area_vtx(j)
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           state%pv(i,j) = (pole + mesh%half_f(j)) / state%m_vtx(i,j)
         end do

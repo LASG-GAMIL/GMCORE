@@ -50,7 +50,7 @@ module gmcore_mod
   procedure(integrator_interface), pointer :: integrator
   procedure(splitter_interface), pointer :: splitter
 
-  real(r8) :: damp_t0 = -1
+  real(r8) :: damp_2nd_t0 = -1
 
 contains
 
@@ -93,7 +93,6 @@ contains
     call operators_prepare(proc%blocks, old)
     call diagnose(proc%blocks, old)
     call output(proc%blocks, old)
-    if (proc%id == 0) call log_print_diag(curr_time%isoformat())
 
     do while (.not. time_is_finished())
       call time_integrate(dt, proc%blocks)
@@ -135,6 +134,7 @@ contains
     type(static_type), pointer :: static
     integer i, j, iblk
     real(r8) tm, te, tav, tpe
+    real(r8), save :: tpe0 = 0.0_r8
 
     tm = 0.0_r8
     te = 0.0_r8
@@ -184,9 +184,22 @@ contains
     call global_sum(proc%comm, tav)
     call global_sum(proc%comm, tpe)
 
-    call log_add_diag('total_m' , tm )
-    call log_add_diag('total_e' , te )
-    call log_add_diag('total_pe', tpe)
+    if (tpe0 == 0) tpe0 = tpe
+    if (tpe > tpe0) then
+      damp_2nd_t0 = elapsed_seconds + 1800
+      if (proc%id == 0) call log_notice('Increase damp for 1800s.')
+    end if
+    tpe0 = tpe
+
+    do iblk = 1, size(blocks)
+      blocks(iblk)%state(itime)%tm  = tm
+      blocks(iblk)%state(itime)%te  = te
+      blocks(iblk)%state(itime)%tpe = tpe
+    end do
+
+    call log_add_diag('tm' , tm )
+    call log_add_diag('te' , te )
+    call log_add_diag('tpe', tpe)
 
   end subroutine diagnose
 
@@ -445,24 +458,10 @@ contains
     type(state_type), intent(inout) :: state
 
     type(mesh_type), pointer :: mesh
-    integer j, damp_order
+    integer i, j, damp_order
     real(r8) wgt
 
     mesh => state%mesh
-
-    if (adaptive_damp) then
-      wgt = exp(- (elapsed_seconds - damp_t0) / 1800.0_r8)
-      call log_add_diag('damp_wgt', wgt)
-    else
-      wgt = 1.0_r8
-    end if
-
-    do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-      damp_order = block%reduced_mesh(j)%damp_order
-      if (damp_order > 0) then
-        call zonal_damp(block, damp_order, dt, mesh%de_lon(j), wgt, mesh%half_lon_lb, mesh%half_lon_ub, mesh%num_half_lon, state%u(:,j))
-      end if
-    end do
 
     do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
 #ifdef V_POLE
@@ -471,7 +470,21 @@ contains
       damp_order = max(block%reduced_mesh(j)%damp_order, block%reduced_mesh(j+1)%damp_order)
 #endif
       if (damp_order > 0) then
-        call zonal_damp(block, damp_order, dt, mesh%le_lat(j), wgt, mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%v(:,j))
+        if (damp_2nd_t0 > elapsed_seconds) damp_order = 2
+        call zonal_damp(block, damp_order, dt, mesh%le_lat(j), 1.0_r8, mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%v(:,j))
+      end if
+    end do
+    do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+      if (mesh%is_south_pole(j)) then
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          state%v(i,j) = 0.2_r8 * state%v(i,j) + 0.8_r8 * state%v(i,j+1)
+        end do
+        call fill_halo(block, mesh%lon_halo_width, state%v(:,j))
+      else if (mesh%is_north_pole(j+1)) then
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          state%v(i,j) = 0.2_r8 * state%v(i,j) + 0.8_r8 * state%v(i,j-1)
+        end do
+        call fill_halo(block, mesh%lon_halo_width, state%v(:,j))
       end if
     end do
 

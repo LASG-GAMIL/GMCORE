@@ -29,8 +29,8 @@ contains
 !$OMP PARALLEL DO COLLAPSE(2)
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        state%ke(i,j) = (mesh%area_lon_east (j  ) * state%u(i-1,j  )**2 + &
-                         mesh%area_lon_west (j  ) * state%u(i  ,j  )**2 + &
+        state%ke(i,j) = (mesh%area_lon_west (j  ) * state%u(i-1,j  )**2 + &
+                         mesh%area_lon_east (j  ) * state%u(i  ,j  )**2 + &
 #ifdef V_POLE
                          mesh%area_lat_north(j  ) * state%v(i  ,j  )**2 + &
                          mesh%area_lat_south(j+1) * state%v(i  ,j+1)**2   &

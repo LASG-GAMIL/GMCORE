@@ -456,8 +456,8 @@ contains
     type(reduced_state_type), intent(inout) :: reduced_state
     real(r8), intent(in) :: dt
 
-    real(r8) m_vtx, pole, sign
-    integer i, u_j
+    real(r8) m_vtx
+    integer raw_i, i
 
 #ifdef V_POLE
     if (raw_mesh%is_outside_half_lat(j+buf_j)) then
@@ -486,21 +486,12 @@ contains
     if (raw_mesh%is_outside_half_lat(j+buf_j)) then
       return
     else if (raw_mesh%is_south_pole(j+buf_j) .or. raw_mesh%is_north_pole(j+buf_j+1)) then
-      sign = merge(-1.0_r8, 1.0_r8, raw_mesh%full_lat(j) < 0.0_r8)
-      u_j  = merge(buf_j+1, buf_j , raw_mesh%full_lat(j) < 0.0_r8)
-      pole = 0.0_r8
+      raw_i = raw_mesh%half_lon_ibeg + move - 1
       do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
-        pole = pole + sign * reduced_state%u(i,u_j,move) * reduced_mesh%de_lon(u_j)
+        reduced_state%pv(i,buf_j,move) = sum(raw_state%pv(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j))
+        raw_i = raw_i + reduced_mesh%reduce_factor
       end do
-      call zonal_sum(proc%zonal_comm, pole)
-      pole = pole / reduced_mesh%num_half_lon / reduced_mesh%area_vtx(buf_j) ! FIXME
-      do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
-        m_vtx = (                                                                                                          &
-          (reduced_state%gd(i,buf_j  ,move) + reduced_state%gd(i+1,buf_j  ,move)) * reduced_mesh%area_subcell(2,buf_j  ) + &
-          (reduced_state%gd(i,buf_j+1,move) + reduced_state%gd(i+1,buf_j+1,move)) * reduced_mesh%area_subcell(1,buf_j+1)   &
-        ) / reduced_mesh%area_vtx(buf_j) / g
-        reduced_state%pv(i,buf_j,move) = (pole + reduced_mesh%half_f(buf_j)) / m_vtx
-      end do
+      reduced_state%pv(:,buf_j,move) = reduced_state%pv(:,buf_j,move) / reduced_mesh%reduce_factor
     else
       do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
         m_vtx = (                                                                                                          &

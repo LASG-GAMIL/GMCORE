@@ -36,11 +36,9 @@ module state_mod
     real(r8), allocatable, dimension(:,:) :: dpv_lat_t
     real(r8), allocatable, dimension(:,:) :: dpv_lat_n
     real(r8), allocatable, dimension(:,:) :: ke
-    real(r8) total_m
-    real(r8) total_ke
-    real(r8) total_e
-    real(r8) total_av
-    real(r8) total_pe
+    real(r8) tm
+    real(r8) te
+    real(r8) tpe
   contains
     procedure :: init => state_init
     procedure :: clear => state_clear
