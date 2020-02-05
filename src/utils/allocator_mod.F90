@@ -1,5 +1,6 @@
 module allocator_mod
 
+  use flogger
   use mesh_mod
 
   implicit none
@@ -34,6 +35,8 @@ contains
       if (full_lat) allocate(array(mesh%full_lat_lb:mesh%full_lat_ub))
     else if (present(half_lat)) then
       if (half_lat) allocate(array(mesh%half_lat_lb:mesh%half_lat_ub))
+    else
+      call log_error('allocate_array_1d_r8: Missing full_lon, half_lon, full_lat or half_lat argument!')
     end if
 
     array = 0.0d0

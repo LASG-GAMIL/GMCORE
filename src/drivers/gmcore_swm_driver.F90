@@ -3,7 +3,7 @@ program gmcore_swm_driver
   use log_mod
   use namelist_mod
   use block_mod
-  use process_mod
+  use parallel_mod
   use gmcore_mod
   use mountain_zonal_flow_test_mod
   use rossby_haurwitz_wave_test_mod

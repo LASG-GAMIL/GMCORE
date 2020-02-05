@@ -10,6 +10,8 @@ module parallel_mod
   private
 
   public proc
+  public process_init
+  public process_final
   public fill_halo
   public zero_halo
   public zonal_sum

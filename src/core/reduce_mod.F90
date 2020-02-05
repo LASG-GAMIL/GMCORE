@@ -26,7 +26,6 @@ module reduce_mod
   use mesh_mod
   use static_mod
   use state_mod
-  use process_mod
   use parallel_mod
   use block_mod
   use reduced_types_mod

@@ -14,6 +14,11 @@ module block_mod
   private
 
   public block_type
+  public global_mesh
+  public mesh_type
+  public state_type
+  public static_type
+  public tend_type
 
   !      |         |         |
   !  ____|_________|_________|_____

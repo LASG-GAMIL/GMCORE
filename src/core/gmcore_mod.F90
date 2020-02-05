@@ -3,14 +3,9 @@ module gmcore_mod
   use flogger
   use const_mod
   use namelist_mod
-  use process_mod
   use parallel_mod
   use time_mod, dt => dt_in_seconds, old => old_time_idx, new => new_time_idx
   use history_mod
-  use mesh_mod
-  use state_mod
-  use static_mod
-  use tend_mod
   use block_mod
   use operators_mod
   use reduce_mod

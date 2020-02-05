@@ -8,7 +8,6 @@ module debug_mod
   use tend_mod
   use block_mod
   use parallel_mod
-  use process_mod
 
   private
 

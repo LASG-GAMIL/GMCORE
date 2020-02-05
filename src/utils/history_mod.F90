@@ -106,58 +106,30 @@ contains
     type(mesh_type), pointer :: mesh
     type(state_type), pointer :: state
     type(static_type), pointer :: static
-    integer i, j
-
-    real(r8), allocatable :: u (:,:)
-    real(r8), allocatable :: v (:,:)
-    real(r8), allocatable :: h (:,:)
-    real(r8), allocatable :: hs(:,:)
-    real(r8), allocatable :: pv(:,:)
-
-    mesh => blocks(1)%mesh
-    state => blocks(1)%state(itime)
-    static => blocks(1)%static
-
-    ! Convert wind from C grid to A grid.
-    allocate(u (mesh%half_lon_ibeg:mesh%full_lon_iend,mesh%half_lat_ibeg:mesh%full_lat_iend))
-    allocate(v (mesh%full_lon_ibeg:mesh%half_lon_iend,mesh%full_lat_ibeg:mesh%half_lat_iend))
-    allocate(h (mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend))
-    allocate(hs(mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend))
-    allocate(pv(mesh%half_lon_ibeg:mesh%half_lon_iend,mesh%half_lat_ibeg:mesh%half_lat_iend))
-    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        u (i,j) = state%u(i,j)
-        h (i,j) = (static%ghs(i,j) + state%gd(i,j)) / g
-        hs(i,j) = static%ghs(i,j) / g
-      end do
-    end do
-    do j = mesh%half_lat_ibeg, mesh%half_lat_iend
-      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        v (i,j) = state%v (i,j)
-        pv(i,j) = state%pv(i,j)
-      end do
-    end do
+    integer iblk
 
     call fiona_start_output('h0', elapsed_seconds, new_file=time_step==0)
     call fiona_output('h0', 'lon' , global_mesh%full_lon_deg(1:global_mesh%num_full_lon))
     call fiona_output('h0', 'lat' , global_mesh%full_lat_deg(1:global_mesh%num_full_lat))
     call fiona_output('h0', 'ilon', global_mesh%half_lon_deg(1:global_mesh%num_half_lon))
     call fiona_output('h0', 'ilat', global_mesh%half_lat_deg(1:global_mesh%num_half_lat))
-    call fiona_output('h0', 'u'   , u , decomp_ibegs=[mesh%half_lon_ibeg,mesh%full_lat_ibeg], decomp_iends=[mesh%half_lon_iend,mesh%full_lat_iend])
-    call fiona_output('h0', 'v'   , v , decomp_ibegs=[mesh%full_lon_ibeg,mesh%half_lat_ibeg], decomp_iends=[mesh%full_lon_iend,mesh%half_lat_iend])
-    call fiona_output('h0', 'h'   , h , decomp_ibegs=[mesh%full_lon_ibeg,mesh%full_lat_ibeg], decomp_iends=[mesh%full_lon_iend,mesh%full_lat_iend])
-    call fiona_output('h0', 'hs'  , hs, decomp_ibegs=[mesh%full_lon_ibeg,mesh%full_lat_ibeg], decomp_iends=[mesh%full_lon_iend,mesh%full_lat_iend])
-    call fiona_output('h0', 'pv'  , pv, decomp_ibegs=[mesh%half_lon_ibeg,mesh%half_lat_ibeg], decomp_iends=[mesh%half_lon_iend,mesh%half_lat_iend])
-    call fiona_output('h0', 'tm'  , state%tm)
-    call fiona_output('h0', 'te'  , state%te)
-    call fiona_output('h0', 'tpe' , state%tpe)
+    do iblk = 1, size(blocks)
+      mesh => blocks(iblk)%mesh
+      state => blocks(iblk)%state(itime)
+      static => blocks(iblk)%static
+      call fiona_output('h0', 'u'  , state %u  (mesh%half_lon_ibeg:mesh%half_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend)    , start=[mesh%half_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_half_lon,mesh%num_full_lat])
+      call fiona_output('h0', 'v'  , state %v  (mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%half_lat_ibeg:mesh%half_lat_iend)    , start=[mesh%full_lon_ibeg,mesh%half_lat_ibeg], count=[mesh%num_full_lon,mesh%num_half_lat])
+      call fiona_output('h0', 'hs' , static%ghs(mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend) / g, start=[mesh%full_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_full_lon,mesh%num_full_lat])
+      call fiona_output('h0', 'pv' , state %pv (mesh%half_lon_ibeg:mesh%half_lon_iend,mesh%half_lat_ibeg:mesh%half_lat_iend)    , start=[mesh%half_lon_ibeg,mesh%half_lat_ibeg], count=[mesh%num_half_lon,mesh%num_half_lat])
+      call fiona_output('h0', 'tm' , state %tm)
+      call fiona_output('h0', 'te' , state %te)
+      call fiona_output('h0', 'tpe', state %tpe)
+      call fiona_output('h0', 'h'  , (                                                            &
+        state %gd (mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend) + &
+        static%ghs(mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend)   &
+      ) / g, start=[mesh%full_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_full_lon,mesh%num_full_lat])
+    end do
     call fiona_end_output('h0')
-
-    deallocate(u)
-    deallocate(v)
-    deallocate(h)
-    deallocate(hs)
-    deallocate(pv)
 
   end subroutine history_write_state
 
@@ -175,25 +147,25 @@ contains
     tend => blocks(1)%tend(itime)
 
     call fiona_start_output('h1', elapsed_seconds, new_file=time_step==0)
-    call fiona_output('h1', 'lon'      , global_mesh%full_lon_deg(1:global_mesh%num_full_lon))
-    call fiona_output('h1', 'lat'      , global_mesh%full_lat_deg(1:global_mesh%num_full_lat))
-    call fiona_output('h1', 'ilon'     , global_mesh%half_lon_deg(1:global_mesh%num_half_lon))
-    call fiona_output('h1', 'ilat'     , global_mesh%half_lat_deg(1:global_mesh%num_half_lat))
-    call fiona_output('h1', 'qhv'      , tend%qhv      (mesh%half_lon_ibeg:mesh%half_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend), decomp_ibegs=[mesh%half_lon_ibeg,mesh%full_lat_ibeg], decomp_iends=[mesh%half_lon_iend,mesh%full_lat_iend])
-    call fiona_output('h1', 'qhu'      , tend%qhu      (mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%half_lat_ibeg:mesh%half_lat_iend), decomp_ibegs=[mesh%full_lon_ibeg,mesh%half_lat_ibeg], decomp_iends=[mesh%full_lon_iend,mesh%half_lat_iend])
-    call fiona_output('h1', 'dpedlon'  , tend%dpedlon  (mesh%half_lon_ibeg:mesh%half_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend), decomp_ibegs=[mesh%half_lon_ibeg,mesh%full_lat_ibeg], decomp_iends=[mesh%half_lon_iend,mesh%full_lat_iend])
-    call fiona_output('h1', 'dkedlon'  , tend%dkedlon  (mesh%half_lon_ibeg:mesh%half_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend), decomp_ibegs=[mesh%half_lon_ibeg,mesh%full_lat_ibeg], decomp_iends=[mesh%half_lon_iend,mesh%full_lat_iend])
-    call fiona_output('h1', 'dpedlat'  , tend%dpedlat  (mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%half_lat_ibeg:mesh%half_lat_iend), decomp_ibegs=[mesh%full_lon_ibeg,mesh%half_lat_ibeg], decomp_iends=[mesh%full_lon_iend,mesh%half_lat_iend])
-    call fiona_output('h1', 'dkedlat'  , tend%dkedlat  (mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%half_lat_ibeg:mesh%half_lat_iend), decomp_ibegs=[mesh%full_lon_ibeg,mesh%half_lat_ibeg], decomp_iends=[mesh%full_lon_iend,mesh%half_lat_iend])
-    call fiona_output('h1', 'dmfdlon'  , tend%dmfdlon  (mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend), decomp_ibegs=[mesh%full_lon_ibeg,mesh%full_lat_ibeg], decomp_iends=[mesh%full_lon_iend,mesh%full_lat_iend])
-    call fiona_output('h1', 'dmfdlat'  , tend%dmfdlat  (mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend), decomp_ibegs=[mesh%full_lon_ibeg,mesh%full_lat_ibeg], decomp_iends=[mesh%full_lon_iend,mesh%full_lat_iend])
-    call fiona_output('h1', 'mf_lon_n' , state%mf_lon_n(mesh%half_lon_ibeg:mesh%half_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend), decomp_ibegs=[mesh%half_lon_ibeg,mesh%full_lat_ibeg], decomp_iends=[mesh%half_lon_iend,mesh%full_lat_iend])
-    call fiona_output('h1', 'mf_lon_t' , state%mf_lon_t(mesh%half_lon_ibeg:mesh%half_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend), decomp_ibegs=[mesh%half_lon_ibeg,mesh%full_lat_ibeg], decomp_iends=[mesh%half_lon_iend,mesh%full_lat_iend])
-    call fiona_output('h1', 'mf_lat_n' , state%mf_lat_n(mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%half_lat_ibeg:mesh%half_lat_iend), decomp_ibegs=[mesh%full_lon_ibeg,mesh%half_lat_ibeg], decomp_iends=[mesh%full_lon_iend,mesh%half_lat_iend])
-    call fiona_output('h1', 'mf_lat_t' , state%mf_lat_t(mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%half_lat_ibeg:mesh%half_lat_iend), decomp_ibegs=[mesh%full_lon_ibeg,mesh%half_lat_ibeg], decomp_iends=[mesh%full_lon_iend,mesh%half_lat_iend])
-    call fiona_output('h1', 'pv_lon'   , state%pv_lon  (mesh%half_lon_ibeg:mesh%half_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend), decomp_ibegs=[mesh%half_lon_ibeg,mesh%full_lat_ibeg], decomp_iends=[mesh%half_lon_iend,mesh%full_lat_iend])
-    call fiona_output('h1', 'pv_lat'   , state%pv_lat  (mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%half_lat_ibeg:mesh%half_lat_iend), decomp_ibegs=[mesh%full_lon_ibeg,mesh%half_lat_ibeg], decomp_iends=[mesh%full_lon_iend,mesh%half_lat_iend])
-    call fiona_output('h1', 'ke'       , state%ke      (mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend), decomp_ibegs=[mesh%full_lon_ibeg,mesh%full_lat_ibeg], decomp_iends=[mesh%full_lon_iend,mesh%full_lat_iend])
+    call fiona_output('h1', 'lon'     , global_mesh%full_lon_deg(1:global_mesh%num_full_lon))
+    call fiona_output('h1', 'lat'     , global_mesh%full_lat_deg(1:global_mesh%num_full_lat))
+    call fiona_output('h1', 'ilon'    , global_mesh%half_lon_deg(1:global_mesh%num_half_lon))
+    call fiona_output('h1', 'ilat'    , global_mesh%half_lat_deg(1:global_mesh%num_half_lat))
+    call fiona_output('h1', 'qhv'     , tend%qhv      (mesh%half_lon_ibeg:mesh%half_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend), start=[mesh%half_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_half_lon,mesh%num_full_lat])
+    call fiona_output('h1', 'qhu'     , tend%qhu      (mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%half_lat_ibeg:mesh%half_lat_iend), start=[mesh%full_lon_ibeg,mesh%half_lat_ibeg], count=[mesh%num_full_lon,mesh%num_half_lat])
+    call fiona_output('h1', 'dpedlon' , tend%dpedlon  (mesh%half_lon_ibeg:mesh%half_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend), start=[mesh%half_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_half_lon,mesh%num_full_lat])
+    call fiona_output('h1', 'dkedlon' , tend%dkedlon  (mesh%half_lon_ibeg:mesh%half_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend), start=[mesh%half_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_half_lon,mesh%num_full_lat])
+    call fiona_output('h1', 'dpedlat' , tend%dpedlat  (mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%half_lat_ibeg:mesh%half_lat_iend), start=[mesh%full_lon_ibeg,mesh%half_lat_ibeg], count=[mesh%num_full_lon,mesh%num_half_lat])
+    call fiona_output('h1', 'dkedlat' , tend%dkedlat  (mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%half_lat_ibeg:mesh%half_lat_iend), start=[mesh%full_lon_ibeg,mesh%half_lat_ibeg], count=[mesh%num_full_lon,mesh%num_half_lat])
+    call fiona_output('h1', 'dmfdlon' , tend%dmfdlon  (mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend), start=[mesh%full_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_full_lon,mesh%num_full_lat])
+    call fiona_output('h1', 'dmfdlat' , tend%dmfdlat  (mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend), start=[mesh%full_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_full_lon,mesh%num_full_lat])
+    call fiona_output('h1', 'mf_lon_n', state%mf_lon_n(mesh%half_lon_ibeg:mesh%half_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend), start=[mesh%half_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_half_lon,mesh%num_full_lat])
+    call fiona_output('h1', 'mf_lon_t', state%mf_lon_t(mesh%half_lon_ibeg:mesh%half_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend), start=[mesh%half_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_half_lon,mesh%num_full_lat])
+    call fiona_output('h1', 'mf_lat_n', state%mf_lat_n(mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%half_lat_ibeg:mesh%half_lat_iend), start=[mesh%full_lon_ibeg,mesh%half_lat_ibeg], count=[mesh%num_full_lon,mesh%num_half_lat])
+    call fiona_output('h1', 'mf_lat_t', state%mf_lat_t(mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%half_lat_ibeg:mesh%half_lat_iend), start=[mesh%full_lon_ibeg,mesh%half_lat_ibeg], count=[mesh%num_full_lon,mesh%num_half_lat])
+    call fiona_output('h1', 'pv_lon'  , state%pv_lon  (mesh%half_lon_ibeg:mesh%half_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend), start=[mesh%half_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_half_lon,mesh%num_full_lat])
+    call fiona_output('h1', 'pv_lat'  , state%pv_lat  (mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%half_lat_ibeg:mesh%half_lat_iend), start=[mesh%full_lon_ibeg,mesh%half_lat_ibeg], count=[mesh%num_full_lon,mesh%num_half_lat])
+    call fiona_output('h1', 'ke'      , state%ke      (mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend), start=[mesh%full_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_full_lon,mesh%num_full_lat])
     call fiona_end_output('h1')
 
   end subroutine history_write_debug

@@ -4,7 +4,6 @@ module ke_mod
   use mesh_mod
   use state_mod
   use block_mod
-  use process_mod
   use parallel_mod
 
   implicit none

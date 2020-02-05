@@ -2,17 +2,20 @@ cmake_minimum_required(VERSION 3.0)
 
 project(gmcore LANGUAGES Fortran)
 
-option(STAGGER_V_ON_POLE "Stagger V on the two Poles" OFF)
+option(V_POLE "Stagger V on the two Poles" OFF)
 
-if (STAGGER_V_ON_POLE)
-  add_definitions(-DSTAGGER_V_ON_POLE)
+if (V_POLE)
+  add_definitions(-DV_POLE)
 endif ()
 
 if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
   if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -ffree-line-length-none -O0 -fcheck=all -g -fbacktrace -fopenmp")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -ffree-line-length-none -O0 -fcheck=all -g -fbacktrace")
   else ()
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -ffree-line-length-none -Ofast -fopenmp")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -ffree-line-length-none -Ofast")
+  endif ()
+  if (NOT APPLE)
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fopenmp")
   endif ()
 endif ()
 
@@ -51,7 +54,7 @@ set(source_files
   src/utils/namelist_mod.F90
   src/utils/time_mod.F90
   src/utils/math_mod.F90
-  src/utils/history_mod.F90 
+  src/utils/history_mod.F90
   src/utils/time_mod.F90
   src/utils/sphere_geometry_mod.F90
   src/utils/block_mod.F90
