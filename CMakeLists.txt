@@ -2,10 +2,10 @@ cmake_minimum_required(VERSION 3.0)
 
 project(gmcore LANGUAGES Fortran)
 
-option(STAGGER_V_ON_POLE "Stagger V on the two Poles" OFF)
+option(V_POLE "Stagger V on the two Poles" OFF)
 
-if (STAGGER_V_ON_POLE)
-  add_definitions(-DSTAGGER_V_ON_POLE)
+if (V_POLE)
+  add_definitions(-D V_POLE)
 endif ()
 
 if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
