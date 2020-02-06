@@ -68,7 +68,11 @@ contains
       end do
     end if
 #endif
-    call fill_halo(block, state%ke, full_lon=.true., full_lat=.true.)
+#ifdef V_POLE
+    call fill_halo(block, state%ke, full_lon=.true., full_lat=.true., west_halo=.false., north_halo=.false.)
+#else
+    call fill_halo(block, state%ke, full_lon=.true., full_lat=.true., west_halo=.false., south_halo=.false.)
+#endif
 
   end subroutine calc_ke_cell
 

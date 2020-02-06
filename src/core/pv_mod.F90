@@ -103,7 +103,11 @@ contains
       end if
     end if
 #endif
-    call fill_halo(block, state%pv, full_lon=.false., full_lat=.false.)
+#ifdef V_POLE
+    call fill_halo(block, state%pv, full_lon=.false., full_lat=.false., south_halo=.false.)
+#else
+    call fill_halo(block, state%pv, full_lon=.false., full_lat=.false., north_halo=.false.)
+#endif
 
   end subroutine calc_pv_vtx
 
@@ -125,7 +129,11 @@ contains
       end do
     end do
 !$OMP END PARALLEL DO
-    call fill_halo(block, state%dpv_lat_t, full_lon=.true., full_lat=.false.)
+#ifdef V_POLE
+    call fill_halo(block, state%dpv_lat_t, full_lon=.true., full_lat=.false., west_halo=.false., south_halo=.false.)
+#else
+    call fill_halo(block, state%dpv_lat_t, full_lon=.true., full_lat=.false., west_halo=.false., north_halo=.false.)
+#endif
 
 !$OMP PARALLEL DO COLLAPSE(2)
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -138,7 +146,11 @@ contains
       end do
     end do
 !$OMP END PARALLEL DO
-    call fill_halo(block, state%dpv_lon_t, full_lon=.false., full_lat=.true.)
+#ifdef V_POLE
+    call fill_halo(block, state%dpv_lon_t, full_lon=.false., full_lat=.true., east_halo=.false., north_halo=.false.)
+#else
+    call fill_halo(block, state%dpv_lon_t, full_lon=.false., full_lat=.true., east_halo=.false., south_halo=.false.)
+#endif
 
     ! Normal pv difference
 !$OMP PARALLEL DO COLLAPSE(2)
@@ -188,7 +200,11 @@ contains
       end do 
     end do 
 !$OMP END PARALLEL DO
-    call fill_halo(block, state%pv_lat, full_lon=.false., full_lat=.true.)
+#ifdef V_POLE
+    call fill_halo(block, state%pv_lat, full_lon=.false., full_lat=.true., west_halo=.false., south_halo=.false.)
+#else
+    call fill_halo(block, state%pv_lat, full_lon=.false., full_lat=.true., west_halo=.false., north_halo=.false.)
+#endif
 
 !$OMP PARALLEL DO COLLAPSE(2)
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -201,7 +217,11 @@ contains
       end do 
     end do 
 !$OMP END PARALLEL DO
-    call fill_halo(block, state%pv_lon, full_lon=.true., full_lat=.false.)
+#ifdef V_POLE
+    call fill_halo(block, state%pv_lon, full_lon=.true., full_lat=.false., east_halo=.false., north_halo=.false.)
+#else
+    call fill_halo(block, state%pv_lon, full_lon=.true., full_lat=.false., east_halo=.false., south_halo=.false.)
+#endif
 
   end subroutine calc_pv_edge_midpoint
 
@@ -233,7 +253,11 @@ contains
     if (mesh%has_south_pole()) state%pv_lat(:,mesh%half_lat_ibeg) = state%pv(:,mesh%half_lat_ibeg)
     if (mesh%has_north_pole()) state%pv_lat(:,mesh%half_lat_iend) = state%pv(:,mesh%half_lat_iend)
 #endif
-    call fill_halo(block, state%pv_lat, full_lon=.true., full_lat=.false.)
+#ifdef V_POLE
+    call fill_halo(block, state%pv_lat, full_lon=.false., full_lat=.true., west_halo=.false., south_halo=.false.)
+#else
+    call fill_halo(block, state%pv_lat, full_lon=.false., full_lat=.true., west_halo=.false., north_halo=.false.)
+#endif
 
 !$OMP PARALLEL DO COLLAPSE(2)
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -250,7 +274,11 @@ contains
       end do
     end do
 !$OMP END PARALLEL DO
-    call fill_halo(block, state%pv_lon, full_lon=.false., full_lat=.true.)
+#ifdef V_POLE
+    call fill_halo(block, state%pv_lon, full_lon=.true., full_lat=.false., east_halo=.false., north_halo=.false.)
+#else
+    call fill_halo(block, state%pv_lon, full_lon=.true., full_lat=.false., east_halo=.false., south_halo=.false.)
+#endif
 
   end subroutine calc_pv_edge_apvm
 

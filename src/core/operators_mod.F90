@@ -169,7 +169,11 @@ contains
       end do
     end do
 !$OMP END PARALLEL DO
-    call fill_halo(block, state%mf_lon_n, full_lon=.false., full_lat=.true.)
+#ifdef V_POLE
+    call fill_halo(block, state%mf_lon_n, full_lon=.false., full_lat=.true., north_halo=.false.)
+#else
+    call fill_halo(block, state%mf_lon_n, full_lon=.false., full_lat=.true., south_halo=.false.)
+#endif
 
 !$OMP PARALLEL DO COLLAPSE(2)
     do j = state%mesh%half_lat_ibeg_no_pole, state%mesh%half_lat_iend_no_pole
@@ -178,7 +182,11 @@ contains
       end do
     end do
 !$OMP END PARALLEL DO
-    call fill_halo(block, state%mf_lat_n, full_lon=.true., full_lat=.false.)
+#ifdef V_POLE
+    call fill_halo(block, state%mf_lat_n, full_lon=.true., full_lat=.false., south_halo=.false.)
+#else
+    call fill_halo(block, state%mf_lat_n, full_lon=.true., full_lat=.false., north_halo=.false.)
+#endif
 
   end subroutine calc_mf_lon_n_mf_lat_n
 
@@ -202,7 +210,6 @@ contains
       end do
     end do
 !$OMP END PARALLEL DO
-    call fill_halo(block, state%mf_lon_t, full_lon=.false., full_lat=.true.)
 
 !$OMP PARALLEL DO COLLAPSE(2)
     do j = state%mesh%half_lat_ibeg_no_pole, state%mesh%half_lat_iend_no_pole
@@ -217,7 +224,6 @@ contains
       end do
     end do
 !$OMP END PARALLEL DO
-    call fill_halo(block, state%mf_lat_t, full_lon=.true., full_lat=.false.)
 
   end subroutine calc_mf_lon_t_mf_lat_t
 

@@ -65,7 +65,7 @@ contains
       do i = 1, n
         g(i) = g(i) * max(0.0_r8, sign(1.0_r8, -g(i) * df(i)))
       end do
-      call fill_halo(block, 1 - lb, g)
+      call fill_halo(block, 1 - lb, g, east_halo=.false.)
       do i = 1, n
         f(i) = f(i) - wgt * dt * (g(i) - g(i-1))
       end do

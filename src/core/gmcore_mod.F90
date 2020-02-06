@@ -182,7 +182,7 @@ contains
     if (tpe0 == 0) tpe0 = tpe
     if (tpe > tpe0) then
       damp_2nd_t0 = elapsed_seconds + 1800
-      if (proc%id == 0) call log_notice('Increase damp for 1800s.')
+      if (proc%id == 0) call log_notice('Switch to 2nd-order damping in reduce regions for 1800s.')
     end if
     tpe0 = tpe
 
