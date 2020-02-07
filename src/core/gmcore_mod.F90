@@ -454,7 +454,6 @@ contains
 
     type(mesh_type), pointer :: mesh
     integer i, j, damp_order
-    real(r8) wgt
 
     mesh => state%mesh
 
@@ -466,7 +465,7 @@ contains
 #endif
       if (damp_order > 0) then
         if (damp_2nd_t0 > elapsed_seconds) damp_order = 2
-        call zonal_damp(block, damp_order, dt, mesh%le_lat(j), 1.0_r8, mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%v(:,j))
+        call zonal_damp(block, damp_order, dt, mesh%le_lat(j), mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%v(:,j))
       end if
     end do
     do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole

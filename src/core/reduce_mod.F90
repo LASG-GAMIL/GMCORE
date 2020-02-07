@@ -69,25 +69,27 @@ contains
 
       do j = 1, size(reduce_factors)
         if (reduce_factors(j) == 0) cycle
-        if (mod(blocks(iblk)%mesh%num_full_lon, reduce_factors(j)) /= 0) then
+        if (mod(global_mesh%num_full_lon, reduce_factors(j)) /= 0) then
           call log_error('Zonal reduce factor ' // to_string(reduce_factors(j)) // &
-            ' cannot divide zonal grid number ' // to_string(blocks(iblk)%mesh%num_full_lon) // '!')
+            ' cannot divide zonal grid number ' // to_string(global_mesh%num_full_lon) // '!')
         end if
-        if (blocks(iblk)%mesh%has_south_pole()) then
+        ! South Pole
 #ifdef V_POLE
-          full_j = blocks(iblk)%mesh%full_lat_ibeg+j-1
+        full_j = j
 #else
-          full_j = blocks(iblk)%mesh%full_lat_ibeg+j
+        full_j = j + 1
 #endif
+        if (full_j >= blocks(iblk)%mesh%full_lat_ibeg .and. full_j <= blocks(iblk)%mesh%full_lat_iend) then
           call reduce_mesh(reduce_factors(j), full_j, blocks(iblk)%mesh, blocks(iblk)%reduced_mesh(full_j))
           blocks(iblk)%reduced_mesh(full_j)%damp_order = damp_orders(j)
         end if
-        if (blocks(iblk)%mesh%has_north_pole()) then
+        ! North Pole
 #ifdef V_POLE
-          full_j = blocks(iblk)%mesh%full_lat_iend-j+1
+        full_j = global_mesh%full_lat_iend - j + 1
 #else
-          full_j = blocks(iblk)%mesh%full_lat_iend-j
+        full_j = global_mesh%full_lat_iend - j
 #endif
+        if (full_j >= blocks(iblk)%mesh%full_lat_ibeg .and. full_j <= blocks(iblk)%mesh%full_lat_iend) then
           call reduce_mesh(reduce_factors(j), full_j, blocks(iblk)%mesh, blocks(iblk)%reduced_mesh(full_j))
           blocks(iblk)%reduced_mesh(full_j)%damp_order = damp_orders(j)
         end if

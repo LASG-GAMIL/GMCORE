@@ -24,13 +24,12 @@ module damp_mod
 
 contains
 
-  subroutine zonal_damp(block, order, dt, dx, wgt, lb, ub, n, f)
+  subroutine zonal_damp(block, order, dt, dx, lb, ub, n, f)
 
     type(block_type), intent(in) :: block
     integer, intent(in) :: order
     real(r8), intent(in) :: dt
     real(r8), intent(in) :: dx
-    real(r8), intent(in) :: wgt
     integer, intent(in) :: lb
     integer, intent(in) :: ub
     integer, intent(in) :: n
@@ -52,7 +51,7 @@ contains
       end do
       g = g * (-1)**(order / 2 + 1) * a / dx**order
       do i = 1, n
-        f(i) = f(i) + wgt * dt * g(i)
+        f(i) = f(i) + dt * g(i)
       end do
     else
       ns = diff_halo_width(order - 1)
@@ -67,7 +66,7 @@ contains
       end do
       call fill_halo(block, 1 - lb, g, east_halo=.false.)
       do i = 1, n
-        f(i) = f(i) - wgt * dt * (g(i) - g(i-1))
+        f(i) = f(i) - dt * (g(i) - g(i-1))
       end do
     end if
     call fill_halo(block, 1 - lb, f)

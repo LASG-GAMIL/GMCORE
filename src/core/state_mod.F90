@@ -2,7 +2,6 @@ module state_mod
 
   use const_mod
   use mesh_mod
-  use namelist_mod
   use allocator_mod
 
   implicit none
