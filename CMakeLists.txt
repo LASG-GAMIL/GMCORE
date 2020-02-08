@@ -61,6 +61,7 @@ set(source_files
   src/utils/process_mod.F90
   src/utils/halo_mod.F90
   src/utils/allocator_mod.F90
+  src/utils/parallel_types_mod.F90
   src/utils/parallel_mod.F90
   src/utils/debug_mod.F90
   src/core/mesh_mod.F90

@@ -15,6 +15,7 @@ module process_mod
   public process_stop
   public process_final
   public proc
+  public is_root_proc
 
   type process_type
     integer comm
@@ -146,5 +147,11 @@ contains
     call MPI_FINALIZE(ierr)
 
   end subroutine process_final
+
+  pure logical function is_root_proc()
+
+    is_root_proc = proc%id == 0
+
+  end function is_root_proc
 
 end module process_mod

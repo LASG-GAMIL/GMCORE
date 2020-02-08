@@ -20,11 +20,6 @@ module gmcore_mod
   public gmcore_run
   public gmcore_final
 
-  integer, parameter :: csp2      = 1
-  integer, parameter :: all_pass  = 0
-  integer, parameter :: slow_pass = 1
-  integer, parameter :: fast_pass = 2
-
   interface
     subroutine integrator_interface(dt, block, old, new, pass)
       import r8, block_type, tend_type, state_type
@@ -209,8 +204,12 @@ contains
     type(mesh_type), pointer :: mesh
     integer i, j
 
+    call wait_halo(state%async(async_gd))
+    call wait_halo(state%async(async_u))
+    call wait_halo(state%async(async_v))
+
     call operators_prepare(block, state)
-    call reduce_run(block, state, dt)
+    call reduce_run(block, state, dt, pass)
 
     mesh => state%mesh
 
@@ -427,14 +426,14 @@ contains
         new_state%gd(i,j) = old_state%gd(i,j) + dt * tend%dgd(i,j)
       end do
     end do
-    call fill_halo(block, new_state%gd, full_lon=.true., full_lat=.true.)
+    call fill_halo(block, new_state%gd, full_lon=.true., full_lat=.true., async=new_state%async(async_gd))
 
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
         new_state%u(i,j) = old_state%u(i,j) + dt * tend%du(i,j)
       end do
     end do
-    call fill_halo(block, new_state%u, full_lon=.false., full_lat=.true.)
+    call fill_halo(block, new_state%u, full_lon=.false., full_lat=.true., async=new_state%async(async_u))
 
     do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -465,7 +464,8 @@ contains
 #endif
       if (damp_order > 0) then
         if (damp_2nd_t0 > elapsed_seconds) damp_order = 2
-        call zonal_damp(block, damp_order, dt, mesh%le_lat(j), mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%v(:,j))
+        if (damp_order == 1) cycle ! User can choose not to damp except for cases when potential enstrophy increases.
+        call zonal_damp(block, damp_order, dt, mesh%le_lat(j), mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%v(:,j), state%async(async_v))
       end if
     end do
     do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
@@ -473,12 +473,12 @@ contains
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           state%v(i,j) = 0.2_r8 * state%v(i,j) + 0.8_r8 * state%v(i,j+1)
         end do
-        call fill_halo(block, mesh%lon_halo_width, state%v(:,j))
+        call fill_halo(block, mesh%lon_halo_width, state%v(:,j), state%async(async_v))
       else if (mesh%is_north_pole(j+1)) then
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           state%v(i,j) = 0.2_r8 * state%v(i,j) + 0.8_r8 * state%v(i,j-1)
         end do
-        call fill_halo(block, mesh%lon_halo_width, state%v(:,j))
+        call fill_halo(block, mesh%lon_halo_width, state%v(:,j), state%async(async_v))
       end if
     end do
 

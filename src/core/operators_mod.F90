@@ -170,9 +170,9 @@ contains
     end do
 !$OMP END PARALLEL DO
 #ifdef V_POLE
-    call fill_halo(block, state%mf_lon_n, full_lon=.false., full_lat=.true., north_halo=.false.)
+    call fill_halo(block, state%mf_lon_n, full_lon=.false., full_lat=.true., async=state%async(async_mf_lon_n), north_halo=.false.)
 #else
-    call fill_halo(block, state%mf_lon_n, full_lon=.false., full_lat=.true., south_halo=.false.)
+    call fill_halo(block, state%mf_lon_n, full_lon=.false., full_lat=.true., async=state%async(async_mf_lon_n), south_halo=.false.)
 #endif
 
 !$OMP PARALLEL DO COLLAPSE(2)
@@ -183,9 +183,9 @@ contains
     end do
 !$OMP END PARALLEL DO
 #ifdef V_POLE
-    call fill_halo(block, state%mf_lat_n, full_lon=.true., full_lat=.false., south_halo=.false.)
+    call fill_halo(block, state%mf_lat_n, full_lon=.true., full_lat=.false., async=state%async(async_mf_lat_n), south_halo=.false.)
 #else
-    call fill_halo(block, state%mf_lat_n, full_lon=.true., full_lat=.false., north_halo=.false.)
+    call fill_halo(block, state%mf_lat_n, full_lon=.true., full_lat=.false., async=state%async(async_mf_lat_n), north_halo=.false.)
 #endif
 
   end subroutine calc_mf_lon_n_mf_lat_n
@@ -197,20 +197,7 @@ contains
 
     integer i, j
 
-!$OMP PARALLEL DO COLLAPSE(2)
-    do j = state%mesh%full_lat_ibeg_no_pole, state%mesh%full_lat_iend_no_pole
-      do i = state%mesh%half_lon_ibeg, state%mesh%half_lon_iend
-#ifdef V_POLE
-        state%mf_lon_t(i,j) = state%mesh%full_tangent_wgt(1,j) * (state%mf_lat_n(i,j  ) + state%mf_lat_n(i+1,j  )) + &
-                              state%mesh%full_tangent_wgt(2,j) * (state%mf_lat_n(i,j+1) + state%mf_lat_n(i+1,j+1))
-#else
-        state%mf_lon_t(i,j) = state%mesh%full_tangent_wgt(1,j) * (state%mf_lat_n(i,j-1) + state%mf_lat_n(i+1,j-1)) + &
-                              state%mesh%full_tangent_wgt(2,j) * (state%mf_lat_n(i,j  ) + state%mf_lat_n(i+1,j  ))
-#endif
-      end do
-    end do
-!$OMP END PARALLEL DO
-
+    call wait_halo(state%async(async_mf_lon_n))
 !$OMP PARALLEL DO COLLAPSE(2)
     do j = state%mesh%half_lat_ibeg_no_pole, state%mesh%half_lat_iend_no_pole
       do i = state%mesh%full_lon_ibeg, state%mesh%full_lon_iend
@@ -220,6 +207,21 @@ contains
 #else
         state%mf_lat_t(i,j) = state%mesh%half_tangent_wgt(1,j) * (state%mf_lon_n(i-1,j  ) + state%mf_lon_n(i,j  )) + &
                               state%mesh%half_tangent_wgt(2,j) * (state%mf_lon_n(i-1,j+1) + state%mf_lon_n(i,j+1))
+#endif
+      end do
+    end do
+!$OMP END PARALLEL DO
+
+    call wait_halo(state%async(async_mf_lat_n))
+!$OMP PARALLEL DO COLLAPSE(2)
+    do j = state%mesh%full_lat_ibeg_no_pole, state%mesh%full_lat_iend_no_pole
+      do i = state%mesh%half_lon_ibeg, state%mesh%half_lon_iend
+#ifdef V_POLE
+        state%mf_lon_t(i,j) = state%mesh%full_tangent_wgt(1,j) * (state%mf_lat_n(i,j  ) + state%mf_lat_n(i+1,j  )) + &
+                              state%mesh%full_tangent_wgt(2,j) * (state%mf_lat_n(i,j+1) + state%mf_lat_n(i+1,j+1))
+#else
+        state%mf_lon_t(i,j) = state%mesh%full_tangent_wgt(1,j) * (state%mf_lat_n(i,j-1) + state%mf_lat_n(i+1,j-1)) + &
+                              state%mesh%full_tangent_wgt(2,j) * (state%mf_lat_n(i,j  ) + state%mf_lat_n(i+1,j  ))
 #endif
       end do
     end do
@@ -248,104 +250,7 @@ contains
       call log_error('Unknown PV scheme!')
     end select
 
-!$OMP PARALLEL DO
-#ifdef V_POLE
-    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-      if (block%reduced_mesh(j)%reduce_factor > 0) then
-        tend%qhv(:,j) = 0.0_r8
-        do move = 1, block%reduced_mesh(j)%reduce_factor
-          do i = block%reduced_mesh(j)%half_lon_ibeg, block%reduced_mesh(j)%half_lon_iend
-            block%reduced_tend(j)%qhv(i) = (                    &
-              block%reduced_mesh(j)%full_tangent_wgt(1,0) * (   &
-                block%reduced_state(j)%mf_lat_n(i  ,0,move) * ( &
-                  block%reduced_state(j)%pv_lon(i  ,0,move) +   &
-                  block%reduced_state(j)%pv_lat(i  ,0,move)     &
-                ) +                                             &
-                block%reduced_state(j)%mf_lat_n(i+1,0,move) * ( &
-                  block%reduced_state(j)%pv_lon(i  ,0,move) +   &
-                  block%reduced_state(j)%pv_lat(i+1,0,move)     &
-                )                                               &
-              ) +                                               &
-              block%reduced_mesh(j)%full_tangent_wgt(2,0) * (   &
-                block%reduced_state(j)%mf_lat_n(i  ,1,move) * ( &
-                  block%reduced_state(j)%pv_lon(i  ,0,move) +   &
-                  block%reduced_state(j)%pv_lat(i  ,1,move)     &
-                ) +                                             &
-                block%reduced_state(j)%mf_lat_n(i+1,1,move) * ( &
-                  block%reduced_state(j)%pv_lon(i  ,0,move) +   &
-                  block%reduced_state(j)%pv_lat(i+1,1,move)     &
-                )                                               &
-              )                                                 &
-            ) * 0.5_r8
-          end do
-          call reduce_append_array(move, block%reduced_mesh(j), block%reduced_tend(j)%qhv, mesh, tend%qhv(:,j))
-        end do
-        call overlay_inner_halo(block, tend%qhv(:,j), west_halo=.true.)
-      else
-        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          tend%qhv(i,j) = (                                                           &
-            mesh%full_tangent_wgt(1,j) * (                                            &
-              state%mf_lat_n(i  ,j  ) * (state%pv_lon(i,j) + state%pv_lat(i  ,j  )) + &
-              state%mf_lat_n(i+1,j  ) * (state%pv_lon(i,j) + state%pv_lat(i+1,j  ))   &
-            ) +                                                                       &
-            mesh%full_tangent_wgt(2,j) * (                                            &
-              state%mf_lat_n(i  ,j+1) * (state%pv_lon(i,j) + state%pv_lat(i  ,j+1)) + &
-              state%mf_lat_n(i+1,j+1) * (state%pv_lon(i,j) + state%pv_lat(i+1,j+1))   &
-            )                                                                         &
-          ) * 0.5_r8
-        end do
-      end if
-    end do
-#else
-    do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-      if (block%reduced_mesh(j)%reduce_factor > 0) then
-        tend%qhv(:,j) = 0.0_r8
-        do move = 1, block%reduced_mesh(j)%reduce_factor
-          do i = block%reduced_mesh(j)%half_lon_ibeg, block%reduced_mesh(j)%half_lon_iend
-            block%reduced_tend(j)%qhv(i) = (                     &
-              block%reduced_mesh(j)%full_tangent_wgt(1,0) * (    &
-                block%reduced_state(j)%mf_lat_n(i  ,-1,move) * ( &
-                  block%reduced_state(j)%pv_lon(i  , 0,move) +   &
-                  block%reduced_state(j)%pv_lat(i  ,-1,move)     &
-                ) +                                              &
-                block%reduced_state(j)%mf_lat_n(i+1,-1,move) * ( &
-                  block%reduced_state(j)%pv_lon(i  , 0,move) +   &
-                  block%reduced_state(j)%pv_lat(i+1,-1,move)     &
-                )                                                &
-              ) +                                                &
-              block%reduced_mesh(j)%full_tangent_wgt(2,0) * (    &
-                block%reduced_state(j)%mf_lat_n(i  , 0,move) * ( &
-                  block%reduced_state(j)%pv_lon(i  , 0,move) +   &
-                  block%reduced_state(j)%pv_lat(i  , 0,move)     &
-                ) +                                              &
-                block%reduced_state(j)%mf_lat_n(i+1, 0,move) * ( &
-                  block%reduced_state(j)%pv_lon(i  , 0,move) +   &
-                  block%reduced_state(j)%pv_lat(i+1, 0,move)     &
-                )                                                &
-              )                                                  &
-            ) * 0.5_r8
-          end do
-          call reduce_append_array(move, block%reduced_mesh(j), block%reduced_tend(j)%qhv, mesh, tend%qhv(:,j))
-        end do
-        call overlay_inner_halo(block, tend%qhv(:,j), west_halo=.true.)
-      else
-        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          tend%qhv(i,j) = (                                                           &
-            mesh%full_tangent_wgt(1,j) * (                                            &
-              state%mf_lat_n(i  ,j-1) * (state%pv_lon(i,j) + state%pv_lat(i  ,j-1)) + &
-              state%mf_lat_n(i+1,j-1) * (state%pv_lon(i,j) + state%pv_lat(i+1,j-1))   &
-            ) +                                                                       &
-            mesh%full_tangent_wgt(2,j) * (                                            &
-              state%mf_lat_n(i  ,j  ) * (state%pv_lon(i,j) + state%pv_lat(i  ,j  )) + &
-              state%mf_lat_n(i+1,j  ) * (state%pv_lon(i,j) + state%pv_lat(i+1,j  ))   &
-            )                                                                         &
-          ) * 0.5_r8
-        end do
-      end if
-    end do
-#endif
-!$OMP END PARALLEL DO
-
+    call wait_halo(state%async(async_pv_lon))
 !$OMP PARALLEL DO
 #ifdef V_POLE
     do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
@@ -476,6 +381,105 @@ contains
 #endif
 !$OMP END PARALLEL DO
 
+    call wait_halo(state%async(async_pv_lat))
+!$OMP PARALLEL DO
+#ifdef V_POLE
+    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+      if (block%reduced_mesh(j)%reduce_factor > 0) then
+        tend%qhv(:,j) = 0.0_r8
+        do move = 1, block%reduced_mesh(j)%reduce_factor
+          do i = block%reduced_mesh(j)%half_lon_ibeg, block%reduced_mesh(j)%half_lon_iend
+            block%reduced_tend(j)%qhv(i) = (                    &
+              block%reduced_mesh(j)%full_tangent_wgt(1,0) * (   &
+                block%reduced_state(j)%mf_lat_n(i  ,0,move) * ( &
+                  block%reduced_state(j)%pv_lon(i  ,0,move) +   &
+                  block%reduced_state(j)%pv_lat(i  ,0,move)     &
+                ) +                                             &
+                block%reduced_state(j)%mf_lat_n(i+1,0,move) * ( &
+                  block%reduced_state(j)%pv_lon(i  ,0,move) +   &
+                  block%reduced_state(j)%pv_lat(i+1,0,move)     &
+                )                                               &
+              ) +                                               &
+              block%reduced_mesh(j)%full_tangent_wgt(2,0) * (   &
+                block%reduced_state(j)%mf_lat_n(i  ,1,move) * ( &
+                  block%reduced_state(j)%pv_lon(i  ,0,move) +   &
+                  block%reduced_state(j)%pv_lat(i  ,1,move)     &
+                ) +                                             &
+                block%reduced_state(j)%mf_lat_n(i+1,1,move) * ( &
+                  block%reduced_state(j)%pv_lon(i  ,0,move) +   &
+                  block%reduced_state(j)%pv_lat(i+1,1,move)     &
+                )                                               &
+              )                                                 &
+            ) * 0.5_r8
+          end do
+          call reduce_append_array(move, block%reduced_mesh(j), block%reduced_tend(j)%qhv, mesh, tend%qhv(:,j))
+        end do
+        call overlay_inner_halo(block, tend%qhv(:,j), west_halo=.true.)
+      else
+        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+          tend%qhv(i,j) = (                                                           &
+            mesh%full_tangent_wgt(1,j) * (                                            &
+              state%mf_lat_n(i  ,j  ) * (state%pv_lon(i,j) + state%pv_lat(i  ,j  )) + &
+              state%mf_lat_n(i+1,j  ) * (state%pv_lon(i,j) + state%pv_lat(i+1,j  ))   &
+            ) +                                                                       &
+            mesh%full_tangent_wgt(2,j) * (                                            &
+              state%mf_lat_n(i  ,j+1) * (state%pv_lon(i,j) + state%pv_lat(i  ,j+1)) + &
+              state%mf_lat_n(i+1,j+1) * (state%pv_lon(i,j) + state%pv_lat(i+1,j+1))   &
+            )                                                                         &
+          ) * 0.5_r8
+        end do
+      end if
+    end do
+#else
+    do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+      if (block%reduced_mesh(j)%reduce_factor > 0) then
+        tend%qhv(:,j) = 0.0_r8
+        do move = 1, block%reduced_mesh(j)%reduce_factor
+          do i = block%reduced_mesh(j)%half_lon_ibeg, block%reduced_mesh(j)%half_lon_iend
+            block%reduced_tend(j)%qhv(i) = (                     &
+              block%reduced_mesh(j)%full_tangent_wgt(1,0) * (    &
+                block%reduced_state(j)%mf_lat_n(i  ,-1,move) * ( &
+                  block%reduced_state(j)%pv_lon(i  , 0,move) +   &
+                  block%reduced_state(j)%pv_lat(i  ,-1,move)     &
+                ) +                                              &
+                block%reduced_state(j)%mf_lat_n(i+1,-1,move) * ( &
+                  block%reduced_state(j)%pv_lon(i  , 0,move) +   &
+                  block%reduced_state(j)%pv_lat(i+1,-1,move)     &
+                )                                                &
+              ) +                                                &
+              block%reduced_mesh(j)%full_tangent_wgt(2,0) * (    &
+                block%reduced_state(j)%mf_lat_n(i  , 0,move) * ( &
+                  block%reduced_state(j)%pv_lon(i  , 0,move) +   &
+                  block%reduced_state(j)%pv_lat(i  , 0,move)     &
+                ) +                                              &
+                block%reduced_state(j)%mf_lat_n(i+1, 0,move) * ( &
+                  block%reduced_state(j)%pv_lon(i  , 0,move) +   &
+                  block%reduced_state(j)%pv_lat(i+1, 0,move)     &
+                )                                                &
+              )                                                  &
+            ) * 0.5_r8
+          end do
+          call reduce_append_array(move, block%reduced_mesh(j), block%reduced_tend(j)%qhv, mesh, tend%qhv(:,j))
+        end do
+        call overlay_inner_halo(block, tend%qhv(:,j), west_halo=.true.)
+      else
+        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+          tend%qhv(i,j) = (                                                           &
+            mesh%full_tangent_wgt(1,j) * (                                            &
+              state%mf_lat_n(i  ,j-1) * (state%pv_lon(i,j) + state%pv_lat(i  ,j-1)) + &
+              state%mf_lat_n(i+1,j-1) * (state%pv_lon(i,j) + state%pv_lat(i+1,j-1))   &
+            ) +                                                                       &
+            mesh%full_tangent_wgt(2,j) * (                                            &
+              state%mf_lat_n(i  ,j  ) * (state%pv_lon(i,j) + state%pv_lat(i  ,j  )) + &
+              state%mf_lat_n(i+1,j  ) * (state%pv_lon(i,j) + state%pv_lat(i+1,j  ))   &
+            )                                                                         &
+          ) * 0.5_r8
+        end do
+      end if
+    end do
+#endif
+!$OMP END PARALLEL DO
+
   end subroutine calc_qhu_qhv
 
   subroutine calc_dkedlon_dkedlat(block, state, tend, dt)
@@ -489,6 +493,8 @@ contains
     integer i, j, move
 
     mesh => state%mesh
+
+    call wait_halo(state%async(async_ke))
 
 !$OMP PARALLEL DO
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -537,6 +543,7 @@ contains
 
     mesh => state%mesh
 
+    call wait_halo(state%async(async_gd))
 !$OMP PARALLEL DO
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       if (block%reduced_mesh(j)%reduce_factor > 0) then

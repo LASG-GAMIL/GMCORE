@@ -1,9 +1,11 @@
 module parallel_mod
 
   use mpi
+  use flogger
   use mesh_mod
   use block_mod
   use process_mod
+  use parallel_types_mod
 
   implicit none
 
@@ -12,7 +14,21 @@ module parallel_mod
   public proc
   public process_init
   public process_final
+  public is_root_proc
+  public async_type
+  public async_v
+  public async_u
+  public async_gd
+  public async_pv
+  public async_pv_lon
+  public async_pv_lat
+  public async_ke
+  public async_mf_lon_n
+  public async_mf_lat_n
+  public async_dpv_lon_t
+  public async_dpv_lat_t
   public fill_halo
+  public wait_halo
   public zero_halo
   public zonal_sum
   public global_sum
@@ -20,8 +36,15 @@ module parallel_mod
 
   interface fill_halo
     module procedure fill_halo_1d_r8
+    module procedure fill_halo_async_1d_r8
     module procedure fill_halo_2d_r8
+    module procedure fill_halo_async_2d_r8
   end interface fill_halo
+
+  interface wait_halo
+    module procedure wait_halo_1
+    module procedure wait_halo_2
+  end interface wait_halo
 
   interface zero_halo
     module procedure zero_halo_1d_r8
@@ -82,6 +105,54 @@ contains
     end if
 
   end subroutine fill_halo_1d_r8
+
+  subroutine fill_halo_async_1d_r8(block, halo_width, array, async, west_halo, east_halo)
+
+    type(block_type), intent(in) :: block
+    integer, intent(in) :: halo_width
+    real(8), intent(inout)  :: array(:)
+    type(async_type), intent(inout) :: async
+    logical, intent(in), optional :: west_halo
+    logical, intent(in), optional :: east_halo
+
+    integer ierr
+    integer i1, i2, i3, i4
+
+    async%j = async%j + 1
+    if (async%j > size(async%zonal_west_send_req)) call log_error('Internal error!', __FILE__, __LINE__)
+
+    if (merge(west_halo, .true., present(west_halo))) then
+      !   west halo |                                   | east_halo
+      !  ___________|___________________________________|___________
+      ! |     |     |     |     |     |     |     |     |     |     |
+      ! | i3  | i4  |     |     |     |     | i1  | i2  |     |  n  |
+      ! |_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|
+      !    |                                   |
+      !    1                              n - 2 w + 1
+      i1 = size(array) - 2 * halo_width + 1
+      i2 = i1 + halo_width - 1
+      i3 = 1
+      i4 = i3 + halo_width - 1
+      call MPI_ISEND(array(i1:i2), halo_width, MPI_DOUBLE, block%halo(2)%proc_id, 1, proc%comm, async%zonal_west_send_req(async%j), ierr)
+      call MPI_IRECV(array(i3:i4), halo_width, MPI_DOUBLE, block%halo(1)%proc_id, 1, proc%comm, async%zonal_west_recv_req(async%j), ierr)
+    end if
+    if (merge(east_halo, .true., present(east_halo))) then
+      !   west halo |                                   | east_halo
+      !  ___________|___________________________________|___________
+      ! |     |     |     |     |     |     |     |     |     |     |
+      ! |     |     | i1  | i2  |     |     |     |     | i3  | i4  |
+      ! |_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|
+      !                |                                   |
+      !              1 + w                             n - w + 1
+      i1 = 1 + halo_width
+      i2 = i1 + halo_width - 1
+      i3 = size(array) - halo_width + 1
+      i4 = i3 + halo_width - 1
+      call MPI_ISEND(array(i1:i2), halo_width, MPI_DOUBLE, block%halo(1)%proc_id, 2, proc%comm, async%zonal_east_send_req(async%j), ierr)
+      call MPI_IRECV(array(i3:i4), halo_width, MPI_DOUBLE, block%halo(2)%proc_id, 2, proc%comm, async%zonal_east_recv_req(async%j), ierr)
+    end if
+
+  end subroutine fill_halo_async_1d_r8
 
   subroutine fill_halo_2d_r8(block, array, full_lon, full_lat, west_halo, east_halo, south_halo, north_halo)
 
@@ -177,6 +248,151 @@ contains
     end if
 
   end subroutine fill_halo_2d_r8
+
+  subroutine fill_halo_async_2d_r8(block, array, full_lon, full_lat, async, west_halo, east_halo, south_halo, north_halo)
+    
+    type(block_type), intent(in) :: block
+    real(8), intent(inout) :: array(:,:)
+    logical, intent(in) :: full_lon
+    logical, intent(in) :: full_lat
+    type(async_type), intent(inout) :: async
+    logical, intent(in), optional :: west_halo
+    logical, intent(in), optional :: east_halo
+    logical, intent(in), optional :: south_halo
+    logical, intent(in), optional :: north_halo
+
+    integer ierr
+
+    if (merge(west_halo, .true., present(west_halo))) then
+      if (full_lon .and. full_lat) then
+        call MPI_ISEND(array, 1, block%halo(2)%send_type(1,1), block%halo(2)%proc_id, 3, proc%comm, async%west_send_req, ierr)
+        call MPI_IRECV(array, 1, block%halo(1)%recv_type(1,1), block%halo(1)%proc_id, 3, proc%comm, async%west_recv_req, ierr)
+      else if (.not. full_lon .and. full_lat) then
+        call MPI_ISEND(array, 1, block%halo(2)%send_type(2,1), block%halo(2)%proc_id, 4, proc%comm, async%west_send_req, ierr)
+        call MPI_IRECV(array, 1, block%halo(1)%recv_type(2,1), block%halo(1)%proc_id, 4, proc%comm, async%west_recv_req, ierr)
+      else if (full_lon .and. .not. full_lat) then
+        call MPI_ISEND(array, 1, block%halo(2)%send_type(1,2), block%halo(2)%proc_id, 5, proc%comm, async%west_send_req, ierr)
+        call MPI_IRECV(array, 1, block%halo(1)%recv_type(1,2), block%halo(1)%proc_id, 5, proc%comm, async%west_recv_req, ierr)
+      else if (.not. full_lon .and. .not. full_lat) then
+        call MPI_ISEND(array, 1, block%halo(2)%send_type(2,2), block%halo(2)%proc_id, 6, proc%comm, async%west_send_req, ierr)
+        call MPI_IRECV(array, 1, block%halo(1)%recv_type(2,2), block%halo(1)%proc_id, 6, proc%comm, async%west_recv_req, ierr)
+      end if
+    end if
+
+    if (merge(east_halo, .true., present(east_halo))) then
+      if (full_lon .and. full_lat) then
+        call MPI_ISEND(array, 1, block%halo(1)%send_type(1,1), block%halo(1)%proc_id, 7, proc%comm, async%east_send_req, ierr)
+        call MPI_IRECV(array, 1, block%halo(2)%recv_type(1,1), block%halo(2)%proc_id, 7, proc%comm, async%east_recv_req, ierr)
+      else if (.not. full_lon .and. full_lat) then
+        call MPI_ISEND(array, 1, block%halo(1)%send_type(2,1), block%halo(1)%proc_id, 8, proc%comm, async%east_send_req, ierr)
+        call MPI_IRECV(array, 1, block%halo(2)%recv_type(2,1), block%halo(2)%proc_id, 8, proc%comm, async%east_recv_req, ierr)
+      else if (full_lon .and. .not. full_lat) then
+        call MPI_ISEND(array, 1, block%halo(1)%send_type(1,2), block%halo(1)%proc_id, 9, proc%comm, async%east_send_req, ierr)
+        call MPI_IRECV(array, 1, block%halo(2)%recv_type(1,2), block%halo(2)%proc_id, 9, proc%comm, async%east_recv_req, ierr)
+      else if (.not. full_lon .and. .not. full_lat) then
+        call MPI_ISEND(array, 1, block%halo(1)%send_type(2,2), block%halo(1)%proc_id, 10, proc%comm, async%east_send_req, ierr)
+        call MPI_IRECV(array, 1, block%halo(2)%recv_type(2,2), block%halo(2)%proc_id, 10, proc%comm, async%east_recv_req, ierr)
+      end if
+    end if
+
+    if (merge(south_halo, .true., present(south_halo))) then
+      if (full_lon .and. full_lat) then
+        call MPI_ISEND(array, 1, block%halo(4)%send_type(1,1), block%halo(4)%proc_id, 11, proc%comm, async%south_send_req, ierr)
+        call MPI_IRECV(array, 1, block%halo(3)%recv_type(1,1), block%halo(3)%proc_id, 11, proc%comm, async%south_recv_req, ierr)
+      else if (.not. full_lon .and. full_lat) then
+        call MPI_ISEND(array, 1, block%halo(4)%send_type(2,1), block%halo(4)%proc_id, 12, proc%comm, async%south_send_req, ierr)
+        call MPI_IRECV(array, 1, block%halo(3)%recv_type(2,1), block%halo(3)%proc_id, 12, proc%comm, async%south_recv_req, ierr)
+      else if (full_lon .and. .not. full_lat) then
+        call MPI_ISEND(array, 1, block%halo(4)%send_type(1,2), block%halo(4)%proc_id, 13, proc%comm, async%south_send_req, ierr)
+        call MPI_IRECV(array, 1, block%halo(3)%recv_type(1,2), block%halo(3)%proc_id, 13, proc%comm, async%south_recv_req, ierr)
+      else if (.not. full_lon .and. .not. full_lat) then
+        call MPI_ISEND(array, 1, block%halo(4)%send_type(2,2), block%halo(4)%proc_id, 14, proc%comm, async%south_send_req, ierr)
+        call MPI_IRECV(array, 1, block%halo(3)%recv_type(2,2), block%halo(3)%proc_id, 14, proc%comm, async%south_recv_req, ierr)
+      end if
+    end if
+
+    if (merge(north_halo, .true., present(north_halo))) then
+      if (full_lon .and. full_lat) then
+        call MPI_ISEND(array, 1, block%halo(3)%send_type(1,1), block%halo(3)%proc_id, 15, proc%comm, async%north_send_req, ierr)
+        call MPI_IRECV(array, 1, block%halo(4)%recv_type(1,1), block%halo(4)%proc_id, 15, proc%comm, async%north_recv_req, ierr)
+      else if (.not. full_lon .and. full_lat) then
+        call MPI_ISEND(array, 1, block%halo(3)%send_type(2,1), block%halo(3)%proc_id, 16, proc%comm, async%north_send_req, ierr)
+        call MPI_IRECV(array, 1, block%halo(4)%recv_type(2,1), block%halo(4)%proc_id, 16, proc%comm, async%north_recv_req, ierr)
+      else if (full_lon .and. .not. full_lat) then
+        call MPI_ISEND(array, 1, block%halo(3)%send_type(1,2), block%halo(3)%proc_id, 17, proc%comm, async%north_send_req, ierr)
+        call MPI_IRECV(array, 1, block%halo(4)%recv_type(1,2), block%halo(4)%proc_id, 17, proc%comm, async%north_recv_req, ierr)
+      else if (.not. full_lon .and. .not. full_lat) then
+        call MPI_ISEND(array, 1, block%halo(3)%send_type(2,2), block%halo(3)%proc_id, 18, proc%comm, async%north_send_req, ierr)
+        call MPI_IRECV(array, 1, block%halo(4)%recv_type(2,2), block%halo(4)%proc_id, 18, proc%comm, async%north_recv_req, ierr)
+      end if
+    end if
+
+  end subroutine fill_halo_async_2d_r8
+
+  subroutine wait_halo_1(async)
+
+    type(async_type), intent(inout) :: async
+
+    integer status(MPI_STATUS_SIZE), ierr, j
+
+    if (async%west_recv_req  /= MPI_REQUEST_NULL) call MPI_WAIT(async%west_recv_req , status, ierr)
+    if (async%east_recv_req  /= MPI_REQUEST_NULL) call MPI_WAIT(async%east_recv_req , status, ierr)
+    if (async%south_recv_req /= MPI_REQUEST_NULL) call MPI_WAIT(async%south_recv_req, status, ierr)
+    if (async%north_recv_req /= MPI_REQUEST_NULL) call MPI_WAIT(async%north_recv_req, status, ierr)
+
+    do j = 1, size(async%zonal_west_recv_req)
+      if (async%zonal_west_recv_req(j) /= MPI_REQUEST_NULL) call MPI_WAIT(async%zonal_west_recv_req(j), status, ierr)
+      if (async%zonal_east_recv_req(j) /= MPI_REQUEST_NULL) call MPI_WAIT(async%zonal_east_recv_req(j), status, ierr)
+    end do
+
+    async%west_send_req  = MPI_REQUEST_NULL
+    async%west_recv_req  = MPI_REQUEST_NULL
+    async%east_send_req  = MPI_REQUEST_NULL
+    async%east_recv_req  = MPI_REQUEST_NULL
+    async%south_send_req = MPI_REQUEST_NULL
+    async%south_recv_req = MPI_REQUEST_NULL
+    async%north_send_req = MPI_REQUEST_NULL
+    async%north_recv_req = MPI_REQUEST_NULL
+    async%zonal_west_send_req = MPI_REQUEST_NULL
+    async%zonal_west_recv_req = MPI_REQUEST_NULL
+    async%zonal_east_send_req = MPI_REQUEST_NULL
+    async%zonal_east_recv_req = MPI_REQUEST_NULL
+    async%j = 0
+
+  end subroutine wait_halo_1
+
+  subroutine wait_halo_2(async, j)
+
+    type(async_type), intent(inout) :: async
+    integer, intent(in) :: j
+
+    integer status(MPI_STATUS_SIZE), ierr, i
+
+    if (async%zonal_west_recv_req(j) /= MPI_REQUEST_NULL) then
+      call MPI_WAIT(async%zonal_west_recv_req(j), status, ierr)
+      do i = j, async%j
+        async%zonal_west_send_req(i) = async%zonal_west_send_req(i+1)
+        async%zonal_west_recv_req(i) = async%zonal_west_recv_req(i+1)
+      end do
+      async%zonal_west_send_req(async%j) = MPI_REQUEST_NULL
+      async%zonal_west_recv_req(async%j) = MPI_REQUEST_NULL
+    else
+      call log_error('Interval error!', __FILE__, __LINE__)
+    end if
+    if (async%zonal_east_recv_req(j) /= MPI_REQUEST_NULL) then
+      call MPI_WAIT(async%zonal_east_recv_req(j), status, ierr)
+      do i = j, async%j
+        async%zonal_east_send_req(i) = async%zonal_east_send_req(i+1)
+        async%zonal_east_recv_req(i) = async%zonal_east_recv_req(i+1)
+      end do
+      async%zonal_east_send_req(async%j) = MPI_REQUEST_NULL
+      async%zonal_east_recv_req(async%j) = MPI_REQUEST_NULL
+    else
+      call log_error('Interval error!', __FILE__, __LINE__)
+    end if
+    async%j = async%j - 1
+
+  end subroutine wait_halo_2
 
   subroutine zero_halo_1d_r8(block, array, west_halo, east_halo)
 

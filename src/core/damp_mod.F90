@@ -24,7 +24,7 @@ module damp_mod
 
 contains
 
-  subroutine zonal_damp(block, order, dt, dx, lb, ub, n, f)
+  subroutine zonal_damp(block, order, dt, dx, lb, ub, n, f, async)
 
     type(block_type), intent(in) :: block
     integer, intent(in) :: order
@@ -34,6 +34,7 @@ contains
     integer, intent(in) :: ub
     integer, intent(in) :: n
     real(r8), intent(inout) :: f(lb:ub)
+    type(async_type), intent(inout), optional :: async
 
     integer i, ns
     real(r8) g(lb:ub)
@@ -69,7 +70,7 @@ contains
         f(i) = f(i) - dt * (g(i) - g(i-1))
       end do
     end if
-    call fill_halo(block, 1 - lb, f)
+    call fill_halo(block, 1 - lb, f, async)
 
   end subroutine zonal_damp
 

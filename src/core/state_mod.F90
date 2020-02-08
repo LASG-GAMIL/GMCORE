@@ -3,6 +3,7 @@ module state_mod
   use const_mod
   use mesh_mod
   use allocator_mod
+  use parallel_types_mod
 
   implicit none
 
@@ -38,6 +39,7 @@ module state_mod
     real(r8) tm
     real(r8) te
     real(r8) tpe
+    type(async_type) async(11)
   contains
     procedure :: init => state_init
     procedure :: clear => state_clear
@@ -80,6 +82,8 @@ contains
 
     class(state_type), intent(inout) :: this
 
+    integer i
+
     if (allocated(this%u        )) deallocate(this%u        )
     if (allocated(this%v        )) deallocate(this%v        )
     if (allocated(this%gd       )) deallocate(this%gd       )
@@ -98,6 +102,13 @@ contains
     if (allocated(this%dpv_lat_t)) deallocate(this%dpv_lat_t)
     if (allocated(this%dpv_lat_n)) deallocate(this%dpv_lat_n)
     if (allocated(this%ke       )) deallocate(this%ke       )
+
+    do i = 1, size(this%async)
+      if (allocated(this%async(i)%zonal_west_send_req)) deallocate(this%async(i)%zonal_west_send_req)
+      if (allocated(this%async(i)%zonal_west_recv_req)) deallocate(this%async(i)%zonal_west_recv_req)
+      if (allocated(this%async(i)%zonal_east_send_req)) deallocate(this%async(i)%zonal_east_send_req)
+      if (allocated(this%async(i)%zonal_east_recv_req)) deallocate(this%async(i)%zonal_east_recv_req)
+    end do
 
   end subroutine state_clear
 
