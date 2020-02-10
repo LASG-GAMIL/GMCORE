@@ -1,6 +1,7 @@
 module gmcore_mod
 
   use flogger
+  use string
   use const_mod
   use namelist_mod
   use parallel_mod
@@ -107,9 +108,17 @@ contains
     type(block_type), intent(in) :: blocks(:)
     integer, intent(in) :: itime
 
+    real(r8), save :: time1 = 0, time2
+
     if (time_is_alerted('history_write')) then
+      if (time_step == 0) call cpu_time(time1)
+      call cpu_time(time2)
+      if (time_step /= 0) then
+        call log_notice('Time cost ' // to_string(time2 - time1, 1) // ' seconds.')
+        time1 = time2
+      end if
       call history_write_state(blocks, itime)
-      call history_write_debug(blocks, itime)
+      ! call history_write_debug(blocks, itime)
     end if
 
   end subroutine output
