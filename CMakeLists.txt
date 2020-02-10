@@ -14,9 +14,8 @@ if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
   else ()
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -ffree-line-length-none -Ofast")
   endif ()
-  if (NOT APPLE)
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fopenmp")
-  endif ()
+  # FIXME: OpenMP causes sigmentation faults.
+  # set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fopenmp")
 endif ()
 
 find_package(MPI)

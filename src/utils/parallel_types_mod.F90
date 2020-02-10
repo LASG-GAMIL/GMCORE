@@ -53,6 +53,11 @@ contains
     allocate(this%zonal_east_send_req(num_async_lat))
     allocate(this%zonal_east_recv_req(num_async_lat))
 
+    this%zonal_west_send_req = MPI_REQUEST_NULL
+    this%zonal_west_recv_req = MPI_REQUEST_NULL
+    this%zonal_east_send_req = MPI_REQUEST_NULL
+    this%zonal_east_recv_req = MPI_REQUEST_NULL
+
   end subroutine async_init
 
   subroutine async_final(this)

@@ -339,12 +339,6 @@ contains
     if (async%east_recv_req  /= MPI_REQUEST_NULL) call MPI_WAIT(async%east_recv_req , status, ierr)
     if (async%south_recv_req /= MPI_REQUEST_NULL) call MPI_WAIT(async%south_recv_req, status, ierr)
     if (async%north_recv_req /= MPI_REQUEST_NULL) call MPI_WAIT(async%north_recv_req, status, ierr)
-
-    do j = 1, size(async%zonal_west_recv_req)
-      if (async%zonal_west_recv_req(j) /= MPI_REQUEST_NULL) call MPI_WAIT(async%zonal_west_recv_req(j), status, ierr)
-      if (async%zonal_east_recv_req(j) /= MPI_REQUEST_NULL) call MPI_WAIT(async%zonal_east_recv_req(j), status, ierr)
-    end do
-
     async%west_send_req  = MPI_REQUEST_NULL
     async%west_recv_req  = MPI_REQUEST_NULL
     async%east_send_req  = MPI_REQUEST_NULL
@@ -353,11 +347,18 @@ contains
     async%south_recv_req = MPI_REQUEST_NULL
     async%north_send_req = MPI_REQUEST_NULL
     async%north_recv_req = MPI_REQUEST_NULL
-    async%zonal_west_send_req = MPI_REQUEST_NULL
-    async%zonal_west_recv_req = MPI_REQUEST_NULL
-    async%zonal_east_send_req = MPI_REQUEST_NULL
-    async%zonal_east_recv_req = MPI_REQUEST_NULL
-    async%j = 0
+
+    if (allocated(async%zonal_west_send_req)) then
+      do j = 1, size(async%zonal_west_recv_req)
+        if (async%zonal_west_recv_req(j) /= MPI_REQUEST_NULL) call MPI_WAIT(async%zonal_west_recv_req(j), status, ierr)
+        if (async%zonal_east_recv_req(j) /= MPI_REQUEST_NULL) call MPI_WAIT(async%zonal_east_recv_req(j), status, ierr)
+      end do
+      async%zonal_west_send_req = MPI_REQUEST_NULL
+      async%zonal_west_recv_req = MPI_REQUEST_NULL
+      async%zonal_east_send_req = MPI_REQUEST_NULL
+      async%zonal_east_recv_req = MPI_REQUEST_NULL
+      async%j = 0
+    end if
 
   end subroutine wait_halo_1
 
