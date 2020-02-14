@@ -70,7 +70,11 @@ contains
         f(i) = f(i) - dt * (g(i) - g(i-1))
       end do
     end if
-    call fill_halo(block, 1 - lb, f, async)
+    if (present(async)) then
+      call fill_halo(block, 1 - lb, f, async)
+    else
+      call fill_halo(block, 1 - lb, f)
+    end if
 
   end subroutine zonal_damp
 

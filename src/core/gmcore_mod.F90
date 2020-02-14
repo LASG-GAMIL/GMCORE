@@ -47,6 +47,9 @@ contains
 
   subroutine gmcore_init()
 
+    character(10) time_value, time_units
+    real(r8) seconds
+
     call log_init()
     call global_mesh%init_global(num_lon, num_lat, lon_halo_width=max(1, maxval(reduce_factors) - 1), lat_halo_width=1)
     call debug_check_areas()
@@ -75,7 +78,23 @@ contains
       call log_notice('No fast-slow split.')
     end select
 
-    call time_add_alert('print', hours=1.0_r8)
+    time_value = split_string(print_interval, ' ', 1)
+    time_units = split_string(print_interval, ' ', 2)
+    read(time_value, *) seconds
+    select case (time_units)
+    case ('days')
+      seconds = seconds * 86400
+    case ('hours')
+      seconds = seconds * 3600
+    case ('minutes')
+      seconds = seconds * 60
+    case ('seconds')
+      seconds = seconds
+    case default
+      call log_error('Invalid print interval ' // trim(print_interval) // '!')
+    end select
+
+    call time_add_alert('print', seconds=seconds)
 
   end subroutine gmcore_init
 
@@ -114,7 +133,7 @@ contains
       if (time_step == 0) call cpu_time(time1)
       call cpu_time(time2)
       if (time_step /= 0) then
-        call log_notice('Time cost ' // to_string(time2 - time1, 1) // ' seconds.')
+        if (is_root_proc()) call log_notice('Time cost ' // to_string(time2 - time1, 2) // ' seconds.')
         time1 = time2
       end if
       call history_write_state(blocks, itime)
@@ -185,8 +204,8 @@ contains
 
     if (tpe0 == 0) tpe0 = tpe
     if (tpe > tpe0) then
-      damp_2nd_t0 = elapsed_seconds + 1800
-      if (proc%id == 0) call log_notice('Switch to 2nd-order damping in reduce regions for 1800s.')
+      damp_2nd_t0 = elapsed_seconds + dt
+      if (proc%id == 0) call log_notice('Use 2nd-order damping in reduce regions.')
     end if
     tpe0 = tpe
 
@@ -263,8 +282,6 @@ contains
 
       tend%dgd = 0.0_r8
     case (fast_pass)
-!$omp sections
-!$omp section
       call calc_dkedlon_dkedlat(block, state, tend, dt)
       call calc_dpedlon_dpedlat(block, state, tend, dt)
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -277,14 +294,12 @@ contains
           tend%dv(i,j) = - tend%dpedlat(i,j) - tend%dkedlat(i,j)
         end do
       end do
-!$omp section
       call calc_dmfdlon_dmfdlat(block, state, tend, dt)
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           tend%dgd(i,j) = - (tend%dmfdlon(i,j) + tend%dmfdlat(i,j)) * g
         end do
       end do
-!$omp end sections
     end select
 
     ! call debug_check_space_operators(static, state, tend)
@@ -477,19 +492,20 @@ contains
         call zonal_damp(block, damp_order, dt, mesh%le_lat(j), mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%v(:,j), state%async(async_v))
       end if
     end do
-    do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
-      if (mesh%is_south_pole(j)) then
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          state%v(i,j) = 0.2_r8 * state%v(i,j) + 0.8_r8 * state%v(i,j+1)
-        end do
-        call fill_halo(block, mesh%lon_halo_width, state%v(:,j), state%async(async_v))
-      else if (mesh%is_north_pole(j+1)) then
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          state%v(i,j) = 0.2_r8 * state%v(i,j) + 0.8_r8 * state%v(i,j-1)
-        end do
-        call fill_halo(block, mesh%lon_halo_width, state%v(:,j), state%async(async_v))
-      end if
-    end do
+    if (mesh%has_south_pole()) then
+      j = mesh%half_lat_ibeg_no_pole
+      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+        state%v(i,j) = 0.2_r8 * state%v(i,j) + 0.8_r8 * state%v(i,j+1)
+      end do
+      call fill_halo(block, mesh%lon_halo_width, state%v(:,j), state%async(async_v))
+    end if
+    if (mesh%has_north_pole()) then
+      j = mesh%half_lat_iend_no_pole
+      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+        state%v(i,j) = 0.2_r8 * state%v(i,j) + 0.8_r8 * state%v(i,j-1)
+      end do
+      call fill_halo(block, mesh%lon_halo_width, state%v(:,j), state%async(async_v))
+    end if
 
   end subroutine damp_state
 

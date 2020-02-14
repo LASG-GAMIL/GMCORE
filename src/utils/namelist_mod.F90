@@ -8,6 +8,7 @@ module namelist_mod
   character(256) :: case_name = 'N/A'
   character(30) :: test_case = 'N/A'
   character(30) :: history_interval(1) = 'N/A'
+  character(30) :: print_interval = '1 hours'
 
   integer num_lon
   integer num_lat
@@ -51,6 +52,7 @@ module namelist_mod
     run_hours                 , &
     run_days                  , &
     history_interval          , &
+    print_interval            , &
     tangent_wgt_scheme        , &
     pv_scheme                 , &
     pv_pole_stokes            , &

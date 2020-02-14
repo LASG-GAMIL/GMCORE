@@ -333,30 +333,36 @@ contains
 
     type(async_type), intent(inout) :: async
 
-    integer status(MPI_STATUS_SIZE), ierr, j
+    integer ierr, j
 
-    if (async%west_recv_req  /= MPI_REQUEST_NULL) call MPI_WAIT(async%west_recv_req , status, ierr)
-    if (async%east_recv_req  /= MPI_REQUEST_NULL) call MPI_WAIT(async%east_recv_req , status, ierr)
-    if (async%south_recv_req /= MPI_REQUEST_NULL) call MPI_WAIT(async%south_recv_req, status, ierr)
-    if (async%north_recv_req /= MPI_REQUEST_NULL) call MPI_WAIT(async%north_recv_req, status, ierr)
-    async%west_send_req  = MPI_REQUEST_NULL
-    async%west_recv_req  = MPI_REQUEST_NULL
-    async%east_send_req  = MPI_REQUEST_NULL
-    async%east_recv_req  = MPI_REQUEST_NULL
-    async%south_send_req = MPI_REQUEST_NULL
-    async%south_recv_req = MPI_REQUEST_NULL
-    async%north_send_req = MPI_REQUEST_NULL
-    async%north_recv_req = MPI_REQUEST_NULL
+    if (async%west_send_req  /= MPI_REQUEST_NULL) then
+      call MPI_WAIT(async%west_send_req , MPI_STATUS_IGNORE, ierr)
+      call MPI_WAIT(async%west_recv_req , MPI_STATUS_IGNORE, ierr)
+    end if
+    if (async%east_send_req  /= MPI_REQUEST_NULL) then
+      call MPI_WAIT(async%east_send_req , MPI_STATUS_IGNORE, ierr)
+      call MPI_WAIT(async%east_recv_req , MPI_STATUS_IGNORE, ierr)
+    end if
+    if (async%south_send_req /= MPI_REQUEST_NULL) then
+      call MPI_WAIT(async%south_send_req, MPI_STATUS_IGNORE, ierr)
+      call MPI_WAIT(async%south_recv_req, MPI_STATUS_IGNORE, ierr)
+    end if
+    if (async%north_send_req /= MPI_REQUEST_NULL) then
+      call MPI_WAIT(async%north_send_req, MPI_STATUS_IGNORE, ierr)
+      call MPI_WAIT(async%north_recv_req, MPI_STATUS_IGNORE, ierr)
+    end if
 
     if (allocated(async%zonal_west_send_req)) then
       do j = 1, size(async%zonal_west_recv_req)
-        if (async%zonal_west_recv_req(j) /= MPI_REQUEST_NULL) call MPI_WAIT(async%zonal_west_recv_req(j), status, ierr)
-        if (async%zonal_east_recv_req(j) /= MPI_REQUEST_NULL) call MPI_WAIT(async%zonal_east_recv_req(j), status, ierr)
+        if (async%zonal_west_send_req(j) /= MPI_REQUEST_NULL) then
+          call MPI_WAIT(async%zonal_west_send_req(j), MPI_STATUS_IGNORE, ierr)
+          call MPI_WAIT(async%zonal_west_recv_req(j), MPI_STATUS_IGNORE, ierr)
+        end if
+        if (async%zonal_east_send_req(j) /= MPI_REQUEST_NULL) then
+          call MPI_WAIT(async%zonal_east_send_req(j), MPI_STATUS_IGNORE, ierr)
+          call MPI_WAIT(async%zonal_east_recv_req(j), MPI_STATUS_IGNORE, ierr)
+        end if
       end do
-      async%zonal_west_send_req = MPI_REQUEST_NULL
-      async%zonal_west_recv_req = MPI_REQUEST_NULL
-      async%zonal_east_send_req = MPI_REQUEST_NULL
-      async%zonal_east_recv_req = MPI_REQUEST_NULL
       async%j = 0
     end if
 
@@ -367,27 +373,25 @@ contains
     type(async_type), intent(inout) :: async
     integer, intent(in) :: j
 
-    integer status(MPI_STATUS_SIZE), ierr, i
+    integer ierr, i
 
     if (async%zonal_west_recv_req(j) /= MPI_REQUEST_NULL) then
-      call MPI_WAIT(async%zonal_west_recv_req(j), status, ierr)
+      call MPI_WAIT(async%zonal_west_send_req(j), MPI_STATUS_IGNORE, ierr)
+      call MPI_WAIT(async%zonal_west_recv_req(j), MPI_STATUS_IGNORE, ierr)
       do i = j, async%j
         async%zonal_west_send_req(i) = async%zonal_west_send_req(i+1)
         async%zonal_west_recv_req(i) = async%zonal_west_recv_req(i+1)
       end do
-      async%zonal_west_send_req(async%j) = MPI_REQUEST_NULL
-      async%zonal_west_recv_req(async%j) = MPI_REQUEST_NULL
     else
       call log_error('Interval error!', __FILE__, __LINE__)
     end if
     if (async%zonal_east_recv_req(j) /= MPI_REQUEST_NULL) then
-      call MPI_WAIT(async%zonal_east_recv_req(j), status, ierr)
+      call MPI_WAIT(async%zonal_east_send_req(j), MPI_STATUS_IGNORE, ierr)
+      call MPI_WAIT(async%zonal_east_recv_req(j), MPI_STATUS_IGNORE, ierr)
       do i = j, async%j
         async%zonal_east_send_req(i) = async%zonal_east_send_req(i+1)
         async%zonal_east_recv_req(i) = async%zonal_east_recv_req(i+1)
       end do
-      async%zonal_east_send_req(async%j) = MPI_REQUEST_NULL
-      async%zonal_east_recv_req(async%j) = MPI_REQUEST_NULL
     else
       call log_error('Interval error!', __FILE__, __LINE__)
     end if
