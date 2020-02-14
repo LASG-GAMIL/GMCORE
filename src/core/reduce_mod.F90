@@ -59,14 +59,13 @@ contains
 
     type(block_type), intent(inout) :: blocks(:)
 
-    integer iblk, itime, i, j, full_j, num_async_lat
+    integer iblk, itime, j, full_j
 
     do iblk = 1, size(blocks)
       allocate(blocks(iblk)%reduced_mesh  (blocks(iblk)%mesh%full_lat_lb  :blocks(iblk)%mesh%full_lat_ub  ))
       allocate(blocks(iblk)%reduced_static(blocks(iblk)%mesh%full_lat_ibeg:blocks(iblk)%mesh%full_lat_iend))
       allocate(blocks(iblk)%reduced_state (blocks(iblk)%mesh%full_lat_ibeg:blocks(iblk)%mesh%full_lat_iend))
       allocate(blocks(iblk)%reduced_tend  (blocks(iblk)%mesh%full_lat_ibeg:blocks(iblk)%mesh%full_lat_iend))
-      num_async_lat = 0
       do j = 1, size(reduce_factors)
         if (reduce_factors(j) == 0) cycle
         if (mod(global_mesh%num_full_lon, reduce_factors(j)) /= 0) then
@@ -82,7 +81,6 @@ contains
         if (full_j >= blocks(iblk)%mesh%full_lat_ibeg .and. full_j <= blocks(iblk)%mesh%full_lat_iend) then
           call reduce_mesh(reduce_factors(j), full_j, blocks(iblk)%mesh, blocks(iblk)%reduced_mesh(full_j))
           blocks(iblk)%reduced_mesh(full_j)%damp_order = damp_orders(j)
-          num_async_lat = num_async_lat + reduce_factors(j) * 2
         end if
         ! North Pole
 #ifdef V_POLE
@@ -93,13 +91,7 @@ contains
         if (full_j >= blocks(iblk)%mesh%full_lat_ibeg .and. full_j <= blocks(iblk)%mesh%full_lat_iend) then
           call reduce_mesh(reduce_factors(j), full_j, blocks(iblk)%mesh, blocks(iblk)%reduced_mesh(full_j))
           blocks(iblk)%reduced_mesh(full_j)%damp_order = damp_orders(j)
-          num_async_lat = num_async_lat + reduce_factors(j) * 2
         end if
-      end do
-      do itime = 1, size(blocks(iblk)%state)
-        do i = 1, size(blocks(iblk)%state(itime)%async)
-          call blocks(iblk)%state(itime)%async(i)%init(num_async_lat)
-        end do
       end do
       do j = blocks(iblk)%mesh%full_lat_ibeg, blocks(iblk)%mesh%full_lat_iend
         if (blocks(iblk)%reduced_mesh(j)%reduce_factor > 0) then
@@ -292,6 +284,7 @@ contains
     allocate(reduced_state%dpv_lat_n(reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub,-1:0,reduced_mesh%reduce_factor))
     allocate(reduced_state%ke       (reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub, 0:0,reduced_mesh%reduce_factor))
 #endif
+    allocate(reduced_state%async    (                                               11,-2:2,reduced_mesh%reduce_factor))
 
   end subroutine allocate_reduced_state
 
@@ -839,7 +832,8 @@ contains
       ) * dt
 #endif
     end do
-    call fill_halo(block, reduced_mesh%halo_width, reduced_state%pv_lon(:,buf_j,move), raw_state%async(async_pv_lon), east_halo=.false.)
+    call fill_halo(block, reduced_mesh%halo_width, reduced_state%pv_lon(:,buf_j,move), &
+                   reduced_state%async(async_pv_lon,buf_j,move), east_halo=.false.)
 
   end subroutine reduce_pv_lon_apvm
 
@@ -872,7 +866,8 @@ contains
         v * reduced_state%dpv_lat_n(i,buf_j,move) / de   &
       ) * dt
     end do
-    call fill_halo(block, reduced_mesh%halo_width, reduced_state%pv_lat(:,buf_j,move), raw_state%async(async_pv_lat), west_halo=.false.)
+    call fill_halo(block, reduced_mesh%halo_width, reduced_state%pv_lat(:,buf_j,move), &
+                   reduced_state%async(async_pv_lat,buf_j,move), west_halo=.false.)
 
   end subroutine reduce_pv_lat_apvm
 
@@ -896,7 +891,8 @@ contains
       raw_i = raw_i + reduced_mesh%reduce_factor
     end do
     reduced_state%ke(:,buf_j,move) = reduced_state%ke(:,buf_j,move) / reduced_mesh%reduce_factor
-    call fill_halo(block, reduced_mesh%halo_width, reduced_state%ke(:,buf_j,move), raw_state%async(async_ke), west_halo=.false.)
+    call fill_halo(block, reduced_mesh%halo_width, reduced_state%ke(:,buf_j,move), &
+                   reduced_state%async(async_ke,buf_j,move), west_halo=.false.)
 
   end subroutine reduce_ke
 

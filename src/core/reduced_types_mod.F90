@@ -1,6 +1,7 @@
 module reduced_types_mod
 
   use const_mod
+  use parallel_types_mod
 
   implicit none
 
@@ -83,6 +84,7 @@ module reduced_types_mod
     real(r8), allocatable, dimension(:,:,:) :: mf_lat_n
     real(r8), allocatable, dimension(:,:,:) :: mf_lat_t
     real(r8), allocatable, dimension(:,:,:) :: ke
+    type(async_type), allocatable :: async(:,:,:)
   contains
     final :: reduced_state_final
   end type reduced_state_type
@@ -128,6 +130,7 @@ contains
     if (allocated(this%mf_lat_n )) deallocate(this%mf_lat_n )
     if (allocated(this%mf_lat_t )) deallocate(this%mf_lat_t )
     if (allocated(this%ke       )) deallocate(this%ke       )
+    if (allocated(this%async    )) deallocate(this%async    )
 
   end subroutine reduced_state_final
 

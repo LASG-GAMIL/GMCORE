@@ -41,11 +41,6 @@ module parallel_mod
     module procedure fill_halo_async_2d_r8
   end interface fill_halo
 
-  interface wait_halo
-    module procedure wait_halo_1
-    module procedure wait_halo_2
-  end interface wait_halo
-
   interface zero_halo
     module procedure zero_halo_1d_r8
   end interface zero_halo
@@ -118,9 +113,6 @@ contains
     integer ierr
     integer i1, i2, i3, i4
 
-    async%j = async%j + 1
-    if (async%j > size(async%zonal_west_send_req)) call log_error('Internal error!', __FILE__, __LINE__)
-
     if (merge(west_halo, .true., present(west_halo))) then
       !   west halo |                                   | east_halo
       !  ___________|___________________________________|___________
@@ -133,8 +125,8 @@ contains
       i2 = i1 + halo_width - 1
       i3 = 1
       i4 = i3 + halo_width - 1
-      call MPI_ISEND(array(i1:i2), halo_width, MPI_DOUBLE, block%halo(2)%proc_id, 1, proc%comm, async%zonal_west_send_req(async%j), ierr)
-      call MPI_IRECV(array(i3:i4), halo_width, MPI_DOUBLE, block%halo(1)%proc_id, 1, proc%comm, async%zonal_west_recv_req(async%j), ierr)
+      call MPI_ISEND(array(i1:i2), halo_width, MPI_DOUBLE, block%halo(2)%proc_id, 1, proc%comm, async%west_send_req, ierr)
+      call MPI_IRECV(array(i3:i4), halo_width, MPI_DOUBLE, block%halo(1)%proc_id, 1, proc%comm, async%west_recv_req, ierr)
     end if
     if (merge(east_halo, .true., present(east_halo))) then
       !   west halo |                                   | east_halo
@@ -148,8 +140,8 @@ contains
       i2 = i1 + halo_width - 1
       i3 = size(array) - halo_width + 1
       i4 = i3 + halo_width - 1
-      call MPI_ISEND(array(i1:i2), halo_width, MPI_DOUBLE, block%halo(1)%proc_id, 2, proc%comm, async%zonal_east_send_req(async%j), ierr)
-      call MPI_IRECV(array(i3:i4), halo_width, MPI_DOUBLE, block%halo(2)%proc_id, 2, proc%comm, async%zonal_east_recv_req(async%j), ierr)
+      call MPI_ISEND(array(i1:i2), halo_width, MPI_DOUBLE, block%halo(1)%proc_id, 2, proc%comm, async%east_send_req, ierr)
+      call MPI_IRECV(array(i3:i4), halo_width, MPI_DOUBLE, block%halo(2)%proc_id, 2, proc%comm, async%east_recv_req, ierr)
     end if
 
   end subroutine fill_halo_async_1d_r8
@@ -329,11 +321,11 @@ contains
 
   end subroutine fill_halo_async_2d_r8
 
-  subroutine wait_halo_1(async)
+  subroutine wait_halo(async)
 
     type(async_type), intent(inout) :: async
 
-    integer ierr, j
+    integer ierr
 
     if (async%west_send_req  /= MPI_REQUEST_NULL) then
       call MPI_WAIT(async%west_send_req , MPI_STATUS_IGNORE, ierr)
@@ -352,52 +344,7 @@ contains
       call MPI_WAIT(async%north_recv_req, MPI_STATUS_IGNORE, ierr)
     end if
 
-    if (allocated(async%zonal_west_send_req)) then
-      do j = 1, size(async%zonal_west_recv_req)
-        if (async%zonal_west_send_req(j) /= MPI_REQUEST_NULL) then
-          call MPI_WAIT(async%zonal_west_send_req(j), MPI_STATUS_IGNORE, ierr)
-          call MPI_WAIT(async%zonal_west_recv_req(j), MPI_STATUS_IGNORE, ierr)
-        end if
-        if (async%zonal_east_send_req(j) /= MPI_REQUEST_NULL) then
-          call MPI_WAIT(async%zonal_east_send_req(j), MPI_STATUS_IGNORE, ierr)
-          call MPI_WAIT(async%zonal_east_recv_req(j), MPI_STATUS_IGNORE, ierr)
-        end if
-      end do
-      async%j = 0
-    end if
-
-  end subroutine wait_halo_1
-
-  subroutine wait_halo_2(async, j)
-
-    type(async_type), intent(inout) :: async
-    integer, intent(in) :: j
-
-    integer ierr, i
-
-    if (async%zonal_west_recv_req(j) /= MPI_REQUEST_NULL) then
-      call MPI_WAIT(async%zonal_west_send_req(j), MPI_STATUS_IGNORE, ierr)
-      call MPI_WAIT(async%zonal_west_recv_req(j), MPI_STATUS_IGNORE, ierr)
-      do i = j, async%j
-        async%zonal_west_send_req(i) = async%zonal_west_send_req(i+1)
-        async%zonal_west_recv_req(i) = async%zonal_west_recv_req(i+1)
-      end do
-    else
-      call log_error('Interval error!', __FILE__, __LINE__)
-    end if
-    if (async%zonal_east_recv_req(j) /= MPI_REQUEST_NULL) then
-      call MPI_WAIT(async%zonal_east_send_req(j), MPI_STATUS_IGNORE, ierr)
-      call MPI_WAIT(async%zonal_east_recv_req(j), MPI_STATUS_IGNORE, ierr)
-      do i = j, async%j
-        async%zonal_east_send_req(i) = async%zonal_east_send_req(i+1)
-        async%zonal_east_recv_req(i) = async%zonal_east_recv_req(i+1)
-      end do
-    else
-      call log_error('Interval error!', __FILE__, __LINE__)
-    end if
-    async%j = async%j - 1
-
-  end subroutine wait_halo_2
+  end subroutine wait_halo
 
   subroutine zero_halo_1d_r8(block, array, west_halo, east_halo)
 

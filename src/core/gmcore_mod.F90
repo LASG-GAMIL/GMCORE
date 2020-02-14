@@ -489,7 +489,7 @@ contains
       if (damp_order > 0) then
         if (damp_2nd_t0 > elapsed_seconds) damp_order = 2
         if (damp_order == 1) cycle ! User can choose not to damp except for cases when potential enstrophy increases.
-        call zonal_damp(block, damp_order, dt, mesh%le_lat(j), mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%v(:,j), state%async(async_v))
+        call zonal_damp(block, damp_order, dt, mesh%le_lat(j), mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%v(:,j))
       end if
     end do
     if (mesh%has_south_pole()) then
@@ -497,14 +497,14 @@ contains
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         state%v(i,j) = 0.2_r8 * state%v(i,j) + 0.8_r8 * state%v(i,j+1)
       end do
-      call fill_halo(block, mesh%lon_halo_width, state%v(:,j), state%async(async_v))
+      call fill_halo(block, mesh%lon_halo_width, state%v(:,j))
     end if
     if (mesh%has_north_pole()) then
       j = mesh%half_lat_iend_no_pole
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         state%v(i,j) = 0.2_r8 * state%v(i,j) + 0.8_r8 * state%v(i,j-1)
       end do
-      call fill_halo(block, mesh%lon_halo_width, state%v(:,j), state%async(async_v))
+      call fill_halo(block, mesh%lon_halo_width, state%v(:,j))
     end if
 
   end subroutine damp_state
