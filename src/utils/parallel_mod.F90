@@ -33,6 +33,7 @@ module parallel_mod
   public zonal_sum
   public global_sum
   public overlay_inner_halo
+  public barrier
 
   interface fill_halo
     module procedure fill_halo_1d_r8
@@ -242,7 +243,7 @@ contains
   end subroutine fill_halo_2d_r8
 
   subroutine fill_halo_async_2d_r8(block, array, full_lon, full_lat, async, west_halo, east_halo, south_halo, north_halo)
-    
+
     type(block_type), intent(in) :: block
     real(8), intent(inout) :: array(:,:)
     logical, intent(in) :: full_lon
@@ -256,6 +257,8 @@ contains
     integer ierr
 
     if (merge(west_halo, .true., present(west_halo))) then
+      if (async%west_send_req /= MPI_REQUEST_NULL) call MPI_WAIT(async%west_send_req, MPI_STATUS_IGNORE, ierr)
+      if (async%west_recv_req /= MPI_REQUEST_NULL) call MPI_WAIT(async%west_recv_req, MPI_STATUS_IGNORE, ierr)
       if (full_lon .and. full_lat) then
         call MPI_ISEND(array, 1, block%halo(2)%send_type(1,1), block%halo(2)%proc_id, 3, proc%comm, async%west_send_req, ierr)
         call MPI_IRECV(array, 1, block%halo(1)%recv_type(1,1), block%halo(1)%proc_id, 3, proc%comm, async%west_recv_req, ierr)
@@ -272,6 +275,8 @@ contains
     end if
 
     if (merge(east_halo, .true., present(east_halo))) then
+      if (async%east_send_req /= MPI_REQUEST_NULL) call MPI_WAIT(async%east_send_req, MPI_STATUS_IGNORE, ierr)
+      if (async%east_recv_req /= MPI_REQUEST_NULL) call MPI_WAIT(async%east_recv_req, MPI_STATUS_IGNORE, ierr)
       if (full_lon .and. full_lat) then
         call MPI_ISEND(array, 1, block%halo(1)%send_type(1,1), block%halo(1)%proc_id, 7, proc%comm, async%east_send_req, ierr)
         call MPI_IRECV(array, 1, block%halo(2)%recv_type(1,1), block%halo(2)%proc_id, 7, proc%comm, async%east_recv_req, ierr)
@@ -288,6 +293,8 @@ contains
     end if
 
     if (merge(south_halo, .true., present(south_halo))) then
+      if (async%south_send_req /= MPI_REQUEST_NULL) call MPI_WAIT(async%south_send_req, MPI_STATUS_IGNORE, ierr)
+      if (async%south_recv_req /= MPI_REQUEST_NULL) call MPI_WAIT(async%south_recv_req, MPI_STATUS_IGNORE, ierr)
       if (full_lon .and. full_lat) then
         call MPI_ISEND(array, 1, block%halo(4)%send_type(1,1), block%halo(4)%proc_id, 11, proc%comm, async%south_send_req, ierr)
         call MPI_IRECV(array, 1, block%halo(3)%recv_type(1,1), block%halo(3)%proc_id, 11, proc%comm, async%south_recv_req, ierr)
@@ -304,6 +311,8 @@ contains
     end if
 
     if (merge(north_halo, .true., present(north_halo))) then
+      if (async%north_send_req /= MPI_REQUEST_NULL) call MPI_WAIT(async%north_send_req, MPI_STATUS_IGNORE, ierr)
+      if (async%north_recv_req /= MPI_REQUEST_NULL) call MPI_WAIT(async%north_recv_req, MPI_STATUS_IGNORE, ierr)
       if (full_lon .and. full_lat) then
         call MPI_ISEND(array, 1, block%halo(3)%send_type(1,1), block%halo(3)%proc_id, 15, proc%comm, async%north_send_req, ierr)
         call MPI_IRECV(array, 1, block%halo(4)%recv_type(1,1), block%halo(4)%proc_id, 15, proc%comm, async%north_recv_req, ierr)
@@ -439,5 +448,13 @@ contains
     value = res
 
   end subroutine global_sum_0d_r8
+
+  subroutine barrier()
+
+    integer ierr
+
+    call MPI_BARRIER(proc%comm, ierr)
+
+  end subroutine barrier
 
 end module parallel_mod
