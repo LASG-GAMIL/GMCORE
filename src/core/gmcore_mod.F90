@@ -133,7 +133,7 @@ contains
       if (time_step == 0) call cpu_time(time1)
       call cpu_time(time2)
       if (time_step /= 0) then
-        if (is_root_proc()) call log_notice('Time cost ' // to_string(time2 - time1, 2) // ' seconds.')
+        if (is_root_proc()) call log_notice('Time cost ' // to_string(time2 - time1, 5) // ' seconds.')
         time1 = time2
       end if
       call history_write_state(blocks, itime)
@@ -494,17 +494,11 @@ contains
     end do
     if (mesh%has_south_pole()) then
       j = mesh%half_lat_ibeg_no_pole
-      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        state%v(i,j) = 0.2_r8 * state%v(i,j) + 0.8_r8 * state%v(i,j+1)
-      end do
-      call fill_halo(block, mesh%lon_halo_width, state%v(:,j))
+      state%v(:,j) = 0.2_r8 * state%v(:,j) + 0.8_r8 * state%v(:,j+1)
     end if
     if (mesh%has_north_pole()) then
       j = mesh%half_lat_iend_no_pole
-      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        state%v(i,j) = 0.2_r8 * state%v(i,j) + 0.8_r8 * state%v(i,j-1)
-      end do
-      call fill_halo(block, mesh%lon_halo_width, state%v(:,j))
+      state%v(:,j) = 0.2_r8 * state%v(:,j) + 0.8_r8 * state%v(:,j-1)
     end if
 
   end subroutine damp_state
