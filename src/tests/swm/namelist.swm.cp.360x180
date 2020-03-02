@@ -1,6 +1,8 @@
 &gmcore_swm_control
 num_lon = 360
 num_lat = 180
+num_proc_lon = 1
+num_proc_lat = 2
 ! mountain_zonal_flow, rossby_haurwitz_wave, jet_zonal_flow, steady_geostrophic_flow, cross_pole_flow
 test_case = 'cross_pole_flow'
 run_days = 10

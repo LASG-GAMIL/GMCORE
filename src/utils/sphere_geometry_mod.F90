@@ -27,8 +27,8 @@ module sphere_geometry_mod
   integer, parameter :: ORIENT_ON    = 3
 
   type point_type
-    real(r8) lon, lat
-    real(r8) x, y, z
+    real(16) lon, lat
+    real(16) x, y, z
   contains
     procedure :: copy_coord => point_copy_coord
   end type point_type
@@ -80,9 +80,9 @@ contains
   subroutine cartesian_transform_1(lon, lat, x, y, z)
 
     real(r8), intent(in)  :: lon, lat
-    real(r8), intent(out) :: x, y, z
+    real(16), intent(out) :: x, y, z
 
-    real(r8) cos_lat
+    real(16) cos_lat
 
     cos_lat = cos(lat)
     x = radius * cos_lat * cos(lon)
@@ -95,7 +95,7 @@ contains
 
     class(point_type), intent(inout) :: point
 
-    real(r8) cos_lat
+    real(16) cos_lat
 
     cos_lat = cos(point%lat)
     point%x = radius * cos_lat * cos(point%lon)
@@ -106,8 +106,8 @@ contains
 
   subroutine inverse_cartesian_transform_1(lon, lat, x, y, z)
 
-    real(r8), intent(out) :: lon, lat
-    real(r8), intent(in)  :: x, y, z
+    real(16), intent(out) :: lon, lat
+    real(16), intent(in)  :: x, y, z
 
     lon = atan2(y, x)
     lat = asin(z / radius)
@@ -137,11 +137,11 @@ contains
 
   subroutine rotation_transform(lon_p, lat_p, lon_o, lat_o, lon_r, lat_r)
 
-    real(r8), intent(in) :: lon_p, lat_p ! Rotated pole coordinate
-    real(r8), intent(in) :: lon_o, lat_o ! Original coordinate
-    real(r8), intent(out), optional :: lon_r, lat_r ! Rotated coordinate
+    real(16), intent(in) :: lon_p, lat_p ! Rotated pole coordinate
+    real(16), intent(in) :: lon_o, lat_o ! Original coordinate
+    real(16), intent(out), optional :: lon_r, lat_r ! Rotated coordinate
 
-    real(r8) tmp1, tmp2, tmp3, dlon
+    real(16) tmp1, tmp2, tmp3, dlon
 
     dlon = lon_o - lon_p
     if (present(lon_r)) then
@@ -162,12 +162,12 @@ contains
 
   subroutine inverse_rotation_transform(lon_p, lat_p, lon_o, lat_o, lon_r, lat_r)
 
-      real(r8), intent(in)  :: lon_p, lat_p ! Rotated pole coordinate
-      real(r8), intent(out) :: lon_o, lat_o ! Original coordinate
-      real(r8), intent(in)  :: lon_r, lat_r ! Rotated coordinate
+      real(16), intent(in)  :: lon_p, lat_p ! Rotated pole coordinate
+      real(16), intent(out) :: lon_o, lat_o ! Original coordinate
+      real(16), intent(in)  :: lon_r, lat_r ! Rotated coordinate
 
-      real(r8) sin_lon_r, cos_lon_r, sin_lat_r, cos_lat_r, sin_lat_p, cos_lat_p
-      real(r8) tmp1, tmp2, tmp3
+      real(16) sin_lon_r, cos_lon_r, sin_lat_r, cos_lat_r, sin_lat_p, cos_lat_p
+      real(16) tmp1, tmp2, tmp3
 
       sin_lon_r = sin(lon_r)
       cos_lon_r = cos(lon_r)
@@ -191,25 +191,25 @@ contains
 
   end subroutine inverse_rotation_transform
 
-  real(r8) function calc_distance(lon1, lat1, lon2, lat2) result(res)
+  real(16) function calc_distance(lon1, lat1, lon2, lat2) result(res)
 
-    real(r8), intent(in) :: lon1
-    real(r8), intent(in) :: lat1
-    real(r8), intent(in) :: lon2
-    real(r8), intent(in) :: lat2
+    real(16), intent(in) :: lon1
+    real(16), intent(in) :: lat1
+    real(16), intent(in) :: lon2
+    real(16), intent(in) :: lat2
 
     res = radius * acos(min(1.0d0, max(-1.0d0, sin(lat1) * sin(lat2) + cos(lat1) * cos(lat2) * cos(lon1 - lon2))))
 
   end function calc_distance
 
-  real(r8) function calc_area(x, y, z) result(res)
+  real(16) function calc_area(x, y, z) result(res)
 
-    real(r8), intent(in) :: x(:)
-    real(r8), intent(in) :: y(:)
-    real(r8), intent(in) :: z(:)
+    real(16), intent(in) :: x(:)
+    real(16), intent(in) :: y(:)
+    real(16), intent(in) :: z(:)
 
     integer n, im1, i, ip1
-    real(r8) angle
+    real(16) angle
 
     n = size(x)
 #ifndef NDEBUG
@@ -228,17 +228,17 @@ contains
 
   end function calc_area
 
-  real(r8) function calc_area_with_last_small_arc(x, y, z) result(res)
+  real(16) function calc_area_with_last_small_arc(x, y, z) result(res)
 
-    real(r8), intent(in) :: x(:)
-    real(r8), intent(in) :: y(:)
-    real(r8), intent(in) :: z(:)
+    real(16), intent(in) :: x(:)
+    real(16), intent(in) :: y(:)
+    real(16), intent(in) :: z(:)
 
     integer n
-    real(r8) xv(3), yv(3), zv(3)
-    real(r8) lon0, lat0, lon1, lat1, lon2, lat2
-    real(r8) dlon
-    real(r8) area1, area2, area3
+    real(16) xv(3), yv(3), zv(3)
+    real(16) lon0, lat0, lon1, lat1, lon2, lat2
+    real(16) dlon
+    real(16) area1, area2, area3
 
     if (size(x) /= 3) call log_error('Only support triangle with last edge as small arc!', __FILE__, __LINE__)
 
@@ -291,10 +291,10 @@ contains
 
   function norm_vector(x) result(res)
 
-    real(r8), intent(in) :: x(:)
-    real(r8) res(size(x))
+    real(16), intent(in) :: x(:)
+    real(16) res(size(x))
 
-    real(r8) n
+    real(16) n
 
     n = sqrt(sum(x * x))
     if (n /= 0) then
@@ -307,14 +307,14 @@ contains
 
   ! Calculate the dihedra angle between plane AB and plane BC.
 
-  real(r8) function calc_sphere_angle_1(a, b, c) result(res)
+  real(16) function calc_sphere_angle_1(a, b, c) result(res)
 
-    real(r8), intent(in) :: a(3)
-    real(r8), intent(in) :: b(3)
-    real(r8), intent(in) :: c(3)
+    real(16), intent(in) :: a(3)
+    real(16), intent(in) :: b(3)
+    real(16), intent(in) :: c(3)
 
-    real(r8) nab(3) ! Normal vector of plane AB
-    real(r8) nbc(3) ! Normal vector of plane BC
+    real(16) nab(3) ! Normal vector of plane AB
+    real(16) nbc(3) ! Normal vector of plane BC
 
     nab = norm_vector(cross_product(a, b))
     nbc = norm_vector(cross_product(b, c))
@@ -325,15 +325,15 @@ contains
 
   end function calc_sphere_angle_1
 
-  real(r8) function calc_sphere_angle_2(a, b, c) result(res)
+  real(16) function calc_sphere_angle_2(a, b, c) result(res)
 
     class(point_type), intent(in) :: a
     class(point_type), intent(in) :: b
     class(point_type), intent(in) :: c
 
-    real(r8) xa(3), xb(3), xc(3)
-    real(r8) nab(3) ! Normal vector of plane AB
-    real(r8) nbc(3) ! Normal vector of plane BC
+    real(16) xa(3), xb(3), xc(3)
+    real(16) nab(3) ! Normal vector of plane AB
+    real(16) nbc(3) ! Normal vector of plane BC
 
     xa = [a%x,a%y,a%z]
     xb = [b%x,b%y,b%z]
@@ -349,16 +349,16 @@ contains
 
   ! Calculate the great circle arc length from A to B by assuming A and B are on the unit sphere surface.
 
-  real(r8) function calc_arc_length_1(a, b) result(res)
+  real(16) function calc_arc_length_1(a, b) result(res)
 
-    real(r8), intent(in) :: a(3)
-    real(r8), intent(in) :: b(3)
+    real(16), intent(in) :: a(3)
+    real(16), intent(in) :: b(3)
 
     res = acos(max(min(dot_product(a, b), 1.0d0), -1.0d0))
 
   end function calc_arc_length_1
 
-  real(r8) function calc_arc_length_2(a, b) result(res)
+  real(16) function calc_arc_length_2(a, b) result(res)
 
     class(point_type), intent(in) :: a
     class(point_type), intent(in) :: b
@@ -367,10 +367,10 @@ contains
 
   end function calc_arc_length_2
 
-  real(r8) function calc_arc_length_3(a, b) result(res)
+  real(16) function calc_arc_length_3(a, b) result(res)
 
     class(point_type), intent(in) :: a
-    real(r8), intent(in) :: b(3)
+    real(16), intent(in) :: b(3)
 
     res = acos(max(min(dot_product([a%x,a%y,a%z], b), 1.0d0), -1.0d0))
 
@@ -384,8 +384,8 @@ contains
     class(point_type), intent(in) :: d
     class(point_type), intent(inout) :: e
 
-    real(r8) n1(3), n2(3), v(3), r
-    real(r8) lon1, lon2, lat1, lat2
+    real(16) n1(3), n2(3), v(3), r
+    real(16) lon1, lon2, lat1, lat2
 
     n1 = cross_product([a%x,a%y,a%z], [b%x,b%y,b%z])
     n2 = cross_product([c%x,c%y,c%z], [d%x,d%y,d%z])
@@ -427,9 +427,9 @@ contains
 
   integer function orient1(x1, y1, z1, x2, y2, z2, x0, y0, z0) result(res)
 
-    real(r8), intent(in) :: x1, y1, z1, x2, y2, z2, x0, y0, z0
+    real(16), intent(in) :: x1, y1, z1, x2, y2, z2, x0, y0, z0
 
-    real(r8) det
+    real(16) det
 
     det = x0 * (y1 * z2 - y2 * z1) - y0 * (x1 * z2 - x2 * z1) + z0 * (x1 * y2 - x2 * y1)
 

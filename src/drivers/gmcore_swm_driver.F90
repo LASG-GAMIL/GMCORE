@@ -2,9 +2,8 @@ program gmcore_swm_driver
 
   use log_mod
   use namelist_mod
-  use static_mod
-  use state_mod
-  use nest_mod
+  use block_mod
+  use parallel_mod
   use gmcore_mod
   use mountain_zonal_flow_test_mod
   use rossby_haurwitz_wave_test_mod
@@ -15,13 +14,12 @@ program gmcore_swm_driver
   implicit none
 
   character(256) namelist_file_path
-  integer i
+  integer iblk
 
   interface
-    subroutine set_initial_condition_interface(static, state)
-      import static_type, state_type
-      type(static_type), intent(inout) :: static
-      type(state_type), intent(inout) :: state
+    subroutine set_initial_condition_interface(block)
+      import block_type
+      type(block_type), intent(inout), target :: block
     end subroutine
   end interface
   procedure(set_initial_condition_interface), pointer :: set_initial_condition
@@ -49,9 +47,8 @@ program gmcore_swm_driver
     call log_error('Unknown test case ' // trim(test_case) // '!')
   end select
 
-  call set_initial_condition(static, states(1))
-  do i = 1, nest_max_dom
-    call set_initial_condition(nested_statics(i), nested_states(1,i))
+  do iblk = 1, size(proc%blocks)
+    call set_initial_condition(proc%blocks(iblk))
   end do
 
   call gmcore_run()

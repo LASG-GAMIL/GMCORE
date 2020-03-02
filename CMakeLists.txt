@@ -5,11 +5,17 @@ project(gmcore LANGUAGES Fortran)
 option(V_POLE "Stagger V on the two Poles" OFF)
 
 if (V_POLE)
-  add_definitions(-D V_POLE)
+  add_definitions(-DV_POLE)
 endif ()
 
 if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
-  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -ffree-line-length-none -Ofast -fopenmp")
+  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -ffree-line-length-none -O0 -fcheck=all -g -fbacktrace")
+  else ()
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -ffree-line-length-none -Ofast")
+  endif ()
+  # FIXME: OpenMP causes sigmentation faults.
+  # set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fopenmp")
 endif ()
 
 find_package(MPI)
@@ -47,10 +53,14 @@ set(source_files
   src/utils/namelist_mod.F90
   src/utils/time_mod.F90
   src/utils/math_mod.F90
-  src/utils/history_mod.F90 
+  src/utils/history_mod.F90
   src/utils/time_mod.F90
   src/utils/sphere_geometry_mod.F90
+  src/utils/block_mod.F90
+  src/utils/process_mod.F90
+  src/utils/halo_mod.F90
   src/utils/allocator_mod.F90
+  src/utils/parallel_types_mod.F90
   src/utils/parallel_mod.F90
   src/utils/debug_mod.F90
   src/core/mesh_mod.F90
@@ -60,6 +70,7 @@ set(source_files
   src/core/pv_mod.F90
   src/core/ke_mod.F90
   src/core/operators_mod.F90
+  src/core/reduced_types_mod.F90
   src/core/reduce_mod.F90
   src/core/nest_mod.F90
   src/core/damp_mod.F90

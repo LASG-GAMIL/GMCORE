@@ -2,8 +2,13 @@ module damp_mod
 
   use const_mod
   use parallel_mod
+  use block_mod
 
   implicit none
+
+  private
+
+  public zonal_damp
 
   integer, parameter :: diff_halo_width(2:8) = [1, 2, 2, 3, 3, 4, 4]
 
@@ -19,16 +24,17 @@ module damp_mod
 
 contains
 
-  subroutine damp_run(order, dt, dx, wgt, lb, ub, n, f)
+  subroutine zonal_damp(block, order, dt, dx, lb, ub, n, f, async)
 
-    integer , intent(in   ) :: order
-    real(r8), intent(in   ) :: dt
-    real(r8), intent(in   ) :: dx
-    real(r8), intent(in   ) :: wgt
-    integer , intent(in   ) :: lb
-    integer , intent(in   ) :: ub
-    integer , intent(in   ) :: n
+    type(block_type), intent(in) :: block
+    integer, intent(in) :: order
+    real(r8), intent(in) :: dt
+    real(r8), intent(in) :: dx
+    integer, intent(in) :: lb
+    integer, intent(in) :: ub
+    integer, intent(in) :: n
     real(r8), intent(inout) :: f(lb:ub)
+    type(async_type), intent(inout), optional :: async
 
     integer i, ns
     real(r8) g(lb:ub)
@@ -37,7 +43,7 @@ contains
 
     a  = (dx / 2.0_r8)**order / dt
 
-    call parallel_fill_halo(1 - lb, f)
+    call fill_halo(block, 1 - lb, f)
     if (order == 2) then
       ns = diff_halo_width(order)
       w  = diff_weights(:,order)
@@ -46,7 +52,7 @@ contains
       end do
       g = g * (-1)**(order / 2 + 1) * a / dx**order
       do i = 1, n
-        f(i) = f(i) + wgt * dt * g(i)
+        f(i) = f(i) + dt * g(i)
       end do
     else
       ns = diff_halo_width(order - 1)
@@ -59,13 +65,17 @@ contains
       do i = 1, n
         g(i) = g(i) * max(0.0_r8, sign(1.0_r8, -g(i) * df(i)))
       end do
-      call parallel_fill_halo(1 - lb, g)
+      call fill_halo(block, 1 - lb, g, east_halo=.false.)
       do i = 1, n
-        f(i) = f(i) - wgt * dt * (g(i) - g(i-1))
+        f(i) = f(i) - dt * (g(i) - g(i-1))
       end do
     end if
-    call parallel_fill_halo(1 - lb, f)
+    if (present(async)) then
+      call fill_halo(block, 1 - lb, f, async)
+    else
+      call fill_halo(block, 1 - lb, f)
+    end if
 
-  end subroutine damp_run
+  end subroutine zonal_damp
 
 end module damp_mod

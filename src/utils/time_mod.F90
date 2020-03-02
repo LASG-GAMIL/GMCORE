@@ -1,7 +1,6 @@
 module time_mod
 
-  use datetime_mod
-  use timedelta_mod
+  use datetime
   use hash_table_mod
   use const_mod
 
@@ -65,7 +64,7 @@ contains
       start_time = create_datetime(year=1, month=1, day=1, hour=0, minute=0)
     end if
     if (run_days > 0 .or. run_hours > 0) then
-      end_time = start_time + timedelta(days=run_days, hours=run_hours)
+      end_time = start_time + create_timedelta(days=run_days, hours=run_hours)
     else if (sum(end_time_array) > 0) then
       end_time = create_datetime(year=end_time_array(1),  &
                                  month=end_time_array(2), &
@@ -78,7 +77,7 @@ contains
     elapsed_seconds = 0
     old_time_idx = 1
     new_time_idx = 2
-    dt = timedelta(seconds=dt_in_seconds)
+    dt = create_timedelta(seconds=dt_in_seconds)
 
     curr_time = start_time
 
@@ -191,7 +190,7 @@ contains
       seconds_ = 0.0
     end if
 
-    alert%period = timedelta(months=months_, days=days_, hours=hours_, minutes=minutes_, seconds=seconds_)
+    alert%period = create_timedelta(months=months_, days=days_, hours=hours_, minutes=minutes_, seconds=seconds_)
     alert%last_time = start_time - alert%period
     call alerts%insert(trim(name), alert)
 
