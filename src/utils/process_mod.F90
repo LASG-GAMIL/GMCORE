@@ -36,7 +36,7 @@ contains
 
     integer ierr, i, j, jr
     integer nproc, proc_coords(2)
-    integer num_lon, num_lat, res_num, half_num
+    integer num_lon, num_lat, num_total_lat, res_num, half_num
     integer lon_ibeg, lon_iend, lat_ibeg, lat_iend
     integer, allocatable :: zonal_proc_id(:)
 
@@ -75,25 +75,27 @@ contains
     end if
     lon_iend = lon_ibeg + num_lon - 1
 #ifdef V_POLE
+    num_total_lat = global_mesh%num_half_lat
 #else
-    res_num = mod(global_mesh%num_full_lat, proc%dims(2))
+    num_total_lat = global_mesh%num_full_lat
+#endif
+    res_num = mod(num_total_lat, proc%dims(2))
     half_num = proc%dims(2) - proc%dims(2) / 2
     lat_ibeg = 1
     do j = 0, proc_coords(2) - 1
       if (res_num /= 0 .and. j >= half_num .and. j < half_num + res_num) then
-        num_lat = global_mesh%num_full_lat / proc%dims(2) + 1
+        num_lat = num_total_lat / proc%dims(2) + 1
       else
-        num_lat = global_mesh%num_full_lat / proc%dims(2)
+        num_lat = num_total_lat / proc%dims(2)
       end if
       lat_ibeg = lat_ibeg + num_lat
     end do
     if (res_num /= 0 .and. proc_coords(2) >= half_num .and. proc_coords(2) < half_num + res_num) then
-      num_lat = global_mesh%num_full_lat / proc%dims(2) + 1
+      num_lat = num_total_lat / proc%dims(2) + 1
     else
-      num_lat = global_mesh%num_full_lat / proc%dims(2)
+      num_lat = num_total_lat / proc%dims(2)
     end if
     lat_iend = lat_ibeg + num_lat - 1
-#endif
 
     jr = 0
     do j = 1, size(reduce_factors)
@@ -105,7 +107,7 @@ contains
     end do
     allocate(zonal_proc_id(proc%dims(1)))
     if (global_mesh%is_south_pole(lat_ibeg) .or. global_mesh%is_north_pole(lat_iend) .or. &
-        lat_ibeg <= jr .or. lat_iend > global_mesh%num_full_lat - jr) then
+        lat_ibeg <= jr .or. lat_iend > num_total_lat - jr) then
       call log_notice('Create zonal communicator on process ' // to_string(proc%id) // '.')
       do i = 1, proc%dims(1)
         call MPI_CART_RANK(proc%comm, [i-1,proc_coords(2)], zonal_proc_id(i), ierr)
