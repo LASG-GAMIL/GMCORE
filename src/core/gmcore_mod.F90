@@ -203,7 +203,7 @@ contains
     call global_sum(proc%comm, tpe)
 
     if (tpe0 == 0) tpe0 = tpe
-    if (tpe > tpe0) then
+    if (tpe > tpe0 .and. any(damp_orders /= 0)) then
       damp_2nd_t0 = elapsed_seconds + dt
       if (proc%id == 0) call log_notice('Use 2nd-order damping in reduce regions.')
     end if

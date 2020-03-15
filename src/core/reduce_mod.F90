@@ -167,9 +167,9 @@ contains
     end do
     do buf_j = lbound(reduced_mesh%area_lon, 1), ubound(reduced_mesh%area_lon, 1)
       if (raw_mesh%is_outside_full_lat(j+buf_j)) cycle
-      reduced_mesh%area_lon_west(buf_j) = raw_mesh%area_lon_west (j+buf_j) * reduce_factor
+      reduced_mesh%area_lon_west(buf_j) = raw_mesh%area_lon_west(j+buf_j) * reduce_factor
       reduced_mesh%area_lon_east(buf_j) = raw_mesh%area_lon_east(j+buf_j) * reduce_factor
-      reduced_mesh%area_lon     (buf_j) = raw_mesh%area_lon      (j+buf_j) * reduce_factor
+      reduced_mesh%area_lon     (buf_j) = raw_mesh%area_lon     (j+buf_j) * reduce_factor
     end do
     ! Vertex area
     do buf_j = lbound(reduced_mesh%area_vtx, 1), ubound(reduced_mesh%area_vtx, 1)
@@ -178,9 +178,9 @@ contains
     end do
     do buf_j = lbound(reduced_mesh%area_lat, 1), ubound(reduced_mesh%area_lat, 1)
       if (raw_mesh%is_outside_half_lat(j+buf_j)) cycle
-      reduced_mesh%area_lat_north(buf_j) = raw_mesh%area_lat_north  (j+buf_j) * reduce_factor
+      reduced_mesh%area_lat_north(buf_j) = raw_mesh%area_lat_north(j+buf_j) * reduce_factor
       reduced_mesh%area_lat_south(buf_j) = raw_mesh%area_lat_south(j+buf_j) * reduce_factor
-      reduced_mesh%area_lat      (buf_j) = raw_mesh%area_lat     (j+buf_j) * reduce_factor
+      reduced_mesh%area_lat      (buf_j) = raw_mesh%area_lat      (j+buf_j) * reduce_factor
     end do
     ! Edge lengths and cell distances
     do buf_j = lbound(reduced_mesh%le_lat, 1), ubound(reduced_mesh%le_lat, 1)
