@@ -199,8 +199,8 @@ contains
     do j = mesh%half_lat_ibeg, mesh%half_lat_iend
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         state%pv_lat(i,j) = 0.5_r8 * (state%pv(i-1,j) + state%pv(i,j))
-      end do 
-    end do 
+      end do
+    end do
 !$OMP END PARALLEL DO
 #ifdef V_POLE
     call fill_halo(block, state%pv_lat, full_lon=.true., full_lat=.false., async=state%async(async_pv_lat), west_halo=.false., south_halo=.false.)
@@ -216,8 +216,8 @@ contains
 #else
         state%pv_lon(i,j) = 0.5_r8 * (state%pv(i,j) + state%pv(i,j-1))
 #endif
-      end do 
-    end do 
+      end do
+    end do
 !$OMP END PARALLEL DO
 #ifdef V_POLE
     call fill_halo(block, state%pv_lon, full_lon=.false., full_lat=.true., async=state%async(async_pv_lon), east_halo=.false., north_halo=.false.)

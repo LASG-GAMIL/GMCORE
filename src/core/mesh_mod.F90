@@ -47,7 +47,7 @@ module mesh_mod
     real(r8) start_lat
     real(r8) end_lat
     real(r8) dlon
-    real(r8) dlat
+    real(r8), allocatable :: dlat(:)
     real(r8) total_area
     real(r8), allocatable :: full_lon(:)
     real(r8), allocatable :: half_lon(:)
@@ -114,6 +114,7 @@ contains
     integer         , intent(in   ), optional :: lon_halo_width
     integer         , intent(in   ), optional :: lat_halo_width
 
+    real(r8) dlat0
     real(16) x(3), y(3), z(3)
     integer i, j
 
@@ -158,33 +159,41 @@ contains
     end do
 
 #ifdef V_POLE
-    this%dlat = (this%end_lat - this%start_lat) / this%num_full_lat
-    do j = this%half_lat_lb, this%half_lat_ub
-      this%half_lat(j) = this%start_lat + (j - 1) * this%dlat
+    ! Set initial guess latitudes of full merdional grids.
+    dlat0 = (this%end_lat - this%start_lat) / this%num_full_lat
+    do j = 1, this%num_full_lat
+      this%full_lat(j) = this%start_lat + (j - 0.5_r8) * dlat0
+      if (abs(this%full_lat(j)) < 1.0e-14) this%full_lat(j) = 0.0_r8
+    end do
+
+    ! Calculate real dlat which is large at polar region.
+    this%dlat(1:this%num_full_lat) = exp(-100 * (abs(this%full_lat(1:this%num_full_lat)) - pi / 2)**2)
+    this%dlat(1:this%num_full_lat) = (1 + this%dlat(1:this%num_full_lat)) / sum(1 + this%dlat(1:this%num_full_lat)) * pi
+
+    ! Set latitudes of half merdional grids.
+    this%half_lat(1) = this%start_lat
+    this%half_lat_deg(1) = this%start_lat * deg
+    do j = 2, this%num_half_lat - 1
+      this%half_lat(j) = this%half_lat(j-1) + this%dlat(j-1)
       if (abs(this%half_lat(j)) < 1.0e-14) this%half_lat(j) = 0.0_r8
       this%half_lat_deg(j) = this%half_lat(j) * deg
-      if (this%half_lat(j) < -pi05 .or. this%half_lat(j) > pi05) then
-        this%half_lat(j) = inf
-        this%half_lat_deg(j) = inf
-      end if
     end do
     this%half_lat(this%num_half_lat) = this%end_lat
     this%half_lat_deg(this%num_half_lat) = this%end_lat * deg
 
-    do j = this%full_lat_lb, this%full_lat_ub
+    ! Set latitudes of full merdional grids.
+    do j = 1, this%num_full_lat
       if (is_inf(this%half_lat(j)) .or. this%half_lat(j) == pi05) cycle
-      this%full_lat(j) = this%half_lat(j) + 0.5_r8 * this%dlat
+      this%full_lat(j) = this%half_lat(j) + 0.5_r8 * this%dlat(j)
       if (abs(this%full_lat(j)) < 1.0e-14) this%full_lat(j) = 0.0_r8
       this%full_lat_deg(j) = this%full_lat(j) * deg
-      if (this%full_lat(j) < -pi05 .or. this%full_lat(j) > pi05) then
-        this%full_lat(j) = inf
-        this%full_lat_deg(j) = inf
-      end if
     end do
 #else
     this%dlat = (this%end_lat - this%start_lat) / this%num_half_lat
-    do j = this%full_lat_lb, this%full_lat_ub
-      this%full_lat(j) = this%start_lat + (j - 1) * this%dlat
+    this%full_lat(1) = this%start_lat
+    this%full_lat_deg(1) = this%start_lat * deg
+    do j = 2, this%num_full_lat - 1
+      this%full_lat(j) = this%full_lat(j-1) + this%dlat(j-1)
       if (abs(this%full_lat(j)) < 1.0e-14) this%full_lat(j) = 0.0_r8
       this%full_lat_deg(j) = this%full_lat(j) * deg
       if (this%full_lat(j) < -pi05 .or. this%full_lat(j) > pi05) then
@@ -195,9 +204,9 @@ contains
     this%full_lat(this%num_full_lat) = this%end_lat
     this%full_lat_deg(this%num_full_lat) = this%end_lat * deg
 
-    do j = this%half_lat_lb, this%half_lat_ub
+    do j = 1, this%num_half_lat
       if (is_inf(this%full_lat(j)) .or. this%full_lat(j) == pi05) cycle
-      this%half_lat(j) = this%full_lat(j) + 0.5_r8 * this%dlat
+      this%half_lat(j) = this%full_lat(j) + 0.5_r8 * this%dlat(j)
       if (abs(this%half_lat(j)) < 1.0e-14) this%half_lat(j) = 0.0_r8
       this%half_lat_deg(j) = this%half_lat(j) * deg
       if (this%half_lat(j) < -pi05 .or. this%half_lat(j) > pi05) then
@@ -317,8 +326,8 @@ contains
 #endif
 
     do j = this%full_lat_ibeg_no_pole, this%full_lat_iend_no_pole
-      this%le_lon(j) = this%dlat * radius
-      this%de_lon(j) = 2.0d0 * this%area_lon(j) / this%le_lon(j)
+      this%de_lon(j) = radius * this%full_cos_lat(j) * this%dlon
+      this%le_lon(j) = 2.0d0 * this%area_lon(j) / this%de_lon(j)
     end do
 #ifndef V_POLE
     if (this%has_south_pole()) then
@@ -473,7 +482,7 @@ contains
       this%half_cos_lon(i) = parent%half_cos_lon(i)
     end do
 
-    this%dlat = parent%dlat
+    this%dlat = parent%dlat(lbound(this%dlat, 1):lbound(this%dlat, 1))
     do j = this%full_lat_lb, this%full_lat_ub
       this%full_lat(j) = parent%full_lat(j)
       this%full_lat_deg(j) = parent%full_lat_deg(j)
@@ -533,6 +542,11 @@ contains
     this%half_lat_lb = this%half_lat_ibeg - this%lat_halo_width
     this%half_lat_ub = this%half_lat_iend + this%lat_halo_width
 
+#ifdef V_POLE
+    allocate(this%dlat               (this%full_lat_lb:this%full_lat_ub)); this%dlat                = 0.0_r8
+#else
+    allocate(this%dlat               (this%half_lat_lb:this%half_lat_ub)); this%dlat                = 0.0_r8
+#endif
     allocate(this%full_lon           (this%full_lon_lb:this%full_lon_ub)); this%full_lon            = inf
     allocate(this%half_lon           (this%half_lon_lb:this%half_lon_ub)); this%half_lon            = inf
     allocate(this%full_lat           (this%full_lat_lb:this%full_lat_ub)); this%full_lat            = inf

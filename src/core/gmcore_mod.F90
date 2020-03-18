@@ -5,7 +5,7 @@ module gmcore_mod
   use const_mod
   use namelist_mod
   use parallel_mod
-  use time_mod, dt => dt_in_seconds, old => old_time_idx, new => new_time_idx
+  use time_mod, old => old_time_idx, new => new_time_idx
   use history_mod
   use block_mod
   use operators_mod
@@ -105,7 +105,7 @@ contains
     call output(proc%blocks, old)
 
     do while (.not. time_is_finished())
-      call time_integrate(dt, proc%blocks)
+      call time_integrate(dt_in_seconds, proc%blocks)
       if (proc%id == 0 .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
       call time_advance()
       call operators_prepare(proc%blocks, old)
@@ -204,7 +204,7 @@ contains
 
     if (tpe0 == 0) tpe0 = tpe
     if (tpe > tpe0 .and. any(damp_orders /= 0)) then
-      damp_2nd_t0 = elapsed_seconds + dt
+      damp_2nd_t0 = elapsed_seconds + dt_in_seconds
       if (proc%id == 0) call log_notice('Use 2nd-order damping in reduce regions.')
     end if
     tpe0 = tpe
@@ -489,9 +489,10 @@ contains
       if (damp_order > 0) then
         if (damp_2nd_t0 > elapsed_seconds) damp_order = 2
         if (damp_order == 1) cycle ! User can choose not to damp except for cases when potential enstrophy increases.
-        call zonal_damp(block, damp_order, dt, mesh%le_lat(j), mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%v(:,j))
+        call zonal_damp(block, damp_order, dt_in_seconds, mesh%le_lat(j), mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%v(:,j))
       end if
     end do
+#ifndef V_POLE
     if (mesh%has_south_pole()) then
       j = mesh%half_lat_ibeg_no_pole
       state%v(:,j) = 0.2_r8 * state%v(:,j) + 0.8_r8 * state%v(:,j+1)
@@ -500,6 +501,7 @@ contains
       j = mesh%half_lat_iend_no_pole
       state%v(:,j) = 0.2_r8 * state%v(:,j) + 0.8_r8 * state%v(:,j-1)
     end if
+#endif
 
   end subroutine damp_state
 
