@@ -260,16 +260,20 @@ contains
         call parallel_overlay_inner_halo(mesh, tend%qhv(:,j), left_halo=.true.)
       else
         do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
-          tend%qhv(i,j) = (                                                           &
-            mesh%full_tangent_wgt(1,j) * (                                            &
-              state%mf_lat_n(i  ,j  ) * (state%pv_lon(i,j) + state%pv_lat(i  ,j  )) + &
-              state%mf_lat_n(i+1,j  ) * (state%pv_lon(i,j) + state%pv_lat(i+1,j  ))   &
-            ) +                                                                       &
-            mesh%full_tangent_wgt(2,j) * (                                            &
-              state%mf_lat_n(i  ,j+1) * (state%pv_lon(i,j) + state%pv_lat(i  ,j+1)) + &
-              state%mf_lat_n(i+1,j+1) * (state%pv_lon(i,j) + state%pv_lat(i+1,j+1))   &
-            )                                                                         &
-          ) * 0.5_r8
+          if (coriolis_scheme == 1) then
+            tend%qhv(i,j) = (                                                           &
+              mesh%full_tangent_wgt(1,j) * (                                            &
+                state%mf_lat_n(i  ,j  ) * (state%pv_lon(i,j) + state%pv_lat(i  ,j  )) + &
+                state%mf_lat_n(i+1,j  ) * (state%pv_lon(i,j) + state%pv_lat(i+1,j  ))   &
+              ) +                                                                       &
+              mesh%full_tangent_wgt(2,j) * (                                            &
+                state%mf_lat_n(i  ,j+1) * (state%pv_lon(i,j) + state%pv_lat(i  ,j+1)) + &
+                state%mf_lat_n(i+1,j+1) * (state%pv_lon(i,j) + state%pv_lat(i+1,j+1))   &
+              )                                                                         &
+            ) * 0.5_r8
+          else if (coriolis_scheme == 2) then
+            tend%qhv(i,j) = state%mf_lon_t(i,j) * state%pv_lon(i,j)
+          end if
         end do
       end if
     end do
@@ -307,16 +311,20 @@ contains
         call parallel_overlay_inner_halo(mesh, tend%qhv(:,j), left_halo=.true.)
       else
         do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
-          tend%qhv(i,j) = (                                                           &
-            mesh%full_tangent_wgt(1,j) * (                                            &
-              state%mf_lat_n(i  ,j-1) * (state%pv_lon(i,j) + state%pv_lat(i  ,j-1)) + &
-              state%mf_lat_n(i+1,j-1) * (state%pv_lon(i,j) + state%pv_lat(i+1,j-1))   &
-            ) +                                                                       &
-            mesh%full_tangent_wgt(2,j) * (                                            &
-              state%mf_lat_n(i  ,j  ) * (state%pv_lon(i,j) + state%pv_lat(i  ,j  )) + &
-              state%mf_lat_n(i+1,j  ) * (state%pv_lon(i,j) + state%pv_lat(i+1,j  ))   &
-            )                                                                         &
-          ) * 0.5_r8
+          if (coriolis_scheme == 1) then
+            tend%qhv(i,j) = (                                                           &
+              mesh%full_tangent_wgt(1,j) * (                                            &
+                state%mf_lat_n(i  ,j-1) * (state%pv_lon(i,j) + state%pv_lat(i  ,j-1)) + &
+                state%mf_lat_n(i+1,j-1) * (state%pv_lon(i,j) + state%pv_lat(i+1,j-1))   &
+              ) +                                                                       &
+              mesh%full_tangent_wgt(2,j) * (                                            &
+                state%mf_lat_n(i  ,j  ) * (state%pv_lon(i,j) + state%pv_lat(i  ,j  )) + &
+                state%mf_lat_n(i+1,j  ) * (state%pv_lon(i,j) + state%pv_lat(i+1,j  ))   &
+              )                                                                         &
+            ) * 0.5_r8
+          else if (coriolis_scheme == 2) then
+            tend%qhv(i,j) = state%mf_lon_t(i,j) * state%pv_lon(i,j)
+          end if 
         end do
       end if
     end do
@@ -346,12 +354,16 @@ contains
         call parallel_overlay_inner_halo(mesh, tend%qhu(:,j), left_halo=.true.)
       else
         do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
-          tend%qhu(i,j) = ( &
-            mesh%half_tangent_wgt(1,j) * (                                            &
-              state%mf_lon_n(i-1,j-1) * (state%pv_lat(i,j) + state%pv_lon(i-1,j-1)) + &
-              state%mf_lon_n(i  ,j-1) * (state%pv_lat(i,j) + state%pv_lon(i  ,j-1))   &
-            )                                                                         &
-          ) * 0.5_r8
+          if (coriolis_scheme == 1) then
+            tend%qhu(i,j) = ( &
+              mesh%half_tangent_wgt(1,j) * (                                            &
+                state%mf_lon_n(i-1,j-1) * (state%pv_lat(i,j) + state%pv_lon(i-1,j-1)) + &
+                state%mf_lon_n(i  ,j-1) * (state%pv_lat(i,j) + state%pv_lon(i  ,j-1))   &
+              )                                                                         &
+            ) * 0.5_r8
+          else if (coriolis_scheme == 2) then
+            tend%qhu(i,j) = state%mf_lat_t(i,j) * state%pv_lat(i,j)
+          end if 
         end do
       end if
       if (reduced_mesh(j)%reduce_factor > 0) then
@@ -376,12 +388,16 @@ contains
         call parallel_overlay_inner_halo(mesh, tend%qhu(:,j), left_halo=.true.)
       else
         do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
-          tend%qhu(i,j) = tend%qhu(i,j) + (                                           &
-            mesh%half_tangent_wgt(2,j) * (                                            &
-              state%mf_lon_n(i-1,j  ) * (state%pv_lat(i,j) + state%pv_lon(i-1,j  )) + &
-              state%mf_lon_n(i  ,j  ) * (state%pv_lat(i,j) + state%pv_lon(i  ,j  ))   &
-            )                                                                         &
-          ) * 0.5_r8
+          if (coriolis_scheme == 1) then
+            tend%qhu(i,j) = tend%qhu(i,j) + (                                           &
+              mesh%half_tangent_wgt(2,j) * (                                            &
+                state%mf_lon_n(i-1,j  ) * (state%pv_lat(i,j) + state%pv_lon(i-1,j  )) + &
+                state%mf_lon_n(i  ,j  ) * (state%pv_lat(i,j) + state%pv_lon(i  ,j  ))   &
+              )                                                                         &
+            ) * 0.5_r8
+          else if (coriolis_scheme == 2) then
+            tend%qhu(i,j) = state%mf_lat_t(i,j) * state%pv_lat(i,j)
+          end if 
         end do
       end if
     end do
@@ -409,12 +425,16 @@ contains
         call parallel_overlay_inner_halo(mesh, tend%qhu(:,j), left_halo=.true.)
       else
         do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
-          tend%qhu(i,j) = (                                                         &
-            mesh%half_tangent_wgt(1,j) * (                                          &
-              state%mf_lon_n(i-1,j  ) * (state%pv_lat(i,j) + state%pv_lon(i-1,j)) + &
-              state%mf_lon_n(i  ,j  ) * (state%pv_lat(i,j) + state%pv_lon(i  ,j))   &
-            )                                                                       &
-          ) * 0.5_r8
+          if (coriolis_scheme == 1) then
+            tend%qhu(i,j) = (                                                         &
+              mesh%half_tangent_wgt(1,j) * (                                          &
+                state%mf_lon_n(i-1,j  ) * (state%pv_lat(i,j) + state%pv_lon(i-1,j)) + &
+                state%mf_lon_n(i  ,j  ) * (state%pv_lat(i,j) + state%pv_lon(i  ,j))   &
+              )                                                                       &
+            ) * 0.5_r8
+          elseif(coriolis_scheme == 2) then
+            tend%qhu(i,j) = state%mf_lat_t(i,j) * state%pv_lat(i,j)
+          end if 
         end do
       end if
       if (reduced_mesh(j+1)%reduce_factor > 0) then
@@ -439,12 +459,16 @@ contains
         call parallel_overlay_inner_halo(mesh, tend%qhu(:,j), left_halo=.true.)
       else
         do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
-          tend%qhu(i,j) = tend%qhu(i,j) + (                                           &
-            mesh%half_tangent_wgt(2,j) * (                                            &
-              state%mf_lon_n(i-1,j+1) * (state%pv_lat(i,j) + state%pv_lon(i-1,j+1)) + &
-              state%mf_lon_n(i  ,j+1) * (state%pv_lat(i,j) + state%pv_lon(i  ,j+1))   &
-            )                                                                         &
-          ) * 0.5_r8
+          if (coriolis_scheme == 1) then
+            tend%qhu(i,j) = tend%qhu(i,j) + (                                           &
+              mesh%half_tangent_wgt(2,j) * (                                            &
+                state%mf_lon_n(i-1,j+1) * (state%pv_lat(i,j) + state%pv_lon(i-1,j+1)) + &
+                state%mf_lon_n(i  ,j+1) * (state%pv_lat(i,j) + state%pv_lon(i  ,j+1))   &
+              )                                                                         &
+            ) * 0.5_r8
+          else if (coriolis_scheme == 2) then 
+            tend%qhu(i,j) = state%mf_lat_t(i,j) * state%pv_lat(i,j)
+          end if 
         end do
       end if
     end do

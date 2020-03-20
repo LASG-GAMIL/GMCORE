@@ -125,7 +125,7 @@ contains
 
     if (time_is_alerted('history_write')) then
       call history_write_state(static, state)
-      call history_write_debug(static, state, tend)
+      ! call history_write_debug(static, state, tend)
     end if
 
   end subroutine output
@@ -195,8 +195,9 @@ contains
     !   end if
     ! end do
 
-    call log_add_diag('total_m' , state%total_m )
+    ! call log_add_diag('total_m' , state%total_m )
     call log_add_diag('total_e' , state%total_e )
+    call log_add_diag('total_av', state%total_av)
     call log_add_diag('total_pe', state%total_pe)
 
   end subroutine diagnose

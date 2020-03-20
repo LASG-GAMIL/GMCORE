@@ -71,6 +71,7 @@ contains
     call fiona_add_var('h0', 'tm'   , long_name='total mass'               , units='m'     , dim_names=['time'])
     call fiona_add_var('h0', 'te'   , long_name='total energy'             , units='m4 s-4', dim_names=['time'], data_type='real(8)')
     call fiona_add_var('h0', 'tpe'  , long_name='total potential enstrophy', units='m2 s-5', dim_names=['time'], data_type='real(8)')
+    call fiona_add_var('h0', 'tpv'  , long_name='total potential vorticity', units='m2 s-5', dim_names=['time'], data_type='real(8)')
 
     call fiona_create_dataset('h1', desc=case_desc, file_prefix=trim(case_name))
     call fiona_add_att('h1', 'time_step_size', dt)
@@ -154,6 +155,7 @@ contains
     call fiona_output('h0', 'tm'  , state%total_m)
     call fiona_output('h0', 'te'  , state%total_e)
     call fiona_output('h0', 'tpe' , state%total_pe)
+    call fiona_output('h0', 'tpv' , state%total_av)
     call fiona_end_output('h0')
 
   end subroutine history_write_state

@@ -17,6 +17,8 @@ module namelist_mod
   integer :: pv_scheme = 2
   logical :: pv_pole_stokes = .true.
 
+  integer :: coriolis_scheme = 1
+
   integer :: fast_cycles = 1
   character(30) :: split_scheme = ''
   character(30) :: time_scheme = 'pc2'
@@ -49,6 +51,7 @@ module namelist_mod
     tangent_wgt_scheme        , &
     pv_scheme                 , &
     pv_pole_stokes            , &
+    coriolis_scheme           , &
     split_scheme              , &
     time_scheme               , &
     fast_cycles               , &
