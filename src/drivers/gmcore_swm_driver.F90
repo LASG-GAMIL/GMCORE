@@ -4,6 +4,7 @@ program gmcore_swm_driver
   use namelist_mod
   use block_mod
   use parallel_mod
+  use restart_mod
   use gmcore_mod
   use mountain_zonal_flow_test_mod
   use rossby_haurwitz_wave_test_mod
@@ -47,9 +48,13 @@ program gmcore_swm_driver
     call log_error('Unknown test case ' // trim(test_case) // '!')
   end select
 
-  do iblk = 1, size(proc%blocks)
-    call set_initial_condition(proc%blocks(iblk))
-  end do
+  if (restart) then
+    call restart_read(proc%blocks, old_time_idx)
+  else
+    do iblk = 1, size(proc%blocks)
+      call set_initial_condition(proc%blocks(iblk))
+    end do
+  end if
 
   call gmcore_run()
 

@@ -1,7 +1,9 @@
 module time_mod
 
   use datetime
-  use hash_table_mod
+  use string
+  use container
+  use flogger
   use const_mod
 
   implicit none
@@ -12,6 +14,7 @@ module time_mod
   public time_reset_start_time
   public time_swap_indices
   public time_advance
+  public time_fast_forward
   public time_elapsed_seconds
   public time_is_finished
   public time_add_alert
@@ -135,6 +138,33 @@ contains
     curr_time_str = curr_time%format('%Y-%m-%dT%H_%M_%S')
 
   end subroutine time_advance
+
+  subroutine time_fast_forward(time_value, time_units)
+
+    real(r8), intent(in) :: time_value
+    character(*), intent(in) :: time_units
+
+    type(timedelta_type) skipped_time
+    character(30) tmp1, tmp2
+
+    tmp1 = split_string(time_units, ' ', 1)
+    tmp2 = split_string(time_units, ' ', 3)
+
+    curr_time = create_datetime(tmp2)
+    select case (tmp1)
+    case ('hours')
+      call curr_time%add_hours(time_value)
+    case ('days')
+      call curr_time%add_days(time_value)
+    case default
+      call log_error('Unsupported time units ' // trim(time_units) // '!')
+    end select
+
+    skipped_time = curr_time - start_time
+    elapsed_seconds = skipped_time%total_seconds()
+    curr_time_str = curr_time%format('%Y-%m-%dT%H_%M_%S')
+
+  end subroutine time_fast_forward
 
   real(8) function time_elapsed_seconds() result(res)
 

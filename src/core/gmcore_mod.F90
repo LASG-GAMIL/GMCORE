@@ -7,6 +7,7 @@ module gmcore_mod
   use parallel_mod
   use time_mod, old => old_time_idx, new => new_time_idx
   use history_mod
+  use restart_mod
   use block_mod
   use operators_mod
   use reduce_mod
@@ -56,6 +57,7 @@ contains
     call process_init()
     call time_init()
     call history_init()
+    call restart_init()
     call reduce_init(proc%blocks)
 
     select case (time_scheme)
@@ -138,6 +140,9 @@ contains
       end if
       call history_write_state(blocks, itime)
       ! call history_write_debug(blocks, itime)
+    end if
+    if (time_is_alerted('restart_write')) then
+      call restart_write(blocks, itime)
     end if
 
   end subroutine output
