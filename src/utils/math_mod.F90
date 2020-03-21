@@ -12,9 +12,9 @@ contains
 
   function cross_product(x, y) result(res)
 
-    real(r8), intent(in) :: x(3)
-    real(r8), intent(in) :: y(3)
-    real(r8) res(3)
+    real(16), intent(in) :: x(3)
+    real(16), intent(in) :: y(3)
+    real(16) res(3)
 
     res(1) = x(2) * y(3) - x(3) * y(2)
     res(2) = x(3) * y(1) - x(1) * y(3)

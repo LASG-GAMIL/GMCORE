@@ -28,22 +28,24 @@ fi
 
 cd $work_dir
 
+mpirun='mpiexec -np 2'
+
 echo '=========================================================================='
 echo 'Rossby-Haurwitz wave test'
-time ./gmcore_swm_driver.exe namelist.swm.rh4.360x180
+time $mpirun ./gmcore_swm_driver.exe namelist.swm.rh4.360x180
 
 echo '=========================================================================='
 echo 'Zonal mountain wave'
-time ./gmcore_swm_driver.exe namelist.swm.mz.360x180
+time $mpirun ./gmcore_swm_driver.exe namelist.swm.mz.360x180
 
 echo '=========================================================================='
 echo 'Jet zonal flow test'
-time ./gmcore_swm_driver.exe namelist.swm.jz.360x180
+time $mpirun ./gmcore_swm_driver.exe namelist.swm.jz.360x180
 
 echo '=========================================================================='
 echo 'Cross pole flow test'
-time ./gmcore_swm_driver.exe namelist.swm.cp.360x180
+time $mpirun ./gmcore_swm_driver.exe namelist.swm.cp.360x180
 
 echo '=========================================================================='
 echo 'Steady geostrophic flow test'
-time ./gmcore_swm_driver.exe namelist.swm.sg.360x180
+time $mpirun ./gmcore_swm_driver.exe namelist.swm.sg.360x180

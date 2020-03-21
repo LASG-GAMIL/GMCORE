@@ -2,10 +2,9 @@ module mountain_zonal_flow_test_mod
 
   use flogger
   use const_mod
-  use parallel_mod
   use mesh_mod
-  use state_mod
-  use static_mod
+  use parallel_mod
+  use block_mod
 
   implicit none
 
@@ -23,10 +22,9 @@ module mountain_zonal_flow_test_mod
 
 contains
 
-  subroutine mountain_zonal_flow_test_set_initial_condition(static, state)
+  subroutine mountain_zonal_flow_test_set_initial_condition(block)
 
-    type(static_type), intent(inout) :: static
-    type(state_type) , intent(inout) :: state
+    type(block_type), intent(inout), target :: block
 
     real(r8) cos_lat, sin_lat, cos_lon, sin_lon, cos_alpha, sin_alpha, dlon, d
     integer i, j, k
@@ -35,45 +33,45 @@ contains
     cos_alpha = cos(alpha)
     sin_alpha = sin(alpha)
 
-    mesh => state%mesh
+    mesh => block%mesh
 
-    do j = mesh%full_lat_start_idx, mesh%full_lat_end_idx
-      do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
+    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         dlon = abs(mesh%full_lon(i) - lon0)
         dlon = min(dlon, 2 * pi - dlon)
         d = min(R, sqrt(dlon**2 + (mesh%full_lat(j) - lat0)**2))
-        static%ghs(i,j) = ghs0 * (1.0 - d / R)
+        block%static%ghs(i,j) = ghs0 * (1.0 - d / R)
       end do
     end do
-    call parallel_fill_halo(mesh, static%ghs)
+    call fill_halo(block, block%static%ghs, full_lon=.true., full_lat=.true.)
 
-    do j = mesh%full_lat_start_idx, mesh%full_lat_end_idx
+    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       cos_lat = mesh%full_cos_lat(j)
       sin_lat = mesh%full_sin_lat(j)
-      do i = mesh%half_lon_start_idx, mesh%half_lon_end_idx
+      do i = mesh%half_lon_ibeg, mesh%half_lon_iend
         cos_lon = mesh%half_cos_lon(i)
-        state%u(i,j) = u0 * (cos_lat * cos_alpha + cos_lon * sin_lat * sin_alpha)
+        block%state(1)%u(i,j) = u0 * (cos_lat * cos_alpha + cos_lon * sin_lat * sin_alpha)
       end do
     end do
-    call parallel_fill_halo(mesh, state%u)
+    call fill_halo(block, block%state(1)%u, full_lon=.false., full_lat=.true.)
 
-    do j = mesh%half_lat_start_idx, mesh%half_lat_end_idx
-      do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
+    do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         sin_lon = mesh%full_sin_lon(i)
-        state%v(i,j) = - u0 * sin_lon * sin_alpha
+        block%state(1)%v(i,j) = - u0 * sin_lon * sin_alpha
       end do
     end do
-    call parallel_fill_halo(mesh, state%v)
+    call fill_halo(block, block%state(1)%v, full_lon=.true., full_lat=.false.)
 
-    do j = mesh%full_lat_start_idx, mesh%full_lat_end_idx
+    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       cos_lat = mesh%full_cos_lat(j)
       sin_lat = mesh%full_sin_lat(j)
-      do i = mesh%full_lon_start_idx, mesh%full_lon_end_idx
+      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         cos_lon = mesh%full_cos_lon(i)
-        state%gd(i,j) = gd0 - (radius * omega * u0 + u0**2 * 0.5) * (sin_lat * cos_alpha - cos_lon * cos_lat * sin_alpha)**2 - static%ghs(i,j)
+        block%state(1)%gd(i,j) = gd0 - (radius * omega * u0 + u0**2 * 0.5) * (sin_lat * cos_alpha - cos_lon * cos_lat * sin_alpha)**2 - block%static%ghs(i,j)
       end do
     end do
-    call parallel_fill_halo(mesh, state%gd)
+    call fill_halo(block, block%state(1)%gd, full_lon=.true., full_lat=.true.)
 
   end subroutine mountain_zonal_flow_test_set_initial_condition
 

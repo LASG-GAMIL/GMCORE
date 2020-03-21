@@ -8,9 +8,17 @@ module namelist_mod
   character(256) :: case_name = 'N/A'
   character(30) :: test_case = 'N/A'
   character(30) :: history_interval(1) = 'N/A'
+  character(30) :: restart_interval    = 'N/A'
+  character(30) :: print_interval = '1 hours'
+  character(256) :: restart_file = 'N/A'
+
+  logical :: restart = .false.
 
   integer num_lon
   integer num_lat
+
+  integer :: num_proc_lon(20) = 0
+  integer :: num_proc_lat(20) = 0
 
   character(30) :: tangent_wgt_scheme = 'classic'
 
@@ -23,8 +31,10 @@ module namelist_mod
   character(30) :: split_scheme = ''
   character(30) :: time_scheme = 'pc2'
 
-  integer :: reduce_factors(20) = 0
-  integer :: damp_orders(20) = 0
+  real(r8) :: coarse_polar_lats_coef = 0
+
+  integer :: reduce_factors(100) = 0
+  integer :: damp_orders(100) = 0
   logical :: adaptive_damp = .false.
   
   ! Nest settings
@@ -42,12 +52,18 @@ module namelist_mod
     case_desc                 , &
     num_lon                   , &
     num_lat                   , &
+    num_proc_lon              , &
+    num_proc_lat              , &
     start_time                , &
     end_time                  , &
     dt_in_seconds             , &
     run_hours                 , &
     run_days                  , &
     history_interval          , &
+    restart_interval          , &
+    print_interval            , &
+    restart_file              , &
+    restart                   , &
     tangent_wgt_scheme        , &
     pv_scheme                 , &
     pv_pole_stokes            , &
@@ -55,6 +71,7 @@ module namelist_mod
     split_scheme              , &
     time_scheme               , &
     fast_cycles               , &
+    coarse_polar_lats_coef    , &
     reduce_factors            , &
     damp_orders               , &
     adaptive_damp             , &

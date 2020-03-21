@@ -17,6 +17,11 @@ module const_mod
   
   integer, parameter :: nest_ratio = 3
 
+  integer, parameter :: csp2      = 1
+  integer, parameter :: all_pass  = 0
+  integer, parameter :: slow_pass = 1
+  integer, parameter :: fast_pass = 2
+
 contains
 
   pure logical function is_inf(x) result(res)

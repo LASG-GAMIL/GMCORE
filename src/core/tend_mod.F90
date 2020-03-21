@@ -10,8 +10,6 @@ module tend_mod
   private
 
   public tend_type
-  public tends
-  public tend_init_root
 
   type tend_type
     type(mesh_type), pointer :: mesh => null()
@@ -33,29 +31,7 @@ module tend_mod
     final :: tend_final
   end type tend_type
 
-  type(tend_type), allocatable :: tends(:)
-
 contains
-
-  subroutine tend_init_root()
-
-    integer i
-
-    if (.not. allocated(tends)) then
-      select case (trim(time_scheme))
-      case ('pc2', 'rk2')
-        allocate(tends(3))
-      case ('rk3')
-        allocate(tends(4))
-      case ('rk4')
-        allocate(tends(5))
-      end select
-      do i = lbound(tends, 1), ubound(tends, 1)
-        call tends(i)%init(global_mesh)
-      end do
-    end if
-
-  end subroutine tend_init_root
 
   subroutine tend_init(this, mesh)
 

@@ -33,6 +33,7 @@
 *.app
 
 build
+run
 *.nc
 *.png
 *.ps

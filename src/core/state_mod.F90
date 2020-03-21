@@ -2,16 +2,14 @@ module state_mod
 
   use const_mod
   use mesh_mod
-  use namelist_mod
   use allocator_mod
+  use parallel_types_mod
 
   implicit none
 
   private
 
   public state_type
-  public states
-  public state_init_root
 
   type state_type
     type(mesh_type), pointer :: mesh => null()
@@ -38,42 +36,18 @@ module state_mod
     real(r8), allocatable, dimension(:,:) :: dpv_lat_t
     real(r8), allocatable, dimension(:,:) :: dpv_lat_n
     real(r8), allocatable, dimension(:,:) :: ke
-    real(r8) vor_sp
-    real(r8) vor_np
-    real(r8) total_m
-    real(r8) total_ke
-    real(r8) total_e
-    real(r8) total_av
-    real(r8) total_pe
+    real(r8) tm
+    real(r8) te
+    real(r8) tpe
+    real(r8) tav
+    type(async_type) async(11)
   contains
     procedure :: init => state_init
     procedure :: clear => state_clear
     final :: state_final
   end type state_type
 
-  type(state_type), allocatable, target :: states(:)
-
 contains
-
-  subroutine state_init_root()
-
-    integer i
-
-    if (.not. allocated(states)) then
-      select case (trim(time_scheme))
-      case ('pc2', 'rk2')
-        allocate(states(3))
-      case ('rk3')
-        allocate(states(4))
-      case ('rk4')
-        allocate(states(5))
-      end select
-      do i = lbound(states, 1), ubound(states, 1)
-        call states(i)%init(global_mesh)
-      end do
-    end if
-
-  end subroutine state_init_root
 
   subroutine state_init(this, mesh)
 
