@@ -31,7 +31,8 @@ module namelist_mod
   character(30) :: split_scheme = ''
   character(30) :: time_scheme = 'pc2'
 
-  real(r8) :: coarse_polar_lats_coef = 0
+  real(r8) :: coarse_polar_lats_exp = 0
+  real(r8) :: coarse_polar_lats_mul = 2
 
   integer :: reduce_factors(100) = 0
   integer :: damp_orders(100) = 0
@@ -71,7 +72,8 @@ module namelist_mod
     split_scheme              , &
     time_scheme               , &
     fast_cycles               , &
-    coarse_polar_lats_coef    , &
+    coarse_polar_lats_exp     , &
+    coarse_polar_lats_mul     , &
     reduce_factors            , &
     damp_orders               , &
     adaptive_damp             , &
