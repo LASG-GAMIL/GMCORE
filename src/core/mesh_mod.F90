@@ -167,9 +167,13 @@ contains
     end do
 
     ! Calculate real dlat which is large at polar region.
-    if (coarse_polar_lats_coef > 0) then
-      this%dlat(1:this%num_full_lat) = exp(-coarse_polar_lats_coef * (abs(this%full_lat(1:this%num_full_lat)) - pi / 2)**2)
-      this%dlat(1:this%num_full_lat) = (1 + this%dlat(1:this%num_full_lat)) / sum(1 + this%dlat(1:this%num_full_lat)) * pi
+    if (coarse_polar_lats_exp > 0) then
+      this%dlat(1:this%num_full_lat) = exp(                                            &
+        -coarse_polar_lats_exp * (abs(this%full_lat(1:this%num_full_lat)) - pi / 2)**2 &
+      )
+      this%dlat(1:this%num_full_lat) = (                           &
+        1 + coarse_polar_lats_mul * this%dlat(1:this%num_full_lat) &
+      ) / sum(1 + coarse_polar_lats_mul * this%dlat(1:this%num_full_lat)) * pi
     else
       this%dlat(1:this%num_half_lat) = dlat0
     end if
@@ -201,9 +205,13 @@ contains
     end do
 
     ! Calculate real dlat which is large at polar region.
-    if (coarse_polar_lats_coef > 0) then
-      this%dlat(1:this%num_half_lat) = exp(-coarse_polar_lats_coef * (abs(this%half_lat(1:this%num_half_lat)) - pi / 2)**2)
-      this%dlat(1:this%num_half_lat) = (1 + this%dlat(1:this%num_half_lat)) / sum(1 + this%dlat(1:this%num_half_lat)) * pi
+    if (coarse_polar_lats_exp > 0) then
+      this%dlat(1:this%num_half_lat) = exp(                                            &
+        -coarse_polar_lats_exp * (abs(this%half_lat(1:this%num_half_lat)) - pi / 2)**2 &
+      )
+      this%dlat(1:this%num_half_lat) = (                           &
+        1 + coarse_polar_lats_mul * this%dlat(1:this%num_half_lat) &
+      ) / sum(1 + coarse_polar_lats_mul * this%dlat(1:this%num_half_lat)) * pi
     else
       this%dlat(1:this%num_half_lat) = dlat0
     end if
