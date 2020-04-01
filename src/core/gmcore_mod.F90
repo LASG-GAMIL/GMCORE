@@ -77,7 +77,7 @@ contains
       splitter => csp2_splitting
     case default
       splitter => no_splitting
-      call log_notice('No fast-slow split.')
+      if (is_root_proc()) call log_notice('No fast-slow split.')
     end select
 
     time_value = split_string(print_interval, ' ', 1)
@@ -207,12 +207,14 @@ contains
     call global_sum(proc%comm, tav)
     call global_sum(proc%comm, tpe)
 
+#ifndef V_POLE
     if (tpe0 == 0) tpe0 = tpe
     if (tpe > tpe0 .and. any(damp_orders /= 0)) then
       damp_2nd_t0 = elapsed_seconds + dt_in_seconds
       if (proc%id == 0) call log_notice('Use 2nd-order damping in reduce regions.')
     end if
     tpe0 = tpe
+#endif
 
     do iblk = 1, size(blocks)
       blocks(iblk)%state(itime)%tm  = tm
@@ -492,7 +494,9 @@ contains
       damp_order = max(block%reduced_mesh(j)%damp_order, block%reduced_mesh(j+1)%damp_order)
 #endif
       if (damp_order > 0) then
+#ifndef V_POLE
         if (damp_2nd_t0 > elapsed_seconds) damp_order = 2
+#endif
         if (damp_order == 1) cycle ! User can choose not to damp except for cases when potential enstrophy increases.
         call zonal_damp(block, damp_order, dt_in_seconds, mesh%le_lat(j), mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%v(:,j))
       end if
