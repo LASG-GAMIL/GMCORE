@@ -92,9 +92,9 @@ contains
 
   end subroutine debug_check_areas
 
-  subroutine debug_check_space_operators(static, state, tend)
+  subroutine debug_check_space_operators(block, state, tend)
 
-    type(static_type), intent(in) :: static
+    type(block_type), intent(inout) :: block
     type(state_type ), intent(in) :: state
     type(tend_type  ), intent(in) :: tend
 
@@ -130,7 +130,7 @@ contains
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         ip_dke = ip_dke + (tend%dmfdlon(i,j) + tend%dmfdlat(i,j)) * state%ke(i,j) * mesh%area_cell(j)
-        ip_dpe = ip_dpe + (tend%dmfdlon(i,j) + tend%dmfdlat(i,j)) * (state%gd(i,j) + static%ghs(i,j)) * mesh%area_cell(j)
+        ip_dpe = ip_dpe + (tend%dmfdlon(i,j) + tend%dmfdlat(i,j)) * (state%gd(i,j) + block%static%ghs(i,j)) * mesh%area_cell(j)
         ip_dmf = ip_dmf + (tend%dmfdlon(i,j) + tend%dmfdlat(i,j)) * mesh%area_cell(j)
       end do
     end do

@@ -307,7 +307,7 @@ contains
       end do
     end select
 
-    ! call debug_check_space_operators(static, state, tend)
+    ! call debug_check_space_operators(block, state, tend)
 
   end subroutine space_operators
 
