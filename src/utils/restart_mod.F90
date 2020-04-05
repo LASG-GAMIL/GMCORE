@@ -27,7 +27,7 @@ contains
     real(r8) seconds
 
     if (restart_interval == 'N/A') then
-      if (proc%id == 0) call log_warning('Parameter restart_interval is not set, so no restart file outputted.')
+      if (is_root_proc()) call log_warning('Parameter restart_interval is not set, so no restart file outputted.')
       return
     end if
     if (case_name == 'N/A') call log_error('Parameter case_name is not set!')
@@ -133,7 +133,7 @@ contains
     call fiona_end_input('r0')
 
     call time_fast_forward(time_value, time_units)
-    call log_notice('Restart to ' // trim(curr_time_str))
+    if (is_root_proc()) call log_notice('Restart to ' // trim(curr_time_str))
 
   end subroutine restart_read
 

@@ -207,14 +207,12 @@ contains
     call global_sum(proc%comm, tav)
     call global_sum(proc%comm, tpe)
 
-#ifndef V_POLE
     if (tpe0 == 0) tpe0 = tpe
     if (tpe > tpe0 .and. any(damp_orders /= 0)) then
       damp_2nd_t0 = elapsed_seconds + dt_in_seconds
       if (proc%id == 0) call log_notice('Use 2nd-order damping in reduce regions.')
     end if
     tpe0 = tpe
-#endif
 
     do iblk = 1, size(blocks)
       blocks(iblk)%state(itime)%tm  = tm
@@ -487,6 +485,15 @@ contains
 
     mesh => state%mesh
 
+    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+      damp_order = block%reduced_mesh(j)%damp_order
+      if (damp_order > 0) then
+        if (damp_order == 1) cycle ! User can choose not to damp except for cases when potential enstrophy increases.
+        if (damp_2nd_t0 > elapsed_seconds) damp_order = 2
+        call zonal_damp(block, damp_order, dt_in_seconds, mesh%de_lon(j), mesh%half_lon_lb, mesh%half_lon_ub, mesh%num_half_lon, state%u(:,j))
+      end if
+    end do
+
     do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
 #ifdef V_POLE
       damp_order = max(block%reduced_mesh(j)%damp_order, block%reduced_mesh(j-1)%damp_order)
@@ -494,23 +501,11 @@ contains
       damp_order = max(block%reduced_mesh(j)%damp_order, block%reduced_mesh(j+1)%damp_order)
 #endif
       if (damp_order > 0) then
-#ifndef V_POLE
         if (damp_2nd_t0 > elapsed_seconds) damp_order = 2
-#endif
         if (damp_order == 1) cycle ! User can choose not to damp except for cases when potential enstrophy increases.
         call zonal_damp(block, damp_order, dt_in_seconds, mesh%le_lat(j), mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%v(:,j))
       end if
     end do
-#ifndef V_POLE
-    if (mesh%has_south_pole()) then
-      j = mesh%half_lat_ibeg_no_pole
-      state%v(:,j) = 0.2_r8 * state%v(:,j) + 0.8_r8 * state%v(:,j+1)
-    end if
-    if (mesh%has_north_pole()) then
-      j = mesh%half_lat_iend_no_pole
-      state%v(:,j) = 0.2_r8 * state%v(:,j) + 0.8_r8 * state%v(:,j-1)
-    end if
-#endif
 
   end subroutine damp_state
 
