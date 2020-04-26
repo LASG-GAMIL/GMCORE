@@ -98,7 +98,7 @@ contains
     type(mesh_type), pointer :: mesh
     real(r8), dimension(block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
                         block%mesh%half_lat_lb:block%mesh%half_lat_ub) :: f0, df
-    real(r8), parameter :: latlon_damp_coef = 1.0d-20
+    real(r8), parameter :: latlon_damp_coef = 1.0d-12
     integer i, j, o
     integer sign
 
@@ -107,17 +107,17 @@ contains
     df = 0
     f0 = f
     do o = 1, order / 2
-      do j = mesh%half_lat_ibeg_no_pole + 1, mesh%half_lat_iend_no_pole - 1
+      do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          df(i,j) = (f0(i+1,j) - 2 * f0(i,j) + f0(i-1,j)) / mesh%le_lat(j)**2 + &
+          df(i,j) = (f0(i+1,j) - 2 * f0(i,j) + f0(i-1,j)) / mesh%le_lat(j)**2 + ( &
 #ifdef V_POLE
-                    ((f0(i,j+1) - f0(i,j  )) * mesh%full_cos_lat(j  )  - &
-                     (f0(i,j  ) - f0(i,j-1)) * mesh%full_cos_lat(j-1)) / &
+                    (f0(i,j+1) - f0(i,j  )) * mesh%full_cos_lat(j  ) - &
+                    (f0(i,j  ) - f0(i,j-1)) * mesh%full_cos_lat(j-1)   &
 #else
-                    ((f0(i,j+1) - f0(i,j  )) * mesh%full_cos_lat(j+1)  - &
-                     (f0(i,j  ) - f0(i,j-1)) * mesh%full_cos_lat(j  )) / &
+                    (f0(i,j+1) - f0(i,j  )) * mesh%full_cos_lat(j+1) - &
+                    (f0(i,j  ) - f0(i,j-1)) * mesh%full_cos_lat(j  )   &
 #endif
-                    mesh%de_lat(j)**2 * mesh%half_cos_lat(j)
+                    ) / mesh%de_lat(j)**2 / mesh%half_cos_lat(j)
         end do
       end do
       if (o /= order / 2) then
@@ -128,7 +128,7 @@ contains
 
     sign = (-1)**(order / 2 + 1)
 
-    do j = mesh%half_lat_ibeg_no_pole + 1, mesh%half_lat_iend_no_pole - 1
+    do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
         f(i,j) = f(i,j) + sign * dt * latlon_damp_coef * df(i,j)
       end do
