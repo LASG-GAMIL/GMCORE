@@ -6,6 +6,7 @@ module pv_mod
   use state_mod
   use block_mod
   use parallel_mod
+  use damp_mod
 
   implicit none
 
@@ -237,6 +238,7 @@ contains
     real(r8) u, v
     integer i, j
 
+    call latlon_damp_vtx(block, 4, dt, state%pv)
     call calc_dpv_edge(block, state)
 
     mesh => state%mesh

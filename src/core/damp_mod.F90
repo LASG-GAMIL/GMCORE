@@ -9,18 +9,7 @@ module damp_mod
   private
 
   public zonal_damp
-
-  integer, parameter :: diff_halo_width(2:8) = [1, 2, 2, 3, 3, 4, 4]
-
-  real(r8) :: diff_weights(9,2:8) = reshape([ &
-     1, -2,   1,   0,   0,   0,   0,   0,  0,  & ! 2
-    -1,  3, - 3,   1,   0,   0,   0,   0,  0,  & ! 3
-     1, -4,   6, - 4,   1,   0,   0,   0,  0,  & ! 4
-    -1,  5, -10,  10, - 5,   1,   0,   0,  0,  & ! 5
-     1, -6,  15, -20,  15, - 6,   1,   0,  0,  & ! 6
-    -1,  7, -21,  35, -35,  21, - 7,   1,  0,  & ! 7
-     1, -8,  28, -56,  70, -56,  28, - 8,  1   & ! 8
-  ], [9, 7])
+  public latlon_damp_vtx
 
 contains
 
@@ -35,6 +24,18 @@ contains
     integer, intent(in) :: n
     real(r8), intent(inout) :: f(lb:ub)
     type(async_type), intent(inout), optional :: async
+
+    integer, parameter :: diff_halo_width(2:8) = [1, 2, 2, 3, 3, 4, 4]
+
+    real(r8) :: diff_weights(9,2:8) = reshape([  &
+       1, -2,   1,   0,   0,   0,   0,   0,  0,  & ! 2
+      -1,  3, - 3,   1,   0,   0,   0,   0,  0,  & ! 3
+       1, -4,   6, - 4,   1,   0,   0,   0,  0,  & ! 4
+      -1,  5, -10,  10, - 5,   1,   0,   0,  0,  & ! 5
+       1, -6,  15, -20,  15, - 6,   1,   0,  0,  & ! 6
+      -1,  7, -21,  35, -35,  21, - 7,   1,  0,  & ! 7
+       1, -8,  28, -56,  70, -56,  28, - 8,  1   & ! 8
+    ], [9, 7])
 
     integer i, ns
     real(r8) g(lb:ub)
@@ -77,5 +78,64 @@ contains
     end if
 
   end subroutine zonal_damp
+
+  subroutine latlon_damp_vtx(block, order, dt, f)
+
+    ! Scalar diffusion:
+    !
+    ! 2nd order:
+    !
+    !   ∂ F         1      ∂² F        1      ∂          ∂ F
+    !   --- = 𝞶 ---------- ---- + 𝞶 --------- --- cos(φ) ---
+    !   ∂ t     a² cos²(φ) ∂ λ²     a² cos(φ) ∂ φ        ∂ φ
+
+    type(block_type), intent(in), target :: block
+    integer, intent(in) :: order
+    real(r8), intent(in) :: dt
+    real(r8), intent(inout) :: f(block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
+                                 block%mesh%half_lat_lb:block%mesh%half_lat_ub)
+
+    type(mesh_type), pointer :: mesh
+    real(r8), dimension(block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
+                        block%mesh%half_lat_lb:block%mesh%half_lat_ub) :: f0, df
+    real(r8), parameter :: latlon_damp_coef = 1.0d-20
+    integer i, j, o
+    integer sign
+
+    mesh => block%mesh
+
+    df = 0
+    f0 = f
+    do o = 1, order / 2
+      do j = mesh%half_lat_ibeg_no_pole + 1, mesh%half_lat_iend_no_pole - 1
+        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+          df(i,j) = (f0(i+1,j) - 2 * f0(i,j) + f0(i-1,j)) / mesh%le_lat(j)**2 + &
+#ifdef V_POLE
+                    ((f0(i,j+1) - f0(i,j  )) * mesh%full_cos_lat(j  )  - &
+                     (f0(i,j  ) - f0(i,j-1)) * mesh%full_cos_lat(j-1)) / &
+#else
+                    ((f0(i,j+1) - f0(i,j  )) * mesh%full_cos_lat(j+1)  - &
+                     (f0(i,j  ) - f0(i,j-1)) * mesh%full_cos_lat(j  )) / &
+#endif
+                    mesh%de_lat(j)**2 * mesh%half_cos_lat(j)
+        end do
+      end do
+      if (o /= order / 2) then
+        call fill_halo(block, df, full_lon=.false., full_lat=.false.)
+        f0 = df
+      end if
+    end do
+
+    sign = (-1)**(order / 2 + 1)
+
+    do j = mesh%half_lat_ibeg_no_pole + 1, mesh%half_lat_iend_no_pole - 1
+      do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+        f(i,j) = f(i,j) + sign * dt * latlon_damp_coef * df(i,j)
+      end do
+    end do
+
+    call fill_halo(block, f, full_lon=.false., full_lat=.false.)
+
+  end subroutine latlon_damp_vtx
 
 end module damp_mod

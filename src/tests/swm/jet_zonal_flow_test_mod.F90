@@ -30,7 +30,7 @@ contains
     type(block_type), intent(inout), target :: block
 
     integer i, j, neval, ierr
-    real(r8) abserr, lon
+    real(r8) abserr
     type(mesh_type), pointer :: mesh
 
     mesh => block%mesh
@@ -47,21 +47,22 @@ contains
     block%state(1)%v = 0.0_r8
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+      i = mesh%half_lon_ibeg
       if (j == mesh%full_lat_ibeg) then
-        block%state(1)%gd(0,j) = gh0
+        block%state(1)%gd(i,j) = gh0
       else
-        call qags(gh_integrand, -0.5*pi, mesh%full_lat(j), 1.0e-10, 1.0e-3, block%state(1)%gd(0,j), abserr, neval, ierr)
+        call qags(gh_integrand, -0.5*pi, mesh%full_lat(j), 1.0e-12, 1.0e-3, block%state(1)%gd(i,j), abserr, neval, ierr)
         if (ierr /= 0) then
           call log_error('Failed to calculate integration at (' // to_string(i) // ',' // to_string(j) // ')!')
         end if
-        block%state(1)%gd(0,j) = gh0 - block%state(1)%gd(0,j)
+        block%state(1)%gd(i,j) = gh0 - block%state(1)%gd(i,j)
       end if
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-        block%state(1)%gd(i,j) = block%state(1)%gd(0,j)
+        block%state(1)%gd(i,j) = block%state(1)%gd(mesh%half_lon_ibeg,j)
         ! Add perturbation.
         block%state(1)%gd(i,j) = block%state(1)%gd(i,j) + ghd * &
           cos(mesh%full_lat(j)) * &
-          exp(-(merge(mesh%full_lon(i) - 2.0_r8 * pi, mesh%full_lon(i), mesh%full_lon(i) > pi)  / alpha)**2) * &
+          exp(-(merge(mesh%full_lon(i) - 2*pi, mesh%full_lon(i), mesh%full_lon(i) > pi)  / alpha)**2) * &
           exp(-((lat2 - mesh%full_lat(j)) / beta)**2)
       end do
     end do
