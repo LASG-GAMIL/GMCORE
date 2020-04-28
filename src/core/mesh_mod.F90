@@ -502,7 +502,7 @@ contains
       this%half_cos_lon(i) = parent%half_cos_lon(i)
     end do
 
-    this%dlat = parent%dlat(lbound(this%dlat, 1):lbound(this%dlat, 1))
+    this%dlat = parent%dlat(lbound(this%dlat, 1):ubound(this%dlat, 1))
     do j = this%full_lat_lb, this%full_lat_ub
       this%full_lat(j) = parent%full_lat(j)
       this%full_lat_deg(j) = parent%full_lat_deg(j)
