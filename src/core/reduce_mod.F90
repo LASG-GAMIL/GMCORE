@@ -133,7 +133,7 @@ contains
     integer i, buf_j
 
     ! Check if decomposition is OK for reduce.
-    if (mod(raw_mesh%num_full_lon / reduce_factor, proc%dims(1)) /= 0) then
+    if (mod(raw_mesh%num_full_lon / reduce_factor, proc%cart_dims(1)) /= 0) then
       call log_error('Parallel zonal decomposition cannot divide reduced zonal grids!')
     end if
 

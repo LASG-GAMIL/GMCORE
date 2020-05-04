@@ -42,7 +42,8 @@ module gmcore_mod
   procedure(integrator_interface), pointer :: integrator
   procedure(splitter_interface), pointer :: splitter
 
-  real(r8) :: damp_2nd_t0 = -1
+  real(r8) :: shrink_ratio = 1
+  real(r8) :: shrink_cound_down = 0
 
 contains
 
@@ -107,9 +108,9 @@ contains
     call output(proc%blocks, old)
 
     do while (.not. time_is_finished())
-      call time_integrate(dt_in_seconds, proc%blocks)
+      call time_integrate(dt_in_seconds * shrink_ratio, proc%blocks)
       if (proc%id == 0 .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
-      call time_advance()
+      call time_advance(dt_in_seconds * shrink_ratio)
       call operators_prepare(proc%blocks, old)
       call diagnose(proc%blocks, old)
       call output(proc%blocks, old)
@@ -139,7 +140,7 @@ contains
         time1 = time2
       end if
       call history_write_state(blocks, itime)
-      ! call history_write_debug(blocks, itime)
+      call history_write_debug(blocks, itime)
     end if
     if (time_is_alerted('restart_write')) then
       call restart_write(blocks, itime)
@@ -208,9 +209,21 @@ contains
     call global_sum(proc%comm, tpe)
 
     if (tpe0 == 0) tpe0 = tpe
-    if (tpe > tpe0 .and. any(damp_orders /= 0)) then
-      damp_2nd_t0 = elapsed_seconds + dt_in_seconds
-      if (proc%id == 0) call log_notice('Use 2nd-order damping in reduce regions.')
+    if (shrink_cound_down == 0) then
+      if (shrink_ratio /= 1) shrink_ratio = 1
+    else
+      shrink_cound_down = shrink_cound_down - 1
+      do iblk = 1, size(blocks)
+        call damp_state(blocks(iblk), blocks(iblk)%state(itime))
+      end do
+    end if
+    if (tpe > tpe0) then
+      ! Shrink time step for stability.
+      if (shrink_cound_down == 0) then
+        shrink_ratio = 0.75
+        ! if (proc%id == 0) call log_notice('Shrink time step by ' // to_string(shrink_ratio, 8) // '.')
+        shrink_cound_down = 3600.0 / (dt_in_seconds * shrink_ratio)
+      end if
     end if
     tpe0 = tpe
 
@@ -223,6 +236,8 @@ contains
     call log_add_diag('tm' , tm )
     call log_add_diag('te' , te )
     call log_add_diag('tpe', tpe)
+    call log_add_diag('cnt', shrink_cound_down)
+    call log_add_diag('shk', shrink_ratio)
 
   end subroutine diagnose
 
@@ -471,7 +486,19 @@ contains
     end do
     call fill_halo(block, new_state%v, full_lon=.true., full_lat=.false.)
 
-    call damp_state(block, new_state)
+    !!! TESTING !!!
+    if (mesh%has_south_pole()) then
+      j = mesh%half_lat_ibeg_no_pole
+      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+        new_state%v(i,j) = 0.2 * old_state%v(i,j) + 0.8 * old_state%v(i,j+1) + dt * (0.2 * tend%dv(i,j) + 0.8 * tend%dv(i,j+1))
+      end do
+    end if
+    if (mesh%has_north_pole()) then
+      j = mesh%half_lat_iend_no_pole
+      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+        new_state%v(i,j) = 0.2 * old_state%v(i,j) + 0.8 * old_state%v(i,j-1) + dt * (0.2 * tend%dv(i,j) + 0.8 * tend%dv(i,j-1))
+      end do
+    end if
 
   end subroutine update_state
 
@@ -489,7 +516,6 @@ contains
       damp_order = block%reduced_mesh(j)%damp_order
       if (damp_order > 0) then
         if (damp_order == 1) cycle ! User can choose not to damp except for cases when potential enstrophy increases.
-        if (damp_2nd_t0 > elapsed_seconds) damp_order = 2
         call zonal_damp(block, damp_order, dt_in_seconds, mesh%de_lon(j), mesh%half_lon_lb, mesh%half_lon_ub, mesh%num_half_lon, state%u(:,j))
       end if
     end do
@@ -501,7 +527,6 @@ contains
       damp_order = max(block%reduced_mesh(j)%damp_order, block%reduced_mesh(j+1)%damp_order)
 #endif
       if (damp_order > 0) then
-        if (damp_2nd_t0 > elapsed_seconds) damp_order = 2
         if (damp_order == 1) cycle ! User can choose not to damp except for cases when potential enstrophy increases.
         call zonal_damp(block, damp_order, dt_in_seconds, mesh%le_lat(j), mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%v(:,j))
       end if

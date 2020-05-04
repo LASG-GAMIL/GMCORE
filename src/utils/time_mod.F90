@@ -113,8 +113,10 @@ contains
 
   end subroutine time_swap_indices
 
-  subroutine time_advance()
-    
+  subroutine time_advance(dt_in_seconds)
+
+    real(r8), intent(in), optional :: dt_in_seconds
+
     type(hash_table_iterator_type) iter
 
     ! Update alerts.
@@ -133,8 +135,13 @@ contains
     call time_swap_indices(old_time_idx, new_time_idx)
 
     time_step = time_step + 1
-    elapsed_seconds = elapsed_seconds + dt%total_seconds()
-    curr_time = curr_time + dt
+    if (present(dt_in_seconds)) then
+      elapsed_seconds = elapsed_seconds + dt_in_seconds
+      curr_time = curr_time + create_timedelta(seconds=dt_in_seconds)
+    else
+      elapsed_seconds = elapsed_seconds + dt%total_seconds()
+      curr_time = curr_time + dt
+    end if
     curr_time_str = curr_time%format('%Y-%m-%dT%H_%M_%S')
 
   end subroutine time_advance

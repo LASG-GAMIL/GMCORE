@@ -40,12 +40,12 @@ module namelist_mod
   
   ! Nest settings
   character(30) :: nest_time_scheme   = 'pc2'
-  integer       :: nest_max_dom       = 0
-  integer       :: nest_parent_id(20) = 0
-  real(r8)      :: nest_start_lon(20) = 0.0_r8
-  real(r8)      :: nest_end_lon  (20) = 0.0_r8
-  real(r8)      :: nest_start_lat(20) = 0.0_r8
-  real(r8)      :: nest_end_lat  (20) = 0.0_r8
+  integer       :: nest_max_dom       = 1
+  integer       :: nest_parent_id(20) = 1
+  real(r8)      :: nest_lon_beg(20) = inf
+  real(r8)      :: nest_lon_end(20) = inf
+  real(r8)      :: nest_lat_beg(20) = inf
+  real(r8)      :: nest_lat_end(20) = inf
   
   namelist /gmcore_swm_control/ &
     case_name                 , &
@@ -80,10 +80,10 @@ module namelist_mod
     nest_time_scheme          , &
     nest_max_dom              , &
     nest_parent_id            , &
-    nest_start_lon            , &
-    nest_end_lon              , &
-    nest_start_lat            , &
-    nest_end_lat
+    nest_lon_beg              , &
+    nest_lon_end              , &
+    nest_lat_beg              , &
+    nest_lat_end
 
 contains
 

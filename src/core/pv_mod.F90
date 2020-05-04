@@ -238,7 +238,6 @@ contains
     real(r8) u, v
     integer i, j
 
-    call latlon_damp_vtx(block, 4, dt, state%pv)
     call calc_dpv_edge(block, state)
 
     mesh => state%mesh

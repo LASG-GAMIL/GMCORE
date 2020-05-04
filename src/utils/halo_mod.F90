@@ -32,19 +32,20 @@ module halo_mod
     integer :: send_type(2,2) = MPI_DATATYPE_NULL
     integer :: recv_type(2,2) = MPI_DATATYPE_NULL
   contains
-    procedure :: init => halo_init
+    procedure :: init_normal => halo_init_normal
+    procedure :: init_nest => halo_init_nest
     final :: halo_final
   end type halo_type
 
 contains
 
-  subroutine halo_init(this, mesh, proc_id, iblk, west_lat_ibeg, west_lat_iend, &
-                       east_lat_ibeg, east_lat_iend, south_lon_ibeg, south_lon_iend, &
-                       north_lon_ibeg, north_lon_iend)
+  subroutine halo_init_normal(this, mesh, ngb_proc_id, iblk, west_lat_ibeg, west_lat_iend, &
+                              east_lat_ibeg, east_lat_iend, south_lon_ibeg, south_lon_iend, &
+                              north_lon_ibeg, north_lon_iend)
 
     class(halo_type), intent(out) :: this
     type(mesh_type), intent(in) :: mesh
-    integer, intent(in), optional :: proc_id
+    integer, intent(in), optional :: ngb_proc_id
     integer, intent(in), optional :: iblk
     integer, intent(in), optional :: west_lat_ibeg
     integer, intent(in), optional :: west_lat_iend
@@ -57,8 +58,8 @@ contains
 
     integer i, j, ierr
 
-    if (present(proc_id)) then
-      this%proc_id = proc_id
+    if (present(ngb_proc_id)) then
+      this%proc_id = ngb_proc_id
     else if (present(iblk)) then
       call log_error('Handle internal halo!', __FILE__, __LINE__)
     end if
@@ -205,7 +206,15 @@ contains
       end do
     end do
 
-  end subroutine halo_init
+  end subroutine halo_init_normal
+
+  subroutine halo_init_nest(this, parent_mesh, parent_proc_id)
+
+    class(halo_type), intent(inout) :: this
+    type(mesh_type), intent(in) :: parent_mesh
+    integer, intent(in) :: parent_proc_id
+
+  end subroutine halo_init_nest
 
   subroutine halo_final(this)
 

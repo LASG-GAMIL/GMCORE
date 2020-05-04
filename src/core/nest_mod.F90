@@ -2,10 +2,7 @@ module nest_mod
 
   use const_mod
   use namelist_mod
-  use mesh_mod
-  use state_mod
-  use static_mod
-  use tend_mod
+  use block_mod
 
   implicit none
 
@@ -15,8 +12,6 @@ module nest_mod
   public nest_downward
   public nest_upward
   public nest_max_dom
-
-  integer :: num_nested_dom = 0
 
 contains
 
