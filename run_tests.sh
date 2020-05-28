@@ -1,5 +1,7 @@
 #!/bin/bash
 
+np=10
+
 # Fetch submodules if needed.
 git submodule update --init
 
@@ -21,6 +23,9 @@ if (( $# == 1 )); then
   cp src/tests/swm/namelist.swm.jz.360x180  $work_dir
   cp src/tests/swm/namelist.swm.cp.360x180  $work_dir
   cp build/gmcore_swm_driver.exe $work_dir
+  for namelist in $(ls $work_dir/namelist.swm.*); do
+    sed -i "s/num_proc_lat = [0-9]*/num_proc_lat = $np/" $namelist
+  done
 else
   echo '[Error]: You should set a work directory to run the model!'
   exit 1
@@ -28,7 +33,7 @@ fi
 
 cd $work_dir
 
-mpirun='mpiexec -np 2'
+mpirun="mpiexec -np $np"
 
 echo '=========================================================================='
 echo 'Rossby-Haurwitz wave test'
