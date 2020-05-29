@@ -22,6 +22,7 @@ if (( $# == 1 )); then
   cp src/tests/swm/namelist.swm.sg.360x180  $work_dir
   cp src/tests/swm/namelist.swm.jz.360x180  $work_dir
   cp src/tests/swm/namelist.swm.cp.360x180  $work_dir
+  cp src/tests/swm/namelist.swm.sw.360x180  $work_dir
   cp build/gmcore_swm_driver.exe $work_dir
   for namelist in $(ls $work_dir/namelist.swm.*); do
     sed -i "s/num_proc_lat = [0-9]*/num_proc_lat = $np/" $namelist
@@ -54,3 +55,7 @@ time $mpirun ./gmcore_swm_driver.exe namelist.swm.cp.360x180
 echo '=========================================================================='
 echo 'Steady geostrophic flow test'
 time $mpirun ./gmcore_swm_driver.exe namelist.swm.sg.360x180
+
+echo '=========================================================================='
+echo 'Shallow water waves test'
+time $mpirun ./gmcore_swm_driver.exe namelist.swm.sw.360x180

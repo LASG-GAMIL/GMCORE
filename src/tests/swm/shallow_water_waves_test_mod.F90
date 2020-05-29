@@ -102,13 +102,13 @@ contains
 
     mesh => block%mesh
 
-    allocate(u(mesh%half_lon_ibeg:mesh%half_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend,1))
-    allocate(v(mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%half_lat_ibeg:mesh%half_lat_iend,1))
-    allocate(h(mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend,1))
-    call getFields(mesh%full_lat(mesh%full_lat_ibeg:mesh%full_lat_iend), &
-                   mesh%full_lon(mesh%full_lon_ibeg:mesh%full_lon_iend), &
-                   mesh%half_lat(mesh%half_lat_ibeg:mesh%half_lat_iend), &
-                   mesh%half_lon(mesh%half_lon_ibeg:mesh%half_lon_iend), [0.0_dp], u, v, h, 0)
+    allocate(u(mesh%half_lon_lb:mesh%half_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,1))
+    allocate(v(mesh%full_lon_lb:mesh%full_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,1))
+    allocate(h(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,1))
+    call getFields(mesh%full_lat(mesh%full_lat_lb:mesh%full_lat_ub), &
+                   mesh%full_lon(mesh%full_lon_lb:mesh%full_lon_ub), &
+                   mesh%half_lat(mesh%half_lat_lb:mesh%half_lat_ub), &
+                   mesh%half_lon(mesh%half_lon_lb:mesh%half_lon_ub), [0.0_dp], u, v, h, 0)
     call getPhaseSpeed(C, 0)
     if (is_root_proc()) call log_notice('Phase speed is ' // trim(to_string(C, 20)))
 
