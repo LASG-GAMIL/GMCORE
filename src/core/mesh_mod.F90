@@ -22,18 +22,24 @@ module mesh_mod
     integer num_half_lon
     integer num_full_lat
     integer num_half_lat
+    integer num_full_lev
+    integer num_half_lev
     integer full_lon_ibeg
     integer full_lon_iend
     integer full_lat_ibeg
     integer full_lat_iend
     integer full_lat_ibeg_no_pole
     integer full_lat_iend_no_pole
+    integer full_lev_ibeg
+    integer full_lev_iend
     integer half_lon_ibeg
     integer half_lon_iend
     integer half_lat_ibeg
     integer half_lat_iend
     integer half_lat_ibeg_no_pole
     integer half_lat_iend_no_pole
+    integer half_lev_ibeg
+    integer half_lev_iend
     integer full_lon_lb
     integer full_lon_ub
     integer half_lon_lb
@@ -42,6 +48,10 @@ module mesh_mod
     integer full_lat_ub
     integer half_lat_lb
     integer half_lat_ub
+    integer full_lev_lb
+    integer full_lev_ub
+    integer half_lev_lb
+    integer half_lev_ub
     real(r8) start_lon
     real(r8) end_lon
     real(r8) start_lat
@@ -53,6 +63,8 @@ module mesh_mod
     real(r8), allocatable :: half_lon(:)
     real(r8), allocatable :: full_lat(:)
     real(r8), allocatable :: half_lat(:)
+    real(r8), allocatable :: full_lev(:)
+    real(r8), allocatable :: half_lev(:)
     real(r8), allocatable :: full_cos_lon(:)
     real(r8), allocatable :: half_cos_lon(:)
     real(r8), allocatable :: full_sin_lon(:)
@@ -139,6 +151,12 @@ contains
     this%half_lat_ibeg = 1
     this%half_lat_iend = this%num_half_lat
 #endif
+    this%num_full_lev  = num_lev
+    this%num_half_lev  = num_lev + 1
+    this%full_lev_ibeg = 1
+    this%full_lev_iend = this%num_full_lev
+    this%half_lev_ibeg = 1
+    this%half_lev_iend = this%num_half_lev
 
     this%id             = merge(id            , -1, present(id))
     this%lon_halo_width = merge(lon_halo_width,  1, present(lon_halo_width))
@@ -561,6 +579,10 @@ contains
     this%half_lon_ub = this%half_lon_iend + this%lon_halo_width
     this%half_lat_lb = this%half_lat_ibeg - this%lat_halo_width
     this%half_lat_ub = this%half_lat_iend + this%lat_halo_width
+    this%full_lev_lb = this%full_lev_ibeg
+    this%full_lev_ub = this%full_lev_iend
+    this%half_lev_lb = this%half_lev_ibeg
+    this%half_lev_ub = this%half_lev_iend
 
 #ifdef V_POLE
     allocate(this%dlat               (this%full_lat_lb:this%full_lat_ub)); this%dlat                = 0.0_r8
@@ -571,6 +593,8 @@ contains
     allocate(this%half_lon           (this%half_lon_lb:this%half_lon_ub)); this%half_lon            = inf
     allocate(this%full_lat           (this%full_lat_lb:this%full_lat_ub)); this%full_lat            = inf
     allocate(this%half_lat           (this%half_lat_lb:this%half_lat_ub)); this%half_lat            = inf
+    allocate(this%full_lev           (this%full_lev_lb:this%full_lev_ub)); this%full_lev            = inf
+    allocate(this%half_lev           (this%half_lev_lb:this%half_lev_ub)); this%half_lev            = inf
     allocate(this%full_cos_lon       (this%full_lon_lb:this%full_lon_ub)); this%full_cos_lon        = inf
     allocate(this%half_cos_lon       (this%half_lon_lb:this%half_lon_ub)); this%half_cos_lon        = inf
     allocate(this%full_sin_lon       (this%full_lon_lb:this%full_lon_ub)); this%full_sin_lon        = inf
@@ -682,8 +706,10 @@ contains
 
     if (allocated(this%full_lon        )) deallocate(this%full_lon        )
     if (allocated(this%full_lat        )) deallocate(this%full_lat        )
+    if (allocated(this%full_lev        )) deallocate(this%full_lev        )
     if (allocated(this%half_lon        )) deallocate(this%half_lon        )
     if (allocated(this%half_lat        )) deallocate(this%half_lat        )
+    if (allocated(this%half_lev        )) deallocate(this%half_lev        )
     if (allocated(this%full_cos_lon    )) deallocate(this%full_cos_lon    )
     if (allocated(this%half_cos_lon    )) deallocate(this%half_cos_lon    )
     if (allocated(this%full_sin_lon    )) deallocate(this%full_sin_lon    )

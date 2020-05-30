@@ -16,6 +16,7 @@ module namelist_mod
 
   integer num_lon
   integer num_lat
+  integer num_lev
 
   integer :: num_proc_lon(20) = 0
   integer :: num_proc_lat(20) = 0
@@ -53,6 +54,7 @@ module namelist_mod
     case_desc                 , &
     num_lon                   , &
     num_lat                   , &
+    num_lev                   , &
     num_proc_lon              , &
     num_proc_lat              , &
     start_time                , &
