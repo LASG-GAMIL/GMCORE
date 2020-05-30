@@ -14,10 +14,10 @@ module mountain_zonal_flow_test_mod
 
   real(r8), parameter :: alpha = 0.0
   real(r8), parameter :: u0 = 20.0
-  real(r8), parameter :: gd0 = 5960.0 * g
+  real(r8), parameter :: gz0 = 5960.0 * g
   real(r8), parameter :: lon0 = pi * 1.5
   real(r8), parameter :: lat0 = pi / 6.0
-  real(r8), parameter :: ghs0 = 2000.0 * g
+  real(r8), parameter :: gzs0 = 2000.0 * g
   real(r8), parameter :: R = pi / 9.0
 
 contains
@@ -40,10 +40,10 @@ contains
         dlon = abs(mesh%full_lon(i) - lon0)
         dlon = min(dlon, 2 * pi - dlon)
         d = min(R, sqrt(dlon**2 + (mesh%full_lat(j) - lat0)**2))
-        block%static%ghs(i,j) = ghs0 * (1.0 - d / R)
+        block%static%gzs(i,j) = gzs0 * (1.0 - d / R)
       end do
     end do
-    call fill_halo(block, block%static%ghs, full_lon=.true., full_lat=.true.)
+    call fill_halo(block, block%static%gzs, full_lon=.true., full_lat=.true.)
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       cos_lat = mesh%full_cos_lat(j)
@@ -68,10 +68,10 @@ contains
       sin_lat = mesh%full_sin_lat(j)
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         cos_lon = mesh%full_cos_lon(i)
-        block%state(1)%gd(i,j) = gd0 - (radius * omega * u0 + u0**2 * 0.5) * (sin_lat * cos_alpha - cos_lon * cos_lat * sin_alpha)**2 - block%static%ghs(i,j)
+        block%state(1)%gz(i,j) = gz0 - (radius * omega * u0 + u0**2 * 0.5) * (sin_lat * cos_alpha - cos_lon * cos_lat * sin_alpha)**2
       end do
     end do
-    call fill_halo(block, block%state(1)%gd, full_lon=.true., full_lat=.true.)
+    call fill_halo(block, block%state(1)%gz, full_lon=.true., full_lat=.true.)
 
   end subroutine mountain_zonal_flow_test_set_initial_condition
 

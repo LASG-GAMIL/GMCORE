@@ -14,7 +14,7 @@ module rossby_haurwitz_wave_test_mod
 
   real(r8), parameter :: R = 4.0d0
   real(r8), parameter :: omg = 7.848d-6
-  real(r8), parameter :: gd0 = 8.0d3 * g
+  real(r8), parameter :: gz0 = 8.0d3 * g
 
 contains
 
@@ -22,7 +22,7 @@ contains
   !
   ! v = - a ω R cosᴿ⁻¹φ sinφ sinRλ
   !
-  ! gd = gd0 + a² A(φ) + a² B(φ) cosRλ + a² C(φ) cos2Rλ
+  ! gz = gz0 + a² A(φ) + a² B(φ) cosRλ + a² C(φ) cos2Rλ
   !
   ! A(φ) = 1/2 ω (2 Ω + ω) cos²φ + 1/4 ω² cos²ᴿφ ((R + 1) cos²φ + (2 R² - R - 2) - 2 R² cos⁻²φ)
   ! B(φ) = 2 (Ω + ω) ω cosᴿφ ((R² + 2 R + 2) - (R + 1)² cos²φ) / (R + 1) / (R + 2)
@@ -40,7 +40,7 @@ contains
 
     mesh => block%mesh
 
-    block%static%ghs(:,:) = 0.0
+    block%static%gzs(:,:) = 0.0
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       cos_lat = mesh%full_cos_lat(j)
@@ -75,10 +75,10 @@ contains
       c = 0.25 * omg**2 * cos_lat**(2 * R) * ((R + 1) * cos_lat**2 - R - 2)
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         lon = mesh%full_lon(i)
-        block%state(1)%gd(i,j) = gd0 + radius**2 * (a + b * cos(R * lon) + c * cos(2 * R * lon))
+        block%state(1)%gz(i,j) = gz0 + radius**2 * (a + b * cos(R * lon) + c * cos(2 * R * lon))
       end do
     end do
-    call fill_halo(block, block%state(1)%gd, full_lon=.true., full_lat=.true.)
+    call fill_halo(block, block%state(1)%gz, full_lon=.true., full_lat=.true.)
 
   end subroutine rossby_haurwitz_wave_test_set_initial_condition
 

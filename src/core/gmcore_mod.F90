@@ -108,9 +108,9 @@ contains
     call output(proc%blocks, old)
 
     do while (.not. time_is_finished())
-      call time_integrate(dt_in_seconds * shrink_ratio, proc%blocks)
+      call time_integrate(dt_in_seconds, proc%blocks)
       if (proc%id == 0 .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
-      call time_advance(dt_in_seconds * shrink_ratio)
+      call time_advance(dt_in_seconds)
       call operators_prepare(proc%blocks, old)
       call diagnose(proc%blocks, old)
       call output(proc%blocks, old)
@@ -171,7 +171,7 @@ contains
 
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          tm = tm + state%gd(i,j) * mesh%area_cell(j)
+          tm = tm + state%m(i,j) * mesh%area_cell(j)
         end do
       end do
 
@@ -187,7 +187,7 @@ contains
       end do
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          te = te + (state%gd(i,j)**2 / g * 0.5_r8 + state%gd(i,j) * static%ghs(i,j) / g) * mesh%area_cell(j)
+          te = te + (state%m(i,j)**2 * g * 0.5_r8 + state%m(i,j) * static%gzs(i,j)) * mesh%area_cell(j)
         end do
       end do
 
@@ -252,7 +252,7 @@ contains
     type(mesh_type), pointer :: mesh
     integer i, j
 
-    call wait_halo(state%async(async_gd))
+    call wait_halo(state%async(async_gz))
     call wait_halo(state%async(async_u))
     call wait_halo(state%async(async_v))
 
@@ -467,10 +467,10 @@ contains
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        new_state%gd(i,j) = old_state%gd(i,j) + dt * tend%dgd(i,j)
+        new_state%gz(i,j) = old_state%gz(i,j) + dt * tend%dgd(i,j)
       end do
     end do
-    call fill_halo(block, new_state%gd, full_lon=.true., full_lat=.true., async=new_state%async(async_gd))
+    call fill_halo(block, new_state%gz, full_lon=.true., full_lat=.true., async=new_state%async(async_gz))
 
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend

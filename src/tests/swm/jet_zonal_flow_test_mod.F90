@@ -35,7 +35,7 @@ contains
 
     mesh => block%mesh
 
-    block%static%ghs = 0.0_r8
+    block%static%gzs = 0.0_r8
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
@@ -49,24 +49,24 @@ contains
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       i = mesh%half_lon_ibeg
       if (j == mesh%full_lat_ibeg) then
-        block%state(1)%gd(i,j) = gh0
+        block%state(1)%gz(i,j) = gh0
       else
-        call qags(gh_integrand, -0.5*pi, mesh%full_lat(j), 1.0e-12, 1.0e-3, block%state(1)%gd(i,j), abserr, neval, ierr)
+        call qags(gh_integrand, -0.5*pi, mesh%full_lat(j), 1.0e-12, 1.0e-3, block%state(1)%gz(i,j), abserr, neval, ierr)
         if (ierr /= 0) then
           call log_error('Failed to calculate integration at (' // to_string(i) // ',' // to_string(j) // ')!')
         end if
-        block%state(1)%gd(i,j) = gh0 - block%state(1)%gd(i,j)
+        block%state(1)%gz(i,j) = gh0 - block%state(1)%gz(i,j)
       end if
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-        block%state(1)%gd(i,j) = block%state(1)%gd(mesh%half_lon_ibeg,j)
+        block%state(1)%gz(i,j) = block%state(1)%gz(mesh%half_lon_ibeg,j)
         ! Add perturbation.
-        block%state(1)%gd(i,j) = block%state(1)%gd(i,j) + ghd * &
+        block%state(1)%gz(i,j) = block%state(1)%gz(i,j) + ghd * &
           cos(mesh%full_lat(j)) * &
           exp(-(merge(mesh%full_lon(i) - 2*pi, mesh%full_lon(i), mesh%full_lon(i) > pi)  / alpha)**2) * &
           exp(-((lat2 - mesh%full_lat(j)) / beta)**2)
       end do
     end do
-    call fill_halo(block, block%state(1)%gd, full_lon=.true., full_lat=.true.)
+    call fill_halo(block, block%state(1)%gz, full_lon=.true., full_lat=.true.)
 
   end subroutine jet_zonal_flow_test_set_initial_condition
 

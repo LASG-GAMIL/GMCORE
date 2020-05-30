@@ -6,7 +6,7 @@ module parallel_types_mod
 
   integer, parameter :: async_v         = 1
   integer, parameter :: async_u         = 2
-  integer, parameter :: async_gd        = 3
+  integer, parameter :: async_gz        = 3
   integer, parameter :: async_pv        = 4
   integer, parameter :: async_pv_lon    = 5
   integer, parameter :: async_pv_lat    = 6

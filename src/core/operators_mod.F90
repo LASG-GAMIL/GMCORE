@@ -73,12 +73,18 @@ contains
 
     integer i, j
 
+    do j = state%mesh%full_lat_lb, state%mesh%full_lat_ub
+      do i = state%mesh%full_lon_lb, state%mesh%full_lon_ub
+        state%m(i,j) = (state%gz(i,j) - block%static%gzs(i,j)) / g
+      end do
+    end do
+
 !$OMP PARALLEL DO COLLAPSE(2)
     do j = state%mesh%full_lat_ibeg_no_pole, state%mesh%full_lat_iend_no_pole
       do i = state%mesh%half_lon_ibeg, state%mesh%half_lon_iend
-        state%m_lon(i,j) = (state%mesh%area_lon_west(j) * state%gd(i,  j) + &
-                            state%mesh%area_lon_east(j) * state%gd(i+1,j)   &
-                           ) / state%mesh%area_lon(j) / g
+        state%m_lon(i,j) = (state%mesh%area_lon_west(j) * state%m(i,  j) + &
+                            state%mesh%area_lon_east(j) * state%m(i+1,j)   &
+                           ) / state%mesh%area_lon(j)
       end do
     end do
 !$OMP END PARALLEL DO
@@ -87,13 +93,13 @@ contains
     do j = state%mesh%half_lat_ibeg_no_pole, state%mesh%half_lat_iend_no_pole
       do i = state%mesh%full_lon_ibeg, state%mesh%full_lon_iend
 #ifdef V_POLE
-        state%m_lat(i,j) = (state%mesh%area_lat_north(j) * state%gd(i,j  ) + &
-                            state%mesh%area_lat_south(j) * state%gd(i,j-1)   &
-                           ) / state%mesh%area_lat(j) / g
+        state%m_lat(i,j) = (state%mesh%area_lat_north(j) * state%m(i,j  ) + &
+                            state%mesh%area_lat_south(j) * state%m(i,j-1)   &
+                           ) / state%mesh%area_lat(j)
 #else
-        state%m_lat(i,j) = (state%mesh%area_lat_north(j) * state%gd(i,j+1) + &
-                            state%mesh%area_lat_south(j) * state%gd(i,j  )   &
-                           ) / state%mesh%area_lat(j) / g
+        state%m_lat(i,j) = (state%mesh%area_lat_north(j) * state%m(i,j+1) + &
+                            state%mesh%area_lat_south(j) * state%m(i,j  )   &
+                           ) / state%mesh%area_lat(j)
 #endif
       end do
     end do
@@ -113,15 +119,15 @@ contains
     do j = state%mesh%half_lat_ibeg_no_pole, state%mesh%half_lat_iend_no_pole
       do i = state%mesh%half_lon_ibeg, state%mesh%half_lon_iend
 #ifdef V_POLE
-        state%m_vtx(i,j) = (                                                       &
-          (state%gd(i,j-1) + state%gd(i+1,j-1)) * state%mesh%area_subcell(2,j-1) + &
-          (state%gd(i,j  ) + state%gd(i+1,j  )) * state%mesh%area_subcell(1,j  )   &
-        ) / state%mesh%area_vtx(j) / g
+        state%m_vtx(i,j) = (                                                     &
+          (state%m(i,j-1) + state%m(i+1,j-1)) * state%mesh%area_subcell(2,j-1) + &
+          (state%m(i,j  ) + state%m(i+1,j  )) * state%mesh%area_subcell(1,j  )   &
+        ) / state%mesh%area_vtx(j)
 #else
-        state%m_vtx(i,j) = (                                                       &
-          (state%gd(i,j  ) + state%gd(i+1,j  )) * state%mesh%area_subcell(2,j  ) + &
-          (state%gd(i,j+1) + state%gd(i+1,j+1)) * state%mesh%area_subcell(1,j+1)   &
-        ) / state%mesh%area_vtx(j) / g
+        state%m_vtx(i,j) = (                                                     &
+          (state%m(i,j  ) + state%m(i+1,j  )) * state%mesh%area_subcell(2,j  ) + &
+          (state%m(i,j+1) + state%m(i+1,j+1)) * state%mesh%area_subcell(1,j+1)   &
+        ) / state%mesh%area_vtx(j)
 #endif
       end do
     end do
@@ -131,10 +137,10 @@ contains
       j = state%mesh%half_lat_ibeg
       pole = 0.0_r8
       do i = state%mesh%full_lon_ibeg, state%mesh%full_lon_iend
-        pole = pole + state%gd(i,j)
+        pole = pole + state%m(i,j)
       end do
       call zonal_sum(proc%zonal_comm, pole)
-      pole = pole / state%mesh%num_half_lon / g
+      pole = pole / state%mesh%num_half_lon
       do i = state%mesh%half_lon_ibeg, state%mesh%half_lon_iend
         state%m_vtx(i,j) = pole
       end do
@@ -143,10 +149,10 @@ contains
       j = state%mesh%half_lat_iend
       pole = 0.0_r8
       do i = state%mesh%full_lon_ibeg, state%mesh%full_lon_iend
-        pole = pole + state%gd(i,j-1)
+        pole = pole + state%m(i,j-1)
       end do
       call zonal_sum(proc%zonal_comm, pole)
-      pole = pole / state%mesh%num_half_lon / g
+      pole = pole / state%mesh%num_half_lon
       do i = state%mesh%half_lon_ibeg, state%mesh%half_lon_iend
         state%m_vtx(i,j) = pole
       end do
@@ -278,7 +284,7 @@ contains
       else
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           if (coriolis_scheme == 1) then
-            tend%qhu(i,j) = ( &
+            tend%qhu(i,j) = (                                                           &
               mesh%half_tangent_wgt(1,j) * (                                            &
                 state%mf_lon_n(i-1,j-1) * (state%pv_lat(i,j) + state%pv_lon(i-1,j-1)) + &
                 state%mf_lon_n(i  ,j-1) * (state%pv_lat(i,j) + state%pv_lon(i  ,j-1))   &
@@ -575,7 +581,7 @@ contains
 
     mesh => state%mesh
 
-    call wait_halo(state%async(async_gd))
+    call wait_halo(state%async(async_gz))
 !$OMP PARALLEL DO
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       if (block%reduced_mesh(j)%reduce_factor > 0) then
@@ -583,8 +589,7 @@ contains
         do move = 1, block%reduced_mesh(j)%reduce_factor
           do i = block%reduced_mesh(j)%full_lon_ibeg, block%reduced_mesh(j)%full_lon_iend
             block%reduced_tend(j)%dpedlon(i) = (                                          &
-              block%reduced_state (j)%gd (i+1,0,move) - block%reduced_state (j)%gd (i,0,move) + &
-              block%reduced_static(j)%ghs(i+1,0,move) - block%reduced_static(j)%ghs(i,0,move)   &
+              block%reduced_state(j)%gz(i+1,0,move) - block%reduced_state(j)%gz(i,0,move) &
             ) / block%reduced_mesh(j)%de_lon(0)
           end do
           call reduce_append_array(move, block%reduced_mesh(j), block%reduced_tend(j)%dpedlon, mesh, tend%dpedlon(:,j))
@@ -592,10 +597,7 @@ contains
         call overlay_inner_halo(block, tend%dpedlon(:,j), west_halo=.true.)
       else
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          tend%dpedlon(i,j) = (                   &
-                  state %gd (i+1,j) -       state %gd (i,j) + &
-            block%static%ghs(i+1,j) - block%static%ghs(i,j)   &
-          ) / mesh%de_lon(j)
+          tend%dpedlon(i,j) = (state%gz(i+1,j) - state%gz(i,j)) / mesh%de_lon(j)
         end do
       end if
     end do
@@ -605,15 +607,9 @@ contains
     do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
 #ifdef V_POLE
-        tend%dpedlat(i,j) = (                   &
-                state %gd (i,j) -       state %gd (i,j-1) + &
-          block%static%ghs(i,j) - block%static%ghs(i,j-1)   &
-        ) / mesh%de_lat(j)
+        tend%dpedlat(i,j) = (state%gz(i,j) - state%gz(i,j-1)) / mesh%de_lat(j)
 #else
-        tend%dpedlat(i,j) = (                   &
-                state %gd (i,j+1) - state %gd (i,j) + &
-          block%static%ghs(i,j+1) - block%static%ghs(i,j)   &
-        ) / mesh%de_lat(j)
+        tend%dpedlat(i,j) = (state%gz(i,j+1) - state%gz(i,j)) / mesh%de_lat(j)
 #endif
       end do
     end do

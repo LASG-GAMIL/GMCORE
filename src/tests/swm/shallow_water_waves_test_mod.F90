@@ -114,11 +114,11 @@ contains
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        block%state(1)%gd(i,j) = g * h(i,j,1) + 5.0d4
+        block%state(1)%gz(i,j) = g * h(i,j,1) + 5.0d4
       end do
     end do
 
-    call fill_halo(block, block%state(1)%gd, full_lon=.true., full_lat=.true.)
+    call fill_halo(block, block%state(1)%gz, full_lon=.true., full_lat=.true.)
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend

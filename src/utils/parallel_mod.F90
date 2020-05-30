@@ -13,12 +13,13 @@ module parallel_mod
 
   public proc
   public process_init
+  public process_stop
   public process_final
   public is_root_proc
   public async_type
   public async_v
   public async_u
-  public async_gd
+  public async_gz
   public async_pv
   public async_pv_lon
   public async_pv_lat

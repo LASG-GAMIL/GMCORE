@@ -61,7 +61,7 @@ contains
     call fiona_add_var('h0', 'u'    , long_name='u wind component'         , units='m s-1' , dim_names=['ilon', 'lat ', 'time'])
     call fiona_add_var('h0', 'v'    , long_name='v wind component'         , units='m s-1' , dim_names=['lon ', 'ilat', 'time'])
     call fiona_add_var('h0', 'h'    , long_name='height'                   , units='m'     , dim_names=['lon ', 'lat ', 'time'])
-    call fiona_add_var('h0', 'hs'   , long_name='surface height'           , units='m'     , dim_names=['lon ', 'lat ', 'time'])
+    call fiona_add_var('h0', 'zs'   , long_name='surface height'           , units='m'     , dim_names=['lon ', 'lat ', 'time'])
     call fiona_add_var('h0', 'pv'   , long_name='potential vorticity'      , units='s-1'   , dim_names=['ilon', 'ilat', 'time'])
     call fiona_add_var('h0', 'tm'   , long_name='total mass'               , units='m'     , dim_names=['time'])
     call fiona_add_var('h0', 'te'   , long_name='total energy'             , units='m4 s-4', dim_names=['time'], data_type='real(8)')
@@ -121,15 +121,14 @@ contains
       static => blocks(iblk)%static
       call fiona_output('h0', 'u'  , state %u  (mesh%half_lon_ibeg:mesh%half_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend)    , start=[mesh%half_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_half_lon,mesh%num_full_lat])
       call fiona_output('h0', 'v'  , state %v  (mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%half_lat_ibeg:mesh%half_lat_iend)    , start=[mesh%full_lon_ibeg,mesh%half_lat_ibeg], count=[mesh%num_full_lon,mesh%num_half_lat])
-      call fiona_output('h0', 'hs' , static%ghs(mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend) / g, start=[mesh%full_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_full_lon,mesh%num_full_lat])
+      call fiona_output('h0', 'zs' , static%gzs(mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend) / g, start=[mesh%full_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_full_lon,mesh%num_full_lat])
       call fiona_output('h0', 'pv' , state %pv (mesh%half_lon_ibeg:mesh%half_lon_iend,mesh%half_lat_ibeg:mesh%half_lat_iend)    , start=[mesh%half_lon_ibeg,mesh%half_lat_ibeg], count=[mesh%num_half_lon,mesh%num_half_lat])
       call fiona_output('h0', 'tm' , state %tm)
       call fiona_output('h0', 'te' , state %te)
       call fiona_output('h0', 'tpe', state %tpe)
       call fiona_output('h0', 'tpv', state %tav)     
-      call fiona_output('h0', 'h'  , (                                                            &
-        state %gd (mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend) + &
-        static%ghs(mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend)   &
+      call fiona_output('h0', 'h'  , (                                                        &
+        state%gz(mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend) &
       ) / g, start=[mesh%full_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_full_lon,mesh%num_full_lat])
     end do
     call fiona_end_output('h0')

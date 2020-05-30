@@ -14,7 +14,7 @@ module cross_pole_flow_test_mod
   public cross_pole_flow_test_set_initial_condition
 
   real, parameter :: v0 = 20 ! m s-1
-  real, parameter :: gd0 = 5.7684e4 ! m2 s-2
+  real, parameter :: gz0 = 5.7684e4 ! m2 s-2
 
 contains
   
@@ -28,7 +28,7 @@ contains
 
     mesh => block%mesh
 
-    block%static%ghs(:,:) = 0.0
+    block%static%gzs(:,:) = 0.0
 
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       cos_lat = mesh%full_cos_lat(j)
@@ -54,10 +54,10 @@ contains
       sin_lat = mesh%full_sin_lat(j)
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         sin_lon = mesh%full_sin_lon(i)
-        block%state(1)%gd(i,j) = gd0 + 2 * radius * omega * v0 * sin_lat**3 * cos_lat * sin_lon 
+        block%state(1)%gz(i,j) = gz0 + 2 * radius * omega * v0 * sin_lat**3 * cos_lat * sin_lon 
       end do 
     end do 
-    call fill_halo(block, block%state(1)%gd, full_lon=.true., full_lat=.true.)
+    call fill_halo(block, block%state(1)%gz, full_lon=.true., full_lat=.true.)
 
   end subroutine cross_pole_flow_test_set_initial_condition
 
