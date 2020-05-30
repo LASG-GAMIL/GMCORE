@@ -13,5 +13,5 @@ fast_cycles = 5
 case_name = 'cp.u_pole.reduce.split.damp.dt300.360x180'
 history_interval = '6 hours'
 reduce_factors = 8, 8, 8, 6, 6, 6, 4, 4, 2
-damp_orders    = 4, 4, 8, 6, 6, 6, 6, 6, 6
+damp_orders    = 4, 4, 4, 6, 6, 6, 6, 6, 6
 /
