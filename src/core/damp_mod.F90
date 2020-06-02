@@ -44,7 +44,7 @@ contains
 
     a  = (dx / 2.0_r8)**order / dt
 
-    call fill_halo(block, 1 - lb, f)
+    call fill_zonal_halo(block, 1 - lb, f)
     if (order == 2) then
       ns = diff_halo_width(order)
       w  = diff_weights(:,order)
@@ -66,15 +66,15 @@ contains
       do i = 1, n
         g(i) = g(i) * max(0.0_r8, sign(1.0_r8, -g(i) * df(i)))
       end do
-      call fill_halo(block, 1 - lb, g, east_halo=.false.)
+      call fill_zonal_halo(block, 1 - lb, g, east_halo=.false.)
       do i = 1, n
         f(i) = f(i) - dt * (g(i) - g(i-1))
       end do
     end if
     if (present(async)) then
-      call fill_halo(block, 1 - lb, f, async)
+      call fill_zonal_halo(block, 1 - lb, f, async)
     else
-      call fill_halo(block, 1 - lb, f)
+      call fill_zonal_halo(block, 1 - lb, f)
     end if
 
   end subroutine zonal_damp

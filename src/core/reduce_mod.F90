@@ -346,7 +346,7 @@ contains
       raw_i = raw_i + reduced_mesh%reduce_factor
     end do
     reduced_static%gzs(:,buf_j,move) = reduced_static%gzs(:,buf_j,move) / reduced_mesh%reduce_factor
-    call fill_halo(block, reduced_mesh%halo_width, reduced_static%gzs(:,buf_j,move), west_halo=.false.)
+    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_static%gzs(:,buf_j,move), west_halo=.false.)
 
   end subroutine reduce_gzs
 
@@ -413,7 +413,7 @@ contains
     do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
       reduced_state%v(i,buf_j,move) = reduced_state%mf_lat_n(i,buf_j,move) / reduced_state%m_lat(i,buf_j,move)
     end do
-    call fill_halo(block, reduced_mesh%halo_width, reduced_state%v(:,buf_j,move), west_halo=.false.)
+    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%v(:,buf_j,move), west_halo=.false.)
 
   end subroutine reduce_v
 
@@ -439,7 +439,7 @@ contains
       raw_i = raw_i + reduced_mesh%reduce_factor
     end do
     reduced_state%gz(:,buf_j,move) = reduced_state%gz(:,buf_j,move) / reduced_mesh%reduce_factor
-    call fill_halo(block, reduced_mesh%halo_width, reduced_state%gz(:,buf_j,move), west_halo=.false.)
+    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%gz(:,buf_j,move), west_halo=.false.)
     reduced_state%m(:,buf_j,move) = (reduced_state%gz(:,buf_j,move) - reduced_static%gzs(:,buf_j,move)) / g
 
   end subroutine reduce_gz_gd
@@ -510,7 +510,7 @@ contains
       end do
     end if
 #endif
-    call fill_halo(block, reduced_mesh%halo_width, reduced_state%pv(:,buf_j,move))
+    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%pv(:,buf_j,move))
 
   end subroutine reduce_pv
 
@@ -593,7 +593,7 @@ contains
       raw_i = raw_i + reduced_mesh%reduce_factor
     end do
     reduced_state%mf_lon_n(:,buf_j,move) = reduced_state%mf_lon_n(:,buf_j,move) / reduced_mesh%reduce_factor
-    call fill_halo(block, reduced_mesh%halo_width, reduced_state%mf_lon_n(:,buf_j,move), east_halo=.false.)
+    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%mf_lon_n(:,buf_j,move), east_halo=.false.)
 
   end subroutine reduce_mf_lon_n
 
@@ -618,7 +618,7 @@ contains
       raw_i = raw_i + reduced_mesh%reduce_factor
     end do
     reduced_state%mf_lat_n(:,buf_j,move) = reduced_state%mf_lat_n(:,buf_j,move) / reduced_mesh%reduce_factor
-    call fill_halo(block, reduced_mesh%halo_width, reduced_state%mf_lat_n(:,buf_j,move), west_halo=.false.)
+    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%mf_lat_n(:,buf_j,move), west_halo=.false.)
 
   end subroutine reduce_mf_lat_n
 
@@ -703,7 +703,7 @@ contains
       reduced_state%dpv_lon_t(i,buf_j,move) = reduced_state%pv(i,buf_j  ,move) - reduced_state%pv(i,buf_j-1,move)
 #endif
     end do
-    call fill_halo(block, reduced_mesh%halo_width, reduced_state%dpv_lon_t(:,buf_j,move), east_halo=.false.)
+    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%dpv_lon_t(:,buf_j,move), east_halo=.false.)
 
   end subroutine reduce_dpv_lon_t
 
@@ -725,7 +725,7 @@ contains
     do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
       reduced_state%dpv_lat_t(i,buf_j,move) = reduced_state%pv(i+1,buf_j,move) - reduced_state%pv(i,buf_j,move)
     end do
-    call fill_halo(block, reduced_mesh%halo_width, reduced_state%dpv_lat_t(:,buf_j,move), west_halo=.false.)
+    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%dpv_lat_t(:,buf_j,move), west_halo=.false.)
 
   end subroutine reduce_dpv_lat_t
 
@@ -839,8 +839,8 @@ contains
       ) * dt
 #endif
     end do
-    call fill_halo(block, reduced_mesh%halo_width, reduced_state%pv_lon(:,buf_j,move), &
-                   reduced_state%async(async_pv_lon,buf_j,move), east_halo=.false.)
+    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%pv_lon(:,buf_j,move), &
+                         reduced_state%async(async_pv_lon,buf_j,move), east_halo=.false.)
 
   end subroutine reduce_pv_lon_apvm
 
@@ -874,8 +874,8 @@ contains
         v * reduced_state%dpv_lat_n(i,buf_j,move) / de   &
       ) * dt
     end do
-    call fill_halo(block, reduced_mesh%halo_width, reduced_state%pv_lat(:,buf_j,move), &
-                   reduced_state%async(async_pv_lat,buf_j,move), west_halo=.false.)
+    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%pv_lat(:,buf_j,move), &
+                         reduced_state%async(async_pv_lat,buf_j,move), west_halo=.false.)
 
   end subroutine reduce_pv_lat_apvm
 
@@ -900,8 +900,8 @@ contains
       raw_i = raw_i + reduced_mesh%reduce_factor
     end do
     reduced_state%ke(:,buf_j,move) = reduced_state%ke(:,buf_j,move) / reduced_mesh%reduce_factor
-    call fill_halo(block, reduced_mesh%halo_width, reduced_state%ke(:,buf_j,move), &
-                   reduced_state%async(async_ke,buf_j,move), west_halo=.false.)
+    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%ke(:,buf_j,move), &
+                         reduced_state%async(async_ke,buf_j,move), west_halo=.false.)
 
   end subroutine reduce_ke
 
