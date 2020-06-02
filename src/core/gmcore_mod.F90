@@ -470,21 +470,21 @@ contains
         new_state%gz(i,j,1) = old_state%gz(i,j,1) + dt * tend%dgz(i,j,1)
       end do
     end do
-    call fill_halo(block, new_state%gz(:,:,1), full_lon=.true., full_lat=.true., async=new_state%async(async_gz))
+    call fill_halo(block, new_state%gz, full_lon=.true., full_lat=.true., async=new_state%async(async_gz))
 
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
         new_state%u(i,j,1) = old_state%u(i,j,1) + dt * tend%du(i,j,1)
       end do
     end do
-    call fill_halo(block, new_state%u(:,:,1), full_lon=.false., full_lat=.true., async=new_state%async(async_u))
+    call fill_halo(block, new_state%u, full_lon=.false., full_lat=.true., async=new_state%async(async_u))
 
     do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         new_state%v(i,j,1) = old_state%v(i,j,1) + dt * tend%dv(i,j,1)
       end do
     end do
-    call fill_halo(block, new_state%v(:,:,1), full_lon=.true., full_lat=.false.)
+    call fill_halo(block, new_state%v, full_lon=.true., full_lat=.false., async=new_state%async(async_v))
 
     call damp_state(block, new_state)
 

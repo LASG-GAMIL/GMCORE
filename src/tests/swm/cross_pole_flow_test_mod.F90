@@ -38,7 +38,7 @@ contains
         block%state(1)%u(i,j,1) = -v0 * sin_lon * sin_lat * (4.0 * cos_lat**2 - 1.0)
       end do
     end do
-    call fill_halo(block, block%state(1)%u(:,:,1), full_lon=.false., full_lat=.true.)
+    call fill_halo(block, block%state(1)%u, full_lon=.false., full_lat=.true.)
 
     do j = mesh%half_lat_ibeg, mesh%half_lat_iend
       sin_lat = mesh%half_sin_lat(j)
@@ -47,7 +47,7 @@ contains
         block%state(1)%v(i,j,1) = v0 * sin_lat**2 * cos_lon 
       end do 
     end do 
-    call fill_halo(block, block%state(1)%v(:,:,1), full_lon=.true., full_lat=.false.)
+    call fill_halo(block, block%state(1)%v, full_lon=.true., full_lat=.false.)
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       cos_lat = mesh%full_cos_lat(j)
@@ -57,7 +57,7 @@ contains
         block%state(1)%gz(i,j,1) = gz0 + 2 * radius * omega * v0 * sin_lat**3 * cos_lat * sin_lon 
       end do 
     end do 
-    call fill_halo(block, block%state(1)%gz(:,:,1), full_lon=.true., full_lat=.true.)
+    call fill_halo(block, block%state(1)%gz, full_lon=.true., full_lat=.true.)
 
   end subroutine cross_pole_flow_test_set_initial_condition
 

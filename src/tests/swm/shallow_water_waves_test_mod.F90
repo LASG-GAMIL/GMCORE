@@ -118,7 +118,7 @@ contains
       end do
     end do
 
-    call fill_halo(block, block%state(1)%gz(:,:,1), full_lon=.true., full_lat=.true.)
+    call fill_halo(block, block%state(1)%gz, full_lon=.true., full_lat=.true.)
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
@@ -126,7 +126,7 @@ contains
       end do
     end do
 
-    call fill_halo(block, block%state(1)%u(:,:,1), full_lon=.false., full_lat=.true.)
+    call fill_halo(block, block%state(1)%u, full_lon=.false., full_lat=.true.)
 
     do j = mesh%half_lat_ibeg, mesh%half_lat_iend
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -134,7 +134,7 @@ contains
       end do
     end do
 
-    call fill_halo(block, block%state(1)%v(:,:,1), full_lon=.true., full_lat=.false.)
+    call fill_halo(block, block%state(1)%v, full_lon=.true., full_lat=.false.)
 
     deallocate(u)
     deallocate(v)

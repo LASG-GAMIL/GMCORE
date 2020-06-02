@@ -176,9 +176,9 @@ contains
     end do
 !$OMP END PARALLEL DO
 #ifdef V_POLE
-    call fill_halo(block, state%mf_lon_n(:,:,1), full_lon=.false., full_lat=.true., async=state%async(async_mf_lon_n), north_halo=.false.)
+    call fill_halo(block, state%mf_lon_n, full_lon=.false., full_lat=.true., async=state%async(async_mf_lon_n), north_halo=.false.)
 #else
-    call fill_halo(block, state%mf_lon_n(:,:,1), full_lon=.false., full_lat=.true., async=state%async(async_mf_lon_n), south_halo=.false.)
+    call fill_halo(block, state%mf_lon_n, full_lon=.false., full_lat=.true., async=state%async(async_mf_lon_n), south_halo=.false.)
 #endif
 
 !$OMP PARALLEL DO COLLAPSE(2)
@@ -189,9 +189,9 @@ contains
     end do
 !$OMP END PARALLEL DO
 #ifdef V_POLE
-    call fill_halo(block, state%mf_lat_n(:,:,1), full_lon=.true., full_lat=.false., async=state%async(async_mf_lat_n), south_halo=.false.)
+    call fill_halo(block, state%mf_lat_n, full_lon=.true., full_lat=.false., async=state%async(async_mf_lat_n), south_halo=.false.)
 #else
-    call fill_halo(block, state%mf_lat_n(:,:,1), full_lon=.true., full_lat=.false., async=state%async(async_mf_lat_n), north_halo=.false.)
+    call fill_halo(block, state%mf_lat_n, full_lon=.true., full_lat=.false., async=state%async(async_mf_lat_n), north_halo=.false.)
 #endif
 
   end subroutine calc_mf_lon_n_mf_lat_n
