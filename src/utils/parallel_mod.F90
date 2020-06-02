@@ -55,6 +55,7 @@ module parallel_mod
 
   interface zonal_sum
     module procedure zonal_sum_0d_r8
+    module procedure zonal_sum_1d_r8
   end interface zonal_sum
 
   interface global_sum
@@ -645,6 +646,19 @@ contains
     value = res
 
   end subroutine zonal_sum_0d_r8
+
+  subroutine zonal_sum_1d_r8(comm, value)
+
+    integer, intent(in) :: comm
+    real(8), intent(inout) :: value(:)
+
+    integer ierr
+    real(8) res(size(value))
+
+    call MPI_ALLREDUCE(value, res, size(value), MPI_DOUBLE, MPI_SUM, comm, ierr)
+    value = res
+
+  end subroutine zonal_sum_1d_r8
 
   subroutine global_sum_0d_r8(comm, value)
 

@@ -20,51 +20,59 @@ contains
     type(state_type), intent(inout) :: state
 
     type(mesh_type), pointer :: mesh
-    integer i, j
-    real(r8) pole
+    integer i, j, k
+    real(r8) pole(state%mesh%num_full_lev)
 
     mesh => state%mesh
 
-!$OMP PARALLEL DO COLLAPSE(2)
-    do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        state%ke(i,j,1) = (mesh%area_lon_west (j  ) * state%u(i-1,j  ,1)**2 + &
-                           mesh%area_lon_east (j  ) * state%u(i  ,j  ,1)**2 + &
+    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          state%ke(i,j,k) = (mesh%area_lon_west (j  ) * state%u(i-1,j  ,k)**2 + &
+                             mesh%area_lon_east (j  ) * state%u(i  ,j  ,k)**2 + &
 #ifdef V_POLE
-                           mesh%area_lat_north(j  ) * state%v(i  ,j  ,1)**2 + &
-                           mesh%area_lat_south(j+1) * state%v(i  ,j+1,1)**2   &
+                             mesh%area_lat_north(j  ) * state%v(i  ,j  ,k)**2 + &
+                             mesh%area_lat_south(j+1) * state%v(i  ,j+1,k)**2   &
 #else
-                           mesh%area_lat_north(j-1) * state%v(i  ,j-1,1)**2 + &
-                           mesh%area_lat_south(j  ) * state%v(i  ,j  ,1)**2   &
+                             mesh%area_lat_north(j-1) * state%v(i  ,j-1,k)**2 + &
+                             mesh%area_lat_south(j  ) * state%v(i  ,j  ,k)**2   &
 #endif
-                          ) / mesh%area_cell(j)
+                            ) / mesh%area_cell(j)
+        end do
       end do
     end do
-!$OMP END PARALLEL DO
 #ifndef V_POLE
     ! Note: area_lat_south and area_lat_north at the Poles is the same as area_cell.
     if (mesh%has_south_pole()) then
       j = mesh%full_lat_ibeg
       pole = 0.0d0
-      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        pole = pole + state%v(i,j,1)**2
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          pole(k) = pole(k) + state%v(i,j,k)**2
+        end do
       end do
       call zonal_sum(proc%zonal_comm, pole)
       pole = pole / mesh%num_full_lon * 0.5_r8
-      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        state%ke(i,j,1) = pole
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          state%ke(i,j,k) = pole(k)
+        end do
       end do
     end if
     if (mesh%has_north_pole()) then
       j = mesh%full_lat_iend
       pole = 0.0d0
-      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        pole = pole + state%v(i,j-1,1)**2
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          pole(k) = pole(k) + state%v(i,j-1,k)**2
+        end do
       end do
       call zonal_sum(proc%zonal_comm, pole)
       pole = pole / mesh%num_full_lon * 0.5_r8
-      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        state%ke(i,j,1) = pole
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          state%ke(i,j,k) = pole(k)
+        end do
       end do
     end if
 #endif
