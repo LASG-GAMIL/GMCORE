@@ -117,11 +117,12 @@ module mesh_mod
 
 contains
 
-  subroutine mesh_init_global(this, num_lon, num_lat, id, lon_halo_width, lat_halo_width)
+  subroutine mesh_init_global(this, num_lon, num_lat, num_lev, id, lon_halo_width, lat_halo_width)
 
     class(mesh_type), intent(inout)           :: this
     integer         , intent(in   )           :: num_lon
     integer         , intent(in   )           :: num_lat
+    integer         , intent(in   ), optional :: num_lev
     integer         , intent(in   ), optional :: id
     integer         , intent(in   ), optional :: lon_halo_width
     integer         , intent(in   ), optional :: lat_halo_width
@@ -151,8 +152,8 @@ contains
     this%half_lat_ibeg = 1
     this%half_lat_iend = this%num_half_lat
 #endif
-    this%num_full_lev  = num_lev
-    this%num_half_lev  = num_lev + 1
+    this%num_full_lev  = merge(num_lev, 1, present(num_lev))
+    this%num_half_lev  = this%num_full_lev + 1
     this%full_lev_ibeg = 1
     this%full_lev_iend = this%num_full_lev
     this%half_lev_ibeg = 1
@@ -492,6 +493,17 @@ contains
     this%half_lat_iend = merge(lat_iend - 1, lat_iend, this%has_north_pole())
     this%num_half_lat  = this%half_lat_iend - this%half_lat_ibeg + 1
 #endif
+
+    this%num_full_lev  = parent%num_full_lev
+    this%num_half_lev  = parent%num_half_lev
+    this%full_lev_lb   = parent%full_lev_lb
+    this%full_lev_ub   = parent%full_lev_ub
+    this%full_lev_ibeg = parent%full_lev_ibeg
+    this%full_lev_iend = parent%full_lev_iend
+    this%half_lev_lb   = parent%half_lev_lb
+    this%half_lev_ub   = parent%half_lev_ub
+    this%half_lev_ibeg = parent%half_lev_ibeg
+    this%half_lev_iend = parent%half_lev_iend
 
     this%id             = id
     this%lon_halo_width = lon_halo_width

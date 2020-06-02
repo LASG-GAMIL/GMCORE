@@ -17,9 +17,9 @@ module state_mod
     integer :: id = 0
     type(state_type), pointer :: parent => null()
     ! Prognostic variables
-    real(r8), allocatable, dimension(:,:) :: u
-    real(r8), allocatable, dimension(:,:) :: v
-    real(r8), allocatable, dimension(:,:) :: gz
+    real(r8), allocatable, dimension(:,:,:) :: u
+    real(r8), allocatable, dimension(:,:,:) :: v
+    real(r8), allocatable, dimension(:,:,:) :: gz
     ! Diagnostic variables
     real(r8), allocatable, dimension(:,:) :: m
     real(r8), allocatable, dimension(:,:) :: m_vtx
@@ -84,9 +84,9 @@ contains
 
     this%mesh => mesh
 
-    call allocate_array(mesh, this%u        , half_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%v        , full_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%gz       , full_lon=.true., full_lat=.true.)
+    call allocate_array(mesh, this%u        , half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%v        , full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%gz       , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%m        , full_lon=.true., full_lat=.true.)
     call allocate_array(mesh, this%m_vtx    , half_lon=.true., half_lat=.true.)
     call allocate_array(mesh, this%m_lon    , half_lon=.true., full_lat=.true.)

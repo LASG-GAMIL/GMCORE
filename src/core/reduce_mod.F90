@@ -435,7 +435,7 @@ contains
     if (raw_mesh%is_outside_full_lat(j+buf_j)) return
     raw_i = raw_mesh%full_lon_ibeg + move - 1
     do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
-      reduced_state%gz(i,buf_j,move) = sum(raw_state%gz(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j))
+      reduced_state%gz(i,buf_j,move) = sum(raw_state%gz(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j,1))
       raw_i = raw_i + reduced_mesh%reduce_factor
     end do
     reduced_state%gz(:,buf_j,move) = reduced_state%gz(:,buf_j,move) / reduced_mesh%reduce_factor

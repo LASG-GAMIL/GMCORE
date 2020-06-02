@@ -114,27 +114,27 @@ contains
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        block%state(1)%gz(i,j) = g * h(i,j,1) + 5.0d4
+        block%state(1)%gz(i,j,1) = g * h(i,j,1) + 5.0d4
       end do
     end do
 
-    call fill_halo(block, block%state(1)%gz, full_lon=.true., full_lat=.true.)
+    call fill_halo(block, block%state(1)%gz(:,:,1), full_lon=.true., full_lat=.true.)
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-        block%state(1)%u(i,j) = u(i,j,1)
+        block%state(1)%u(i,j,1) = u(i,j,1)
       end do
     end do
 
-    call fill_halo(block, block%state(1)%u, full_lon=.false., full_lat=.true.)
+    call fill_halo(block, block%state(1)%u(:,:,1), full_lon=.false., full_lat=.true.)
 
     do j = mesh%half_lat_ibeg, mesh%half_lat_iend
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        block%state(1)%v(i,j) = v(i,j,1)
+        block%state(1)%v(i,j,1) = v(i,j,1)
       end do
     end do
 
-    call fill_halo(block, block%state(1)%v, full_lon=.true., full_lat=.false.)
+    call fill_halo(block, block%state(1)%v(:,:,1), full_lon=.true., full_lat=.false.)
 
     deallocate(u)
     deallocate(v)

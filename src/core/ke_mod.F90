@@ -28,14 +28,14 @@ contains
 !$OMP PARALLEL DO COLLAPSE(2)
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        state%ke(i,j) = (mesh%area_lon_west (j  ) * state%u(i-1,j  )**2 + &
-                         mesh%area_lon_east (j  ) * state%u(i  ,j  )**2 + &
+        state%ke(i,j) = (mesh%area_lon_west (j  ) * state%u(i-1,j  ,1)**2 + &
+                         mesh%area_lon_east (j  ) * state%u(i  ,j  ,1)**2 + &
 #ifdef V_POLE
-                         mesh%area_lat_north(j  ) * state%v(i  ,j  )**2 + &
-                         mesh%area_lat_south(j+1) * state%v(i  ,j+1)**2   &
+                         mesh%area_lat_north(j  ) * state%v(i  ,j  ,1)**2 + &
+                         mesh%area_lat_south(j+1) * state%v(i  ,j+1,1)**2   &
 #else
-                         mesh%area_lat_north(j-1) * state%v(i  ,j-1)**2 + &
-                         mesh%area_lat_south(j  ) * state%v(i  ,j  )**2   &
+                         mesh%area_lat_north(j-1) * state%v(i  ,j-1,1)**2 + &
+                         mesh%area_lat_south(j  ) * state%v(i  ,j  ,1)**2   &
 #endif
                         ) / mesh%area_cell(j)
       end do
@@ -47,7 +47,7 @@ contains
       j = mesh%full_lat_ibeg
       pole = 0.0d0
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        pole = pole + state%v(i,j)**2
+        pole = pole + state%v(i,j,1)**2
       end do
       call zonal_sum(proc%zonal_comm, pole)
       pole = pole / mesh%num_full_lon * 0.5_r8
@@ -59,7 +59,7 @@ contains
       j = mesh%full_lat_iend
       pole = 0.0d0
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        pole = pole + state%v(i,j-1)**2
+        pole = pole + state%v(i,j-1,1)**2
       end do
       call zonal_sum(proc%zonal_comm, pole)
       pole = pole / mesh%num_full_lon * 0.5_r8

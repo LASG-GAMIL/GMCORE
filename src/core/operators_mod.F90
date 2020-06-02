@@ -75,7 +75,7 @@ contains
 
     do j = state%mesh%full_lat_lb, state%mesh%full_lat_ub
       do i = state%mesh%full_lon_lb, state%mesh%full_lon_ub
-        state%m(i,j) = (state%gz(i,j) - block%static%gzs(i,j)) / g
+        state%m(i,j) = (state%gz(i,j,1) - block%static%gzs(i,j)) / g
       end do
     end do
 
@@ -171,7 +171,7 @@ contains
 !$OMP PARALLEL DO COLLAPSE(2)
     do j = state%mesh%full_lat_ibeg_no_pole, state%mesh%full_lat_iend_no_pole
       do i = state%mesh%half_lon_ibeg, state%mesh%half_lon_iend
-        state%mf_lon_n(i,j) = state%m_lon(i,j) * state%u(i,j)
+        state%mf_lon_n(i,j) = state%m_lon(i,j) * state%u(i,j,1)
       end do
     end do
 !$OMP END PARALLEL DO
@@ -184,7 +184,7 @@ contains
 !$OMP PARALLEL DO COLLAPSE(2)
     do j = state%mesh%half_lat_ibeg_no_pole, state%mesh%half_lat_iend_no_pole
       do i = state%mesh%full_lon_ibeg, state%mesh%full_lon_iend
-        state%mf_lat_n(i,j) = state%m_lat(i,j) * state%v(i,j)
+        state%mf_lat_n(i,j) = state%m_lat(i,j) * state%v(i,j,1)
       end do
     end do
 !$OMP END PARALLEL DO
@@ -597,7 +597,7 @@ contains
         call overlay_inner_halo(block, tend%dpedlon(:,j), west_halo=.true.)
       else
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          tend%dpedlon(i,j) = (state%gz(i+1,j) - state%gz(i,j)) / mesh%de_lon(j)
+          tend%dpedlon(i,j) = (state%gz(i+1,j,1) - state%gz(i,j,1)) / mesh%de_lon(j)
         end do
       end if
     end do
@@ -607,9 +607,9 @@ contains
     do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
 #ifdef V_POLE
-        tend%dpedlat(i,j) = (state%gz(i,j) - state%gz(i,j-1)) / mesh%de_lat(j)
+        tend%dpedlat(i,j) = (state%gz(i,j  ,1) - state%gz(i,j-1,1)) / mesh%de_lat(j)
 #else
-        tend%dpedlat(i,j) = (state%gz(i,j+1) - state%gz(i,j)) / mesh%de_lat(j)
+        tend%dpedlat(i,j) = (state%gz(i,j+1,1) - state%gz(i,j  ,1)) / mesh%de_lat(j)
 #endif
       end do
     end do

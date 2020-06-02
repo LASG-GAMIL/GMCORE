@@ -177,12 +177,12 @@ contains
 
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          te = te + state%mf_lon_n(i,j) * 0.5_r8 * state%u(i,j) * mesh%area_lon(j) * 2
+          te = te + state%mf_lon_n(i,j) * 0.5_r8 * state%u(i,j,1) * mesh%area_lon(j) * 2
         end do
       end do
       do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          te = te + state%mf_lat_n(i,j) * 0.5_r8 * state%v(i,j) * mesh%area_lat(j) * 2
+          te = te + state%mf_lat_n(i,j) * 0.5_r8 * state%v(i,j,1) * mesh%area_lat(j) * 2
         end do
       end do
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -467,24 +467,24 @@ contains
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        new_state%gz(i,j) = old_state%gz(i,j) + dt * tend%dgd(i,j)
+        new_state%gz(i,j,1) = old_state%gz(i,j,1) + dt * tend%dgd(i,j)
       end do
     end do
-    call fill_halo(block, new_state%gz, full_lon=.true., full_lat=.true., async=new_state%async(async_gz))
+    call fill_halo(block, new_state%gz(:,:,1), full_lon=.true., full_lat=.true., async=new_state%async(async_gz))
 
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-        new_state%u(i,j) = old_state%u(i,j) + dt * tend%du(i,j)
+        new_state%u(i,j,1) = old_state%u(i,j,1) + dt * tend%du(i,j)
       end do
     end do
-    call fill_halo(block, new_state%u, full_lon=.false., full_lat=.true., async=new_state%async(async_u))
+    call fill_halo(block, new_state%u(:,:,1), full_lon=.false., full_lat=.true., async=new_state%async(async_u))
 
     do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        new_state%v(i,j) = old_state%v(i,j) + dt * tend%dv(i,j)
+        new_state%v(i,j,1) = old_state%v(i,j,1) + dt * tend%dv(i,j)
       end do
     end do
-    call fill_halo(block, new_state%v, full_lon=.true., full_lat=.false.)
+    call fill_halo(block, new_state%v(:,:,1), full_lon=.true., full_lat=.false.)
 
     call damp_state(block, new_state)
 
@@ -518,7 +518,7 @@ contains
       damp_order = block%reduced_mesh(j)%damp_order
       if (damp_order > 0) then
         if (damp_order == 1) cycle ! User can choose not to damp except for cases when potential enstrophy increases.
-        call zonal_damp(block, damp_order, dt_in_seconds, mesh%de_lon(j), mesh%half_lon_lb, mesh%half_lon_ub, mesh%num_half_lon, state%u(:,j))
+        call zonal_damp(block, damp_order, dt_in_seconds, mesh%de_lon(j), mesh%half_lon_lb, mesh%half_lon_ub, mesh%num_half_lon, state%u(:,j,1))
       end if
     end do
 
@@ -530,7 +530,7 @@ contains
 #endif
       if (damp_order > 0) then
         if (damp_order == 1) cycle ! User can choose not to damp except for cases when potential enstrophy increases.
-        call zonal_damp(block, damp_order, dt_in_seconds, mesh%le_lat(j), mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%v(:,j))
+        call zonal_damp(block, damp_order, dt_in_seconds, mesh%le_lat(j), mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, state%v(:,j,1))
       end if
     end do
 

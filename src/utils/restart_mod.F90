@@ -84,10 +84,10 @@ contains
       mesh   => blocks(iblk)%mesh
       state  => blocks(iblk)%state(itime)
       static => blocks(iblk)%static
-      call fiona_output('r0', 'u'  , state %u  (mesh%half_lon_ibeg:mesh%half_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend), start=[mesh%half_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_half_lon,mesh%num_full_lat])
-      call fiona_output('r0', 'v'  , state %v  (mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%half_lat_ibeg:mesh%half_lat_iend), start=[mesh%full_lon_ibeg,mesh%half_lat_ibeg], count=[mesh%num_full_lon,mesh%num_half_lat])
-      call fiona_output('r0', 'gz' , state %gz (mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend), start=[mesh%full_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_full_lon,mesh%num_full_lat])
-      call fiona_output('r0', 'gzs', static%gzs(mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend), start=[mesh%full_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_full_lon,mesh%num_full_lat])
+      call fiona_output('r0', 'u'  , state %u  (mesh%half_lon_ibeg:mesh%half_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend,1), start=[mesh%half_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_half_lon,mesh%num_full_lat])
+      call fiona_output('r0', 'v'  , state %v  (mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%half_lat_ibeg:mesh%half_lat_iend,1), start=[mesh%full_lon_ibeg,mesh%half_lat_ibeg], count=[mesh%num_full_lon,mesh%num_half_lat])
+      call fiona_output('r0', 'gz' , state %gz (mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend,1), start=[mesh%full_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_full_lon,mesh%num_full_lat])
+      call fiona_output('r0', 'gzs', static%gzs(mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend  ), start=[mesh%full_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_full_lon,mesh%num_full_lat])
     end do
     call fiona_end_output('r0')
 
@@ -121,14 +121,14 @@ contains
       mesh   => blocks(iblk)%mesh
       state  => blocks(iblk)%state(itime)
       static => blocks(iblk)%static
-      call fiona_input('r0', 'u'  , state %u  (mesh%half_lon_ibeg:mesh%half_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend), start=[mesh%half_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_half_lon,mesh%num_full_lat], time_step=time_step)
-      call fiona_input('r0', 'v'  , state %v  (mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%half_lat_ibeg:mesh%half_lat_iend), start=[mesh%full_lon_ibeg,mesh%half_lat_ibeg], count=[mesh%num_full_lon,mesh%num_half_lat], time_step=time_step)
-      call fiona_input('r0', 'gz' , state %gz (mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend), start=[mesh%full_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_full_lon,mesh%num_full_lat], time_step=time_step)
-      call fiona_input('r0', 'gzs', static%gzs(mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend), start=[mesh%full_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_full_lon,mesh%num_full_lat], time_step=time_step)
-      call fill_halo(blocks(iblk), state %u  , full_lon=.false., full_lat=.true. )
-      call fill_halo(blocks(iblk), state %v  , full_lon=.true. , full_lat=.false.)
-      call fill_halo(blocks(iblk), state %gz , full_lon=.true. , full_lat=.true. )
-      call fill_halo(blocks(iblk), static%gzs, full_lon=.true. , full_lat=.true. )
+      call fiona_input('r0', 'u'  , state %u  (mesh%half_lon_ibeg:mesh%half_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend,1), start=[mesh%half_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_half_lon,mesh%num_full_lat], time_step=time_step)
+      call fiona_input('r0', 'v'  , state %v  (mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%half_lat_ibeg:mesh%half_lat_iend,1), start=[mesh%full_lon_ibeg,mesh%half_lat_ibeg], count=[mesh%num_full_lon,mesh%num_half_lat], time_step=time_step)
+      call fiona_input('r0', 'gz' , state %gz (mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend,1), start=[mesh%full_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_full_lon,mesh%num_full_lat], time_step=time_step)
+      call fiona_input('r0', 'gzs', static%gzs(mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend  ), start=[mesh%full_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_full_lon,mesh%num_full_lat], time_step=time_step)
+      call fill_halo(blocks(iblk), state %u  (:,:,1), full_lon=.false., full_lat=.true. )
+      call fill_halo(blocks(iblk), state %v  (:,:,1), full_lon=.true. , full_lat=.false.)
+      call fill_halo(blocks(iblk), state %gz (:,:,1), full_lon=.true. , full_lat=.true. )
+      call fill_halo(blocks(iblk), static%gzs       , full_lon=.true. , full_lat=.true. )
     end do
     call fiona_end_input('r0')
 
