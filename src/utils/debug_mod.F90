@@ -129,7 +129,7 @@ contains
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        ip_dke = ip_dke + (tend%dmfdlon(i,j,1) + tend%dmfdlat(i,j,1)) * state%ke(i,j) * mesh%area_cell(j)
+        ip_dke = ip_dke + (tend%dmfdlon(i,j,1) + tend%dmfdlat(i,j,1)) * state%ke(i,j,1) * mesh%area_cell(j)
         ip_dpe = ip_dpe + (tend%dmfdlon(i,j,1) + tend%dmfdlat(i,j,1)) * state%gz(i,j,1) * mesh%area_cell(j)
         ip_dmf = ip_dmf + (tend%dmfdlon(i,j,1) + tend%dmfdlat(i,j,1)) * mesh%area_cell(j)
       end do

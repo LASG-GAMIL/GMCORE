@@ -28,16 +28,16 @@ contains
 !$OMP PARALLEL DO COLLAPSE(2)
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        state%ke(i,j) = (mesh%area_lon_west (j  ) * state%u(i-1,j  ,1)**2 + &
-                         mesh%area_lon_east (j  ) * state%u(i  ,j  ,1)**2 + &
+        state%ke(i,j,1) = (mesh%area_lon_west (j  ) * state%u(i-1,j  ,1)**2 + &
+                           mesh%area_lon_east (j  ) * state%u(i  ,j  ,1)**2 + &
 #ifdef V_POLE
-                         mesh%area_lat_north(j  ) * state%v(i  ,j  ,1)**2 + &
-                         mesh%area_lat_south(j+1) * state%v(i  ,j+1,1)**2   &
+                           mesh%area_lat_north(j  ) * state%v(i  ,j  ,1)**2 + &
+                           mesh%area_lat_south(j+1) * state%v(i  ,j+1,1)**2   &
 #else
-                         mesh%area_lat_north(j-1) * state%v(i  ,j-1,1)**2 + &
-                         mesh%area_lat_south(j  ) * state%v(i  ,j  ,1)**2   &
+                           mesh%area_lat_north(j-1) * state%v(i  ,j-1,1)**2 + &
+                           mesh%area_lat_south(j  ) * state%v(i  ,j  ,1)**2   &
 #endif
-                        ) / mesh%area_cell(j)
+                          ) / mesh%area_cell(j)
       end do
     end do
 !$OMP END PARALLEL DO
@@ -52,7 +52,7 @@ contains
       call zonal_sum(proc%zonal_comm, pole)
       pole = pole / mesh%num_full_lon * 0.5_r8
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        state%ke(i,j) = pole
+        state%ke(i,j,1) = pole
       end do
     end if
     if (mesh%has_north_pole()) then
@@ -64,14 +64,14 @@ contains
       call zonal_sum(proc%zonal_comm, pole)
       pole = pole / mesh%num_full_lon * 0.5_r8
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        state%ke(i,j) = pole
+        state%ke(i,j,1) = pole
       end do
     end if
 #endif
 #ifdef V_POLE
-    call fill_halo(block, state%ke, full_lon=.true., full_lat=.true., west_halo=.false., north_halo=.false.)
+    call fill_halo(block, state%ke(:,:,1), full_lon=.true., full_lat=.true., west_halo=.false., north_halo=.false.)
 #else
-    call fill_halo(block, state%ke, full_lon=.true., full_lat=.true., west_halo=.false., south_halo=.false.)
+    call fill_halo(block, state%ke(:,:,1), full_lon=.true., full_lat=.true., west_halo=.false., south_halo=.false.)
 #endif
 
   end subroutine calc_ke_cell

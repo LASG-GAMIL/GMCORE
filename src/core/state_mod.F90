@@ -29,14 +29,14 @@ module state_mod
     real(r8), allocatable, dimension(:,:,:) :: mf_lat_n
     real(r8), allocatable, dimension(:,:,:) :: mf_lat_t
     real(r8), allocatable, dimension(:,:,:) :: mf_lon_t
-    real(r8), allocatable, dimension(:,:) :: pv
-    real(r8), allocatable, dimension(:,:) :: pv_lon
-    real(r8), allocatable, dimension(:,:) :: pv_lat
-    real(r8), allocatable, dimension(:,:) :: dpv_lon_t
-    real(r8), allocatable, dimension(:,:) :: dpv_lon_n
-    real(r8), allocatable, dimension(:,:) :: dpv_lat_t
-    real(r8), allocatable, dimension(:,:) :: dpv_lat_n
-    real(r8), allocatable, dimension(:,:) :: ke
+    real(r8), allocatable, dimension(:,:,:) :: pv
+    real(r8), allocatable, dimension(:,:,:) :: pv_lon
+    real(r8), allocatable, dimension(:,:,:) :: pv_lat
+    real(r8), allocatable, dimension(:,:,:) :: dpv_lon_t
+    real(r8), allocatable, dimension(:,:,:) :: dpv_lon_n
+    real(r8), allocatable, dimension(:,:,:) :: dpv_lat_t
+    real(r8), allocatable, dimension(:,:,:) :: dpv_lat_n
+    real(r8), allocatable, dimension(:,:,:) :: ke
     real(r8) tm
     real(r8) te
     real(r8) tpe
@@ -87,22 +87,22 @@ contains
     call allocate_array(mesh, this%u        , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%v        , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%gz       , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%m        , full_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%m_vtx    , half_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%m_lon    , half_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%m_lat    , full_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%mf_lon_n , half_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%mf_lon_t , half_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%mf_lat_n , full_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%mf_lat_t , full_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%pv       , half_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%pv_lon   , half_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%pv_lat   , full_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%dpv_lon_t, half_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%dpv_lon_n, half_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%dpv_lat_t, full_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%dpv_lat_n, full_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%ke       , full_lon=.true., full_lat=.true.)
+    call allocate_array(mesh, this%m        , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%m_vtx    , half_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%m_lon    , half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%m_lat    , full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%mf_lon_n , half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%mf_lon_t , half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%mf_lat_n , full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%mf_lat_t , full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%pv       , half_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%pv_lon   , half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%pv_lat   , full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dpv_lon_t, half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dpv_lon_n, half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dpv_lat_t, full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dpv_lat_n, full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%ke       , full_lon=.true., full_lat=.true., full_lev=.true.)
 
   end subroutine state_init
 

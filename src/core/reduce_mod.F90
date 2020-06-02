@@ -464,9 +464,9 @@ contains
     if (raw_mesh%is_outside_half_lat(j+buf_j)) then
       return
     else if (raw_mesh%is_south_pole(j+buf_j)) then
-      reduced_state%pv(:,buf_j,move) = raw_state%pv(raw_mesh%full_lon_ibeg,raw_mesh%half_lat_ibeg)
+      reduced_state%pv(:,buf_j,move) = raw_state%pv(raw_mesh%full_lon_ibeg,raw_mesh%half_lat_ibeg,1)
     else if (raw_mesh%is_north_pole(j+buf_j)) then
-      reduced_state%pv(:,buf_j,move) = raw_state%pv(raw_mesh%full_lon_ibeg,raw_mesh%half_lat_iend)
+      reduced_state%pv(:,buf_j,move) = raw_state%pv(raw_mesh%full_lon_ibeg,raw_mesh%half_lat_iend,1)
     else
       do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
         m_vtx = (                                                                                                        &
@@ -489,7 +489,7 @@ contains
     else if (raw_mesh%is_south_pole(j+buf_j) .or. raw_mesh%is_north_pole(j+buf_j+1)) then
       raw_i = raw_mesh%half_lon_ibeg + move - 1
       do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
-        reduced_state%pv(i,buf_j,move) = sum(raw_state%pv(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j))
+        reduced_state%pv(i,buf_j,move) = sum(raw_state%pv(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j,1))
         raw_i = raw_i + reduced_mesh%reduce_factor
       end do
       reduced_state%pv(:,buf_j,move) = reduced_state%pv(:,buf_j,move) / reduced_mesh%reduce_factor
@@ -896,7 +896,7 @@ contains
 
     raw_i = raw_mesh%full_lon_ibeg + move - 1
     do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
-      reduced_state%ke(i,buf_j,move) = sum(raw_state%ke(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j))
+      reduced_state%ke(i,buf_j,move) = sum(raw_state%ke(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j,1))
       raw_i = raw_i + reduced_mesh%reduce_factor
     end do
     reduced_state%ke(:,buf_j,move) = reduced_state%ke(:,buf_j,move) / reduced_mesh%reduce_factor

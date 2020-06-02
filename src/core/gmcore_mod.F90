@@ -193,13 +193,13 @@ contains
 
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          tav = tav + state%m_vtx(i,j,1) * state%pv(i,j) * mesh%area_vtx(j)
+          tav = tav + state%m_vtx(i,j,1) * state%pv(i,j,1) * mesh%area_vtx(j)
         end do
       end do
 
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          tpe = tpe + state%m_vtx(i,j,1) * state%pv(i,j)**2 * 0.5_r8 * mesh%area_vtx(j)
+          tpe = tpe + state%m_vtx(i,j,1) * state%pv(i,j,1)**2 * 0.5_r8 * mesh%area_vtx(j)
         end do
       end do
     end do
