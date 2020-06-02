@@ -270,19 +270,19 @@ contains
 
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          tend%du(i,j) =   tend%qhv(i,j) - tend%dpedlon(i,j) - tend%dkedlon(i,j)
+          tend%du(i,j,1) =   tend%qhv(i,j,1) - tend%dpedlon(i,j,1) - tend%dkedlon(i,j,1)
         end do
       end do
 
       do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          tend%dv(i,j) = - tend%qhu(i,j) - tend%dpedlat(i,j) - tend%dkedlat(i,j)
+          tend%dv(i,j,1) = - tend%qhu(i,j,1) - tend%dpedlat(i,j,1) - tend%dkedlat(i,j,1)
         end do
       end do
 
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          tend%dgd(i,j) = - (tend%dmfdlon(i,j) + tend%dmfdlat(i,j)) * g
+          tend%dgz(i,j,1) = - (tend%dmfdlon(i,j,1) + tend%dmfdlat(i,j,1)) * g
         end do
       end do
     case (slow_pass)
@@ -290,34 +290,34 @@ contains
 
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          tend%du(i,j) =   tend%qhv(i,j)
+          tend%du(i,j,1) =   tend%qhv(i,j,1)
         end do
       end do
 
       do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          tend%dv(i,j) = - tend%qhu(i,j)
+          tend%dv(i,j,1) = - tend%qhu(i,j,1)
         end do
       end do
 
-      tend%dgd = 0.0_r8
+      tend%dgz = 0.0_r8
     case (fast_pass)
       call calc_dkedlon_dkedlat(block, state, tend, dt)
       call calc_dpedlon_dpedlat(block, state, tend, dt)
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          tend%du(i,j) = - tend%dpedlon(i,j) - tend%dkedlon(i,j)
+          tend%du(i,j,1) = - tend%dpedlon(i,j,1) - tend%dkedlon(i,j,1)
         end do
       end do
       do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          tend%dv(i,j) = - tend%dpedlat(i,j) - tend%dkedlat(i,j)
+          tend%dv(i,j,1) = - tend%dpedlat(i,j,1) - tend%dkedlat(i,j,1)
         end do
       end do
       call calc_dmfdlon_dmfdlat(block, state, tend, dt)
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          tend%dgd(i,j) = - (tend%dmfdlon(i,j) + tend%dmfdlat(i,j)) * g
+          tend%dgz(i,j,1) = - (tend%dmfdlon(i,j,1) + tend%dmfdlat(i,j,1)) * g
         end do
       end do
     end select
@@ -415,7 +415,7 @@ contains
     call space_operators(block, block%state(s2) , block%tend(s3),          dt, pass)
     block%tend(old)%du  = (block%tend(s1)%du  + 4.0_r8 * block%tend(s2)%du  + block%tend(s3)%du ) / 6.0_r8
     block%tend(old)%dv  = (block%tend(s1)%dv  + 4.0_r8 * block%tend(s2)%dv  + block%tend(s3)%dv ) / 6.0_r8
-    block%tend(old)%dgd = (block%tend(s1)%dgd + 4.0_r8 * block%tend(s2)%dgd + block%tend(s3)%dgd) / 6.0_r8
+    block%tend(old)%dgz = (block%tend(s1)%dgz + 4.0_r8 * block%tend(s2)%dgz + block%tend(s3)%dgz) / 6.0_r8
     call update_state(         dt, block, block%tend(old), block%state(old), block%state(new))
 
   end subroutine runge_kutta_3rd
@@ -447,7 +447,7 @@ contains
     call space_operators(block, block%state(s3) , block%tend(s4),          dt, pass)
     block%tend(old)%du  = (block%tend(s1)%du  + 2.0_r8 * block%tend(s2)%du  + 2.0_r8 * block%tend(s3)%du  + block%tend(s4)%du ) / 6.0_r8
     block%tend(old)%dv  = (block%tend(s1)%dv  + 2.0_r8 * block%tend(s2)%dv  + 2.0_r8 * block%tend(s3)%dv  + block%tend(s4)%dv ) / 6.0_r8
-    block%tend(old)%dgd = (block%tend(s1)%dgd + 2.0_r8 * block%tend(s2)%dgd + 2.0_r8 * block%tend(s3)%dgd + block%tend(s4)%dgd) / 6.0_r8
+    block%tend(old)%dgz = (block%tend(s1)%dgz + 2.0_r8 * block%tend(s2)%dgz + 2.0_r8 * block%tend(s3)%dgz + block%tend(s4)%dgz) / 6.0_r8
     call update_state(         dt, block, block%tend(old), block%state(old), block%state(new))
 
   end subroutine runge_kutta_4th
@@ -467,21 +467,21 @@ contains
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        new_state%gz(i,j,1) = old_state%gz(i,j,1) + dt * tend%dgd(i,j)
+        new_state%gz(i,j,1) = old_state%gz(i,j,1) + dt * tend%dgz(i,j,1)
       end do
     end do
     call fill_halo(block, new_state%gz(:,:,1), full_lon=.true., full_lat=.true., async=new_state%async(async_gz))
 
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-        new_state%u(i,j,1) = old_state%u(i,j,1) + dt * tend%du(i,j)
+        new_state%u(i,j,1) = old_state%u(i,j,1) + dt * tend%du(i,j,1)
       end do
     end do
     call fill_halo(block, new_state%u(:,:,1), full_lon=.false., full_lat=.true., async=new_state%async(async_u))
 
     do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        new_state%v(i,j,1) = old_state%v(i,j,1) + dt * tend%dv(i,j)
+        new_state%v(i,j,1) = old_state%v(i,j,1) + dt * tend%dv(i,j,1)
       end do
     end do
     call fill_halo(block, new_state%v(:,:,1), full_lon=.true., full_lat=.false.)

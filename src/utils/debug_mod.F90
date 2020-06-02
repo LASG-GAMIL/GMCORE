@@ -113,25 +113,25 @@ contains
 
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-        ip_cf = ip_cf + tend%qhv(i,j) * state%mf_lon_n(i,j) * mesh%area_lon(j)
-        ip_dke = ip_dke + tend%dkedlon(i,j) * state%mf_lon_n(i,j) * mesh%area_lon(j) * 2
-        ip_dpe = ip_dpe + tend%dpedlon(i,j) * state%mf_lon_n(i,j) * mesh%area_lon(j) * 2
+        ip_cf  = ip_cf  + tend%qhv    (i,j,1) * state%mf_lon_n(i,j) * mesh%area_lon(j)
+        ip_dke = ip_dke + tend%dkedlon(i,j,1) * state%mf_lon_n(i,j) * mesh%area_lon(j) * 2
+        ip_dpe = ip_dpe + tend%dpedlon(i,j,1) * state%mf_lon_n(i,j) * mesh%area_lon(j) * 2
       end do
     end do
 
     do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        ip_cf = ip_cf - tend%qhu(i,j) * state%mf_lat_n(i,j) * mesh%area_lat(j)
-        ip_dke = ip_dke + tend%dkedlat(i,j) * state%mf_lat_n(i,j) * mesh%area_lat(j) * 2
-        ip_dpe = ip_dpe + tend%dpedlat(i,j) * state%mf_lat_n(i,j) * mesh%area_lat(j) * 2
+        ip_cf  = ip_cf  - tend%qhu    (i,j,1) * state%mf_lat_n(i,j) * mesh%area_lat(j)
+        ip_dke = ip_dke + tend%dkedlat(i,j,1) * state%mf_lat_n(i,j) * mesh%area_lat(j) * 2
+        ip_dpe = ip_dpe + tend%dpedlat(i,j,1) * state%mf_lat_n(i,j) * mesh%area_lat(j) * 2
       end do
     end do
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        ip_dke = ip_dke + (tend%dmfdlon(i,j) + tend%dmfdlat(i,j)) * state%ke(i,j) * mesh%area_cell(j)
-        ip_dpe = ip_dpe + (tend%dmfdlon(i,j) + tend%dmfdlat(i,j)) * state%gz(i,j,1) * mesh%area_cell(j)
-        ip_dmf = ip_dmf + (tend%dmfdlon(i,j) + tend%dmfdlat(i,j)) * mesh%area_cell(j)
+        ip_dke = ip_dke + (tend%dmfdlon(i,j,1) + tend%dmfdlat(i,j,1)) * state%ke(i,j) * mesh%area_cell(j)
+        ip_dpe = ip_dpe + (tend%dmfdlon(i,j,1) + tend%dmfdlat(i,j,1)) * state%gz(i,j,1) * mesh%area_cell(j)
+        ip_dmf = ip_dmf + (tend%dmfdlon(i,j,1) + tend%dmfdlat(i,j,1)) * mesh%area_cell(j)
       end do
     end do
 

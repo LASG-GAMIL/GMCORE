@@ -13,18 +13,18 @@ module tend_mod
 
   type tend_type
     type(mesh_type), pointer :: mesh => null()
-    real(r8), allocatable, dimension(:,:) :: du
-    real(r8), allocatable, dimension(:,:) :: dv
-    real(r8), allocatable, dimension(:,:) :: dgd
+    real(r8), allocatable, dimension(:,:,:) :: du
+    real(r8), allocatable, dimension(:,:,:) :: dv
+    real(r8), allocatable, dimension(:,:,:) :: dgz
     ! Individual tendencies
-    real(r8), allocatable, dimension(:,:) :: qhv
-    real(r8), allocatable, dimension(:,:) :: qhu
-    real(r8), allocatable, dimension(:,:) :: dpedlon
-    real(r8), allocatable, dimension(:,:) :: dkedlon
-    real(r8), allocatable, dimension(:,:) :: dpedlat
-    real(r8), allocatable, dimension(:,:) :: dkedlat
-    real(r8), allocatable, dimension(:,:) :: dmfdlon
-    real(r8), allocatable, dimension(:,:) :: dmfdlat
+    real(r8), allocatable, dimension(:,:,:) :: qhv
+    real(r8), allocatable, dimension(:,:,:) :: qhu
+    real(r8), allocatable, dimension(:,:,:) :: dpedlon
+    real(r8), allocatable, dimension(:,:,:) :: dkedlon
+    real(r8), allocatable, dimension(:,:,:) :: dpedlat
+    real(r8), allocatable, dimension(:,:,:) :: dkedlat
+    real(r8), allocatable, dimension(:,:,:) :: dmfdlon
+    real(r8), allocatable, dimension(:,:,:) :: dmfdlat
   contains
     procedure :: init => tend_init
     procedure :: clear => tend_clear
@@ -42,17 +42,17 @@ contains
 
     this%mesh => mesh
 
-    call allocate_array(mesh, this%du     , half_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%dv     , full_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%dgd    , full_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%qhu    , full_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%qhv    , half_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%dpedlon, half_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%dkedlon, half_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%dpedlat, full_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%dkedlat, full_lon=.true., half_lat=.true.)
-    call allocate_array(mesh, this%dmfdlon, full_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%dmfdlat, full_lon=.true., full_lat=.true.)
+    call allocate_array(mesh, this%du     , half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dv     , full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dgz    , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%qhu    , full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%qhv    , half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dpedlon, half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dkedlon, half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dpedlat, full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dkedlat, full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dmfdlon, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dmfdlat, full_lon=.true., full_lat=.true., full_lev=.true.)
 
   end subroutine tend_init
 
@@ -62,7 +62,7 @@ contains
 
     if (allocated(this%du     )) deallocate(this%du     )
     if (allocated(this%dv     )) deallocate(this%dv     )
-    if (allocated(this%dgd    )) deallocate(this%dgd    )
+    if (allocated(this%dgz    )) deallocate(this%dgz    )
     if (allocated(this%qhu    )) deallocate(this%qhu    )
     if (allocated(this%qhv    )) deallocate(this%qhv    )
     if (allocated(this%dpedlon)) deallocate(this%dpedlon)
