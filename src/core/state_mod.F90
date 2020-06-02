@@ -21,14 +21,14 @@ module state_mod
     real(r8), allocatable, dimension(:,:,:) :: v
     real(r8), allocatable, dimension(:,:,:) :: gz
     ! Diagnostic variables
-    real(r8), allocatable, dimension(:,:) :: m
-    real(r8), allocatable, dimension(:,:) :: m_vtx
-    real(r8), allocatable, dimension(:,:) :: m_lon
-    real(r8), allocatable, dimension(:,:) :: m_lat
-    real(r8), allocatable, dimension(:,:) :: mf_lon_n
-    real(r8), allocatable, dimension(:,:) :: mf_lat_n
-    real(r8), allocatable, dimension(:,:) :: mf_lat_t
-    real(r8), allocatable, dimension(:,:) :: mf_lon_t
+    real(r8), allocatable, dimension(:,:,:) :: m
+    real(r8), allocatable, dimension(:,:,:) :: m_vtx
+    real(r8), allocatable, dimension(:,:,:) :: m_lon
+    real(r8), allocatable, dimension(:,:,:) :: m_lat
+    real(r8), allocatable, dimension(:,:,:) :: mf_lon_n
+    real(r8), allocatable, dimension(:,:,:) :: mf_lat_n
+    real(r8), allocatable, dimension(:,:,:) :: mf_lat_t
+    real(r8), allocatable, dimension(:,:,:) :: mf_lon_t
     real(r8), allocatable, dimension(:,:) :: pv
     real(r8), allocatable, dimension(:,:) :: pv_lon
     real(r8), allocatable, dimension(:,:) :: pv_lat
