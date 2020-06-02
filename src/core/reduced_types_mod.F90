@@ -19,6 +19,16 @@ module reduced_types_mod
     integer full_lon_ub
     integer half_lon_lb
     integer half_lon_ub
+    integer num_full_lev
+    integer num_half_lev
+    integer full_lev_ibeg
+    integer full_lev_iend
+    integer half_lev_ibeg
+    integer half_lev_iend
+    integer full_lev_lb
+    integer full_lev_ub
+    integer half_lev_lb
+    integer half_lev_ub
 #ifdef V_POLE
     real(r8), dimension(  -1:1) :: full_lat         = inf
     real(r8), dimension(  -1:1) :: half_lat         = inf
@@ -67,35 +77,35 @@ module reduced_types_mod
   end type reduced_static_type
 
   type reduced_state_type
-    real(r8), allocatable, dimension(:,:,:) :: u
-    real(r8), allocatable, dimension(:,:,:) :: v
-    real(r8), allocatable, dimension(:,:,:) :: gz
-    real(r8), allocatable, dimension(:,:,:) :: m
-    real(r8), allocatable, dimension(:,:,:) :: m_lon
-    real(r8), allocatable, dimension(:,:,:) :: m_lat
-    real(r8), allocatable, dimension(:,:,:) :: mf_lon_n
-    real(r8), allocatable, dimension(:,:,:) :: mf_lon_t
-    real(r8), allocatable, dimension(:,:,:) :: mf_lat_n
-    real(r8), allocatable, dimension(:,:,:) :: mf_lat_t
-    real(r8), allocatable, dimension(:,:,:) :: pv
-    real(r8), allocatable, dimension(:,:,:) :: pv_lon
-    real(r8), allocatable, dimension(:,:,:) :: pv_lat
-    real(r8), allocatable, dimension(:,:,:) :: dpv_lon_t
-    real(r8), allocatable, dimension(:,:,:) :: dpv_lat_t
-    real(r8), allocatable, dimension(:,:,:) :: dpv_lon_n
-    real(r8), allocatable, dimension(:,:,:) :: dpv_lat_n
-    real(r8), allocatable, dimension(:,:,:) :: ke
+    real(r8), allocatable, dimension(:,:,:,:) :: u
+    real(r8), allocatable, dimension(:,:,:,:) :: v
+    real(r8), allocatable, dimension(:,:,:,:) :: gz
+    real(r8), allocatable, dimension(:,:,:,:) :: m
+    real(r8), allocatable, dimension(:,:,:,:) :: m_lon
+    real(r8), allocatable, dimension(:,:,:,:) :: m_lat
+    real(r8), allocatable, dimension(:,:,:,:) :: mf_lon_n
+    real(r8), allocatable, dimension(:,:,:,:) :: mf_lon_t
+    real(r8), allocatable, dimension(:,:,:,:) :: mf_lat_n
+    real(r8), allocatable, dimension(:,:,:,:) :: mf_lat_t
+    real(r8), allocatable, dimension(:,:,:,:) :: pv
+    real(r8), allocatable, dimension(:,:,:,:) :: pv_lon
+    real(r8), allocatable, dimension(:,:,:,:) :: pv_lat
+    real(r8), allocatable, dimension(:,:,:,:) :: dpv_lon_t
+    real(r8), allocatable, dimension(:,:,:,:) :: dpv_lat_t
+    real(r8), allocatable, dimension(:,:,:,:) :: dpv_lon_n
+    real(r8), allocatable, dimension(:,:,:,:) :: dpv_lat_n
+    real(r8), allocatable, dimension(:,:,:,:) :: ke
     type(async_type), allocatable :: async(:,:,:)
   contains
     final :: reduced_state_final
   end type reduced_state_type
 
   type reduced_tend_type
-    real(r8), allocatable, dimension(:) :: qhv
-    real(r8), allocatable, dimension(:) :: qhu
-    real(r8), allocatable, dimension(:) :: dmfdlon
-    real(r8), allocatable, dimension(:) :: dpedlon
-    real(r8), allocatable, dimension(:) :: dkedlon
+    real(r8), allocatable, dimension(:,:) :: qhv
+    real(r8), allocatable, dimension(:,:) :: qhu
+    real(r8), allocatable, dimension(:,:) :: dmfdlon
+    real(r8), allocatable, dimension(:,:) :: dpedlon
+    real(r8), allocatable, dimension(:,:) :: dkedlon
   contains
     final :: reduced_tend_final
   end type reduced_tend_type
