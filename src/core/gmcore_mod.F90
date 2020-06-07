@@ -53,7 +53,7 @@ contains
     real(r8) seconds
 
     call log_init()
-    call global_mesh%init_global(num_lon, num_lat, lon_halo_width=max(1, maxval(reduce_factors) - 1), lat_halo_width=1)
+    call global_mesh%init_global(num_lon, num_lat, lon_halo_width=max(1, maxval(reduce_factors) - 1), lat_halo_width=2)
     call debug_check_areas()
     call process_init()
     call time_init()
@@ -106,13 +106,14 @@ contains
     call operators_prepare(proc%blocks, old)
     call diagnose(proc%blocks, old)
     call output(proc%blocks, old)
+    if (proc%id == 0) call log_print_diag(curr_time%isoformat())
 
     do while (.not. time_is_finished())
       call time_integrate(dt_in_seconds, proc%blocks)
-      if (proc%id == 0 .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
       call time_advance(dt_in_seconds)
       call operators_prepare(proc%blocks, old)
       call diagnose(proc%blocks, old)
+      if (proc%id == 0 .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
       call output(proc%blocks, old)
     end do
 
@@ -158,7 +159,6 @@ contains
     type(static_type), pointer :: static
     integer i, j, iblk
     real(r8) tm, te, tav, tpe
-    real(r8), save :: tpe0 = 0.0_r8
 
     tm = 0.0_r8
     te = 0.0_r8
@@ -217,27 +217,6 @@ contains
     call log_add_diag('tm' , tm )
     call log_add_diag('te' , te )
     call log_add_diag('tpe', tpe)
-
-    !if (tpe0 == 0) tpe0 = tpe
-    !if (shrink_cound_down == 0) then
-    !  if (shrink_ratio /= 1) shrink_ratio = 1
-    !else
-    !  shrink_cound_down = shrink_cound_down - 1
-    !  do iblk = 1, size(blocks)
-    !    call damp_state(blocks(iblk), blocks(iblk)%state(itime))
-    !  end do
-    !end if
-    !if (tpe > tpe0) then
-    !  ! Shrink time step for stability.
-    !  if (shrink_cound_down == 0) then
-    !    shrink_ratio = 0.75
-    !    ! if (proc%id == 0) call log_notice('Shrink time step by ' // to_string(shrink_ratio, 8) // '.')
-    !    shrink_cound_down = 3600.0 / (dt_in_seconds * shrink_ratio)
-    !  end if
-    !end if
-    !tpe0 = tpe
-    !call log_add_diag('cnt', shrink_cound_down)
-    !call log_add_diag('shk', shrink_ratio)
 
   end subroutine diagnose
 
@@ -470,21 +449,21 @@ contains
         new_state%gz(i,j,1) = old_state%gz(i,j,1) + dt * tend%dgz(i,j,1)
       end do
     end do
-    call fill_halo(block, new_state%gz, full_lon=.true., full_lat=.true., async=new_state%async(async_gz))
+    call fill_halo(block, new_state%gz, full_lon=.true., full_lat=.true.)
 
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
         new_state%u(i,j,1) = old_state%u(i,j,1) + dt * tend%du(i,j,1)
       end do
     end do
-    call fill_halo(block, new_state%u, full_lon=.false., full_lat=.true., async=new_state%async(async_u))
+    call fill_halo(block, new_state%u, full_lon=.false., full_lat=.true.)
 
     do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         new_state%v(i,j,1) = old_state%v(i,j,1) + dt * tend%dv(i,j,1)
       end do
     end do
-    call fill_halo(block, new_state%v, full_lon=.true., full_lat=.false., async=new_state%async(async_v))
+    call fill_halo(block, new_state%v, full_lon=.true., full_lat=.false.)
 
     call damp_state(block, new_state)
 

@@ -166,7 +166,10 @@ contains
     logical, intent(in), optional :: east_halo
 
     integer status(MPI_STATUS_SIZE), ierr
-    integer i1, i2, i3, i4
+    integer nx, nz, i1, i2, i3, i4
+
+    nz = size(array, 1)
+    nx = size(array, 2)
 
     if (merge(west_halo, .true., present(west_halo))) then
       !   west halo |                                   | east_halo
@@ -175,13 +178,13 @@ contains
       ! | i3  | i4  |     |     |     |     | i1  | i2  |     |  n  |
       ! |_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|
       !    |                                   |
-      !    1                              n - 2 w + 1
-      i1 = size(array) - 2 * halo_width + 1
+      !    1                             nx - 2 w + 1
+      i1 = nx - 2 * halo_width + 1
       i2 = i1 + halo_width - 1
       i3 = 1
       i4 = i3 + halo_width - 1
-      call MPI_SENDRECV(array(:,i1:i2), halo_width * size(array, 1), MPI_DOUBLE, block%halo(2)%proc_id, 1, &
-                        array(:,i3:i4), halo_width * size(array, 1), MPI_DOUBLE, block%halo(1)%proc_id, 1, &
+      call MPI_SENDRECV(array(:,i1:i2), halo_width * nz, MPI_DOUBLE, block%halo(2)%proc_id, 1, &
+                        array(:,i3:i4), halo_width * nz, MPI_DOUBLE, block%halo(1)%proc_id, 1, &
                         proc%comm, status, ierr)
     end if
     if (merge(east_halo, .true., present(east_halo))) then
@@ -191,13 +194,13 @@ contains
       ! |     |     | i1  | i2  |     |     |     |     | i3  | i4  |
       ! |_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|
       !                |                                   |
-      !              1 + w                             n - w + 1
+      !              1 + w                            nx - w + 1
       i1 = 1 + halo_width
       i2 = i1 + halo_width - 1
-      i3 = size(array) - halo_width + 1
+      i3 = nx - halo_width + 1
       i4 = i3 + halo_width - 1
-      call MPI_SENDRECV(array(:,i1:i2), halo_width * size(array, 1), MPI_DOUBLE, block%halo(1)%proc_id, 2, &
-                        array(:,i3:i4), halo_width * size(array, 1), MPI_DOUBLE, block%halo(2)%proc_id, 2, &
+      call MPI_SENDRECV(array(:,i1:i2), halo_width * nz, MPI_DOUBLE, block%halo(1)%proc_id, 2, &
+                        array(:,i3:i4), halo_width * nz, MPI_DOUBLE, block%halo(2)%proc_id, 2, &
                         proc%comm, status, ierr)
     end if
 
@@ -213,7 +216,10 @@ contains
     logical, intent(in), optional :: east_halo
 
     integer ierr
-    integer i1, i2, i3, i4
+    integer nx, nz, i1, i2, i3, i4
+
+    nz = size(array, 1)
+    nx = size(array, 2)
 
     if (merge(west_halo, .true., present(west_halo))) then
       !   west halo |                                   | east_halo
@@ -222,13 +228,13 @@ contains
       ! | i3  | i4  |     |     |     |     | i1  | i2  |     |  n  |
       ! |_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|
       !    |                                   |
-      !    1                              n - 2 w + 1
-      i1 = size(array) - 2 * halo_width + 1
+      !    1                             nx - 2 w + 1
+      i1 = nx - 2 * halo_width + 1
       i2 = i1 + halo_width - 1
       i3 = 1
       i4 = i3 + halo_width - 1
-      call MPI_ISEND(array(:,i1:i2), halo_width * size(array, 1), MPI_DOUBLE, block%halo(2)%proc_id, 1, proc%comm, async%west_send_req, ierr)
-      call MPI_IRECV(array(:,i3:i4), halo_width * size(array, 1), MPI_DOUBLE, block%halo(1)%proc_id, 1, proc%comm, async%west_recv_req, ierr)
+      call MPI_ISEND(array(:,i1:i2), halo_width * nz, MPI_DOUBLE, block%halo(2)%proc_id, 1, proc%comm, async%west_send_req, ierr)
+      call MPI_IRECV(array(:,i3:i4), halo_width * nz, MPI_DOUBLE, block%halo(1)%proc_id, 1, proc%comm, async%west_recv_req, ierr)
     end if
     if (merge(east_halo, .true., present(east_halo))) then
       !   west halo |                                   | east_halo
@@ -237,13 +243,13 @@ contains
       ! |     |     | i1  | i2  |     |     |     |     | i3  | i4  |
       ! |_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|
       !                |                                   |
-      !              1 + w                             n - w + 1
+      !              1 + w                            nx - w + 1
       i1 = 1 + halo_width
       i2 = i1 + halo_width - 1
-      i3 = size(array) - halo_width + 1
+      i3 = nx - halo_width + 1
       i4 = i3 + halo_width - 1
-      call MPI_ISEND(array(:,i1:i2), halo_width * size(array, 1), MPI_DOUBLE, block%halo(1)%proc_id, 2, proc%comm, async%east_send_req, ierr)
-      call MPI_IRECV(array(:,i3:i4), halo_width * size(array, 1), MPI_DOUBLE, block%halo(2)%proc_id, 2, proc%comm, async%east_recv_req, ierr)
+      call MPI_ISEND(array(:,i1:i2), halo_width * nz, MPI_DOUBLE, block%halo(1)%proc_id, 2, proc%comm, async%east_send_req, ierr)
+      call MPI_IRECV(array(:,i3:i4), halo_width * nz, MPI_DOUBLE, block%halo(2)%proc_id, 2, proc%comm, async%east_recv_req, ierr)
     end if
 
   end subroutine fill_zonal_halo_2d_r8_async

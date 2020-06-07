@@ -34,7 +34,11 @@ cp $gmcore_root/src/tests/swm/namelist.swm.jz.360x180  $work_dir
 cp $gmcore_root/src/tests/swm/namelist.swm.cp.360x180  $work_dir
 cp $gmcore_root/src/tests/swm/namelist.swm.sw.360x180  $work_dir
 for namelist in $(ls $work_dir/namelist.swm.*); do
-  sed -i '.bak' "s/num_proc_lat = [0-9]*/num_proc_lat = $np/" $namelist
+  if [[ $(uname) == 'Darwin' ]]; then
+    sed -i '.bak' "s/num_proc_lat = [0-9]*/num_proc_lat = $np/" $namelist
+  else
+    sed -i "s/num_proc_lat = [0-9]*/num_proc_lat = $np/" $namelist
+  fi
 done
 rm *.bak
 

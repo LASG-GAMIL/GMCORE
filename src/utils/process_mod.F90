@@ -85,6 +85,7 @@ contains
     integer ierr
 
     if (allocated(proc%blocks)) deallocate(proc%blocks)
+    if (proc%group /= MPI_GROUP_NULL) call MPI_GROUP_FREE(proc%group, ierr)
 
     call MPI_FINALIZE(ierr)
 
@@ -278,17 +279,17 @@ contains
           exit
         end if
       end do
-      allocate(zonal_proc_id(proc%cart_dims(1)))
       if (global_mesh%is_south_pole(lat_ibeg) .or. global_mesh%is_north_pole(lat_iend) .or. &
           lat_ibeg <= jr .or. lat_iend > num_total_lat - jr) then
         call log_notice('Create zonal communicator on process ' // to_string(proc%id) // '.')
+        allocate(zonal_proc_id(proc%cart_dims(1)))
         do i = 1, proc%cart_dims(1)
           call MPI_CART_RANK(proc%comm, [i-1,proc%cart_coords(2)], zonal_proc_id(i), ierr)
         end do
         call MPI_GROUP_INCL(proc%group, size(zonal_proc_id), zonal_proc_id, proc%zonal_group, ierr)
         call MPI_COMM_CREATE_GROUP(proc%comm, proc%zonal_group, sum(zonal_proc_id), proc%zonal_comm, ierr)
+        deallocate(zonal_proc_id)
       end if
-      deallocate(zonal_proc_id)
     end if
 
   end subroutine setup_zonal_comm_for_reduce

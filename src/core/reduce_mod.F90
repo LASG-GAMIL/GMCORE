@@ -357,7 +357,7 @@ contains
       raw_i = raw_i + reduced_mesh%reduce_factor
     end do
     reduced_static%gzs(:,buf_j,move) = reduced_static%gzs(:,buf_j,move) / reduced_mesh%reduce_factor
-    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_static%gzs(:,buf_j,move), west_halo=.false.)
+    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_static%gzs(:,buf_j,move))
 
   end subroutine reduce_gzs
 
@@ -677,7 +677,7 @@ contains
           reduced_mesh%full_tangent_wgt(1,buf_j) * (reduced_state%mf_lat_n(k,i,buf_j  ,move) + reduced_state%mf_lat_n(k,i+1,buf_j  ,move)) + &
           reduced_mesh%full_tangent_wgt(2,buf_j) * (reduced_state%mf_lat_n(k,i,buf_j+1,move) + reduced_state%mf_lat_n(k,i+1,buf_j+1,move))
 #else
-        reduced_state%mf_lon_t(i,k,buf_j,move) =                                                                                             &
+        reduced_state%mf_lon_t(k,i,buf_j,move) =                                                                                             &
           reduced_mesh%full_tangent_wgt(1,buf_j) * (reduced_state%mf_lat_n(k,i,buf_j-1,move) + reduced_state%mf_lat_n(k,i+1,buf_j-1,move)) + &
           reduced_mesh%full_tangent_wgt(2,buf_j) * (reduced_state%mf_lat_n(k,i,buf_j  ,move) + reduced_state%mf_lat_n(k,i+1,buf_j  ,move))
 #endif
@@ -763,10 +763,10 @@ contains
 
     do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
       do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
-        reduced_state%dpv_lat_t(k,i,buf_j,move) = reduced_state%pv(k,i+1,buf_j,move) - reduced_state%pv(k,i,buf_j,move)
+        reduced_state%dpv_lat_t(k,i,buf_j,move) = reduced_state%pv(k,i,buf_j,move) - reduced_state%pv(k,i-1,buf_j,move)
       end do
     end do
-    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%dpv_lat_t(:,:,buf_j,move), west_halo=.false.)
+    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%dpv_lat_t(:,:,buf_j,move))
 
   end subroutine reduce_dpv_lat_t
 

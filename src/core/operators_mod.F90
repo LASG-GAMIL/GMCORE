@@ -185,11 +185,7 @@ contains
         end do
       end do
     end do
-#ifdef V_POLE
-    call fill_halo(block, state%mf_lon_n, full_lon=.false., full_lat=.true., async=state%async(async_mf_lon_n), north_halo=.false.)
-#else
-    call fill_halo(block, state%mf_lon_n, full_lon=.false., full_lat=.true., async=state%async(async_mf_lon_n), south_halo=.false.)
-#endif
+    call fill_halo(block, state%mf_lon_n, full_lon=.false., full_lat=.true.)
 
     do k = state%mesh%full_lev_ibeg, state%mesh%full_lev_iend
       do j = state%mesh%half_lat_ibeg_no_pole, state%mesh%half_lat_iend_no_pole
@@ -198,11 +194,7 @@ contains
         end do
       end do
     end do
-#ifdef V_POLE
-    call fill_halo(block, state%mf_lat_n, full_lon=.true., full_lat=.false., async=state%async(async_mf_lat_n), south_halo=.false.)
-#else
-    call fill_halo(block, state%mf_lat_n, full_lon=.true., full_lat=.false., async=state%async(async_mf_lat_n), north_halo=.false.)
-#endif
+    call fill_halo(block, state%mf_lat_n, full_lon=.true., full_lat=.false.)
 
   end subroutine calc_mf_lon_n_mf_lat_n
 
@@ -267,6 +259,8 @@ contains
     end select
 
     call wait_halo(state%async(async_pv_lon))
+    call wait_halo(state%async(async_pv_lat))
+
 #ifdef V_POLE
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
@@ -419,7 +413,6 @@ contains
     end do
 #endif
 
-    call wait_halo(state%async(async_pv_lat))
 #ifdef V_POLE
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
