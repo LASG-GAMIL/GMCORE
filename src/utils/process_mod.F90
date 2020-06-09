@@ -58,14 +58,10 @@ contains
 
     ! Setup halos (only normal halos for the time being).
     allocate(proc%blocks(1)%halo(4))
-    call proc%blocks(1)%halo(1)%init_normal(proc%blocks(1)%mesh, ngb_proc_id=proc%ngb(1), &
-                                            west_lat_ibeg=proc%lat_ibeg, west_lat_iend=proc%lat_iend)
-    call proc%blocks(1)%halo(2)%init_normal(proc%blocks(1)%mesh, ngb_proc_id=proc%ngb(2), &
-                                            east_lat_ibeg=proc%lat_ibeg, east_lat_iend=proc%lat_iend)
-    call proc%blocks(1)%halo(3)%init_normal(proc%blocks(1)%mesh, ngb_proc_id=proc%ngb(3), &
-                                            south_lon_ibeg=proc%lon_ibeg, south_lon_iend=proc%lon_iend)
-    call proc%blocks(1)%halo(4)%init_normal(proc%blocks(1)%mesh, ngb_proc_id=proc%ngb(4), &
-                                            north_lon_ibeg=proc%lon_ibeg, north_lon_iend=proc%lon_iend)
+    call proc%blocks(1)%halo(1)%init_normal(proc%blocks(1)%mesh, ngb_proc_id=proc%ngb(1), west=.true.)
+    call proc%blocks(1)%halo(2)%init_normal(proc%blocks(1)%mesh, ngb_proc_id=proc%ngb(2), east=.true.)
+    call proc%blocks(1)%halo(3)%init_normal(proc%blocks(1)%mesh, ngb_proc_id=proc%ngb(3), south=.true.)
+    call proc%blocks(1)%halo(4)%init_normal(proc%blocks(1)%mesh, ngb_proc_id=proc%ngb(4), north=.true.)
 
   end subroutine process_init
 

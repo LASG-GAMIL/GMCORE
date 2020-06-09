@@ -108,8 +108,10 @@ module mesh_mod
     procedure :: is_south_pole => mesh_is_south_pole
     procedure :: is_north_pole => mesh_is_north_pole
     procedure :: is_pole => mesh_is_pole
-    procedure :: is_outside_full_lat => mesh_is_outside_full_lat
-    procedure :: is_outside_half_lat => mesh_is_outside_half_lat
+    procedure :: is_inside_with_halo_full_lat => mesh_is_inside_with_halo_full_lat
+    procedure :: is_inside_with_halo_half_lat => mesh_is_inside_with_halo_half_lat
+    procedure :: is_outside_pole_full_lat => mesh_is_outside_pole_full_lat
+    procedure :: is_outside_pole_half_lat => mesh_is_outside_pole_half_lat
     final :: mesh_final
   end type mesh_type
 
@@ -628,10 +630,10 @@ contains
     allocate(this%area_lat_south     (this%half_lat_lb:this%half_lat_ub)); this%area_lat_south      = 0.0_r8
     allocate(this%area_vtx           (this%half_lat_lb:this%half_lat_ub)); this%area_vtx            = 0.0_r8
     allocate(this%area_subcell     (2,this%full_lat_lb:this%full_lat_ub)); this%area_subcell        = 0.0_r8
-    allocate(this%de_lon             (this%full_lat_lb:this%full_lat_ub)); this%de_lon              = inf
-    allocate(this%de_lat             (this%half_lat_lb:this%half_lat_ub)); this%de_lat              = inf
-    allocate(this%le_lat             (this%half_lat_lb:this%half_lat_ub)); this%le_lat              = inf
-    allocate(this%le_lon             (this%full_lat_lb:this%full_lat_ub)); this%le_lon              = inf
+    allocate(this%de_lon             (this%full_lat_lb:this%full_lat_ub)); this%de_lon              = 0.0_r8
+    allocate(this%de_lat             (this%half_lat_lb:this%half_lat_ub)); this%de_lat              = 0.0_r8
+    allocate(this%le_lat             (this%half_lat_lb:this%half_lat_ub)); this%le_lat              = 0.0_r8
+    allocate(this%le_lon             (this%full_lat_lb:this%full_lat_ub)); this%le_lon              = 0.0_r8
     allocate(this%full_tangent_wgt (2,this%full_lat_lb:this%full_lat_ub)); this%full_tangent_wgt    = inf
     allocate(this%half_tangent_wgt (2,this%half_lat_lb:this%half_lat_ub)); this%half_tangent_wgt    = inf
     allocate(this%full_f             (this%full_lat_lb:this%full_lat_ub)); this%full_f              = inf
@@ -694,23 +696,41 @@ contains
 
   end function mesh_is_pole
 
-  logical function mesh_is_outside_full_lat(this, j) result(res)
+  logical function mesh_is_inside_with_halo_full_lat(this, j) result(res)
+
+    class(mesh_type), intent(in) :: this
+    integer, intent(in) :: j
+
+    res = j >= this%full_lat_lb .and. j <= this%full_lat_ub
+
+  end function mesh_is_inside_with_halo_full_lat
+
+  logical function mesh_is_inside_with_halo_half_lat(this, j) result(res)
+
+    class(mesh_type), intent(in) :: this
+    integer, intent(in) :: j
+
+    res = j >= this%half_lat_lb .and. j <= this%half_lat_ub
+
+  end function mesh_is_inside_with_halo_half_lat
+
+  logical function mesh_is_outside_pole_full_lat(this, j) result(res)
 
     class(mesh_type), intent(in) :: this
     integer, intent(in) :: j
 
     res = j < 1 .or. j > global_mesh%num_full_lat
 
-  end function mesh_is_outside_full_lat
+  end function mesh_is_outside_pole_full_lat
 
-  logical function mesh_is_outside_half_lat(this, j) result(res)
+  logical function mesh_is_outside_pole_half_lat(this, j) result(res)
 
     class(mesh_type), intent(in) :: this
     integer, intent(in) :: j
 
     res = j < 1 .or. j > global_mesh%num_half_lat
 
-  end function mesh_is_outside_half_lat
+  end function mesh_is_outside_pole_half_lat
 
   subroutine mesh_final(this)
 
