@@ -36,6 +36,8 @@ module namelist_mod
   real(r8) :: coarse_polar_lats_mul = 2
 
   integer :: reduce_factors(100) = 0
+  integer :: color_proc_lat_reduce(100) = 0
+  integer :: num_proc_lon_reduce(100) = 0
   integer :: damp_orders(100) = 0
   logical :: adaptive_damp = .false.
   
@@ -77,6 +79,8 @@ module namelist_mod
     coarse_polar_lats_exp     , &
     coarse_polar_lats_mul     , &
     reduce_factors            , &
+    color_proc_lat_reduce     , &
+    num_proc_lon_reduce       , &
     damp_orders               , &
     adaptive_damp             , &
     nest_time_scheme          , &
