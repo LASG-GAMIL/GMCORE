@@ -135,10 +135,11 @@ contains
       end do
     end do
 
-    call log_add_diag('cf' , ip_cf  / radius**2)
-    call log_add_diag('dke', ip_dke / radius**2)
-    call log_add_diag('dpe', ip_dpe / radius**2)
-    ! call log_add_diag('dmf', ip_dmf / radius**2)
+    call global_sum(proc%comm, ip_cf)
+    call global_sum(proc%comm, ip_dke)
+    call global_sum(proc%comm, ip_dpe)
+
+    if (proc%id == 0) write(6, *) ip_cf  / radius**2, ip_dke / radius**2, ip_dpe / radius**2
 
   end subroutine debug_check_space_operators
 
