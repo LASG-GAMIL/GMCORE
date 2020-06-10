@@ -6,8 +6,10 @@ Check barotropic test results [here](https://github.com/gmcore-project/gmcore/wi
 
 # Status
 
-- [ ] Parallelization using MPI, see branch [parallel](https://github.com/LASG-GAMIL/GMCORE/tree/parallel) (~2020.03).
-- [ ] Nesting at middle and low latitudes (~2020.04).
+- Parallelization using MPI:
+  - [X] 1D latitudional decomposition (done)
+  - [ ] 2D decomposition (~2020.06)
+- [ ] Nesting at middle and low latitudes (~2020.09).
 - [ ] Acceleration using GPU (~?).
 - [ ] Baroclinic version (~2020.10).
 - [ ] Advection module (~2021).
@@ -20,8 +22,15 @@ First make sure you have installed netCDF library, and set `NETCDF_ROOT` environ
 ```
 $ git clone https://github.com/LASG-GAMIL/GMCORE gmcore
 ```
-There is a shell script `run_tests.sh`, which will clone the submodules, compile the model and run several tests:
+There is a shell script `run_tests.sh`, which will clone the submodules, compile the model and run several tests, but it assumes MPI to be installed:
 ```
 $ ./run_tests.sh <work_directory>
 ```
 It will take some time to run the tests. When the tests are finished, cd to `<work_directory>`, and use some visualization tools, such as Panoply, to view the results.
+
+# Authors
+
+- Li Dong <dongli@lasg.iap.ac.cn>
+- Jianghao Li
+
+You are welcome to join our team to develop a robust global model!
