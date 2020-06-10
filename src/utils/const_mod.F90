@@ -16,11 +16,17 @@ module const_mod
   real(r8), parameter :: inf = huge(1.0_r8)
   
   integer, parameter :: nest_ratio = 3
+  integer, parameter :: inf_i4 = 10000000
 
   integer, parameter :: csp2      = 1
   integer, parameter :: all_pass  = 0
   integer, parameter :: slow_pass = 1
   integer, parameter :: fast_pass = 2
+
+  integer, parameter :: west  = 1
+  integer, parameter :: east  = 2
+  integer, parameter :: south = 3
+  integer, parameter :: north = 4
 
 contains
 

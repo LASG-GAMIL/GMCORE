@@ -17,6 +17,17 @@ module process_mod
   public proc
   public is_root_proc
 
+  type process_neighbor_type
+    integer :: id = MPI_PROC_NULL
+    integer :: orient = 0
+    integer :: lon_ibeg = inf_i4
+    integer :: lon_iend = inf_i4
+    integer :: lat_ibeg = inf_i4
+    integer :: lat_iend = inf_i4
+  contains
+    procedure :: init => process_neighbor_init
+  end type process_neighbor_type
+
   type process_type
     integer comm
     integer group
@@ -24,15 +35,13 @@ module process_mod
     integer :: zonal_group = MPI_GROUP_NULL
     integer cart_dims(2)
     integer cart_coords(2)
-    integer id                              ! MPI process ID
-    integer idom                            ! Nest domain index (root domain is 1)
-    integer lon_ibeg                        ! Index of beginning longitude grid
-    integer lon_iend                        ! Index of ending longitude grid
-    integer lat_ibeg                        ! Index of beginning latitude grid
-    integer lat_iend                        ! Index of ending latitude grid
-    integer, allocatable :: parent_ngb(:)   ! Neighbor  parent domain indices
-    integer, allocatable ::  child_ngb(:)   ! Neighbor   child domain indices
-    integer :: ngb(4) = MPI_PROC_NULL       ! Neighbor sibling domain indices
+    integer id                                         ! MPI process ID
+    integer idom                                       ! Nest domain index (root domain is 1)
+    integer lon_ibeg                                   ! Index of beginning longitude grid
+    integer lon_iend                                   ! Index of ending longitude grid
+    integer lat_ibeg                                   ! Index of beginning latitude grid
+    integer lat_iend                                   ! Index of ending latitude grid
+    type(process_neighbor_type), allocatable :: ngb(:) ! Neighbor processes
     type(block_type), allocatable :: blocks(:)
   end type process_type
 
@@ -42,7 +51,7 @@ contains
 
   subroutine process_init()
 
-    integer ierr
+    integer ierr, ingb
     integer num_total_lon, num_total_lat
 
     call setup_mpi()
@@ -57,11 +66,11 @@ contains
                              proc%lon_ibeg, proc%lon_iend, proc%lat_ibeg, proc%lat_iend)
 
     ! Setup halos (only normal halos for the time being).
-    allocate(proc%blocks(1)%halo(4))
-    call proc%blocks(1)%halo(1)%init_normal(proc%blocks(1)%mesh, ngb_proc_id=proc%ngb(1), west=.true.)
-    call proc%blocks(1)%halo(2)%init_normal(proc%blocks(1)%mesh, ngb_proc_id=proc%ngb(2), east=.true.)
-    call proc%blocks(1)%halo(3)%init_normal(proc%blocks(1)%mesh, ngb_proc_id=proc%ngb(3), south=.true.)
-    call proc%blocks(1)%halo(4)%init_normal(proc%blocks(1)%mesh, ngb_proc_id=proc%ngb(4), north=.true.)
+    allocate(proc%blocks(1)%halo(size(proc%ngb)))
+    do ingb = 1, size(proc%ngb)
+      call proc%blocks(1)%halo(ingb)%init_normal(proc%blocks(1)%mesh, orient=proc%ngb(ingb)%orient, &
+                                                 ngb_proc_id=proc%ngb(ingb)%id)
+    end do
 
   end subroutine process_init
 
@@ -137,10 +146,16 @@ contains
     call MPI_CART_CREATE(tmp_comm, 2, proc%cart_dims, periods, .true., proc%comm, ierr)
     call MPI_COMM_GROUP(proc%comm, proc%group, ierr)
     ! - Get the basic information and neighborhood.
+    if (allocated(proc%ngb)) deallocate(proc%ngb)
+    allocate(proc%ngb(4))
+    call proc%ngb(west )%init(west , lat_ibeg=proc%lat_ibeg, lat_iend=proc%lat_iend)
+    call proc%ngb(east )%init(east , lat_ibeg=proc%lat_ibeg, lat_iend=proc%lat_iend)
+    call proc%ngb(south)%init(south, lon_ibeg=proc%lon_ibeg, lon_iend=proc%lon_ibeg)
+    call proc%ngb(north)%init(north, lon_ibeg=proc%lon_ibeg, lon_iend=proc%lon_ibeg)
     call MPI_COMM_RANK(proc%comm, proc%id, ierr)
     call MPI_CART_COORDS(proc%comm, proc%id, 2, proc%cart_coords, ierr)
-    call MPI_CART_SHIFT(proc%comm, 0, 1, proc%ngb(1), proc%ngb(2), ierr)
-    call MPI_CART_SHIFT(proc%comm, 1, 1, proc%ngb(3), proc%ngb(4), ierr)
+    call MPI_CART_SHIFT(proc%comm, 0, 1, proc%ngb(1)%id, proc%ngb(2)%id, ierr)
+    call MPI_CART_SHIFT(proc%comm, 1, 1, proc%ngb(3)%id, proc%ngb(4)%id, ierr)
     call MPI_COMM_FREE(tmp_comm, ierr)
 
   end subroutine setup_mpi
@@ -341,5 +356,27 @@ contains
     end if
 
   end subroutine connect_parent
+
+  subroutine process_neighbor_init(this, orient, lon_ibeg, lon_iend, lat_ibeg, lat_iend)
+
+    class(process_neighbor_type), intent(inout) :: this
+    integer, intent(in) :: orient
+    integer, intent(in), optional :: lon_ibeg
+    integer, intent(in), optional :: lon_iend
+    integer, intent(in), optional :: lat_ibeg
+    integer, intent(in), optional :: lat_iend
+
+    this%orient = orient
+
+    select case (orient)
+    case (west, east)
+      this%lat_ibeg = lat_ibeg
+      this%lat_iend = lat_iend
+    case (south, north)
+      this%lon_ibeg = lon_ibeg
+      this%lon_iend = lon_iend
+    end select
+
+  end subroutine process_neighbor_init
 
 end module process_mod

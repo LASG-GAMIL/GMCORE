@@ -11,13 +11,17 @@ module halo_mod
 
   public halo_type
 
+  integer, parameter :: cross_proc_halo = 1
+  integer, parameter :: cross_comm_halo = 2
+  integer, parameter :: inner_halo = 3
+  integer, parameter :: nest_halo = 4
+
   type halo_type
-    integer :: proc_id
-    integer :: iblk
-    logical :: west  = .false.
-    logical :: east  = .false.
-    logical :: south = .false.
-    logical :: north = .false.
+    integer :: comm = MPI_COMM_NULL
+    integer :: proc_id = MPI_PROC_NULL
+    integer :: iblk = 0
+    integer :: orient = 0
+    integer :: type = 0
     ! (1,1): full_lon,full_lat (1,2): full_lon,half_lat
     ! (2,1): half_lon,full_lat (2,2): half_lon,half_lat
     integer :: send_type_2d(2,2) = MPI_DATATYPE_NULL
@@ -36,16 +40,13 @@ module halo_mod
 
 contains
 
-  subroutine halo_init_normal(this, mesh, ngb_proc_id, iblk, west, east, south, north)
+  subroutine halo_init_normal(this, mesh, orient, ngb_proc_id, iblk)
 
     class(halo_type), intent(out) :: this
     type(mesh_type), intent(in) :: mesh
+    integer, intent(in) :: orient
     integer, intent(in), optional :: ngb_proc_id
     integer, intent(in), optional :: iblk
-    logical, intent(in), optional :: west
-    logical, intent(in), optional :: east
-    logical, intent(in), optional :: south
-    logical, intent(in), optional :: north
 
     integer array_size(3,2,2)
     integer send_subarray_size(3,2,2)
@@ -92,6 +93,8 @@ contains
     !                                                              |            wx + nx
     !                                                              nx
 
+    this%orient = orient
+    this%type = cross_proc_halo
     num_lev = [mesh%num_full_lev,mesh%num_half_lev]
 
     do k = 1, 2
@@ -99,8 +102,8 @@ contains
       array_size(:,2,1) = [mesh%num_half_lon+2*mesh%lon_halo_width,mesh%num_full_lat+2*mesh%lat_halo_width,num_lev(k)]
       array_size(:,1,2) = [mesh%num_full_lon+2*mesh%lon_halo_width,mesh%num_half_lat+2*mesh%lat_halo_width,num_lev(k)]
       array_size(:,2,2) = [mesh%num_half_lon+2*mesh%lon_halo_width,mesh%num_half_lat+2*mesh%lat_halo_width,num_lev(k)]
-      if (merge(west, .false., present(west))) then
-        this%west = .true.
+      select case (orient)
+      case (west)
         ! full_lon + full_lat
         send_subarray_size (:,1,1) = [mesh%lon_halo_width,mesh%num_full_lat,num_lev(k)]
         recv_subarray_size (:,1,1) = send_subarray_size(:,1,1)
@@ -121,8 +124,7 @@ contains
         recv_subarray_size (:,2,2) = send_subarray_size(:,2,2)
         send_subarray_start(:,2,2) = [mesh%lon_halo_width,mesh%lat_halo_width,0]
         recv_subarray_start(:,2,2) = [                  0,mesh%lat_halo_width,0]
-      else if (merge(east, .false., present(east))) then
-        this%east = .true.
+      case (east)
         ! full_lon + full_lat
         send_subarray_size (:,1,1) = [mesh%lon_halo_width,mesh%num_full_lat,num_lev(k)]
         recv_subarray_size (:,1,1) = send_subarray_size(:,1,1)
@@ -143,8 +145,7 @@ contains
         recv_subarray_size (:,2,2) = send_subarray_size(:,2,2)
         send_subarray_start(:,2,2) = [mesh%num_half_lon                    ,mesh%lat_halo_width,0]
         recv_subarray_start(:,2,2) = [mesh%num_half_lon+mesh%lon_halo_width,mesh%lat_halo_width,0]
-      else if (merge(south, .false., present(south))) then
-        this%south = .true.
+      case (south)
         ! full_lon + full_lat
         send_subarray_size (:,1,1) = [array_size(1,1,1),mesh%lat_halo_width,num_lev(k)]
         recv_subarray_size (:,1,1) = send_subarray_size(:,1,1)
@@ -165,8 +166,7 @@ contains
         recv_subarray_size (:,2,2) = send_subarray_size(:,2,2)
         send_subarray_start(:,2,2) = [0,mesh%lat_halo_width,0]
         recv_subarray_start(:,2,2) = [0,0,0]
-      else if (merge(north, .false., present(north))) then
-        this%north = .true.
+      case (north)
         ! full_lon + full_lat
         send_subarray_size (:,1,1) = [array_size(1,1,1),mesh%lat_halo_width,num_lev(k)]
         recv_subarray_size (:,1,1) = send_subarray_size(:,1,1)
@@ -187,7 +187,7 @@ contains
         recv_subarray_size (:,2,2) = send_subarray_size(:,2,2)
         send_subarray_start(:,2,2) = [0,mesh%num_half_lat,0]
         recv_subarray_start(:,2,2) = [0,mesh%num_half_lat+mesh%lat_halo_width,0]
-      end if
+      end select
       do j = 1, 2
         do i = 1, 2
           call MPI_TYPE_CREATE_SUBARRAY(3, array_size(:,i,j), send_subarray_size(:,i,j), &
