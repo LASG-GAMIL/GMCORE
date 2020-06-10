@@ -6,7 +6,7 @@ Check barotropic test results [here](https://github.com/gmcore-project/gmcore/wi
 
 # Status
 
-- Parallelization using MPI:
+- [ ] Parallelization using MPI:
   - [X] 1D latitudional decomposition (done)
   - [ ] 2D decomposition (~2020.06)
 - [ ] Nesting at middle and low latitudes (~2020.09).

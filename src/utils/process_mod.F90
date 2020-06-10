@@ -51,7 +51,6 @@ contains
 
   subroutine process_init()
 
-    integer ierr, ingb
     integer num_total_lon, num_total_lat
 
     call setup_mpi()
@@ -60,17 +59,7 @@ contains
     call setup_zonal_comm_for_reduce(num_total_lat, proc%lat_ibeg, proc%lat_iend)
     call connect_parent() ! <-- FIXME: Needs implementation.
 
-    if (.not. allocated(proc%blocks)) allocate(proc%blocks(1))
-
-    call proc%blocks(1)%init(proc%id, global_mesh%lon_halo_width, global_mesh%lat_halo_width, &
-                             proc%lon_ibeg, proc%lon_iend, proc%lat_ibeg, proc%lat_iend)
-
-    ! Setup halos (only normal halos for the time being).
-    allocate(proc%blocks(1)%halo(size(proc%ngb)))
-    do ingb = 1, size(proc%ngb)
-      call proc%blocks(1)%halo(ingb)%init_normal(proc%blocks(1)%mesh, orient=proc%ngb(ingb)%orient, &
-                                                 ngb_proc_id=proc%ngb(ingb)%id)
-    end do
+    call create_blocks()
 
   end subroutine process_init
 
@@ -356,6 +345,24 @@ contains
     end if
 
   end subroutine connect_parent
+
+  subroutine create_blocks()
+
+    integer ingb
+
+    if (.not. allocated(proc%blocks)) allocate(proc%blocks(1))
+
+    call proc%blocks(1)%init(proc%id, global_mesh%lon_halo_width, global_mesh%lat_halo_width, &
+                             proc%lon_ibeg, proc%lon_iend, proc%lat_ibeg, proc%lat_iend)
+
+    ! Setup halos (only normal halos for the time being).
+    allocate(proc%blocks(1)%halo(size(proc%ngb)))
+    do ingb = 1, size(proc%ngb)
+      call proc%blocks(1)%halo(ingb)%init_normal(proc%blocks(1)%mesh, orient=proc%ngb(ingb)%orient, &
+                                                 ngb_proc_id=proc%ngb(ingb)%id)
+    end do
+
+  end subroutine create_blocks
 
   subroutine process_neighbor_init(this, orient, lon_ibeg, lon_iend, lat_ibeg, lat_iend)
 
