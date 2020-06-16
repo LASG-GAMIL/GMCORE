@@ -106,14 +106,13 @@ contains
     call operators_prepare(proc%blocks, old)
     call diagnose(proc%blocks, old)
     call output(proc%blocks, old)
-    if (proc%id == 0) call log_print_diag(curr_time%isoformat())
 
     do while (.not. time_is_finished())
       call time_integrate(dt_in_seconds, proc%blocks)
+      if (proc%id == 0 .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
       call time_advance(dt_in_seconds)
       call operators_prepare(proc%blocks, old)
       call diagnose(proc%blocks, old)
-      if (proc%id == 0 .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
       call output(proc%blocks, old)
     end do
 

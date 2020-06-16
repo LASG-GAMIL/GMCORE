@@ -115,6 +115,7 @@ contains
 
     integer j
 
+    ! Extend loop range by 1 is for Coriolis forces.
     do j = block%mesh%full_lat_ibeg - 1, block%mesh%full_lat_iend + 1
       if (block%reduced_mesh(j)%reduce_factor > 0) then
         call reduce_state(j, block, block%mesh, state, block%reduced_mesh(j), block%reduced_static(j), block%reduced_state(j), dt, pass)
@@ -422,6 +423,7 @@ contains
 
     integer i, k
 
+    if (reduced_mesh%area_lon(buf_j) == 0) return
     do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
       do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
         reduced_state%u(k,i,buf_j,move) = reduced_state%mf_lon_n(k,i,buf_j,move) / reduced_state%m_lon(k,i,buf_j,move)
@@ -445,6 +447,7 @@ contains
 
     integer i, k
 
+    if (reduced_mesh%area_lat(buf_j) == 0) return
     do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
       do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
         reduced_state%v(k,i,buf_j,move) = reduced_state%mf_lat_n(k,i,buf_j,move) / reduced_state%m_lat(k,i,buf_j,move)
@@ -540,6 +543,7 @@ contains
       end do
       reduced_state%pv(:,:,buf_j,move) = reduced_state%pv(:,:,buf_j,move) / reduced_mesh%reduce_factor
     else
+      if (reduced_mesh%area_vtx(buf_j) == 0) return
       do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
         do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
           m_vtx = (                                                                                                            &
@@ -577,7 +581,7 @@ contains
 
     integer i, k
 
-    if (raw_mesh%is_outside_pole_full_lat(j+buf_j)) return
+    if (reduced_mesh%area_lon(buf_j) == 0) return
     do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
       do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
         reduced_state%m_lon(k,i,buf_j,move) = (                                   &
