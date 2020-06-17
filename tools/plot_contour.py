@@ -23,6 +23,19 @@ args = parser.parse_args()
 if not args.output:
   args.output = args.var + '.png'
 
+lon = {
+  'h': 'lon',
+  'u': 'ilon',
+  'v': 'lon',
+  'pv': 'ilon'
+}
+lat = {
+  'h': 'lat',
+  'u': 'lat',
+  'v': 'ilat',
+  'pv': 'ilat'
+}
+
 f = []
 for file_path in args.input:
   if not os.path.isfile(file_path):
@@ -41,6 +54,11 @@ def parse_time(time_var, time_step):
   base_time = pendulum.from_format(base_time_str.strip(), 'YYYY-MM-DDTHH_mm_ss')
   if dt == 'hours ':
     return base_time.add(hours=time_var[time_step])
+  elif dt == 'days ':
+    return base_time.add(hours=time_var[time_step] * 24)
+  else:
+    print(f'[Error]: Unsupported time units {time_var.units}!')
+    exit(1)
 
 def plot(lon, lat, var):
   plt.pcolormesh(lon, lat, var, transform=proj, cmap='rainbow')
@@ -53,7 +71,7 @@ def plot(lon, lat, var):
   plt.title(f'{f[i].variables[args.var].long_name} @ {parse_time(f[0].variables["time"], args.time_step)}')
 
 for i in range(len(f)):
-  plot(f[i].variables['lon'][:], f[i].variables['lat'][:], f[i].variables[args.var][args.time_step,:,:])
+  plot(f[i].variables[lon[args.var]][:], f[i].variables[lat[args.var]][:], f[i].variables[args.var][args.time_step,:,:])
 
 plt.savefig(args.output)
 plt.close()
