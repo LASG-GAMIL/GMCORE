@@ -51,6 +51,7 @@ module shallow_water_waves_test_mod
 
   use flogger
   use string
+  use const_mod, only: inf
   use mesh_mod
   use parallel_mod
   use block_mod
@@ -207,17 +208,22 @@ contains
     real(kind=dp), parameter     :: a4 = a3    * ( sigma + 3 )
     real(kind=dp), parameter     :: a5 = a4    * ( sigma + 4 )
 
-    C5    = ( 04.0_dp * a5  * sin(lat)**4  - &
-              20.0_dp * a4  * sin(lat)**2  + &
-              15.0_dp * a3) * sin(lat)     / 15.0_dp
+    integer j
 
-    C5p   = ( 04.0_dp * a5  * sin(lat)**4  - &
-              12.0_dp * a4  * sin(lat)**2  + &
-              03.0_dp * a3) * cos(lat)     / 3.0_dp
+    do j = 1, size(lat)
+      if (lat(j) /= inf) then
+        C5    = ( 04.0_dp * a5  * sin(lat(j))**4  - &
+                  20.0_dp * a4  * sin(lat(j))**2  + &
+                  15.0_dp * a3) * sin(lat(j))     / 15.0_dp
 
-    psi   = amp * cos(lat) ** (sigma) * C5
+        C5p   = ( 04.0_dp * a5  * sin(lat(j))**4  - &
+                  12.0_dp * a4  * sin(lat(j))**2  + &
+                  03.0_dp * a3) * cos(lat(j))     / 3.0_dp
+        psi(j)   = amp * cos(lat(j)) ** (sigma) * C5(j)
 
-    dpsi  = amp * cos(lat) ** (sigma) * ( - sigma * tan(lat) * C5 + C5p )
+        dpsi(j)  = amp * cos(lat(j)) ** (sigma) * ( - sigma * tan(lat(j)) * C5(j) + C5p(j) )
+      end if
+    end do
 
   end subroutine getPsi
 
@@ -317,8 +323,10 @@ contains
              v(i,j,n) = vTilde(j) * &
                  cos( k * lon(i) - k * C * time(n) - 0.5_dp * pi )
 #else
-             v(i,j,n) = (vTilde(j) + vTilde(j+1)) * 0.5_dp * &
-                 cos( k * lon(i) - k * C * time(n) - 0.5_dp * pi )
+             if (j < size(ilat)) then
+               v(i,j,n) = (vTilde(j) + vTilde(j+1)) * 0.5_dp * &
+                   cos( k * lon(i) - k * C * time(n) - 0.5_dp * pi )
+             end if
 #endif
           end do
        end do
