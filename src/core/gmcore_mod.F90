@@ -466,20 +466,6 @@ contains
 
     call damp_state(block, new_state)
 
-    !!!! TESTING !!!
-    !if (mesh%has_south_pole()) then
-    !  j = mesh%half_lat_ibeg_no_pole
-    !  do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-    !    new_state%v(i,j) = 0.2 * old_state%v(i,j) + 0.8 * old_state%v(i,j+1) + dt * (0.2 * tend%dv(i,j) + 0.8 * tend%dv(i,j+1))
-    !  end do
-    !end if
-    !if (mesh%has_north_pole()) then
-    !  j = mesh%half_lat_iend_no_pole
-    !  do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-    !    new_state%v(i,j) = 0.2 * old_state%v(i,j) + 0.8 * old_state%v(i,j-1) + dt * (0.2 * tend%dv(i,j) + 0.8 * tend%dv(i,j-1))
-    !  end do
-    !end if
-
   end subroutine update_state
 
   subroutine damp_state(block, state)
