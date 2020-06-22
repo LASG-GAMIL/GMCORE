@@ -103,7 +103,7 @@ contains
 
   subroutine gmcore_run()
 
-    call operators_prepare(proc%blocks, old)
+    call operators_prepare(proc%blocks, old, dt_in_seconds)
     call diagnose(proc%blocks, old)
     call output(proc%blocks, old)
     if (proc%id == 0) call log_print_diag(curr_time%isoformat())
@@ -111,7 +111,7 @@ contains
     do while (.not. time_is_finished())
       call time_integrate(dt_in_seconds, proc%blocks)
       call time_advance(dt_in_seconds)
-      call operators_prepare(proc%blocks, old)
+      call operators_prepare(proc%blocks, old, dt_in_seconds)
       call diagnose(proc%blocks, old)
       if (proc%id == 0 .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
       call output(proc%blocks, old)
@@ -197,11 +197,16 @@ contains
         end do
       end do
 
-      do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          tpe = tpe + state%m_vtx(i,j,1) * state%pv(i,j,1)**2 * 0.5_r8 * mesh%area_vtx(j)
+          tpe = tpe + state%m_lon(i,j,1) * state%pv_lon(i,j,1)**2 * 0.5_r8 * mesh%area_lon(j)
         end do
-      end do
+      end do 
+      do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          tpe = tpe + state%m_lat(i,j,1) * state%pv_lat(i,j,1)**2 * 0.5_r8 * mesh%area_lat(j)
+        end do
+      end do 
     end do
     call global_sum(proc%comm, tm)
     call global_sum(proc%comm, te)
@@ -235,7 +240,7 @@ contains
     call wait_halo(state%async(async_u))
     call wait_halo(state%async(async_v))
 
-    call operators_prepare(block, state)
+    call operators_prepare(block, state, dt)
     call reduce_run(block, state, dt, pass)
 
     mesh => state%mesh

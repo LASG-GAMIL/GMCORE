@@ -34,10 +34,11 @@ module operators_mod
 
 contains
 
-  subroutine operators_prepare_1(blocks, itime)
+  subroutine operators_prepare_1(blocks, itime, dt)
 
     type(block_type), intent(inout) :: blocks(:)
     integer, intent(in) :: itime
+    real(r8), intent(in) :: dt
 
     integer iblk
 
@@ -47,21 +48,24 @@ contains
       call calc_mf_lon_n_mf_lat_n(blocks(iblk), blocks(iblk)%state(itime))
       call calc_mf_lon_t_mf_lat_t(blocks(iblk), blocks(iblk)%state(itime))
       call calc_pv_vtx(blocks(iblk), blocks(iblk)%state(itime))
+      call calc_pv_edge(blocks(iblk), blocks(iblk)%state(itime), dt)
       call calc_ke_cell(blocks(iblk), blocks(iblk)%state(itime))
     end do
 
   end subroutine operators_prepare_1
 
-  subroutine operators_prepare_2(block, state)
+  subroutine operators_prepare_2(block, state, dt)
 
     type(block_type), intent(in) :: block
     type(state_type), intent(inout) :: state
+    real(r8), intent(in) :: dt
 
     call calc_m_lon_m_lat(block, state)
     call calc_m_vtx(block, state)
     call calc_mf_lon_n_mf_lat_n(block, state)
     call calc_mf_lon_t_mf_lat_t(block, state)
     call calc_pv_vtx(block, state)
+    call calc_pv_edge(block, state, dt)
     call calc_ke_cell(block, state)
 
   end subroutine operators_prepare_2
@@ -138,14 +142,14 @@ contains
     if (state%mesh%has_south_pole()) then
       j = state%mesh%half_lat_ibeg
       pole = 0.0_r8
-      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      do k = state%mesh%full_lev_ibeg, state%mesh%full_lev_iend
         do i = state%mesh%full_lon_ibeg, state%mesh%full_lon_iend
           pole(k) = pole(k) + state%m(i,j,k)
         end do
       end do
       call zonal_sum(proc%zonal_comm, pole)
       pole = pole / state%mesh%num_half_lon
-      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      do k = state%mesh%full_lev_ibeg, state%mesh%full_lev_iend
         do i = state%mesh%half_lon_ibeg, state%mesh%half_lon_iend
           state%m_vtx(i,j,k) = pole(k)
         end do
@@ -154,14 +158,14 @@ contains
     if (state%mesh%has_north_pole()) then
       j = state%mesh%half_lat_iend
       pole = 0.0_r8
-      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      do k = state%mesh%full_lev_ibeg, state%mesh%full_lev_iend
         do i = state%mesh%full_lon_ibeg, state%mesh%full_lon_iend
           pole(k) = pole(k) + state%m(i,j-1,k)
         end do
       end do
       call zonal_sum(proc%zonal_comm, pole)
       pole = pole / state%mesh%num_half_lon
-      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      do k = state%mesh%full_lev_ibeg, state%mesh%full_lev_iend
         do i = state%mesh%half_lon_ibeg, state%mesh%half_lon_iend
           state%m_vtx(i,j,k) = pole(k)
         end do
@@ -237,15 +241,13 @@ contains
 
   end subroutine calc_mf_lon_t_mf_lat_t
 
-  subroutine calc_qhu_qhv(block, state, tend, dt)
-
-    type(block_type), intent(inout) :: block
-    type(state_type), intent(inout) :: state
-    type(tend_type), intent(inout) :: tend
+  subroutine calc_pv_edge(block, state, dt)
+    
+    type(block_type), intent(in) :: block
+    type(state_type), intent(inout) :: state 
     real(r8), intent(in) :: dt
 
     type(mesh_type), pointer :: mesh
-    integer i, j, k, move
 
     mesh => state%mesh
 
@@ -260,6 +262,22 @@ contains
 
     call wait_halo(state%async(async_pv_lon))
     call wait_halo(state%async(async_pv_lat))
+
+  end subroutine calc_pv_edge
+
+  subroutine calc_qhu_qhv(block, state, tend, dt)
+
+    type(block_type), intent(inout) :: block
+    type(state_type), intent(inout) :: state
+    type(tend_type), intent(inout) :: tend
+    real(r8), intent(in) :: dt
+
+    type(mesh_type), pointer :: mesh
+    integer i, j, k, move
+
+    mesh => state%mesh
+
+    call calc_pv_edge(block, state, dt)
 
 #ifdef V_POLE
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
@@ -323,7 +341,7 @@ contains
         else
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             if (coriolis_scheme == 1) then
-              tend%qhu(i,j,k) = tend%qhu(i,j) + (                                               &
+              tend%qhu(i,j,k) = tend%qhu(i,j,k) + (                                               &
                 mesh%half_tangent_wgt(2,j) * (                                                  &
                   state%mf_lon_n(i-1,j  ,k) * (state%pv_lat(i,j,k) + state%pv_lon(i-1,j  ,k)) + &
                   state%mf_lon_n(i  ,j  ,k) * (state%pv_lat(i,j,k) + state%pv_lon(i  ,j  ,k))   &

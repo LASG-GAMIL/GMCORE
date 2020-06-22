@@ -139,7 +139,7 @@ contains
     call global_sum(proc%comm, ip_dke)
     call global_sum(proc%comm, ip_dpe)
 
-    if (proc%id == 0) write(6, *) ip_cf  / radius**2, ip_dke / radius**2, ip_dpe / radius**2
+    if (proc%id == 0) write(6, *) ip_cf / ( 4.0 * pi * radius**2), ip_dke / ( 4.0 * pi * radius**2), ip_dpe / ( 4.0 * pi * radius**2)
 
   end subroutine debug_check_space_operators
 
