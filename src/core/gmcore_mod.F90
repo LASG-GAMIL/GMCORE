@@ -106,14 +106,13 @@ contains
     call operators_prepare(proc%blocks, old, dt_in_seconds)
     call diagnose(proc%blocks, old)
     call output(proc%blocks, old)
-    if (proc%id == 0) call log_print_diag(curr_time%isoformat())
 
     do while (.not. time_is_finished())
       call time_integrate(dt_in_seconds, proc%blocks)
+      if (proc%id == 0 .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
       call time_advance(dt_in_seconds)
       call operators_prepare(proc%blocks, old, dt_in_seconds)
       call diagnose(proc%blocks, old)
-      if (proc%id == 0 .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
       call output(proc%blocks, old)
     end do
 
@@ -471,20 +470,6 @@ contains
     call fill_halo(block, new_state%v, full_lon=.true., full_lat=.false.)
 
     call damp_state(block, new_state)
-
-    !!!! TESTING !!!
-    !if (mesh%has_south_pole()) then
-    !  j = mesh%half_lat_ibeg_no_pole
-    !  do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-    !    new_state%v(i,j) = 0.2 * old_state%v(i,j) + 0.8 * old_state%v(i,j+1) + dt * (0.2 * tend%dv(i,j) + 0.8 * tend%dv(i,j+1))
-    !  end do
-    !end if
-    !if (mesh%has_north_pole()) then
-    !  j = mesh%half_lat_iend_no_pole
-    !  do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-    !    new_state%v(i,j) = 0.2 * old_state%v(i,j) + 0.8 * old_state%v(i,j-1) + dt * (0.2 * tend%dv(i,j) + 0.8 * tend%dv(i,j-1))
-    !  end do
-    !end if
 
   end subroutine update_state
 
