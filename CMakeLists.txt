@@ -66,6 +66,8 @@ set(source_files
   src/utils/parallel_mod.F90
   src/utils/debug_mod.F90
   src/core/mesh_mod.F90
+  src/core/hybrid_coord_mod.F90
+  src/core/vert_coord_mod.F90
   src/core/state_mod.F90
   src/core/static_mod.F90
   src/core/tend_mod.F90
@@ -83,6 +85,7 @@ set(source_files
   src/tests/swm/steady_geostrophic_flow_test_mod.F90
   src/tests/swm/cross_pole_flow_test_mod.F90
   src/tests/swm/shallow_water_waves_test_mod.F90
+  src/tests/held_suarez_test_mod.F90
   lib/quadpack.f90
 )
 

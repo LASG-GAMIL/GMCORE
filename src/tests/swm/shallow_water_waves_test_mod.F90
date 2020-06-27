@@ -52,7 +52,6 @@ module shallow_water_waves_test_mod
   use flogger
   use string
   use const_mod, only: inf
-  use mesh_mod
   use parallel_mod
   use block_mod
 

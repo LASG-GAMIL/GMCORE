@@ -368,7 +368,7 @@ contains
     call space_operators(block, block%state(new), block%tend(old), 0.5_r8 * dt, pass)
     call update_state(0.5_r8 * dt, block, block%tend(old), block%state(old), block%state(new))
 
-    ! Do correct stepe
+    ! Do correct step.
     call space_operators(block, block%state(new), block%tend(new),          dt, pass)
     call update_state(         dt, block, block%tend(new), block%state(old), block%state(new))
 
