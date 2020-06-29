@@ -24,7 +24,7 @@ module state_mod
     real(r8), allocatable, dimension(:,:,:) :: w          ! Vertical wind speed
     real(r8), allocatable, dimension(:,:,:) :: gz         ! Geopotential (m2 s-2)
     real(r8), allocatable, dimension(:,:,:) :: gz_p       ! Perturbed geopotential (m2 s-2)
-    real(r8), allocatable, dimension(:,:,:) :: gz_lev     ! Geopotential height on half levels
+    real(r8), allocatable, dimension(:,:,:) :: gz_lev     ! Geopotential height on half levels (m2 s-2)
     real(r8), allocatable, dimension(:,:,:) :: m          ! Mass
     real(r8), allocatable, dimension(:,:,:) :: m_vtx      ! Mass on vertex
     real(r8), allocatable, dimension(:,:,:) :: m_lon      ! Mass on zonal edge

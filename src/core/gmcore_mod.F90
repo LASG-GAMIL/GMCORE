@@ -53,7 +53,7 @@ contains
     real(r8) seconds
 
     call log_init()
-    call global_mesh%init_global(num_lon, num_lat, lon_halo_width=max(1, maxval(reduce_factors) - 1), lat_halo_width=2)
+    call global_mesh%init_global(num_lon, num_lat, num_lev, lon_halo_width=max(1, maxval(reduce_factors) - 1), lat_halo_width=2)
     call debug_check_areas()
     call process_init()
     call time_init()

@@ -51,6 +51,7 @@ add_subdirectory(lib/flogger)
 
 set(source_files
   src/utils/const_mod.F90
+  src/utils/formula_mod.F90
   src/utils/namelist_mod.F90
   src/utils/time_mod.F90
   src/utils/math_mod.F90
@@ -85,6 +86,7 @@ set(source_files
   src/tests/swm/steady_geostrophic_flow_test_mod.F90
   src/tests/swm/cross_pole_flow_test_mod.F90
   src/tests/swm/shallow_water_waves_test_mod.F90
+  src/tests/steady_state_test_mod.F90
   src/tests/held_suarez_test_mod.F90
   lib/quadpack.f90
 )
