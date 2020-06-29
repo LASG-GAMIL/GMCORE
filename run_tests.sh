@@ -1,7 +1,6 @@
 #!/bin/bash
 
-np=2
-if (( $# == 1 )); then
+if (( $# >= 1 )); then
   if [[ ! -d $1 ]]; then
     mkdir -p $1
   fi
@@ -9,6 +8,12 @@ if (( $# == 1 )); then
 else
   echo '[Error]: You should set a work directory to run the model!'
   exit 1
+fi
+
+if (( $# == 2 )); then
+  np=$2
+else
+  np=2
 fi
 
 gmcore_root=$(cd $(dirname $BASH_SOURCE) && pwd)
