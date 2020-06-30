@@ -67,6 +67,7 @@ set(source_files
   src/utils/parallel_mod.F90
   src/utils/debug_mod.F90
   src/core/mesh_mod.F90
+  src/core/hybrid_coord_ecmwf_mod.F90
   src/core/hybrid_coord_mod.F90
   src/core/vert_coord_mod.F90
   src/core/state_mod.F90
@@ -96,3 +97,6 @@ target_link_libraries(gmcore netcdff fortran_container fortran_datetime fiona fl
 
 add_executable(gmcore_swm_driver.exe src/drivers/gmcore_swm_driver.F90)
 target_link_libraries(gmcore_swm_driver.exe gmcore)
+
+add_executable(gmcore_driver.exe src/drivers/gmcore_driver.F90)
+target_link_libraries(gmcore_driver.exe gmcore)

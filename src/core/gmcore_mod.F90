@@ -9,6 +9,7 @@ module gmcore_mod
   use history_mod
   use restart_mod
   use block_mod
+  use vert_coord_mod
   use operators_mod
   use reduce_mod
   use debug_mod
@@ -47,13 +48,16 @@ module gmcore_mod
 
 contains
 
-  subroutine gmcore_init()
+  subroutine gmcore_init(namelist_path)
+
+    character(*), intent(in) :: namelist_path
 
     character(10) time_value, time_units
     real(r8) seconds
 
     call log_init()
     call global_mesh%init_global(num_lon, num_lat, num_lev, lon_halo_width=max(1, maxval(reduce_factors) - 1), lat_halo_width=2)
+    call vert_coord_init(num_lev, namelist_path)
     call debug_check_areas()
     call process_init()
     call time_init()
@@ -156,7 +160,7 @@ contains
     type(mesh_type), pointer :: mesh
     type(state_type), pointer :: state
     type(static_type), pointer :: static
-    integer i, j, iblk
+    integer i, j, k, iblk
     real(r8) tm, te, tav, tpe
 
     tm = 0.0_r8
@@ -168,44 +172,52 @@ contains
       state => blocks(iblk)%state(itime)
       static => blocks(iblk)%static
 
-      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          tm = tm + state%m(i,j,1) * mesh%area_cell(j)
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            tm = tm + state%m(i,j,k) * mesh%area_cell(j)
+          end do
         end do
       end do
 
-      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          te = te + state%mf_lon_n(i,j,1) * 0.5_r8 * state%u(i,j,1) * mesh%area_lon(j) * 2
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+            te = te + state%mf_lon_n(i,j,k) * 0.5_r8 * state%u(i,j,k) * mesh%area_lon(j) * 2
+          end do
         end do
-      end do
-      do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          te = te + state%mf_lat_n(i,j,1) * 0.5_r8 * state%v(i,j,1) * mesh%area_lat(j) * 2
+        do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            te = te + state%mf_lat_n(i,j,k) * 0.5_r8 * state%v(i,j,k) * mesh%area_lat(j) * 2
+          end do
         end do
-      end do
-      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          te = te + (state%m(i,j,1)**2 * g * 0.5_r8 + state%m(i,j,1) * static%gzs(i,j)) * mesh%area_cell(j)
-        end do
-      end do
-
-      do j = mesh%half_lat_ibeg, mesh%half_lat_iend
-        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          tav = tav + state%m_vtx(i,j,1) * state%pv(i,j,1) * mesh%area_vtx(j)
+        do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            te = te + (state%m(i,j,k)**2 * g * 0.5_r8 + state%m(i,j,k) * static%gzs(i,j)) * mesh%area_cell(j)
+          end do
         end do
       end do
 
-      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          tpe = tpe + state%m_lon(i,j,1) * state%pv_lon(i,j,1)**2 * 0.5_r8 * mesh%area_lon(j)
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+            tav = tav + state%m_vtx(i,j,k) * state%pv(i,j,k) * mesh%area_vtx(j)
+          end do
         end do
-      end do 
-      do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          tpe = tpe + state%m_lat(i,j,1) * state%pv_lat(i,j,1)**2 * 0.5_r8 * mesh%area_lat(j)
+      end do
+
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+            tpe = tpe + state%m_lon(i,j,k) * state%pv_lon(i,j,k)**2 * 0.5_r8 * mesh%area_lon(j)
+          end do
         end do
-      end do 
+        do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            tpe = tpe + state%m_lat(i,j,k) * state%pv_lat(i,j,k)**2 * 0.5_r8 * mesh%area_lat(j)
+          end do
+        end do
+      end do
     end do
     call global_sum(proc%comm, tm)
     call global_sum(proc%comm, te)
@@ -233,7 +245,7 @@ contains
     integer, intent(in) :: pass
 
     type(mesh_type), pointer :: mesh
-    integer i, j
+    integer i, j, k
 
     call wait_halo(state%async(async_gz))
     call wait_halo(state%async(async_u))
@@ -251,35 +263,39 @@ contains
       call calc_dpedlon_dpedlat(block, state, tend, dt)
       call calc_dmfdlon_dmfdlat(block, state, tend, dt)
 
-      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          tend%du(i,j,1) =   tend%qhv(i,j,1) - tend%dpedlon(i,j,1) - tend%dkedlon(i,j,1)
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+            tend%du(i,j,k) =   tend%qhv(i,j,k) - tend%dpedlon(i,j,k) - tend%dkedlon(i,j,k)
+          end do
         end do
-      end do
 
-      do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          tend%dv(i,j,1) = - tend%qhu(i,j,1) - tend%dpedlat(i,j,1) - tend%dkedlat(i,j,1)
+        do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            tend%dv(i,j,k) = - tend%qhu(i,j,k) - tend%dpedlat(i,j,k) - tend%dkedlat(i,j,k)
+          end do
         end do
-      end do
 
-      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          tend%dgz(i,j,1) = - (tend%dmfdlon(i,j,1) + tend%dmfdlat(i,j,1)) * g
+        do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            tend%dgz(i,j,k) = - (tend%dmfdlon(i,j,k) + tend%dmfdlat(i,j,k)) * g
+          end do
         end do
       end do
     case (slow_pass)
       call calc_qhu_qhv(block, state, tend, dt)
 
-      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          tend%du(i,j,1) =   tend%qhv(i,j,1)
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+            tend%du(i,j,k) =   tend%qhv(i,j,k)
+          end do
         end do
-      end do
 
-      do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          tend%dv(i,j,1) = - tend%qhu(i,j,1)
+        do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            tend%dv(i,j,k) = - tend%qhu(i,j,k)
+          end do
         end do
       end do
 
@@ -287,20 +303,27 @@ contains
     case (fast_pass)
       call calc_dkedlon_dkedlat(block, state, tend, dt)
       call calc_dpedlon_dpedlat(block, state, tend, dt)
-      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          tend%du(i,j,1) = - tend%dpedlon(i,j,1) - tend%dkedlon(i,j,1)
+
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+            tend%du(i,j,k) = - tend%dpedlon(i,j,k) - tend%dkedlon(i,j,k)
+          end do
+        end do
+        do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            tend%dv(i,j,k) = - tend%dpedlat(i,j,k) - tend%dkedlat(i,j,k)
+          end do
         end do
       end do
-      do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          tend%dv(i,j,1) = - tend%dpedlat(i,j,1) - tend%dkedlat(i,j,1)
-        end do
-      end do
+
       call calc_dmfdlon_dmfdlat(block, state, tend, dt)
-      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          tend%dgz(i,j,1) = - (tend%dmfdlon(i,j,1) + tend%dmfdlat(i,j,1)) * g
+
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            tend%dgz(i,j,k) = - (tend%dmfdlon(i,j,k) + tend%dmfdlat(i,j,k)) * g
+          end do
         end do
       end do
     end select
@@ -444,27 +467,33 @@ contains
     type(state_type), intent(inout) :: new_state
 
     type(mesh_type), pointer :: mesh
-    integer i, j
+    integer i, j, k
 
     mesh => old_state%mesh
 
-    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        new_state%gz(i,j,1) = old_state%gz(i,j,1) + dt * tend%dgz(i,j,1)
+    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          new_state%gz(i,j,k) = old_state%gz(i,j,k) + dt * tend%dgz(i,j,k)
+        end do
       end do
     end do
     call fill_halo(block, new_state%gz, full_lon=.true., full_lat=.true.)
 
-    do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-      do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-        new_state%u(i,j,1) = old_state%u(i,j,1) + dt * tend%du(i,j,1)
+    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+          new_state%u(i,j,k) = old_state%u(i,j,k) + dt * tend%du(i,j,k)
+        end do
       end do
     end do
     call fill_halo(block, new_state%u, full_lon=.false., full_lat=.true.)
 
-    do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
-      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        new_state%v(i,j,1) = old_state%v(i,j,1) + dt * tend%dv(i,j,1)
+    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          new_state%v(i,j,k) = old_state%v(i,j,k) + dt * tend%dv(i,j,k)
+        end do
       end do
     end do
     call fill_halo(block, new_state%v, full_lon=.true., full_lat=.false.)

@@ -565,6 +565,9 @@ contains
       this%half_f(j) = parent%half_f(j)
     end do
 
+    this%full_lev = parent%full_lev
+    this%half_lev = parent%half_lev
+
   end subroutine mesh_init_from_parent
 
   subroutine mesh_common_init(this)

@@ -130,7 +130,7 @@ contains
             (state%m(i,j  ,k) + state%m(i+1,j  ,k)) * state%mesh%area_subcell(1,j  )   &
           ) / state%mesh%area_vtx(j)
 #else
-          state%m_vtx(i,j,1) = (                                                       &
+          state%m_vtx(i,j,k) = (                                                       &
             (state%m(i,j  ,k) + state%m(i+1,j  ,k)) * state%mesh%area_subcell(2,j  ) + &
             (state%m(i,j+1,k) + state%m(i+1,j+1,k)) * state%mesh%area_subcell(1,j+1)   &
           ) / state%mesh%area_vtx(j)

@@ -50,7 +50,7 @@ module namelist_mod
   real(r8)      :: nest_lat_beg(20) = inf
   real(r8)      :: nest_lat_end(20) = inf
   
-  namelist /gmcore_swm_control/ &
+  namelist /gmcore_control/     &
     case_name                 , &
     test_case                 , &
     case_desc                 , &
@@ -98,7 +98,7 @@ contains
     character(*), intent(in) :: file_path
 
     open(10, file=file_path, status='old')
-    read(10, nml=gmcore_swm_control)
+    read(10, nml=gmcore_control)
     close(10)
 
   end subroutine parse_namelist

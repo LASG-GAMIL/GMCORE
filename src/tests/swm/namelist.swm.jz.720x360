@@ -1,4 +1,4 @@
-&gmcore_swm_control
+&gmcore_control
 num_lon = 720
 num_lat = 360
 ! mountain_zonal_flow, rossby_haurwitz_wave, jet_zonal_flow, steady_geostrophic_flow, cross_pole_flow

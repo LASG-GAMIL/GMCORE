@@ -107,14 +107,14 @@ contains
         sin_lat = mesh%full_sin_lat(j)
         cos_lat = mesh%full_cos_lat(j)
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          state%gz(i,j,k) = gzbar + u0 * cos(etav)**1.5d0 * (                                    &
+          state%gz_lev(i,j,k) = gzbar + u0 * cos(etav)**1.5d0 * (                                &
             (-2 * sin_lat**6 * (cos_lat**2 + 1d0 / 3d0) + 10d0 / 63d0) * u0 * cos(etav)**1.5d0 + &
             (8d0 / 5d0 * cos_lat**3 * (sin_lat**2 + 2d0 / 3d0) - pi / 4d0) * radius * omega      &
           )
         end do
       end do
     end do
-    call fill_halo(block, state%gz, full_lon=.true., full_lat=.true., full_lev=.false.)
+    call fill_halo(block, state%gz_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       eta = mesh%full_lev(k)
@@ -132,14 +132,14 @@ contains
         sin_lat = mesh%full_sin_lat(j)
         cos_lat = mesh%full_cos_lat(j)
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          state%gz_lev(i,j,k) = gzbar + u0 * cos(etav)**1.5d0 * (                                &
+          state%gz(i,j,k) = gzbar + u0 * cos(etav)**1.5d0 * (                                    &
             (-2 * sin_lat**6 * (cos_lat**2 + 1d0 / 3d0) + 10d0 / 63d0) * u0 * cos(etav)**1.5d0 + &
             (8d0 / 5d0 * cos_lat**3 * (sin_lat**2 + 2d0 / 3d0) - pi / 4d0) * radius * omega      &
           )
         end do
       end do
     end do
-    call fill_halo(block, state%gz_lev, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block, state%gz, full_lon=.true., full_lat=.true., full_lev=.true.)
 
     etav = (1 - eta0) * pi / 2
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend

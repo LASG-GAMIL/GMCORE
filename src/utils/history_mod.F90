@@ -58,11 +58,22 @@ contains
     call fiona_add_dim('h0', 'lat'  , size=global_mesh%num_full_lat, add_var=.true., decomp=.true.)
     call fiona_add_dim('h0', 'ilon' , size=global_mesh%num_half_lon, add_var=.true., decomp=.true.)
     call fiona_add_dim('h0', 'ilat' , size=global_mesh%num_half_lat, add_var=.true., decomp=.true.)
-    call fiona_add_var('h0', 'u'    , long_name='u wind component'         , units='m s-1' , dim_names=['ilon', 'lat ', 'time'])
-    call fiona_add_var('h0', 'v'    , long_name='v wind component'         , units='m s-1' , dim_names=['lon ', 'ilat', 'time'])
-    call fiona_add_var('h0', 'h'    , long_name='height'                   , units='m'     , dim_names=['lon ', 'lat ', 'time'])
-    call fiona_add_var('h0', 'zs'   , long_name='surface height'           , units='m'     , dim_names=['lon ', 'lat ', 'time'])
-    call fiona_add_var('h0', 'pv'   , long_name='potential vorticity'      , units='s-1'   , dim_names=['ilon', 'ilat', 'time'])
+    if (num_lev > 1) then
+      call fiona_add_dim('h0', 'lev'  , size=global_mesh%num_full_lev, add_var=.true., decomp=.false.)
+      call fiona_add_dim('h0', 'ilev' , size=global_mesh%num_half_lev, add_var=.true., decomp=.false.)
+      call fiona_add_var('h0', 'u'    , long_name='u wind component'         , units='m s-1'  , dim_names=['ilon', 'lat ', 'lev ', 'time'])
+      call fiona_add_var('h0', 'v'    , long_name='v wind component'         , units='m s-1'  , dim_names=['lon ', 'ilat', 'lev ', 'time'])
+      call fiona_add_var('h0', 'z'    , long_name='height'                   , units='m'      , dim_names=['lon ', 'lat ', 'lev ', 'time'])
+      call fiona_add_var('h0', 'zs'   , long_name='surface height'           , units='m'      , dim_names=['lon ', 'lat ',         'time'])
+      call fiona_add_var('h0', 'pv'   , long_name='potential vorticity'      , units='m-1 s-1', dim_names=['ilon', 'ilat', 'lev ', 'time'])
+      call fiona_add_var('h0', 't'    , long_name='temperature'              , units='K'      , dim_names=['lon ', 'lat ', 'lev ', 'time'])
+    else
+      call fiona_add_var('h0', 'u'    , long_name='u wind component'         , units='m s-1' , dim_names=['ilon', 'lat ', 'time'])
+      call fiona_add_var('h0', 'v'    , long_name='v wind component'         , units='m s-1' , dim_names=['lon ', 'ilat', 'time'])
+      call fiona_add_var('h0', 'z'    , long_name='height'                   , units='m'     , dim_names=['lon ', 'lat ', 'time'])
+      call fiona_add_var('h0', 'zs'   , long_name='surface height'           , units='m'     , dim_names=['lon ', 'lat ', 'time'])
+      call fiona_add_var('h0', 'pv'   , long_name='potential vorticity'      , units='s-1'   , dim_names=['ilon', 'ilat', 'time'])
+    end if
     call fiona_add_var('h0', 'tm'   , long_name='total mass'               , units='m'     , dim_names=['time'])
     call fiona_add_var('h0', 'te'   , long_name='total energy'             , units='m4 s-4', dim_names=['time'], data_type='real(8)')
     call fiona_add_var('h0', 'tpe'  , long_name='total potential enstrophy', units='m2 s-5', dim_names=['time'], data_type='real(8)')
@@ -114,22 +125,29 @@ contains
     call fiona_output('h0', 'lat' , global_mesh%full_lat_deg(1:global_mesh%num_full_lat))
     call fiona_output('h0', 'ilon', global_mesh%half_lon_deg(1:global_mesh%num_half_lon))
     call fiona_output('h0', 'ilat', global_mesh%half_lat_deg(1:global_mesh%num_half_lat))
+    if (num_lev > 1) then
+      call fiona_output('h0', 'lev' , global_mesh%full_lev)
+      call fiona_output('h0', 'ilev', global_mesh%half_lev)
+    end if
 
     do iblk = 1, size(blocks)
       mesh => blocks(iblk)%mesh
       state => blocks(iblk)%state(itime)
       static => blocks(iblk)%static
-      call fiona_output('h0', 'u'  , state %u  (mesh%half_lon_ibeg:mesh%half_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend,1)    , start=[mesh%half_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_half_lon,mesh%num_full_lat])
-      call fiona_output('h0', 'v'  , state %v  (mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%half_lat_ibeg:mesh%half_lat_iend,1)    , start=[mesh%full_lon_ibeg,mesh%half_lat_ibeg], count=[mesh%num_full_lon,mesh%num_half_lat])
+      call fiona_output('h0', 'u'  , state %u  (mesh%half_lon_ibeg:mesh%half_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend,:)    , start=[mesh%half_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_half_lon,mesh%num_full_lat])
+      call fiona_output('h0', 'v'  , state %v  (mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%half_lat_ibeg:mesh%half_lat_iend,:)    , start=[mesh%full_lon_ibeg,mesh%half_lat_ibeg], count=[mesh%num_full_lon,mesh%num_half_lat])
       call fiona_output('h0', 'zs' , static%gzs(mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend  ) / g, start=[mesh%full_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_full_lon,mesh%num_full_lat])
-      call fiona_output('h0', 'pv' , state %pv (mesh%half_lon_ibeg:mesh%half_lon_iend,mesh%half_lat_ibeg:mesh%half_lat_iend,1)    , start=[mesh%half_lon_ibeg,mesh%half_lat_ibeg], count=[mesh%num_half_lon,mesh%num_half_lat])
+      call fiona_output('h0', 'pv' , state %pv (mesh%half_lon_ibeg:mesh%half_lon_iend,mesh%half_lat_ibeg:mesh%half_lat_iend,:)    , start=[mesh%half_lon_ibeg,mesh%half_lat_ibeg], count=[mesh%num_half_lon,mesh%num_half_lat])
       call fiona_output('h0', 'tm' , state %tm)
       call fiona_output('h0', 'te' , state %te)
       call fiona_output('h0', 'tpe', state %tpe)
       call fiona_output('h0', 'tpv', state %tav)     
-      call fiona_output('h0', 'h'  , (                                                          &
-        state%gz(mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend,1) &
+      call fiona_output('h0', 'z'  , (                                                          &
+        state%gz(mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend,:) &
       ) / g, start=[mesh%full_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_full_lon,mesh%num_full_lat])
+      if (num_lev > 1) then
+        call fiona_output('h0', 't', state%t(mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend,:), start=[mesh%full_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_full_lon,mesh%num_full_lat])
+      end if
     end do
     call fiona_end_output('h0')
 
