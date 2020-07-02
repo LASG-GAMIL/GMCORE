@@ -41,7 +41,7 @@ module state_mod
     real(r8), allocatable, dimension(:,:,:) :: dpv_lat_t  ! Zonal potential vorticity difference on merdional edge
     real(r8), allocatable, dimension(:,:,:) :: dpv_lat_n  ! Meridional potential vorticity difference on merdional edge
     real(r8), allocatable, dimension(:,:,:) :: ke         ! Kinetic energy
-    real(r8), allocatable, dimension(:,:,:) :: detadt     ! Vertical coordinate speed
+    real(r8), allocatable, dimension(:,:,:) :: we         ! Vertical coordinate speed
     real(r8), allocatable, dimension(:,:,:) :: pt         ! Potential temperature
     real(r8), allocatable, dimension(:,:,:) :: pt_p       ! Perturbed potential temperature
     real(r8), allocatable, dimension(:,:,:) :: t          ! Temperature
@@ -95,7 +95,7 @@ contains
     call allocate_array(mesh, this%dpv_lat_t, full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%dpv_lat_n, full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%ke       , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%detadt   , full_lon=.true., full_lat=.true., half_lev=.true.)
+    call allocate_array(mesh, this%we       , full_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%pt       , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%pt_p     , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%t        , full_lon=.true., full_lat=.true., full_lev=.true.)
@@ -133,6 +133,10 @@ contains
     if (allocated(this%dpv_lat_t)) deallocate(this%dpv_lat_t)
     if (allocated(this%dpv_lat_n)) deallocate(this%dpv_lat_n)
     if (allocated(this%ke       )) deallocate(this%ke       )
+    if (allocated(this%we       )) deallocate(this%we       )
+    if (allocated(this%pt       )) deallocate(this%pt       )
+    if (allocated(this%pt_p     )) deallocate(this%pt_p     )
+    if (allocated(this%t        )) deallocate(this%t        )
 
   end subroutine state_clear
 
