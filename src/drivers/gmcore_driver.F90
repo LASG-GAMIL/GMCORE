@@ -7,6 +7,7 @@ program gmcore_driver
   use restart_mod
   use gmcore_mod
   use steady_state_test_mod
+  use rossby_haurwitz_wave_3d_test_mod
 
   implicit none
 
@@ -32,6 +33,8 @@ program gmcore_driver
   select case (test_case)
   case ('steady_state')
     set_initial_condition => steady_state_test_set_initial_condition
+  case ('rossby_haurwitz_wave')
+    set_initial_condition => rossby_haurwitz_wave_3d_test_set_initial_condition
   case default
     call log_error('Unknown test case ' // trim(test_case) // '!')
   end select

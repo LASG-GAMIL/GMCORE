@@ -67,6 +67,7 @@ contains
       call fiona_add_var('h0', 'zs'   , long_name='surface height'           , units='m'      , dim_names=['lon ', 'lat ',         'time'])
       call fiona_add_var('h0', 'pv'   , long_name='potential vorticity'      , units='m-1 s-1', dim_names=['ilon', 'ilat', 'lev ', 'time'])
       call fiona_add_var('h0', 't'    , long_name='temperature'              , units='K'      , dim_names=['lon ', 'lat ', 'lev ', 'time'])
+      call fiona_add_var('h0', 'phs'  , long_name='surface hydrostatic pressure', units='Pa', dim_names=['lon ', 'lat ', 'time'])
     else
       call fiona_add_var('h0', 'u'    , long_name='u wind component'         , units='m s-1' , dim_names=['ilon', 'lat ', 'time'])
       call fiona_add_var('h0', 'v'    , long_name='v wind component'         , units='m s-1' , dim_names=['lon ', 'ilat', 'time'])
@@ -147,6 +148,7 @@ contains
       ) / g, start=[mesh%full_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_full_lon,mesh%num_full_lat])
       if (num_lev > 1) then
         call fiona_output('h0', 't', state%t(mesh%full_lon_ibeg:mesh%full_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend,:), start=[mesh%full_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_full_lon,mesh%num_full_lat])
+        call fiona_output('h0', 'phs', state%phs(mesh%full_lat_ibeg:mesh%full_lon_iend,mesh%full_lat_ibeg:mesh%full_lat_iend), start=[mesh%full_lon_ibeg,mesh%full_lat_ibeg], count=[mesh%num_full_lon,mesh%num_full_lat])
       end if
     end do
     call fiona_end_output('h0')

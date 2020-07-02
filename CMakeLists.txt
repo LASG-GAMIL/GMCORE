@@ -88,6 +88,7 @@ set(source_files
   src/tests/swm/cross_pole_flow_test_mod.F90
   src/tests/swm/shallow_water_waves_test_mod.F90
   src/tests/steady_state_test_mod.F90
+  src/tests/rossby_haurwitz_wave_3d_test_mod.F90
   src/tests/held_suarez_test_mod.F90
   lib/quadpack.f90
 )
