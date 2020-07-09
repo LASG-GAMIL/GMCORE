@@ -1,0 +1,31 @@
+&gmcore_swm_control
+num_lon = 3600
+num_lat = 1800
+num_proc_lon = 1
+num_proc_lat = 30
+! mountain_zonal_flow, rossby_haurwitz_wave, jet_zonal_flow, steady_geostrophic_flow, cross_pole_flow
+test_case = 'mountain_zonal_flow'
+run_days = 50
+time_scheme = 'pc2'
+dt_in_seconds = 50
+split_scheme = 'csp2'
+fast_cycles = 5
+pv_scheme = 3
+coarse_polar_lats_exp = 100
+coarse_polar_lats_mul = 4
+case_name = 'mz.u_pole.4.3600x1800'
+history_interval = '12 hours'
+print_interval = '5 minutes'
+reduce_factors = 16, 16, 16, 16, 16, 16, 16, 16, 12, 
+                 12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
+                  8,  8,  8,  8,  8,  8,  8,  8,  6,  6,
+                  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,
+                  6,  6,  4,  4,  4,  4,  4,  4,  4,  4,
+                  4,  4,  4,  4,  2,  2,  2,  2,  2,  2
+damp_orders    =  4,  4,  4,  4,  4,  4   4,  4,  4,
+                  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,
+                  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,
+                  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,
+                  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,
+                  4,  4,  4,  4,  4,  4,  4,  4,  4,  4
+/
