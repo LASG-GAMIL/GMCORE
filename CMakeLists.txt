@@ -75,6 +75,7 @@ set(source_files
   src/core/tend_mod.F90
   src/core/pv_mod.F90
   src/core/ke_mod.F90
+  src/core/interp_mod.F90
   src/core/operators_mod.F90
   src/core/reduced_types_mod.F90
   src/core/reduce_mod.F90

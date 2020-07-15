@@ -120,7 +120,7 @@ contains
       end if
     end if
 #endif
-    call fill_halo(block, state%pv, full_lon=.false., full_lat=.false.)
+    call fill_halo(block, state%pv, full_lon=.false., full_lat=.false., full_lev=.true.)
 
   end subroutine calc_pv_vtx
 
@@ -145,9 +145,9 @@ contains
       end do
     end do
 #ifdef V_POLE
-    call fill_halo(block, state%dpv_lat_t, full_lon=.true., full_lat=.false., west_halo=.false., south_halo=.false.)
+    call fill_halo(block, state%dpv_lat_t, full_lon=.true., full_lat=.false., full_lev=.true., west_halo=.false., south_halo=.false.)
 #else
-    call fill_halo(block, state%dpv_lat_t, full_lon=.true., full_lat=.false., west_halo=.false., north_halo=.false.)
+    call fill_halo(block, state%dpv_lat_t, full_lon=.true., full_lat=.false., full_lev=.true., west_halo=.false., north_halo=.false.)
 #endif
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
@@ -162,9 +162,9 @@ contains
       end do
     end do
 #ifdef V_POLE
-    call fill_halo(block, state%dpv_lon_t, full_lon=.false., full_lat=.true., east_halo=.false., north_halo=.false.)
+    call fill_halo(block, state%dpv_lon_t, full_lon=.false., full_lat=.true., full_lev=.true., east_halo=.false., north_halo=.false.)
 #else
-    call fill_halo(block, state%dpv_lon_t, full_lon=.false., full_lat=.true., east_halo=.false., south_halo=.false.)
+    call fill_halo(block, state%dpv_lon_t, full_lon=.false., full_lat=.true., full_lev=.true., east_halo=.false., south_halo=.false.)
 #endif
 
     ! Normal pv difference
@@ -216,9 +216,9 @@ contains
       end do
     end do
 #ifdef V_POLE
-    call fill_halo(block, state%pv_lat, full_lon=.true., full_lat=.false., west_halo=.false., south_halo=.false.)
+    call fill_halo(block, state%pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., west_halo=.false., south_halo=.false.)
 #else
-    call fill_halo(block, state%pv_lat, full_lon=.true., full_lat=.false., west_halo=.false., north_halo=.false.)
+    call fill_halo(block, state%pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., west_halo=.false., north_halo=.false.)
 #endif
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
@@ -233,9 +233,9 @@ contains
       end do
     end do
 #ifdef V_POLE
-    call fill_halo(block, state%pv_lon, full_lon=.false., full_lat=.true., east_halo=.false., north_halo=.false.)
+    call fill_halo(block, state%pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., east_halo=.false., north_halo=.false.)
 #else
-    call fill_halo(block, state%pv_lon, full_lon=.false., full_lat=.true., east_halo=.false., south_halo=.false.)
+    call fill_halo(block, state%pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., east_halo=.false., south_halo=.false.)
 #endif
 
   end subroutine calc_pv_edge_midpoint
@@ -273,9 +273,9 @@ contains
     if (mesh%has_north_pole()) state%pv_lat(:,mesh%half_lat_iend,:) = state%pv(:,mesh%half_lat_iend,:)
 #endif
 #ifdef V_POLE
-    call fill_halo(block, state%pv_lat, full_lon=.true., full_lat=.false., west_halo=.false., south_halo=.false.)
+    call fill_halo(block, state%pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., west_halo=.false., south_halo=.false.)
 #else
-    call fill_halo(block, state%pv_lat, full_lon=.true., full_lat=.false., west_halo=.false., north_halo=.false.)
+    call fill_halo(block, state%pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., west_halo=.false., north_halo=.false.)
 #endif
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
@@ -302,9 +302,9 @@ contains
       end do
     end do
 #ifdef V_POLE
-    call fill_halo(block, state%pv_lon, full_lon=.false., full_lat=.true., east_halo=.false., north_halo=.false.)
+    call fill_halo(block, state%pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., east_halo=.false., north_halo=.false.)
 #else
-    call fill_halo(block, state%pv_lon, full_lon=.false., full_lat=.true., east_halo=.false., south_halo=.false.)
+    call fill_halo(block, state%pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., east_halo=.false., south_halo=.false.)
 #endif
 
   end subroutine calc_pv_edge_apvm

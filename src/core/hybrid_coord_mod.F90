@@ -1,6 +1,7 @@
 module hybrid_coord_mod
 
   use flogger
+  use namelist_mod
   use const_mod
   use hybrid_coord_ecmwf_mod
   use mesh_mod
@@ -12,6 +13,7 @@ module hybrid_coord_mod
   public hybrid_coord_init
   public hybrid_coord_final
   public hybrid_coord_calc_ph_lev
+  public hybrid_coord_calc_dphdt_lev
 
   real(r8), allocatable, dimension(:) :: hyai
   real(r8), allocatable, dimension(:) :: hybi
@@ -50,7 +52,7 @@ contains
     close(10)
 
     if (ierr /= 0) then
-      if (num_lev == 1) then
+      if (.not. baroclinic) then
         call log_notice('Run shallow-water model.')
         return
       else
@@ -89,7 +91,7 @@ contains
 
   end subroutine hybrid_coord_final
 
-  real(r8) function hybrid_coord_calc_ph_lev(k, phs) result(res)
+  pure real(r8) function hybrid_coord_calc_ph_lev(k, phs) result(res)
 
     integer, intent(in) :: k
     real(r8), intent(in) :: phs
@@ -97,5 +99,14 @@ contains
     res = hyai(k) * p0 + hybi(k) * phs
 
   end function hybrid_coord_calc_ph_lev
+
+  pure real(r8) function hybrid_coord_calc_dphdt_lev(k, dphsdt) result(res)
+
+    integer, intent(in) :: k
+    real(r8), intent(in) :: dphsdt
+
+    res = hybi(k) * dphsdt
+
+  end function hybrid_coord_calc_dphdt_lev
 
 end module hybrid_coord_mod

@@ -18,6 +18,9 @@ module namelist_mod
   integer num_lat
   integer :: num_lev = 1
 
+  logical :: baroclinic = .false.
+  logical :: hydrostatic = .true.
+
   integer :: num_proc_lon(20) = 0
   integer :: num_proc_lat(20) = 0
 
@@ -57,6 +60,7 @@ module namelist_mod
     num_lon                   , &
     num_lat                   , &
     num_lev                   , &
+    hydrostatic               , &
     num_proc_lon              , &
     num_proc_lat              , &
     start_time                , &
@@ -100,6 +104,10 @@ contains
     open(10, file=file_path, status='old')
     read(10, nml=gmcore_control)
     close(10)
+
+    if (num_lev > 1) then
+      baroclinic = .true.
+    end if
 
   end subroutine parse_namelist
 

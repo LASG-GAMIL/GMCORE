@@ -17,7 +17,7 @@ module tend_mod
     real(r8), allocatable, dimension(:,:,:) :: dv
     real(r8), allocatable, dimension(:,:,:) :: dgz
     real(r8), allocatable, dimension(:,:,:) :: dpt
-    real(r8), allocatable, dimension(:,:,:) :: dphs
+    real(r8), allocatable, dimension(:,:  ) :: dphs
     ! Individual tendencies
     real(r8), allocatable, dimension(:,:,:) :: qhv
     real(r8), allocatable, dimension(:,:,:) :: qhu
@@ -65,8 +65,8 @@ contains
     call allocate_array(mesh, this%dmfdlon , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%dmfdlat , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%dptfdlon, full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%dptfdlon, full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%dptfdlon, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dptfdlat, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%dptfdlev, full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%dpdlon  , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%dpdlat  , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%wedudlev, half_lon=.true., full_lat=.true., full_lev=.true.)

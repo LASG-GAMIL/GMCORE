@@ -191,12 +191,27 @@ contains
             te = te + state%mf_lat_n(i,j,k) * 0.5_r8 * state%v(i,j,k) * mesh%area_lat(j) * 2
           end do
         end do
-        do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            te = te + (state%m(i,j,k)**2 * g * 0.5_r8 + state%m(i,j,k) * static%gzs(i,j)) * mesh%area_cell(j)
+      end do
+      if (baroclinic .and. hydrostatic) then
+        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+          do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              te = te + state%m(i,j,k) * cp * state%t(i,j,k) * mesh%area_cell(j)
+            end do
           end do
         end do
-      end do
+        do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            te = te + static%gzs(i,j) * state%phs(i,j) * mesh%area_cell(j)
+          end do
+        end do
+      else if (.not. baroclinic) then
+        do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            te = te + (state%m(i,j,1)**2 * g * 0.5_r8 + state%m(i,j,1) * static%gzs(i,j)) * mesh%area_cell(j)
+          end do
+        end do
+      end if
 
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%half_lat_ibeg, mesh%half_lat_iend
@@ -258,30 +273,62 @@ contains
 
     select case (pass)
     case (all_pass)
-      call calc_qhu_qhv(block, state, tend, dt)
-      call calc_dkedlon_dkedlat(block, state, tend, dt)
-      call calc_dpedlon_dpedlat(block, state, tend, dt)
-      call calc_dmfdlon_dmfdlat(block, state, tend, dt)
+      if (baroclinic .and. hydrostatic) then
+        call calc_dmfdlon_dmfdlat(block, state, tend, dt)
+        call calc_dphs(block, state, tend, dt)
+        call calc_wedphdlev(block, state, tend)
+        call calc_wedudlev_wedvdlev(block, state, tend, dt)
+        call calc_dptfdlon_dptfdlat_dptfdlev(block, state, tend, dt)
+        call calc_qhu_qhv(block, state, tend, dt)
+        call calc_dkedlon_dkedlat(block, state, tend, dt)
+        call calc_dpedlon_dpedlat(block, state, tend, dt)
+        call calc_dpdlon_dpdlat(block, state, tend, dt)
 
-      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            tend%du(i,j,k) =   tend%qhv(i,j,k) - tend%dpedlon(i,j,k) - tend%dkedlon(i,j,k)
+        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+            do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+              tend%du(i,j,k) =   tend%qhv(i,j,k) - tend%dpedlon(i,j,k) - tend%dkedlon(i,j,k) - tend%dpdlon(i,j,k) - tend%wedudlev(i,j,k)
+            end do
+          end do
+
+          do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              tend%dv(i,j,k) = - tend%qhu(i,j,k) - tend%dpedlat(i,j,k) - tend%dkedlat(i,j,k) - tend%dpdlat(i,j,k) - tend%wedvdlev(i,j,k)
+            end do
+          end do
+
+          do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              tend%dpt(i,j,k) = - tend%dptfdlon(i,j,k) - tend%dptfdlat(i,j,k) - tend%dptfdlev(i,j,k)
+            end do
           end do
         end do
+      else if (.not. baroclinic) then
+        call calc_dmfdlon_dmfdlat(block, state, tend, dt)
+        call calc_qhu_qhv(block, state, tend, dt)
+        call calc_dkedlon_dkedlat(block, state, tend, dt)
+        call calc_dpedlon_dpedlat(block, state, tend, dt)
 
-        do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            tend%dv(i,j,k) = - tend%qhu(i,j,k) - tend%dpedlat(i,j,k) - tend%dkedlat(i,j,k)
+        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+            do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+              tend%du(i,j,k) =   tend%qhv(i,j,k) - tend%dpedlon(i,j,k) - tend%dkedlon(i,j,k)
+            end do
+          end do
+
+          do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              tend%dv(i,j,k) = - tend%qhu(i,j,k) - tend%dpedlat(i,j,k) - tend%dkedlat(i,j,k)
+            end do
+          end do
+
+          do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              tend%dgz(i,j,k) = - (tend%dmfdlon(i,j,k) + tend%dmfdlat(i,j,k)) * g
+            end do
           end do
         end do
-
-        do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            tend%dgz(i,j,k) = - (tend%dmfdlon(i,j,k) + tend%dmfdlat(i,j,k)) * g
-          end do
-        end do
-      end do
+      end if
     case (slow_pass)
       call calc_qhu_qhv(block, state, tend, dt)
 
@@ -471,14 +518,35 @@ contains
 
     mesh => old_state%mesh
 
-    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+    if (baroclinic) then
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          new_state%gz(i,j,k) = old_state%gz(i,j,k) + dt * tend%dgz(i,j,k)
+          new_state%phs(i,j) = old_state%phs(i,j) + dt * tend%dphs(i,j)
         end do
       end do
-    end do
-    call fill_halo(block, new_state%gz, full_lon=.true., full_lat=.true.)
+      call fill_halo(block, new_state%phs, full_lon=.true., full_lat=.true.)
+
+      call calc_ph_ph_lev(block, new_state)
+      call calc_m(block, new_state)
+
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            new_state%pt(i,j,k) = (old_state%pt(i,j,k) * old_state%m(i,j,k) + dt * tend%dpt(i,j,k)) / new_state%m(i,j,k)
+          end do
+        end do
+      end do
+      call fill_halo(block, new_state%pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+    else
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            new_state%gz(i,j,k) = old_state%gz(i,j,k) + dt * tend%dgz(i,j,k)
+          end do
+        end do
+      end do
+      call fill_halo(block, new_state%gz, full_lon=.true., full_lat=.true.)
+    end if
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -487,7 +555,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, new_state%u, full_lon=.false., full_lat=.true.)
+    call fill_halo(block, new_state%u, full_lon=.false., full_lat=.true., full_lev=.true.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
@@ -496,7 +564,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, new_state%v, full_lon=.true., full_lat=.false.)
+    call fill_halo(block, new_state%v, full_lon=.true., full_lat=.false., full_lev=.true.)
 
     call damp_state(block, new_state)
 

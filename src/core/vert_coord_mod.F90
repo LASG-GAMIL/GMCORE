@@ -10,6 +10,7 @@ module vert_coord_mod
   public vert_coord_init
   public vert_coord_final
   public vert_coord_calc_ph_lev
+  public vert_coord_calc_dphdt_lev
 
 contains
 
@@ -28,7 +29,7 @@ contains
 
   end subroutine vert_coord_final
 
-  real(r8) function vert_coord_calc_ph_lev(k, phs) result(res)
+  pure real(r8) function vert_coord_calc_ph_lev(k, phs) result(res)
 
     integer, intent(in) :: k
     real(r8), intent(in) :: phs
@@ -36,5 +37,14 @@ contains
     res = hybrid_coord_calc_ph_lev(k, phs)
 
   end function vert_coord_calc_ph_lev
+
+  pure real(r8) function vert_coord_calc_dphdt_lev(k, dphsdt) result(res)
+
+    integer, intent(in) :: k
+    real(r8), intent(in) :: dphsdt
+
+    res = hybrid_coord_calc_dphdt_lev(k, dphsdt)
+
+  end function vert_coord_calc_dphdt_lev
 
 end module vert_coord_mod

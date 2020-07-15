@@ -76,7 +76,7 @@ contains
       end do
     end if
 #endif
-    call fill_halo(block, state%ke, full_lon=.true., full_lat=.true., west_halo=.false.)
+    call fill_halo(block, state%ke, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false.)
 
   end subroutine calc_ke_cell
 

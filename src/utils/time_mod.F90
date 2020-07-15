@@ -16,6 +16,7 @@ module time_mod
   public time_advance
   public time_fast_forward
   public time_elapsed_seconds
+  public time_is_first_step
   public time_is_finished
   public time_add_alert
   public time_is_alerted
@@ -178,6 +179,12 @@ contains
     res = elapsed_seconds
 
   end function time_elapsed_seconds
+
+  logical function time_is_first_step() result(res)
+
+    res = elapsed_seconds == 0
+
+  end function time_is_first_step
 
   logical function time_is_finished() result(res)
 
