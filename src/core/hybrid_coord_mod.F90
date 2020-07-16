@@ -3,6 +3,7 @@ module hybrid_coord_mod
   use flogger
   use namelist_mod
   use const_mod
+  use hybrid_coord_test_mod
   use hybrid_coord_ecmwf_mod
   use mesh_mod
 
@@ -61,6 +62,8 @@ contains
     end if
 
     select case (template)
+    case ('test_l26')
+      call hybrid_coord_test_l26(p0, hyai, hybi)
     case ('ecmwf_l50')
       call hybrid_coord_ecmwf_l50(p0, hyai, hybi)
     case default

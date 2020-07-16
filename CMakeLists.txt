@@ -67,6 +67,7 @@ set(source_files
   src/utils/parallel_mod.F90
   src/utils/debug_mod.F90
   src/core/mesh_mod.F90
+  src/core/hybrid_coord_test_mod.F90
   src/core/hybrid_coord_ecmwf_mod.F90
   src/core/hybrid_coord_mod.F90
   src/core/vert_coord_mod.F90

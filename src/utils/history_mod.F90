@@ -77,6 +77,7 @@ contains
       call fiona_add_var('h0', 't'    , long_name='temperature'                 , units='K'      , dim_names=cell_dims)
       call fiona_add_var('h0', 'pt'   , long_name='potential temperature'       , units='K'      , dim_names=cell_dims)
       call fiona_add_var('h0', 'phs'  , long_name='surface hydrostatic pressure', units='Pa'     , dim_names=['lon ', 'lat ', 'time'])
+      call fiona_add_var('h0', 'ph'   , long_name='hydrostatic pressure'        , units='Pa'     , dim_names=cell_dims)
     end if
     call fiona_add_var('h0', 'u'    , long_name='u wind component'            , units='m s-1'  , dim_names=lon_dims)
     call fiona_add_var('h0', 'v'    , long_name='v wind component'            , units='m s-1'  , dim_names=lat_dims)
@@ -165,6 +166,7 @@ contains
         call fiona_output('h0', 't'  , state%t  (is:ie,js:je,ks:ke), start=[is,js,ks], count=[mesh%num_full_lon,mesh%num_full_lat])
         call fiona_output('h0', 'pt' , state%pt (is:ie,js:je,ks:ke), start=[is,js,ks], count=[mesh%num_full_lon,mesh%num_full_lat])
         call fiona_output('h0', 'phs', state%phs(is:ie,js:je      ), start=[is,js   ], count=[mesh%num_full_lon,mesh%num_full_lat])
+        call fiona_output('h0', 'ph' , state%ph (is:ie,js:je,ks:ke), start=[is,js,ks], count=[mesh%num_full_lon,mesh%num_full_lat])
       end if
       is = mesh%half_lon_ibeg; ie = mesh%half_lon_iend
       js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
