@@ -6,6 +6,7 @@ module hybrid_coord_mod
   use hybrid_coord_test_mod
   use hybrid_coord_ecmwf_mod
   use mesh_mod
+  use process_mod
 
   implicit none
 
@@ -54,7 +55,7 @@ contains
 
     if (ierr /= 0) then
       if (.not. baroclinic) then
-        call log_notice('Run shallow-water model.')
+        if (is_root_proc()) call log_notice('Run shallow-water model.')
         return
       else
         call log_error('No hybrid_coord parameters in ' // trim(namelist_path) // '!')

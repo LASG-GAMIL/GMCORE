@@ -28,8 +28,11 @@ contains
   subroutine history_init()
 
     character(10) time_value, time_units
-    character(4) cell_dims(4), lon_dims(4), lat_dims(4), vtx_dims(4)
-    character(4) cell_dims_2d(3), cell_lev_dims(4), lev_dims(4)
+    character(4) cell_dims(4), cell_dims_2d(3)
+    character(4) lon_dims(4), lon_dims_2d(3)
+    character(4) lat_dims(4), lat_dims_2d(3)
+    character(4) vtx_dims(4), vtx_dims_2d(3)
+    character(4) cell_lev_dims(4), lev_dims(4)
     real(r8) seconds
 
     if (history_interval(1) == 'N/A') call log_error('Parameter history_interval is not set!')
@@ -51,20 +54,16 @@ contains
       call log_error('Invalid history interval ' // trim(history_interval(1)) // '!')
     end select
 
-    if (baroclinic) then
-          cell_dims(1) =  'lon';     cell_dims(2) =  'lat';     cell_dims(3) =  'lev';     cell_dims(4) = 'time'
-      cell_lev_dims(1) =  'lon'; cell_lev_dims(2) =  'lat'; cell_lev_dims(3) = 'ilev'; cell_lev_dims(4) = 'time'
-           lon_dims(1) = 'ilon';      lon_dims(2) =  'lat';      lon_dims(3) =  'lev';      lon_dims(4) = 'time'
-           lat_dims(1) =  'lon';      lat_dims(2) = 'ilat';      lat_dims(3) =  'lev';      lat_dims(4) = 'time'
-           vtx_dims(1) = 'ilon';      vtx_dims(2) = 'ilat';      vtx_dims(3) =  'lev';      vtx_dims(4) = 'time'
-           lev_dims(1) =  'lon';      lev_dims(2) =  'lat';      lev_dims(3) = 'ilev';      lev_dims(4) = 'time'
-       cell_dims_2d(1) =  'lon';  cell_dims_2d(2) =  'lat';  cell_dims_2d(3) = 'time'
-    else
-         cell_dims(1) =  'lon';    cell_dims(2) =  'lat';    cell_dims(3) = 'time'
-          lon_dims(1) = 'ilon';     lon_dims(2) =  'lat';     lon_dims(3) = 'time'
-          lat_dims(1) =  'lon';     lat_dims(2) = 'ilat';     lat_dims(3) = 'time'
-          vtx_dims(1) = 'ilon';     vtx_dims(2) = 'ilat';     vtx_dims(3) = 'time'
-    end if
+        cell_dims(1) =  'lon';     cell_dims(2) =  'lat';     cell_dims(3) =  'lev';     cell_dims(4) = 'time'
+    cell_lev_dims(1) =  'lon'; cell_lev_dims(2) =  'lat'; cell_lev_dims(3) = 'ilev'; cell_lev_dims(4) = 'time'
+         lon_dims(1) = 'ilon';      lon_dims(2) =  'lat';      lon_dims(3) =  'lev';      lon_dims(4) = 'time'
+         lat_dims(1) =  'lon';      lat_dims(2) = 'ilat';      lat_dims(3) =  'lev';      lat_dims(4) = 'time'
+         vtx_dims(1) = 'ilon';      vtx_dims(2) = 'ilat';      vtx_dims(3) =  'lev';      vtx_dims(4) = 'time'
+         lev_dims(1) =  'lon';      lev_dims(2) =  'lat';      lev_dims(3) = 'ilev';      lev_dims(4) = 'time'
+     cell_dims_2d(1) =  'lon';  cell_dims_2d(2) =  'lat';  cell_dims_2d(3) = 'time'
+      lon_dims_2d(1) = 'ilon';   lon_dims_2d(2) =  'lat';   lon_dims_2d(3) = 'time'
+      lat_dims_2d(1) =  'lon';   lat_dims_2d(2) = 'ilat';   lat_dims_2d(3) = 'time'
+      vtx_dims_2d(1) = 'ilon';   vtx_dims_2d(2) = 'ilat';   vtx_dims_2d(3) = 'time'
 
     call fiona_init(time_units, start_time_str)
 
@@ -76,23 +75,33 @@ contains
     call fiona_add_dim('h0', 'ilon' , size=global_mesh%num_half_lon, add_var=.true., decomp=.true.)
     call fiona_add_dim('h0', 'ilat' , size=global_mesh%num_half_lat, add_var=.true., decomp=.true.)
     if (baroclinic) then
-      call fiona_add_dim('h0', 'lev'   , size=global_mesh%num_full_lev, add_var=.true., decomp=.false.)
-      call fiona_add_dim('h0', 'ilev'  , size=global_mesh%num_half_lev, add_var=.true., decomp=.false.)
-      call fiona_add_var('h0', 't'     , long_name='temperature'                 , units='K'      , dim_names=cell_dims)
-      call fiona_add_var('h0', 't850'  , long_name='temperature on 850hPa'       , units='K'      , dim_names=cell_dims_2d)
-      call fiona_add_var('h0', 'pt'    , long_name='potential temperature'       , units='K'      , dim_names=cell_dims)
-      call fiona_add_var('h0', 'phs'   , long_name='surface hydrostatic pressure', units='Pa'     , dim_names=cell_dims_2d)
-      call fiona_add_var('h0', 'ph'    , long_name='hydrostatic pressure'        , units='Pa'     , dim_names=cell_dims)
+      call fiona_add_dim('h0', 'lev'  , size=global_mesh%num_full_lev, add_var=.true., decomp=.false.)
+      call fiona_add_dim('h0', 'ilev' , size=global_mesh%num_half_lev, add_var=.true., decomp=.false.)
+      call fiona_add_var('h0', 't'    , long_name='temperature'                 , units='K'      , dim_names=cell_dims)
+      call fiona_add_var('h0', 't850' , long_name='temperature on 850hPa'       , units='K'      , dim_names=cell_dims_2d)
+      call fiona_add_var('h0', 'pt'   , long_name='potential temperature'       , units='K'      , dim_names=cell_dims)
+      call fiona_add_var('h0', 'phs'  , long_name='surface hydrostatic pressure', units='Pa'     , dim_names=cell_dims_2d)
+      call fiona_add_var('h0', 'ph'   , long_name='hydrostatic pressure'        , units='Pa'     , dim_names=cell_dims)
+      call fiona_add_var('h0', 'u'    , long_name='u wind component'            , units='m s-1'  , dim_names=lon_dims)
+      call fiona_add_var('h0', 'v'    , long_name='v wind component'            , units='m s-1'  , dim_names=lat_dims)
+      call fiona_add_var('h0', 'z'    , long_name='height'                      , units='m'      , dim_names=cell_dims)
+      call fiona_add_var('h0', 'zs'   , long_name='surface height'              , units='m'      , dim_names=cell_dims_2d)
+      call fiona_add_var('h0', 'pv'   , long_name='potential vorticity'         , units='m-1 s-1', dim_names=vtx_dims)
+      call fiona_add_var('h0', 'tm'   , long_name='total mass'                  , units='m'      , dim_names=['time'])
+      call fiona_add_var('h0', 'te'   , long_name='total energy'                , units='m4 s-4' , dim_names=['time'], data_type='real(8)')
+      call fiona_add_var('h0', 'tpe'  , long_name='total potential enstrophy'   , units='m2 s-5' , dim_names=['time'], data_type='real(8)')
+      call fiona_add_var('h0', 'tpv'  , long_name='total potential vorticity'   , units='m2 s-5' , dim_names=['time'], data_type='real(8)')
+    else
+      call fiona_add_var('h0', 'u'    , long_name='u wind component'            , units='m s-1'  , dim_names=lon_dims_2d)
+      call fiona_add_var('h0', 'v'    , long_name='v wind component'            , units='m s-1'  , dim_names=lat_dims_2d)
+      call fiona_add_var('h0', 'z'    , long_name='height'                      , units='m'      , dim_names=cell_dims_2d)
+      call fiona_add_var('h0', 'zs'   , long_name='surface height'              , units='m'      , dim_names=cell_dims_2d)
+      call fiona_add_var('h0', 'pv'   , long_name='potential vorticity'         , units='m-1 s-1', dim_names=vtx_dims_2d)
+      call fiona_add_var('h0', 'tm'   , long_name='total mass'                  , units='m'      , dim_names=['time'])
+      call fiona_add_var('h0', 'te'   , long_name='total energy'                , units='m4 s-4' , dim_names=['time'], data_type='real(8)')
+      call fiona_add_var('h0', 'tpe'  , long_name='total potential enstrophy'   , units='m2 s-5' , dim_names=['time'], data_type='real(8)')
+      call fiona_add_var('h0', 'tpv'  , long_name='total potential vorticity'   , units='m2 s-5' , dim_names=['time'], data_type='real(8)')
     end if
-    call fiona_add_var('h0', 'u'    , long_name='u wind component'            , units='m s-1'  , dim_names=lon_dims)
-    call fiona_add_var('h0', 'v'    , long_name='v wind component'            , units='m s-1'  , dim_names=lat_dims)
-    call fiona_add_var('h0', 'z'    , long_name='height'                      , units='m'      , dim_names=cell_dims)
-    call fiona_add_var('h0', 'zs'   , long_name='surface height'              , units='m'      , dim_names=cell_dims_2d)
-    call fiona_add_var('h0', 'pv'   , long_name='potential vorticity'         , units='m-1 s-1', dim_names=vtx_dims)
-    call fiona_add_var('h0', 'tm'   , long_name='total mass'               , units='m'     , dim_names=['time'])
-    call fiona_add_var('h0', 'te'   , long_name='total energy'             , units='m4 s-4', dim_names=['time'], data_type='real(8)')
-    call fiona_add_var('h0', 'tpe'  , long_name='total potential enstrophy', units='m2 s-5', dim_names=['time'], data_type='real(8)')
-    call fiona_add_var('h0', 'tpv'  , long_name='total potential vorticity', units='m2 s-5', dim_names=['time'], data_type='real(8)')
 
     call fiona_create_dataset('h1', desc=case_desc, file_prefix=trim(case_name), mpi_comm=proc%comm)
     call fiona_add_att('h1', 'time_step_size', dt)
@@ -114,22 +123,38 @@ contains
       call fiona_add_var('h1', 'wedudlev' , long_name='vertical advection of u'                       , units='', dim_names=lon_dims)
       call fiona_add_var('h1', 'dpdlat'   , long_name='meridional pressure gradient force'            , units='', dim_names=lat_dims)
       call fiona_add_var('h1', 'wedvdlev' , long_name='vertical advection of v'                       , units='', dim_names=lat_dims)
+      call fiona_add_var('h1', 'qhv'      , long_name='nonliear zonal Coriolis force'                 , units='', dim_names=lon_dims)
+      call fiona_add_var('h1', 'qhu'      , long_name='nonliear meridional Coriolis force'            , units='', dim_names=lat_dims)
+      call fiona_add_var('h1', 'dpedlon'  , long_name='zonal geopotential energy gradient force'      , units='', dim_names=lon_dims)
+      call fiona_add_var('h1', 'dkedlon'  , long_name='zonal kinetic energy gradient force'           , units='', dim_names=lon_dims)
+      call fiona_add_var('h1', 'dpedlat'  , long_name='meridional geopotential energy gradient force' , units='', dim_names=lat_dims)
+      call fiona_add_var('h1', 'dkedlat'  , long_name='meridional kinetic energy gradient force'      , units='', dim_names=lat_dims)
+      call fiona_add_var('h1', 'dmfdlon'  , long_name='zonal mass flux divergence'                    , units='', dim_names=cell_dims)
+      call fiona_add_var('h1', 'dmfdlat'  , long_name='meridional mass flux divergence'               , units='', dim_names=cell_dims)
+      call fiona_add_var('h1', 'mf_lon_n' , long_name='normal mass flux on U grid'                    , units='', dim_names=lon_dims)
+      call fiona_add_var('h1', 'mf_lon_t' , long_name='tangent mass flux on U grid'                   , units='', dim_names=lon_dims)
+      call fiona_add_var('h1', 'mf_lat_n' , long_name='normal mass flux on V grid'                    , units='', dim_names=lat_dims)
+      call fiona_add_var('h1', 'mf_lat_t' , long_name='tangent mass flux on V grid'                   , units='', dim_names=lat_dims)
+      call fiona_add_var('h1', 'pv_lon'   , long_name='pv on U grid'                                  , units='', dim_names=lon_dims)
+      call fiona_add_var('h1', 'pv_lat'   , long_name='pv on V grid'                                  , units='', dim_names=lat_dims)
+      call fiona_add_var('h1', 'ke'       , long_name='kinetic energy on cell grid'                   , units='', dim_names=cell_dims)
+    else
+      call fiona_add_var('h1', 'qhv'      , long_name='nonliear zonal Coriolis force'                 , units='', dim_names=lon_dims_2d)
+      call fiona_add_var('h1', 'qhu'      , long_name='nonliear meridional Coriolis force'            , units='', dim_names=lat_dims_2d)
+      call fiona_add_var('h1', 'dpedlon'  , long_name='zonal geopotential energy gradient force'      , units='', dim_names=lon_dims_2d)
+      call fiona_add_var('h1', 'dkedlon'  , long_name='zonal kinetic energy gradient force'           , units='', dim_names=lon_dims_2d)
+      call fiona_add_var('h1', 'dpedlat'  , long_name='meridional geopotential energy gradient force' , units='', dim_names=lat_dims_2d)
+      call fiona_add_var('h1', 'dkedlat'  , long_name='meridional kinetic energy gradient force'      , units='', dim_names=lat_dims_2d)
+      call fiona_add_var('h1', 'dmfdlon'  , long_name='zonal mass flux divergence'                    , units='', dim_names=cell_dims_2d)
+      call fiona_add_var('h1', 'dmfdlat'  , long_name='meridional mass flux divergence'               , units='', dim_names=cell_dims_2d)
+      call fiona_add_var('h1', 'mf_lon_n' , long_name='normal mass flux on U grid'                    , units='', dim_names=lon_dims_2d)
+      call fiona_add_var('h1', 'mf_lon_t' , long_name='tangent mass flux on U grid'                   , units='', dim_names=lon_dims_2d)
+      call fiona_add_var('h1', 'mf_lat_n' , long_name='normal mass flux on V grid'                    , units='', dim_names=lat_dims_2d)
+      call fiona_add_var('h1', 'mf_lat_t' , long_name='tangent mass flux on V grid'                   , units='', dim_names=lat_dims_2d)
+      call fiona_add_var('h1', 'pv_lon'   , long_name='pv on U grid'                                  , units='', dim_names=lon_dims_2d)
+      call fiona_add_var('h1', 'pv_lat'   , long_name='pv on V grid'                                  , units='', dim_names=lat_dims_2d)
+      call fiona_add_var('h1', 'ke'       , long_name='kinetic energy on cell grid'                   , units='', dim_names=cell_dims_2d)
     end if
-    call fiona_add_var('h1', 'qhv'      , long_name='nonliear zonal Coriolis force'                , units='m s-2'  , dim_names=lon_dims)
-    call fiona_add_var('h1', 'qhu'      , long_name='nonliear meridional Coriolis force'           , units='m s-2'  , dim_names=lat_dims)
-    call fiona_add_var('h1', 'dpedlon'  , long_name='zonal geopotential energy gradient force'     , units=''       , dim_names=lon_dims)
-    call fiona_add_var('h1', 'dkedlon'  , long_name='zonal kinetic energy gradient force'          , units=''       , dim_names=lon_dims)
-    call fiona_add_var('h1', 'dpedlat'  , long_name='meridional geopotential energy gradient force', units=''       , dim_names=lat_dims)
-    call fiona_add_var('h1', 'dkedlat'  , long_name='meridional kinetic energy gradient force'     , units=''       , dim_names=lat_dims)
-    call fiona_add_var('h1', 'dmfdlon'  , long_name='zonal mass flux divergence'                   , units=''       , dim_names=cell_dims)
-    call fiona_add_var('h1', 'dmfdlat'  , long_name='meridional mass flux divergence'              , units=''       , dim_names=cell_dims)
-    call fiona_add_var('h1', 'mf_lon_n' , long_name='normal mass flux on U grid'                   , units='m2 s-1' , dim_names=lon_dims)
-    call fiona_add_var('h1', 'mf_lon_t' , long_name='tangent mass flux on U grid'                  , units='m2 s-1' , dim_names=lon_dims)
-    call fiona_add_var('h1', 'mf_lat_n' , long_name='normal mass flux on V grid'                   , units='m2 s-1' , dim_names=lat_dims)
-    call fiona_add_var('h1', 'mf_lat_t' , long_name='tangent mass flux on V grid'                  , units='m2 s-1' , dim_names=lat_dims)
-    call fiona_add_var('h1', 'pv_lon'   , long_name='pv on U grid'                                 , units='m-1 s-1', dim_names=lon_dims)
-    call fiona_add_var('h1', 'pv_lat'   , long_name='pv on V grid'                                 , units='m-1 s-1', dim_names=lat_dims)
-    call fiona_add_var('h1', 'ke'       , long_name='kinetic energy on cell grid'                  , units='',        dim_names=cell_dims)
 
     call time_add_alert('history_write', seconds=seconds)
 
