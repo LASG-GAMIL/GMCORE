@@ -11,6 +11,7 @@ module gmcore_mod
   use block_mod
   use vert_coord_mod
   use operators_mod
+  use interp_mod
   use reduce_mod
   use debug_mod
   use damp_mod
@@ -131,10 +132,12 @@ contains
 
   subroutine output(blocks, itime)
 
-    type(block_type), intent(in) :: blocks(:)
+    type(block_type), intent(in), target :: blocks(:)
     integer, intent(in) :: itime
 
+    type(state_type), pointer :: state
     real(r8), save :: time1 = 0, time2
+    integer i, j, k, iblk
 
     if (time_is_alerted('history_write')) then
       if (time_step == 0) call cpu_time(time1)
@@ -143,6 +146,11 @@ contains
         if (is_root_proc()) call log_notice('Time cost ' // to_string(time2 - time1, 5) // ' seconds.')
         time1 = time2
       end if
+      ! Interpolate onto isobaric layers.
+      do iblk = 1, size(blocks)
+        state => blocks(iblk)%state(itime)
+        call interp_cell_to_isobaric_level(state%mesh, state%ph, state%t, 85000.0_r8, state%t850, logp=.true.)
+      end do
       call history_write_state(blocks, itime)
       call history_write_debug(blocks, itime)
     end if
@@ -274,15 +282,15 @@ contains
     select case (pass)
     case (all_pass)
       if (baroclinic .and. hydrostatic) then
-        call calc_dmfdlon_dmfdlat(block, state, tend, dt)
-        call calc_dphs(block, state, tend, dt)
-        call calc_wedphdlev(block, state, tend)
-        call calc_wedudlev_wedvdlev(block, state, tend, dt)
+        call calc_dmfdlon_dmfdlat           (block, state, tend, dt)
+        call calc_dphs                      (block, state, tend, dt)
+        call calc_wedphdlev                 (block, state, tend)
+        call calc_wedudlev_wedvdlev         (block, state, tend, dt)
         call calc_dptfdlon_dptfdlat_dptfdlev(block, state, tend, dt)
-        call calc_qhu_qhv(block, state, tend, dt)
-        call calc_dkedlon_dkedlat(block, state, tend, dt)
-        call calc_dpedlon_dpedlat(block, state, tend, dt)
-        call calc_dpdlon_dpdlat(block, state, tend, dt)
+        call calc_qhu_qhv                   (block, state, tend, dt)
+        call calc_dkedlon_dkedlat           (block, state, tend, dt)
+        call calc_dpedlon_dpedlat           (block, state, tend, dt)
+        call calc_dpdlon_dpdlat             (block, state, tend, dt)
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole

@@ -51,6 +51,7 @@ module state_mod
     real(r8), allocatable, dimension(:,:,:) :: pt_lev        ! Potential temperature on the vertical edge
     real(r8), allocatable, dimension(:,:,:) :: pt_p          ! Perturbed potential temperature
     real(r8), allocatable, dimension(:,:,:) :: t             ! Temperature
+    real(r8), allocatable, dimension(:,:  ) :: t850          ! Temperature on 850hPa
     real(r8), allocatable, dimension(:,:,:) :: t_lnpop       ! T ln(p_{k+1/2} / p_{k-1/2})
     real(r8), allocatable, dimension(:,:,:) :: t_lnpop_lon   ! T ln(p_{k+1/2} / p_{k-1/2})
     real(r8), allocatable, dimension(:,:,:) :: t_lnpop_lat   ! T ln(p_{k+1/2} / p_{k-1/2})
@@ -118,6 +119,7 @@ contains
     call allocate_array(mesh, this%pt_lev       , full_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%pt_p         , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%t            , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%t850         , full_lon=.true., full_lat=.true.                 )
     call allocate_array(mesh, this%t_lnpop      , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%t_lnpop_lon  , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%t_lnpop_lat  , full_lon=.true., half_lat=.true., full_lev=.true.)
@@ -170,6 +172,7 @@ contains
     if (allocated(this%pt_lev       )) deallocate(this%pt_lev       )
     if (allocated(this%pt_p         )) deallocate(this%pt_p         )
     if (allocated(this%t            )) deallocate(this%t            )
+    if (allocated(this%t850         )) deallocate(this%t850         )
     if (allocated(this%t_lnpop      )) deallocate(this%t_lnpop      )
     if (allocated(this%t_lnpop_lon  )) deallocate(this%t_lnpop_lon  )
     if (allocated(this%t_lnpop_lat  )) deallocate(this%t_lnpop_lat  )
