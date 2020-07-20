@@ -284,7 +284,7 @@ contains
       if (baroclinic .and. hydrostatic) then
         call calc_dmfdlon_dmfdlat           (block, state, tend, dt)
         call calc_dphs                      (block, state, tend, dt)
-        call calc_wedphdlev                 (block, state, tend)
+        call calc_wedphdlev                 (block, state, tend, dt)
         call calc_wedudlev_wedvdlev         (block, state, tend, dt)
         call calc_dptfdlon_dptfdlat_dptfdlev(block, state, tend, dt)
         call calc_qhu_qhv                   (block, state, tend, dt)
@@ -313,7 +313,7 @@ contains
         end do
       else if (.not. baroclinic) then
         call calc_dmfdlon_dmfdlat(block, state, tend, dt)
-        call calc_qhu_qhv(block, state, tend, dt)
+        call calc_qhu_qhv        (block, state, tend, dt)
         call calc_dkedlon_dkedlat(block, state, tend, dt)
         call calc_dpedlon_dpedlat(block, state, tend, dt)
 
@@ -534,8 +534,8 @@ contains
       end do
       call fill_halo(block, new_state%phs, full_lon=.true., full_lat=.true.)
 
-      call calc_ph_ph_lev(block, new_state)
-      call calc_m(block, new_state)
+      call calc_ph_lev_ph(block, new_state)
+      call calc_m        (block, new_state)
 
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend

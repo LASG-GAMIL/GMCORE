@@ -114,6 +114,7 @@ contains
       call fiona_add_dim('h1', 'lev'  , size=global_mesh%num_full_lev, add_var=.true., decomp=.false.)
       call fiona_add_dim('h1', 'ilev' , size=global_mesh%num_half_lev, add_var=.true., decomp=.false.)
       call fiona_add_var('h1', 'pt_lev'   , long_name='potential temperature on half levels'          , units='', dim_names=cell_lev_dims)
+      call fiona_add_var('h1', 'ph_lev'   , long_name='hydrostatic pressure on half levels'           , units='', dim_names=cell_lev_dims)
       call fiona_add_var('h1', 'dphs'     , long_name='surface hydrostatic pressure tendency'         , units='', dim_names=cell_dims_2d)
       call fiona_add_var('h1', 'dptfdlon' , long_name='zonal potential temperature flux gradient'     , units='', dim_names=cell_dims)
       call fiona_add_var('h1', 'dptfdlat' , long_name='meridional potential temperature flux gradient', units='', dim_names=cell_dims)
@@ -135,6 +136,7 @@ contains
       call fiona_add_var('h1', 'mf_lon_t' , long_name='tangent mass flux on U grid'                   , units='', dim_names=lon_dims)
       call fiona_add_var('h1', 'mf_lat_n' , long_name='normal mass flux on V grid'                    , units='', dim_names=lat_dims)
       call fiona_add_var('h1', 'mf_lat_t' , long_name='tangent mass flux on V grid'                   , units='', dim_names=lat_dims)
+      call fiona_add_var('h1', 'm'        , long_name='dph on full levels'                            , units='', dim_names=cell_dims)
       call fiona_add_var('h1', 'pv_lon'   , long_name='pv on U grid'                                  , units='', dim_names=lon_dims)
       call fiona_add_var('h1', 'pv_lat'   , long_name='pv on V grid'                                  , units='', dim_names=lat_dims)
       call fiona_add_var('h1', 'ke'       , long_name='kinetic energy on cell grid'                   , units='', dim_names=cell_dims)
@@ -276,6 +278,7 @@ contains
     call fiona_output('h1', 'dmfdlat' , tend%dmfdlat  (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'ke'      , state%ke      (is:ie,js:je,ks:ke), start=start, count=count)
     if (baroclinic) then
+      call fiona_output('h1', 'm'       , state%m      (is:ie,js:je,ks:ke), start=start, count=count)
       call fiona_output('h1', 'dphs'    , tend%dphs    (is:ie,js:je      ), start=start, count=count)
       call fiona_output('h1', 'dptfdlon', tend%dptfdlon(is:ie,js:je,ks:ke), start=start, count=count)
       call fiona_output('h1', 'dptfdlat', tend%dptfdlat(is:ie,js:je,ks:ke), start=start, count=count)
@@ -327,6 +330,7 @@ contains
     if (baroclinic) then
       call fiona_output('h1', 'wedphdlev', state%wedphdlev(is:ie,js:je,ks:ke), start=start, count=count)
       call fiona_output('h1', 'pt_lev'   , state%pt_lev   (is:ie,js:je,ks:ke), start=start, count=count)
+      call fiona_output('h1', 'ph_lev'   , state%ph_lev   (is:ie,js:je,ks:ke), start=start, count=count)
     end if
 
     call fiona_end_output('h1')

@@ -9,6 +9,7 @@ module interp_mod
 
   public interp_cell_to_edge_on_full_level
   public interp_cell_to_edge_on_half_level
+  public interp_cell_to_vertex_on_full_level
   public interp_full_level_to_half_level_on_cell
   public interp_cell_to_isobaric_level
 
@@ -87,6 +88,73 @@ contains
     end do
 
   end subroutine interp_cell_to_edge_on_half_level
+
+  subroutine interp_cell_to_vertex_on_full_level(mesh, x, x_vtx)
+
+    type(mesh_type), intent(in) :: mesh
+    real(r8), intent(in) :: x(mesh%full_lon_lb:mesh%full_lon_ub, &
+                              mesh%full_lat_lb:mesh%full_lat_ub, &
+                              mesh%full_lev_lb:mesh%full_lev_ub)
+    real(r8), intent(inout) :: x_vtx(mesh%half_lon_lb:mesh%half_lon_ub, &
+                                     mesh%half_lat_lb:mesh%half_lat_ub, &
+                                     mesh%full_lev_lb:mesh%full_lev_ub)
+
+    integer i, j, k
+    real(r8) pole(mesh%num_full_lev)
+
+    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+#ifdef V_POLE
+          x_vtx(i,j,k) = (                                           &
+            (x(i,j-1,k) + x(i+1,j-1,k)) * mesh%area_subcell(2,j-1) + &
+            (x(i,j  ,k) + x(i+1,j  ,k)) * mesh%area_subcell(1,j  )   &
+          ) / mesh%area_vtx(j)
+#else
+          x_vtx(i,j,k) = (                                           &
+            (x(i,j  ,k) + x(i+1,j  ,k)) * mesh%area_subcell(2,j  ) + &
+            (x(i,j+1,k) + x(i+1,j+1,k)) * mesh%area_subcell(1,j+1)   &
+          ) / mesh%area_vtx(j)
+#endif
+        end do
+      end do
+    end do
+#ifdef V_POLE
+    if (mesh%has_south_pole()) then
+      j = mesh%half_lat_ibeg
+      pole = 0.0_r8
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          pole(k) = pole(k) + x(i,j,k)
+        end do
+      end do
+      call zonal_sum(proc%zonal_comm, pole)
+      pole = pole / mesh%num_half_lon
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+          x_vtx(i,j,k) = pole(k)
+        end do
+      end do
+    end if
+    if (mesh%has_north_pole()) then
+      j = mesh%half_lat_iend
+      pole = 0.0_r8
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          pole(k) = pole(k) + x(i,j-1,k)
+        end do
+      end do
+      call zonal_sum(proc%zonal_comm, pole)
+      pole = pole / mesh%num_half_lon
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+          x_vtx(i,j,k) = pole(k)
+        end do
+      end do
+    end if
+#endif
+
+  end subroutine interp_cell_to_vertex_on_full_level
 
   subroutine interp_full_level_to_half_level_on_cell(mesh, x, x_lev)
 

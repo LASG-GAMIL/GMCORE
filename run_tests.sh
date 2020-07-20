@@ -27,7 +27,7 @@ if [[ ! -d $work_dir/build ]]; then
   mkdir $work_dir/build
 fi
 cd $work_dir/build
-FC=gfortran cmake $gmcore_root
+FC=mpif90 cmake $gmcore_root
 make
 cd ..
 

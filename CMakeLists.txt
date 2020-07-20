@@ -3,9 +3,14 @@ cmake_minimum_required(VERSION 3.0)
 project(gmcore LANGUAGES Fortran)
 
 option(V_POLE "Stagger V on the two Poles" OFF)
+option(SIGMA "Use sigma vertical coordinate" OFF)
 
 if (V_POLE)
   add_definitions(-DV_POLE)
+endif ()
+if (SIGMA)
+  add_definitions(-DSIGMA)
+  message(STATUS "Use sigma vertical coordinate.")
 endif ()
 
 if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
@@ -67,6 +72,7 @@ set(source_files
   src/utils/parallel_mod.F90
   src/utils/debug_mod.F90
   src/core/mesh_mod.F90
+  src/core/sigma_coord_mod.F90
   src/core/hybrid_coord_test_mod.F90
   src/core/hybrid_coord_ecmwf_mod.F90
   src/core/hybrid_coord_mod.F90

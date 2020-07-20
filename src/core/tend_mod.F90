@@ -18,6 +18,11 @@ module tend_mod
     real(r8), allocatable, dimension(:,:,:) :: dgz
     real(r8), allocatable, dimension(:,:,:) :: dpt
     real(r8), allocatable, dimension(:,:  ) :: dphs
+    logical :: flag_du   = .false.
+    logical :: flag_dv   = .false.
+    logical :: flag_dgz  = .false.
+    logical :: flag_dpt  = .false.
+    logical :: flag_dphs = .false.
     ! Individual tendencies
     real(r8), allocatable, dimension(:,:,:) :: qhv
     real(r8), allocatable, dimension(:,:,:) :: qhu
@@ -36,6 +41,7 @@ module tend_mod
     real(r8), allocatable, dimension(:,:,:) :: wedvdlev
   contains
     procedure :: init => tend_init
+    procedure :: reset_flags => tend_reset_flags
     procedure :: clear => tend_clear
     final :: tend_final
   end type tend_type
@@ -73,6 +79,18 @@ contains
     call allocate_array(mesh, this%wedvdlev, full_lon=.true., half_lat=.true., full_lev=.true.)
 
   end subroutine tend_init
+
+  subroutine tend_reset_flags(this)
+
+    class(tend_type), intent(inout) :: this
+
+    this%flag_du   = .false.
+    this%flag_dv   = .false.
+    this%flag_dgz  = .false.
+    this%flag_dpt  = .false.
+    this%flag_dphs = .false.
+
+  end subroutine tend_reset_flags
 
   subroutine tend_clear(this)
 
