@@ -18,11 +18,12 @@ module tend_mod
     real(r8), allocatable, dimension(:,:,:) :: dgz
     real(r8), allocatable, dimension(:,:,:) :: dpt
     real(r8), allocatable, dimension(:,:  ) :: dphs
-    logical :: flag_du   = .false.
-    logical :: flag_dv   = .false.
-    logical :: flag_dgz  = .false.
-    logical :: flag_dpt  = .false.
-    logical :: flag_dphs = .false.
+    logical :: updated_du   = .false.
+    logical :: updated_dv   = .false.
+    logical :: updated_dgz  = .false.
+    logical :: updated_dpt  = .false.
+    logical :: updated_dphs = .false.
+    logical :: copy_gz = .false.
     ! Individual tendencies
     real(r8), allocatable, dimension(:,:,:) :: qhv
     real(r8), allocatable, dimension(:,:,:) :: qhu
@@ -84,11 +85,13 @@ contains
 
     class(tend_type), intent(inout) :: this
 
-    this%flag_du   = .false.
-    this%flag_dv   = .false.
-    this%flag_dgz  = .false.
-    this%flag_dpt  = .false.
-    this%flag_dphs = .false.
+    this%updated_du   = .false.
+    this%updated_dv   = .false.
+    this%updated_dgz  = .false.
+    this%updated_dpt  = .false.
+    this%updated_dphs = .false.
+
+    this%copy_gz = .false.
 
   end subroutine tend_reset_flags
 
