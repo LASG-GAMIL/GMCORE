@@ -137,6 +137,9 @@ contains
       call fiona_add_var('h1', 'mf_lat_n' , long_name='normal mass flux on V grid'                    , units='', dim_names=lat_dims)
       call fiona_add_var('h1', 'mf_lat_t' , long_name='tangent mass flux on V grid'                   , units='', dim_names=lat_dims)
       call fiona_add_var('h1', 'm'        , long_name='dph on full levels'                            , units='', dim_names=cell_dims)
+      call fiona_add_var('h1', 'm_lon'    , long_name='dph on lon edges on full levels'               , units='', dim_names=lon_dims)
+      call fiona_add_var('h1', 'm_lat'    , long_name='dph on lat edges on full levels'               , units='', dim_names=lat_dims)
+      call fiona_add_var('h1', 'm_vtx'    , long_name='dph on vertices on full levels'                , units='', dim_names=vtx_dims)
       call fiona_add_var('h1', 'pv_lon'   , long_name='pv on U grid'                                  , units='', dim_names=lon_dims)
       call fiona_add_var('h1', 'pv_lat'   , long_name='pv on V grid'                                  , units='', dim_names=lat_dims)
       call fiona_add_var('h1', 'ke'       , long_name='kinetic energy on cell grid'                   , units='', dim_names=cell_dims)
@@ -153,6 +156,9 @@ contains
       call fiona_add_var('h1', 'mf_lon_t' , long_name='tangent mass flux on U grid'                   , units='', dim_names=lon_dims_2d)
       call fiona_add_var('h1', 'mf_lat_n' , long_name='normal mass flux on V grid'                    , units='', dim_names=lat_dims_2d)
       call fiona_add_var('h1', 'mf_lat_t' , long_name='tangent mass flux on V grid'                   , units='', dim_names=lat_dims_2d)
+      call fiona_add_var('h1', 'm_lon'    , long_name='mass on lon edges'                             , units='', dim_names=lon_dims_2d)
+      call fiona_add_var('h1', 'm_lat'    , long_name='mass on lat edges'                             , units='', dim_names=lat_dims_2d)
+      call fiona_add_var('h1', 'm_vtx'    , long_name='mass on vertices'                              , units='', dim_names=vtx_dims_2d)
       call fiona_add_var('h1', 'pv_lon'   , long_name='pv on U grid'                                  , units='', dim_names=lon_dims_2d)
       call fiona_add_var('h1', 'pv_lat'   , long_name='pv on V grid'                                  , units='', dim_names=lat_dims_2d)
       call fiona_add_var('h1', 'ke'       , long_name='kinetic energy on cell grid'                   , units='', dim_names=cell_dims_2d)
@@ -294,6 +300,7 @@ contains
     call fiona_output('h1', 'qhv'     , tend%qhv      (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dpedlon' , tend%dpedlon  (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dkedlon' , tend%dkedlon  (is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'm_lon'   , state%m_lon   (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'mf_lon_n', state%mf_lon_n(is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'mf_lon_t', state%mf_lon_t(is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'pv_lon'  , state%pv_lon  (is:ie,js:je,ks:ke), start=start, count=count)
@@ -312,6 +319,7 @@ contains
     call fiona_output('h1', 'qhu'     , tend%qhu      (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dpedlat' , tend%dpedlat  (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dkedlat' , tend%dkedlat  (is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'm_lat'   , state%m_lat   (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'mf_lat_n', state%mf_lat_n(is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'mf_lat_t', state%mf_lat_t(is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'pv_lat'  , state%pv_lat  (is:ie,js:je,ks:ke), start=start, count=count)
@@ -320,6 +328,14 @@ contains
       call fiona_output('h1', 'dpdlat'  , tend%dpdlat  (is:ie,js:je,ks:ke), start=start, count=count)
       call fiona_output('h1', 'wedvdlev', tend%wedvdlev(is:ie,js:je,ks:ke), start=start, count=count)
     end if
+
+    is = mesh%half_lon_ibeg; ie = mesh%half_lon_iend
+    js = mesh%half_lat_ibeg; je = mesh%half_lat_iend
+    ks = mesh%full_lev_ibeg; ke = mesh%full_lev_iend
+    start = [is,js,ks]
+    count = [mesh%num_half_lon,mesh%num_half_lat,mesh%num_full_lev]
+
+    call fiona_output('h1', 'm_vtx', state%m_vtx(is:ie,js:je,ks:ke), start=start, count=count)
 
     is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
     js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
