@@ -22,7 +22,7 @@ module state_mod
     real(r8), allocatable, dimension(:,:,:) :: u             ! Zonal wind speed (m s-1)
     real(r8), allocatable, dimension(:,:,:) :: v             ! Meridional wind speed (m s-1)
     real(r8), allocatable, dimension(:,:,:) :: w             ! Vertical wind speed
-    real(r8), allocatable, dimension(:,:,:) :: omega         ! ω = dp / dt (Pa s-1)
+    real(r8), allocatable, dimension(:,:,:) :: wp            ! ω = dp / dt (Pa s-1)
     real(r8), allocatable, dimension(:,:,:) :: wedphdlev     ! Vertical coordinate speed multiplied by 𝛛π/𝛛η
     real(r8), allocatable, dimension(:,:,:) :: wedphdlev_lon ! Vertical coordinate speed multiplied by 𝛛π/𝛛η on zonal edge
     real(r8), allocatable, dimension(:,:,:) :: wedphdlev_lat ! Vertical coordinate speed multiplied by 𝛛π/𝛛η on merdional edge
@@ -90,7 +90,7 @@ contains
     call allocate_array(mesh, this%u            , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%v            , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%w            , full_lon=.true., full_lat=.true., half_lev=.true.)
-    call allocate_array(mesh, this%omega        , full_lon=.true., full_lat=.true., half_lev=.true.)
+    call allocate_array(mesh, this%wp           , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%wedphdlev    , full_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%wedphdlev_lon, half_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%wedphdlev_lat, full_lon=.true., half_lat=.true., half_lev=.true.)
@@ -143,7 +143,7 @@ contains
     if (allocated(this%u            )) deallocate(this%u            )
     if (allocated(this%v            )) deallocate(this%v            )
     if (allocated(this%w            )) deallocate(this%w            )
-    if (allocated(this%omega        )) deallocate(this%omega        )
+    if (allocated(this%wp           )) deallocate(this%wp           )
     if (allocated(this%wedphdlev    )) deallocate(this%wedphdlev    )
     if (allocated(this%wedphdlev_lon)) deallocate(this%wedphdlev_lon)
     if (allocated(this%wedphdlev_lat)) deallocate(this%wedphdlev_lat)

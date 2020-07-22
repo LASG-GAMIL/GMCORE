@@ -46,8 +46,8 @@ contains
       if (.not. baroclinic) then
         if (is_root_proc()) call log_notice('Run shallow-water model.')
         return
-      else
-        call log_error('No sigma_coord parameters in ' // trim(namelist_path) // '!')
+      !else
+      !  call log_error('No sigma_coord parameters in ' // trim(namelist_path) // '!')
       end if
     end if
 

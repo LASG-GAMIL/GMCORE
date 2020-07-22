@@ -21,7 +21,7 @@ module operators_mod
   public calc_gz_lev_gz
   public calc_ak
   public calc_t
-  public calc_omega
+  public calc_wp
   public calc_wedphdlev
   public calc_m
   public calc_m_lon_m_lat
@@ -197,26 +197,35 @@ contains
 
   end subroutine calc_t
 
-  subroutine calc_omega(block, state, tend)
+  subroutine calc_wp(block, state, tend, dt)
 
     type(block_type), intent(in) :: block
     type(state_type), intent(inout) :: state
     type(tend_type), intent(inout) :: tend
+    real(r8), intent(in) :: dt
 
     type(mesh_type), pointer :: mesh
-    integer i, j, k
+    integer i, j, k, l
+    real(r8) mf
 
-    mesh => state%mesh
+    if (baroclinic) then
+      mesh => state%mesh
 
-    do k = mesh%half_lev_ibeg, mesh%half_lev_iend
-      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            mf = 0.5_r8 * (tend%dmfdlon(i,j,k) + tend%dmfdlat(i,j,k))
+            do l = 1, k - 1
+              mf = mf + tend%dmfdlon(i,j,l) + tend%dmfdlat(i,j,l)
+            end do
+            state%wp(i,j,k) = - mf + 0.5_r8 * (state%u(i-1,j,k) * (state%ph(i  ,j,k) - state%ph(i-1,j,k)) + &
+                                               state%u(i  ,j,k) * (state%ph(i+1,j,k) - state%ph(i  ,j,k))) / mesh%de_lon(j)
+          end do
         end do
       end do
-    end do
+    end if
 
-  end subroutine calc_omega
+  end subroutine calc_wp
 
   subroutine calc_wedphdlev(block, state, tend, dt)
 

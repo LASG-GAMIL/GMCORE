@@ -12,6 +12,7 @@ module process_mod
   private
 
   public process_init
+  public process_create_blocks
   public process_stop
   public process_final
   public proc
@@ -58,8 +59,6 @@ contains
                            proc%lon_ibeg, proc%lon_iend, proc%lat_ibeg, proc%lat_iend)
     call setup_zonal_comm_for_reduce(num_total_lat, proc%lat_ibeg, proc%lat_iend)
     call connect_parent() ! <-- FIXME: Needs implementation.
-
-    call create_blocks()
 
   end subroutine process_init
 
@@ -346,7 +345,7 @@ contains
 
   end subroutine connect_parent
 
-  subroutine create_blocks()
+  subroutine process_create_blocks()
 
     integer ingb
 
@@ -362,7 +361,7 @@ contains
                                                  ngb_proc_id=proc%ngb(ingb)%id)
     end do
 
-  end subroutine create_blocks
+  end subroutine process_create_blocks
 
   subroutine process_neighbor_init(this, orient, lon_ibeg, lon_iend, lat_ibeg, lat_iend)
 

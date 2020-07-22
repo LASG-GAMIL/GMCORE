@@ -5,6 +5,7 @@ module gmcore_mod
   use const_mod
   use namelist_mod
   use parallel_mod
+  use process_mod
   use time_mod, old => old_time_idx, new => new_time_idx
   use history_mod
   use restart_mod
@@ -61,6 +62,7 @@ contains
     call debug_check_areas()
     call process_init()
     call vert_coord_init(num_lev, namelist_path)
+    call process_create_blocks()
     call time_init()
     call history_init()
     call restart_init()
@@ -293,6 +295,7 @@ contains
         call calc_dkedlon_dkedlat           (block, state, tend, dt)
         call calc_dpedlon_dpedlat           (block, state, tend, dt)
         call calc_dpdlon_dpdlat             (block, state, tend, dt)
+        call calc_wp                        (block, state, tend, dt)
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
