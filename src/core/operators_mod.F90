@@ -23,6 +23,7 @@ module operators_mod
   public calc_t
   public calc_wp
   public calc_wedphdlev
+  public calc_div
   public calc_m
   public calc_m_lon_m_lat
   public calc_m_vtx
@@ -66,6 +67,7 @@ contains
       call calc_ke_cell             (blocks(iblk), blocks(iblk)%state(itime))
       call calc_gz_lev_gz           (blocks(iblk), blocks(iblk)%state(itime))
       call calc_pt_lon_pt_lat_pt_lev(blocks(iblk), blocks(iblk)%state(itime))
+      call calc_div                 (blocks(iblk), blocks(iblk)%state(itime))
     end do
 
   end subroutine operators_prepare_1
@@ -89,6 +91,7 @@ contains
     call calc_ke_cell             (block, state)
     call calc_gz_lev_gz           (block, state)
     call calc_pt_lon_pt_lat_pt_lev(block, state)
+    call calc_div                 (block, state)
 
   end subroutine operators_prepare_2
 
@@ -265,6 +268,29 @@ contains
     end if
 
   end subroutine calc_wedphdlev
+
+  subroutine calc_div(block, state)
+
+    type(block_type), intent(in) :: block
+    type(state_type), intent(inout) :: state
+
+    type(mesh_type), pointer :: mesh
+    integer i, j, k
+
+    mesh => state%mesh
+
+    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          state%div(i,j,k) = (                                                      &
+            (state%u(i,j,k) * mesh%le_lon(j) - state%u(i-1,j,k) * mesh%le_lon(j)) + &
+            (state%v(i,j,k) * mesh%le_lat(j) - state%v(i,j-1,k) * mesh%le_lat(j-1)) &
+          ) / mesh%area_cell(j)
+        end do
+      end do
+    end do
+
+  end subroutine calc_div
 
   subroutine calc_gz_lev_gz(block, state)
 
