@@ -95,6 +95,11 @@ module reduced_types_mod
     real(r8), allocatable, dimension(:,:,:,:) :: dpv_lon_n
     real(r8), allocatable, dimension(:,:,:,:) :: dpv_lat_n
     real(r8), allocatable, dimension(:,:,:,:) :: ke
+    ! Baroclinic:
+    real(r8), allocatable, dimension(:,:,:,:) :: ptf_lon
+    real(r8), allocatable, dimension(:,:,:,:) :: t_lnpop_lon
+    real(r8), allocatable, dimension(:,:,:,:) :: ph_lev
+    real(r8), allocatable, dimension(:,:,:,:) :: ak_t_lon
     type(async_type), allocatable :: async(:,:,:)
   contains
     final :: reduced_state_final
@@ -106,6 +111,8 @@ module reduced_types_mod
     real(r8), allocatable, dimension(:,:) :: dmfdlon
     real(r8), allocatable, dimension(:,:) :: dpedlon
     real(r8), allocatable, dimension(:,:) :: dkedlon
+    real(r8), allocatable, dimension(:,:) :: dptfdlon
+    real(r8), allocatable, dimension(:,:) :: dpdlon
   contains
     final :: reduced_tend_final
   end type reduced_tend_type
@@ -124,25 +131,29 @@ contains
 
     type(reduced_state_type), intent(inout) :: this
 
-    if (allocated(this%u        )) deallocate(this%u        )
-    if (allocated(this%v        )) deallocate(this%v        )
-    if (allocated(this%gz       )) deallocate(this%gz       )
-    if (allocated(this%m        )) deallocate(this%m        )
-    if (allocated(this%m_lon    )) deallocate(this%m_lon    )
-    if (allocated(this%m_lat    )) deallocate(this%m_lat    )
-    if (allocated(this%mf_lon_n )) deallocate(this%mf_lon_n )
-    if (allocated(this%mf_lon_t )) deallocate(this%mf_lon_t )
-    if (allocated(this%mf_lat_n )) deallocate(this%mf_lat_n )
-    if (allocated(this%mf_lat_t )) deallocate(this%mf_lat_t )
-    if (allocated(this%pv       )) deallocate(this%pv       )
-    if (allocated(this%pv_lon   )) deallocate(this%pv_lon   )
-    if (allocated(this%pv_lat   )) deallocate(this%pv_lat   )
-    if (allocated(this%dpv_lon_n)) deallocate(this%dpv_lon_n)
-    if (allocated(this%dpv_lat_n)) deallocate(this%dpv_lat_n)
-    if (allocated(this%dpv_lon_t)) deallocate(this%dpv_lon_t)
-    if (allocated(this%dpv_lat_t)) deallocate(this%dpv_lat_t)
-    if (allocated(this%ke       )) deallocate(this%ke       )
-    if (allocated(this%async    )) deallocate(this%async    )
+    if (allocated(this%u          )) deallocate(this%u          )
+    if (allocated(this%v          )) deallocate(this%v          )
+    if (allocated(this%gz         )) deallocate(this%gz         )
+    if (allocated(this%m          )) deallocate(this%m          )
+    if (allocated(this%m_lon      )) deallocate(this%m_lon      )
+    if (allocated(this%m_lat      )) deallocate(this%m_lat      )
+    if (allocated(this%mf_lon_n   )) deallocate(this%mf_lon_n   )
+    if (allocated(this%mf_lon_t   )) deallocate(this%mf_lon_t   )
+    if (allocated(this%mf_lat_n   )) deallocate(this%mf_lat_n   )
+    if (allocated(this%mf_lat_t   )) deallocate(this%mf_lat_t   )
+    if (allocated(this%pv         )) deallocate(this%pv         )
+    if (allocated(this%pv_lon     )) deallocate(this%pv_lon     )
+    if (allocated(this%pv_lat     )) deallocate(this%pv_lat     )
+    if (allocated(this%dpv_lon_n  )) deallocate(this%dpv_lon_n  )
+    if (allocated(this%dpv_lat_n  )) deallocate(this%dpv_lat_n  )
+    if (allocated(this%dpv_lon_t  )) deallocate(this%dpv_lon_t  )
+    if (allocated(this%dpv_lat_t  )) deallocate(this%dpv_lat_t  )
+    if (allocated(this%ke         )) deallocate(this%ke         )
+    if (allocated(this%ptf_lon    )) deallocate(this%ptf_lon    )
+    if (allocated(this%t_lnpop_lon)) deallocate(this%t_lnpop_lon)
+    if (allocated(this%ph_lev     )) deallocate(this%ph_lev     )
+    if (allocated(this%ak_t_lon   )) deallocate(this%ak_t_lon   )
+    if (allocated(this%async      )) deallocate(this%async      )
 
   end subroutine reduced_state_final
 
@@ -150,11 +161,13 @@ contains
 
     type(reduced_tend_type), intent(inout) :: this
 
-    if (allocated(this%qhv    )) deallocate(this%qhv    )
-    if (allocated(this%qhu    )) deallocate(this%qhu    )
-    if (allocated(this%dmfdlon)) deallocate(this%dmfdlon)
-    if (allocated(this%dpedlon)) deallocate(this%dpedlon)
-    if (allocated(this%dkedlon)) deallocate(this%dkedlon)
+    if (allocated(this%qhv     )) deallocate(this%qhv     )
+    if (allocated(this%qhu     )) deallocate(this%qhu     )
+    if (allocated(this%dmfdlon )) deallocate(this%dmfdlon )
+    if (allocated(this%dpedlon )) deallocate(this%dpedlon )
+    if (allocated(this%dkedlon )) deallocate(this%dkedlon )
+    if (allocated(this%dptfdlon)) deallocate(this%dptfdlon)
+    if (allocated(this%dpdlon  )) deallocate(this%dpdlon  )
 
   end subroutine reduced_tend_final
 

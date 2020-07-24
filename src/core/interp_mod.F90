@@ -15,7 +15,7 @@ module interp_mod
 
 contains
 
-  subroutine interp_cell_to_edge_on_full_level(mesh, x, x_lon, x_lat)
+  subroutine interp_cell_to_edge_on_full_level(mesh, x, x_lon, x_lat, reversed_area)
 
     type(mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: x(mesh%full_lon_lb:mesh%full_lon_ub, &
@@ -27,28 +27,51 @@ contains
     real(r8), intent(inout) :: x_lat(mesh%full_lon_lb:mesh%full_lon_ub, &
                                      mesh%half_lat_lb:mesh%half_lat_ub, &
                                      mesh%full_lev_lb:mesh%full_lev_ub)
+    logical, intent(in), optional :: reversed_area
 
     integer i, j, k
 
-    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          x_lon(i,j,k) = (mesh%area_lon_west(j) * x(i,j,k) + mesh%area_lon_east(j) * x(i+1,j,k)) / mesh%area_lon(j)
+    if (merge(reversed_area, .false., present(reversed_area))) then
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+            x_lon(i,j,k) = (mesh%area_lon_west(j) * x(i,j,k) + mesh%area_lon_east(j) * x(i+1,j,k)) / mesh%area_lon(j)
+          end do
         end do
       end do
-    end do
 
-    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
 #ifdef V_POLE
-          x_lat(i,j,k) = (mesh%area_lat_north(j) * x(i,j,k) + mesh%area_lat_south(j) * x(i,j-1,k)) / mesh%area_lat(j)
+            x_lat(i,j,k) = (mesh%area_lat_north(j) * x(i,j,k) + mesh%area_lat_south(j) * x(i,j-1,k)) / mesh%area_lat(j)
 #else
-          x_lat(i,j,k) = (mesh%area_lat_north(j) * x(i,j+1,k) + mesh%area_lat_south(j) * x(i,j,k)) / mesh%area_lat(j)
+            x_lat(i,j,k) = (mesh%area_lat_north(j) * x(i,j+1,k) + mesh%area_lat_south(j) * x(i,j,k)) / mesh%area_lat(j)
 #endif
+          end do
         end do
       end do
-    end do
+    else
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+            x_lon(i,j,k) = (mesh%area_lon_east(j) * x(i,j,k) + mesh%area_lon_west(j) * x(i+1,j,k)) / mesh%area_lon(j)
+          end do
+        end do
+      end do
+
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+#ifdef V_POLE
+            x_lat(i,j,k) = (mesh%area_lat_south(j) * x(i,j,k) + mesh%area_lat_north(j) * x(i,j-1,k)) / mesh%area_lat(j)
+#else
+            x_lat(i,j,k) = (mesh%area_lat_south(j) * x(i,j+1,k) + mesh%area_lat_north(j) * x(i,j,k)) / mesh%area_lat(j)
+#endif
+          end do
+        end do
+      end do
+    end if
 
   end subroutine interp_cell_to_edge_on_full_level
 
@@ -168,6 +191,17 @@ contains
 
     integer i, j, k
     real(r8) deta1, deta2, deta3
+
+    ! ------ k-1   |                 |
+    !              |                 |
+    ! ====== k-1   |- deta1, x(k-1)  |
+    !              |                 |
+    ! ------ k     |  |              |- deta3
+    !                 |              |
+    ! ====== k        |- deta2, x(k) |
+    !                 |              |
+    ! ------ k+1      |              |
+
 
     do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
       deta1 = mesh%half_lev(k) - mesh%half_lev(k-1)

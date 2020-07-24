@@ -280,6 +280,8 @@ contains
     type(reduced_mesh_type), intent(in) :: reduced_mesh
     type(reduced_state_type), intent(inout) :: reduced_state
 
+    integer is, ie, ks, ke
+
 #ifdef V_POLE
     allocate(reduced_state%mf_lon_n (reduced_mesh%full_lev_lb:reduced_mesh%full_lev_ub,reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub,-2:2,reduced_mesh%reduce_factor))
     allocate(reduced_state%mf_lat_n (reduced_mesh%full_lev_lb:reduced_mesh%full_lev_ub,reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub,-1:2,reduced_mesh%reduce_factor))
@@ -300,24 +302,39 @@ contains
     allocate(reduced_state%dpv_lat_n(reduced_mesh%full_lev_lb:reduced_mesh%full_lev_ub,reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub, 0:1,reduced_mesh%reduce_factor))
     allocate(reduced_state%ke       (reduced_mesh%full_lev_lb:reduced_mesh%full_lev_ub,reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub, 0:0,reduced_mesh%reduce_factor))
 #else
-    allocate(reduced_state%mf_lon_n (reduced_mesh%full_lev_lb:reduced_mesh%full_lev_ub,reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub,-2:2,reduced_mesh%reduce_factor))
-    allocate(reduced_state%mf_lat_n (reduced_mesh%full_lev_lb:reduced_mesh%full_lev_ub,reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub,-2:1,reduced_mesh%reduce_factor))
-    allocate(reduced_state%mf_lon_t (reduced_mesh%full_lev_lb:reduced_mesh%full_lev_ub,reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub, 0:0,reduced_mesh%reduce_factor))
-    allocate(reduced_state%mf_lat_t (reduced_mesh%full_lev_lb:reduced_mesh%full_lev_ub,reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub,-1:0,reduced_mesh%reduce_factor))
-    allocate(reduced_state%gz       (reduced_mesh%full_lev_lb:reduced_mesh%full_lev_ub,reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub,-2:2,reduced_mesh%reduce_factor))
-    allocate(reduced_state%m        (reduced_mesh%full_lev_lb:reduced_mesh%full_lev_ub,reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub,-2:2,reduced_mesh%reduce_factor))
-    allocate(reduced_state%m_lon    (reduced_mesh%full_lev_lb:reduced_mesh%full_lev_ub,reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub,-2:2,reduced_mesh%reduce_factor))
-    allocate(reduced_state%m_lat    (reduced_mesh%full_lev_lb:reduced_mesh%full_lev_ub,reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub,-2:1,reduced_mesh%reduce_factor))
-    allocate(reduced_state%u        (reduced_mesh%full_lev_lb:reduced_mesh%full_lev_ub,reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub,-2:2,reduced_mesh%reduce_factor))
-    allocate(reduced_state%v        (reduced_mesh%full_lev_lb:reduced_mesh%full_lev_ub,reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub,-2:1,reduced_mesh%reduce_factor))
-    allocate(reduced_state%pv       (reduced_mesh%full_lev_lb:reduced_mesh%full_lev_ub,reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub,-2:1,reduced_mesh%reduce_factor))
-    allocate(reduced_state%pv_lon   (reduced_mesh%full_lev_lb:reduced_mesh%full_lev_ub,reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub, 0:0,reduced_mesh%reduce_factor))
-    allocate(reduced_state%pv_lat   (reduced_mesh%full_lev_lb:reduced_mesh%full_lev_ub,reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub,-1:0,reduced_mesh%reduce_factor))
-    allocate(reduced_state%dpv_lon_t(reduced_mesh%full_lev_lb:reduced_mesh%full_lev_ub,reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub,-1:1,reduced_mesh%reduce_factor))
-    allocate(reduced_state%dpv_lon_n(reduced_mesh%full_lev_lb:reduced_mesh%full_lev_ub,reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub, 0:0,reduced_mesh%reduce_factor))
-    allocate(reduced_state%dpv_lat_t(reduced_mesh%full_lev_lb:reduced_mesh%full_lev_ub,reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub,-1:0,reduced_mesh%reduce_factor))
-    allocate(reduced_state%dpv_lat_n(reduced_mesh%full_lev_lb:reduced_mesh%full_lev_ub,reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub,-1:0,reduced_mesh%reduce_factor))
-    allocate(reduced_state%ke       (reduced_mesh%full_lev_lb:reduced_mesh%full_lev_ub,reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub, 0:0,reduced_mesh%reduce_factor))
+    is = reduced_mesh%full_lon_lb; ie = reduced_mesh%full_lon_ub
+    ks = reduced_mesh%full_lev_lb; ke = reduced_mesh%full_lev_ub
+
+    allocate(reduced_state%mf_lat_n (ks:ke,is:ie,-2:1,reduced_mesh%reduce_factor))
+    allocate(reduced_state%mf_lat_t (ks:ke,is:ie,-1:0,reduced_mesh%reduce_factor))
+    allocate(reduced_state%gz       (ks:ke,is:ie,-2:2,reduced_mesh%reduce_factor))
+    allocate(reduced_state%m        (ks:ke,is:ie,-2:2,reduced_mesh%reduce_factor))
+    allocate(reduced_state%m_lat    (ks:ke,is:ie,-2:1,reduced_mesh%reduce_factor))
+    allocate(reduced_state%v        (ks:ke,is:ie,-2:1,reduced_mesh%reduce_factor))
+    allocate(reduced_state%pv_lat   (ks:ke,is:ie,-1:0,reduced_mesh%reduce_factor))
+    allocate(reduced_state%dpv_lon_t(ks:ke,is:ie,-1:1,reduced_mesh%reduce_factor))
+    allocate(reduced_state%dpv_lat_n(ks:ke,is:ie,-1:0,reduced_mesh%reduce_factor))
+    allocate(reduced_state%ke       (ks:ke,is:ie, 0:0,reduced_mesh%reduce_factor))
+
+    is = reduced_mesh%full_lon_lb; ie = reduced_mesh%full_lon_ub
+    ks = reduced_mesh%half_lev_lb; ke = reduced_mesh%half_lev_ub
+
+    allocate(reduced_state%ph_lev   (ks:ke,is:ie, 0:0,reduced_mesh%reduce_factor))
+
+    is = reduced_mesh%half_lon_lb; ie = reduced_mesh%half_lon_ub
+    ks = reduced_mesh%full_lev_lb; ke = reduced_mesh%full_lev_ub
+
+    allocate(reduced_state%mf_lon_n   (ks:ke,is:ie,-2:2,reduced_mesh%reduce_factor))
+    allocate(reduced_state%mf_lon_t   (ks:ke,is:ie, 0:0,reduced_mesh%reduce_factor))
+    allocate(reduced_state%m_lon      (ks:ke,is:ie,-2:2,reduced_mesh%reduce_factor))
+    allocate(reduced_state%u          (ks:ke,is:ie,-2:2,reduced_mesh%reduce_factor))
+    allocate(reduced_state%pv         (ks:ke,is:ie,-2:1,reduced_mesh%reduce_factor))
+    allocate(reduced_state%pv_lon     (ks:ke,is:ie, 0:0,reduced_mesh%reduce_factor))
+    allocate(reduced_state%dpv_lon_n  (ks:ke,is:ie, 0:0,reduced_mesh%reduce_factor))
+    allocate(reduced_state%dpv_lat_t  (ks:ke,is:ie,-1:0,reduced_mesh%reduce_factor))
+    allocate(reduced_state%ptf_lon    (ks:ke,is:ie, 0:0,reduced_mesh%reduce_factor))
+    allocate(reduced_state%t_lnpop_lon(ks:ke,is:ie, 0:0,reduced_mesh%reduce_factor))
+    allocate(reduced_state%ak_t_lon   (ks:ke,is:ie, 0:0,reduced_mesh%reduce_factor))
 #endif
     allocate(reduced_state%async    (11,-2:2,reduced_mesh%reduce_factor))
 
@@ -340,6 +357,7 @@ contains
     call apply_reduce(lbound(reduced_state%mf_lon_t, 3), ubound(reduced_state%mf_lon_t, 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_mf_lon_t, dt)
     call apply_reduce(lbound(reduced_state%mf_lat_t, 3), ubound(reduced_state%mf_lat_t, 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_mf_lat_t, dt)
     call apply_reduce(lbound(reduced_state%gz      , 3), ubound(reduced_state%gz      , 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_gz      , dt)
+    call apply_reduce(lbound(reduced_state%m       , 3), ubound(reduced_state%m       , 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_m       , dt)
     if (pass == all_pass .or. pass == slow_pass) then
       call apply_reduce(lbound(reduced_state%m_lon    , 3), ubound(reduced_state%m_lon    , 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_m_lon      , dt)
       call apply_reduce(lbound(reduced_state%m_lat    , 3), ubound(reduced_state%m_lat    , 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_m_lat      , dt)
@@ -352,6 +370,12 @@ contains
       call apply_reduce(lbound(reduced_state%dpv_lon_n, 3), ubound(reduced_state%dpv_lon_n, 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_dpv_lon_n  , dt)
       call apply_reduce(lbound(reduced_state%pv_lon   , 3), ubound(reduced_state%pv_lon   , 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_pv_lon_apvm, dt)
       call apply_reduce(lbound(reduced_state%pv_lat   , 3), ubound(reduced_state%pv_lat   , 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_pv_lat_apvm, dt)
+      if (baroclinic) then
+        call apply_reduce(lbound(reduced_state%ptf_lon, 3), ubound(reduced_state%ptf_lon  , 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_ptf_lon    , dt)
+        call apply_reduce(lbound(reduced_state%ph_lev , 3), ubound(reduced_state%ph_lev   , 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_ph_lev     , dt)
+        call apply_reduce(lbound(reduced_state%t_lnpop_lon, 3), ubound(reduced_state%t_lnpop_lon, 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_t_lnpop_lon, dt)
+        call apply_reduce(lbound(reduced_state%ak_t_lon   , 3), ubound(reduced_state%ak_t_lon   , 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_ak_t_lon, dt)
+      end if
     end if
     if (pass == all_pass .or. pass == fast_pass) then
       call apply_reduce(lbound(reduced_state%ke       , 3), ubound(reduced_state%ke       , 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_ke         , dt)
@@ -482,12 +506,38 @@ contains
       end do
       reduced_state%gz(:,:,buf_j,move) = reduced_state%gz(:,:,buf_j,move) / reduced_mesh%reduce_factor
       call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%gz(:,:,buf_j,move), west_halo=.false.)
-      do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
-        reduced_state%m(k,:,buf_j,move) = (reduced_state%gz(k,:,buf_j,move) - reduced_static%gzs(:,buf_j,move)) / g
-      end do
     end if
 
   end subroutine reduce_gz
+
+  subroutine reduce_m(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+
+    integer, intent(in) :: j
+    integer, intent(in) :: buf_j
+    integer, intent(in) :: move
+    type(block_type), intent(in) :: block
+    type(mesh_type), intent(in) :: raw_mesh
+    type(state_type), intent(inout) :: raw_state
+    type(reduced_mesh_type), intent(in) :: reduced_mesh
+    type(reduced_static_type), intent(in) :: reduced_static
+    type(reduced_state_type), intent(inout) :: reduced_state
+    real(r8), intent(in) :: dt
+
+    integer raw_i, i, k
+
+    if (raw_mesh%is_inside_with_halo_full_lat(j+buf_j)) then
+      raw_i = raw_mesh%full_lon_ibeg + move - 1
+      do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
+        do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
+          reduced_state%m(k,i,buf_j,move) = sum(raw_state%m(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j,k))
+        end do
+        raw_i = raw_i + reduced_mesh%reduce_factor
+      end do
+      reduced_state%m(:,:,buf_j,move) = reduced_state%m(:,:,buf_j,move) / reduced_mesh%reduce_factor
+      call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%m(:,:,buf_j,move), west_halo=.false.)
+    end if
+
+  end subroutine reduce_m
 
   subroutine reduce_pv(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
 
@@ -986,6 +1036,123 @@ contains
 
   end subroutine reduce_ke
 
+  subroutine reduce_ptf_lon(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+
+    integer, intent(in) :: j
+    integer, intent(in) :: buf_j
+    integer, intent(in) :: move
+    type(block_type), intent(in) :: block
+    type(mesh_type), intent(in) :: raw_mesh
+    type(state_type), intent(inout) :: raw_state
+    type(reduced_mesh_type), intent(in) :: reduced_mesh
+    type(reduced_static_type), intent(in) :: reduced_static
+    type(reduced_state_type), intent(inout) :: reduced_state
+    real(r8), intent(in) :: dt
+
+    integer raw_i, i, k
+
+    if (raw_mesh%is_inside_with_halo_full_lat(j+buf_j)) then
+      raw_i = raw_mesh%full_lon_ibeg + move - 1
+      do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
+        do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
+          reduced_state%ptf_lon(k,i,buf_j,move) = sum(                               &
+            raw_state%mf_lon_n(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j,k) * &
+            raw_state%pt_lon  (raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j,k)   &
+          )
+        end do
+        raw_i = raw_i + reduced_mesh%reduce_factor
+      end do
+      reduced_state%ptf_lon(:,:,buf_j,move) = reduced_state%ptf_lon(:,:,buf_j,move) / reduced_mesh%reduce_factor
+      call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%ptf_lon(:,:,buf_j,move))
+    end if
+
+  end subroutine reduce_ptf_lon
+
+  subroutine reduce_t_lnpop_lon(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+
+    integer, intent(in) :: j
+    integer, intent(in) :: buf_j
+    integer, intent(in) :: move
+    type(block_type), intent(in) :: block
+    type(mesh_type), intent(in) :: raw_mesh
+    type(state_type), intent(inout) :: raw_state
+    type(reduced_mesh_type), intent(in) :: reduced_mesh
+    type(reduced_static_type), intent(in) :: reduced_static
+    type(reduced_state_type), intent(inout) :: reduced_state
+    real(r8), intent(in) :: dt
+
+    integer raw_i, i, k
+
+    raw_i = raw_mesh%full_lon_ibeg + move - 1
+    do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
+      do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
+        reduced_state%t_lnpop_lon(k,i,buf_j,move) = sum(                            &
+          raw_state%t_lnpop_lon(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j,k) &
+        )
+      end do
+      raw_i = raw_i + reduced_mesh%reduce_factor
+    end do
+    reduced_state%t_lnpop_lon(:,:,buf_j,move) = reduced_state%t_lnpop_lon(:,:,buf_j,move) / reduced_mesh%reduce_factor
+
+  end subroutine reduce_t_lnpop_lon
+
+  subroutine reduce_ak_t_lon(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+
+    integer, intent(in) :: j
+    integer, intent(in) :: buf_j
+    integer, intent(in) :: move
+    type(block_type), intent(in) :: block
+    type(mesh_type), intent(in) :: raw_mesh
+    type(state_type), intent(inout) :: raw_state
+    type(reduced_mesh_type), intent(in) :: reduced_mesh
+    type(reduced_static_type), intent(in) :: reduced_static
+    type(reduced_state_type), intent(inout) :: reduced_state
+    real(r8), intent(in) :: dt
+
+    integer raw_i, i, k
+
+    raw_i = raw_mesh%full_lon_ibeg + move - 1
+    do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
+      do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
+        reduced_state%ak_t_lon(k,i,buf_j,move) = sum(                            &
+          raw_state%ak_t_lon(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j,k) &
+        )
+      end do
+      raw_i = raw_i + reduced_mesh%reduce_factor
+    end do
+    reduced_state%ak_t_lon(:,:,buf_j,move) = reduced_state%ak_t_lon(:,:,buf_j,move) / reduced_mesh%reduce_factor
+
+  end subroutine reduce_ak_t_lon
+
+  subroutine reduce_ph_lev(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+
+    integer, intent(in) :: j
+    integer, intent(in) :: buf_j
+    integer, intent(in) :: move
+    type(block_type), intent(in) :: block
+    type(mesh_type), intent(in) :: raw_mesh
+    type(state_type), intent(inout) :: raw_state
+    type(reduced_mesh_type), intent(in) :: reduced_mesh
+    type(reduced_static_type), intent(in) :: reduced_static
+    type(reduced_state_type), intent(inout) :: reduced_state
+    real(r8), intent(in) :: dt
+
+    integer raw_i, i, k
+
+    raw_i = raw_mesh%full_lon_ibeg + move - 1
+    do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
+      do k = reduced_mesh%half_lev_ibeg, reduced_mesh%half_lev_iend
+        reduced_state%ph_lev(k,i,buf_j,move) = sum(                            &
+          raw_state%ph_lev(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j,k) &
+        )
+      end do
+      raw_i = raw_i + reduced_mesh%reduce_factor
+    end do
+    reduced_state%ph_lev(:,:,buf_j,move) = reduced_state%ph_lev(:,:,buf_j,move) / reduced_mesh%reduce_factor
+    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%ph_lev(:,:,buf_j,move), west_halo=.false.)
+
+  end subroutine reduce_ph_lev
+
   subroutine reduce_append_array(move, reduced_mesh, reduced_array, raw_mesh, raw_array)
 
     integer, intent(in) :: move
@@ -1018,11 +1185,22 @@ contains
     type(reduced_mesh_type), intent(in) :: reduced_mesh
     type(reduced_tend_type), intent(inout) :: reduced_tend
 
-    allocate(reduced_tend%qhu    (reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub,reduced_mesh%full_lev_lb:reduced_mesh%full_lev_ub))
-    allocate(reduced_tend%qhv    (reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub,reduced_mesh%full_lev_lb:reduced_mesh%full_lev_ub))
-    allocate(reduced_tend%dmfdlon(reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub,reduced_mesh%full_lev_lb:reduced_mesh%full_lev_ub))
-    allocate(reduced_tend%dpedlon(reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub,reduced_mesh%full_lev_lb:reduced_mesh%full_lev_ub))
-    allocate(reduced_tend%dkedlon(reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub,reduced_mesh%full_lev_lb:reduced_mesh%full_lev_ub))
+    integer is, ie, ks, ke
+
+    is = reduced_mesh%full_lon_lb; ie = reduced_mesh%full_lon_ub
+    ks = reduced_mesh%full_lev_lb; ke = reduced_mesh%full_lev_ub
+
+    allocate(reduced_tend%qhu     (is:ie,ks:ke))
+    allocate(reduced_tend%dmfdlon (is:ie,ks:ke))
+    allocate(reduced_tend%dptfdlon(is:ie,ks:ke))
+
+    is = reduced_mesh%half_lon_lb; ie = reduced_mesh%half_lon_ub
+    ks = reduced_mesh%full_lev_lb; ke = reduced_mesh%full_lev_ub
+
+    allocate(reduced_tend%qhv     (is:ie,ks:ke))
+    allocate(reduced_tend%dpedlon (is:ie,ks:ke))
+    allocate(reduced_tend%dkedlon (is:ie,ks:ke))
+    allocate(reduced_tend%dpdlon  (is:ie,ks:ke))
 
   end subroutine allocate_reduced_tend
 

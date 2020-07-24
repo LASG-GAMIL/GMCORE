@@ -69,6 +69,8 @@ contains
     call reduce_init(proc%blocks)
 
     select case (time_scheme)
+    case ('debug')
+      integrator => euler_debug
     case ('pc2')
       integrator => predict_correct
     case ('pc2+fb')
@@ -282,6 +284,8 @@ contains
     call reduce_run(block, state, dt, pass)
 
     mesh => state%mesh
+
+    call tend%reset_flags()
 
     select case (pass)
     case (all_pass)
@@ -516,6 +520,19 @@ contains
     call integrator(dt, block, old, new, all_pass)
 
   end subroutine no_splitting
+
+  subroutine euler_debug(dt, block, old, new, pass)
+
+    real(r8), intent(in) :: dt
+    type(block_type), intent(inout) :: block
+    integer, intent(in) :: old
+    integer, intent(in) :: new
+    integer, intent(in) :: pass
+
+    call space_operators(block, block%state(old), block%tend(old), dt, pass)
+    call update_state(dt, block, block%tend(old), block%state(old), block%state(new))
+
+  end subroutine euler_debug
 
   subroutine predict_correct(dt, block, old, new, pass)
 

@@ -382,8 +382,8 @@ contains
     if (baroclinic) then
       mesh => state%mesh
 
-      call interp_cell_to_edge_on_full_level(mesh, state%pt, state%pt_lon, state%pt_lat)
-      call fill_halo(block, state%pt_lon, full_lon=.false., full_lat=.true., full_lev=.true., east_halo=.false.)
+      call interp_cell_to_edge_on_full_level(mesh, state%pt, state%pt_lon, state%pt_lat, reversed_area=.true.)
+      call fill_halo(block, state%pt_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
 #ifdef V_POLE
       call fill_halo(block, state%pt_lat, full_lon=.true., full_lat=.false., full_lev=.true., south_halo=.false.)
 #else
@@ -888,17 +888,38 @@ contains
     type(mesh_type), pointer :: mesh
     integer i, j, k, move
 
-    mesh => state%mesh
-
     if (baroclinic) then
+      mesh => state%mesh
+
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            tend%dpdlon(i,j,k) = Rd / mesh%de_lon(j) / state%m_lon(i,j,k) * (            &
-              state%t_lnpop_lon(i,j,k) * (state%ph_lev(i+1,j,k) - state%ph_lev(i,j,k)) + &
-              state%ak_t_lon(i,j,k) * (state%m(i+1,j,k) - state%m(i,j,k))                &
-            )
-          end do
+          if (block%reduced_mesh(j)%reduce_factor > 0) then
+            tend%dpdlon(:,j,k) = 0.0_r8
+            do move = 1, block%reduced_mesh(j)%reduce_factor
+              do i = block%reduced_mesh(j)%half_lon_ibeg, block%reduced_mesh(j)%half_lon_iend
+                block%reduced_tend(j)%dpdlon(i,k) = Rd /                &
+                  block%reduced_mesh(j)%de_lon(0) /                     &
+                  block%reduced_state(j)%m_lon(k,i,0,move) * (          &
+                    block%reduced_state(j)%t_lnpop_lon(k,i,0,move) * (  &
+                      block%reduced_state(j)%ph_lev(k,i+1,0,move) -     &
+                      block%reduced_state(j)%ph_lev(k,i  ,0,move)       &
+                    ) + block%reduced_state(j)%ak_t_lon(k,i,0,move) * ( &
+                      block%reduced_state(j)%m(k,i+1,0,move) -          &
+                      block%reduced_state(j)%m(k,i  ,0,move)            &
+                    )                                                   &
+                )
+              end do
+              call reduce_append_array(move, block%reduced_mesh(j), block%reduced_tend(j)%dpdlon(:,k), mesh, tend%dpdlon(:,j,k))
+            end do
+            call overlay_inner_halo(block, tend%dpdlon(:,j,k), west_halo=.true.)
+          else
+            do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+              tend%dpdlon(i,j,k) = Rd / mesh%de_lon(j) / state%m_lon(i,j,k) * (            &
+                state%t_lnpop_lon(i,j,k) * (state%ph_lev(i+1,j,k) - state%ph_lev(i,j,k)) + &
+                state%ak_t_lon(i,j,k) * (state%m(i+1,j,k) - state%m(i,j,k))                &
+              )
+            end do
+          end if
         end do
       end do
 
@@ -1022,7 +1043,7 @@ contains
     real(r8), intent(in) :: dt
 
     type(mesh_type), pointer :: mesh
-    integer i, j, k
+    integer i, j, k, move
     real(r8) pole(state%mesh%num_full_lev)
 
     if (baroclinic) then
@@ -1030,15 +1051,26 @@ contains
 
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            if (block%reduced_mesh(j)%reduce_factor > 0) then
-            else
+          if (block%reduced_mesh(j)%reduce_factor > 0) then
+            tend%dptfdlon(:,j,k) = 0.0_r8
+            do move = 1, block%reduced_mesh(j)%reduce_factor
+              do i = block%reduced_mesh(j)%full_lon_ibeg, block%reduced_mesh(j)%full_lon_iend
+                block%reduced_tend(j)%dptfdlon(i,k) = (          &
+                  block%reduced_state(j)%ptf_lon(k,i  ,0,move) - &
+                  block%reduced_state(j)%ptf_lon(k,i-1,0,move)   &
+                ) * block%reduced_mesh(j)%le_lon(0) / block%reduced_mesh(j)%area_cell(0)
+              end do
+              call reduce_append_array(move, block%reduced_mesh(j), block%reduced_tend(j)%dptfdlon(:,k), mesh, tend%dptfdlon(:,j,k))
+            end do
+            call overlay_inner_halo(block, tend%dptfdlon(:,j,k), west_halo=.true.)
+          else
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
               tend%dptfdlon(i,j,k) = (                            &
                 state%mf_lon_n(i  ,j,k) * state%pt_lon(i  ,j,k) - &
                 state%mf_lon_n(i-1,j,k) * state%pt_lon(i-1,j,k)   &
               ) * mesh%le_lon(j) / mesh%area_cell(j)
-            end if
-          end do
+            end do
+          end if
         end do
       end do
 
