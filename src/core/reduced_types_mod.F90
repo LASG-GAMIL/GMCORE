@@ -96,9 +96,14 @@ module reduced_types_mod
     real(r8), allocatable, dimension(:,:,:,:) :: dpv_lat_n
     real(r8), allocatable, dimension(:,:,:,:) :: ke
     ! Baroclinic:
+    real(r8), allocatable, dimension(:,:,:,:) :: pt
+    real(r8), allocatable, dimension(:,:,:,:) :: pt_lon
     real(r8), allocatable, dimension(:,:,:,:) :: ptf_lon
-    real(r8), allocatable, dimension(:,:,:,:) :: t_lnpop_lon
     real(r8), allocatable, dimension(:,:,:,:) :: ph_lev
+    real(r8), allocatable, dimension(:,:,:,:) :: ph
+    real(r8), allocatable, dimension(:,:,:,:) :: ak
+    real(r8), allocatable, dimension(:,:,:,:) :: t
+    real(r8), allocatable, dimension(:,:,:,:) :: t_lnpop_lon
     real(r8), allocatable, dimension(:,:,:,:) :: ak_t_lon
     type(async_type), allocatable :: async(:,:,:)
   contains
@@ -149,9 +154,14 @@ contains
     if (allocated(this%dpv_lon_t  )) deallocate(this%dpv_lon_t  )
     if (allocated(this%dpv_lat_t  )) deallocate(this%dpv_lat_t  )
     if (allocated(this%ke         )) deallocate(this%ke         )
+    if (allocated(this%pt         )) deallocate(this%pt         )
+    if (allocated(this%pt_lon     )) deallocate(this%pt_lon     )
     if (allocated(this%ptf_lon    )) deallocate(this%ptf_lon    )
-    if (allocated(this%t_lnpop_lon)) deallocate(this%t_lnpop_lon)
     if (allocated(this%ph_lev     )) deallocate(this%ph_lev     )
+    if (allocated(this%ph         )) deallocate(this%ph         )
+    if (allocated(this%ak         )) deallocate(this%ak         )
+    if (allocated(this%t          )) deallocate(this%t          )
+    if (allocated(this%t_lnpop_lon)) deallocate(this%t_lnpop_lon)
     if (allocated(this%ak_t_lon   )) deallocate(this%ak_t_lon   )
     if (allocated(this%async      )) deallocate(this%async      )
 

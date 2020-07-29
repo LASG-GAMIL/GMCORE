@@ -282,10 +282,17 @@ contains
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          state%div(i,j,k) = (                                                      &
-            (state%u(i,j,k) * mesh%le_lon(j) - state%u(i-1,j,k) * mesh%le_lon(j)) + &
-            (state%v(i,j,k) * mesh%le_lat(j) - state%v(i,j-1,k) * mesh%le_lat(j-1)) &
+#ifdef V_POLE
+          state%div(i,j,k) = (                                                          &
+            (state%u(i,j  ,k) * mesh%le_lon(j  ) - state%u(i-1,j,k) * mesh%le_lon(j)) + &
+            (state%v(i,j+1,k) * mesh%le_lat(j+1) - state%v(i  ,j,k) * mesh%le_lat(j))   &
           ) / mesh%area_cell(j)
+#else
+          state%div(i,j,k) = (                                                          &
+            (state%u(i,j,k) * mesh%le_lon(j) - state%u(i-1,  j,k) * mesh%le_lon(j  )) + &
+            (state%v(i,j,k) * mesh%le_lat(j) - state%v(i  ,j-1,k) * mesh%le_lat(j-1))   &
+          ) / mesh%area_cell(j)
+#endif
         end do
       end do
     end do
