@@ -357,33 +357,35 @@ contains
     real(r8), intent(in) :: dt
     integer, intent(in) :: pass
 
-    call apply_reduce(lbound(reduced_state%mf_lon_n, 3), ubound(reduced_state%mf_lon_n, 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_mf_lon_n, dt)
-    call apply_reduce(lbound(reduced_state%mf_lat_n, 3), ubound(reduced_state%mf_lat_n, 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_mf_lat_n, dt)
-    call apply_reduce(lbound(reduced_state%mf_lon_t, 3), ubound(reduced_state%mf_lon_t, 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_mf_lon_t, dt)
-    call apply_reduce(lbound(reduced_state%mf_lat_t, 3), ubound(reduced_state%mf_lat_t, 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_mf_lat_t, dt)
-    call apply_reduce(lbound(reduced_state%gz      , 3), ubound(reduced_state%gz      , 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_gz      , dt)
-    call apply_reduce(lbound(reduced_state%m       , 3), ubound(reduced_state%m       , 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_m       , dt)
+#define reduce_args(x) lbound(reduced_state%x, 3), ubound(reduced_state%x, 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_ ## x, dt
+
+    call apply_reduce(reduce_args(mf_lon_n))
+    call apply_reduce(reduce_args(mf_lat_n))
+    call apply_reduce(reduce_args(mf_lon_t))
+    call apply_reduce(reduce_args(mf_lat_t))
+    call apply_reduce(reduce_args(gz      ))
+    call apply_reduce(reduce_args(m       ))
     if (pass == all_pass .or. pass == slow_pass) then
-      call apply_reduce(lbound(reduced_state%m_lon    , 3), ubound(reduced_state%m_lon    , 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_m_lon      , dt)
-      call apply_reduce(lbound(reduced_state%m_lat    , 3), ubound(reduced_state%m_lat    , 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_m_lat      , dt)
-      call apply_reduce(lbound(reduced_state%u        , 3), ubound(reduced_state%u        , 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_u          , dt)
-      call apply_reduce(lbound(reduced_state%v        , 3), ubound(reduced_state%v        , 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_v          , dt)
-      call apply_reduce(lbound(reduced_state%pv       , 3), ubound(reduced_state%pv       , 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_pv         , dt)
-      call apply_reduce(lbound(reduced_state%dpv_lon_t, 3), ubound(reduced_state%dpv_lon_t, 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_dpv_lon_t  , dt)
-      call apply_reduce(lbound(reduced_state%dpv_lat_n, 3), ubound(reduced_state%dpv_lat_n, 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_dpv_lat_n  , dt)
-      call apply_reduce(lbound(reduced_state%dpv_lat_t, 3), ubound(reduced_state%dpv_lat_t, 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_dpv_lat_t  , dt)
-      call apply_reduce(lbound(reduced_state%dpv_lon_n, 3), ubound(reduced_state%dpv_lon_n, 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_dpv_lon_n  , dt)
-      call apply_reduce(lbound(reduced_state%pv_lon   , 3), ubound(reduced_state%pv_lon   , 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_pv_lon_apvm, dt)
-      call apply_reduce(lbound(reduced_state%pv_lat   , 3), ubound(reduced_state%pv_lat   , 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_pv_lat_apvm, dt)
+      call apply_reduce(reduce_args(m_lon    ))
+      call apply_reduce(reduce_args(m_lat    ))
+      call apply_reduce(reduce_args(u        ))
+      call apply_reduce(reduce_args(v        ))
+      call apply_reduce(reduce_args(pv       ))
+      call apply_reduce(reduce_args(dpv_lon_t))
+      call apply_reduce(reduce_args(dpv_lat_n))
+      call apply_reduce(reduce_args(dpv_lat_t))
+      call apply_reduce(reduce_args(dpv_lon_n))
+      call apply_reduce(reduce_args(pv_lon   ))
+      call apply_reduce(reduce_args(pv_lat   ))
       if (baroclinic) then
-        call apply_reduce(lbound(reduced_state%ptf_lon    , 3), ubound(reduced_state%ptf_lon    , 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_ptf_lon    , dt)
-        call apply_reduce(lbound(reduced_state%ph_lev     , 3), ubound(reduced_state%ph_lev     , 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_ph_lev     , dt)
-        call apply_reduce(lbound(reduced_state%t_lnpop_lon, 3), ubound(reduced_state%t_lnpop_lon, 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_t_lnpop_lon, dt)
-        call apply_reduce(lbound(reduced_state%ak_t_lon   , 3), ubound(reduced_state%ak_t_lon   , 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_ak_t_lon   , dt)
+        call apply_reduce(reduce_args(ptf_lon    ))
+        call apply_reduce(reduce_args(ph_lev     ))
+        call apply_reduce(reduce_args(t_lnpop_lon))
+        call apply_reduce(reduce_args(ak_t_lon   ))
       end if
     end if
     if (pass == all_pass .or. pass == fast_pass) then
-      call apply_reduce(lbound(reduced_state%ke       , 3), ubound(reduced_state%ke       , 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_ke         , dt)
+      call apply_reduce(reduce_args(ke))
     end if
 
   end subroutine reduce_state
@@ -929,7 +931,7 @@ contains
 
   end subroutine reduce_dpv_lat_n
 
-  subroutine reduce_pv_lon_apvm(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_pv_lon(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -974,9 +976,9 @@ contains
     call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%pv_lon(:,:,buf_j,move), &
                          reduced_state%async(async_pv_lon,buf_j,move), east_halo=.false.)
 
-  end subroutine reduce_pv_lon_apvm
+  end subroutine reduce_pv_lon
 
-  subroutine reduce_pv_lat_apvm(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_pv_lat(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -1011,7 +1013,7 @@ contains
     call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%pv_lat(:,:,buf_j,move), &
                          reduced_state%async(async_pv_lat,buf_j,move), west_halo=.false.)
 
-  end subroutine reduce_pv_lat_apvm
+  end subroutine reduce_pv_lat
 
   subroutine reduce_ke(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
 

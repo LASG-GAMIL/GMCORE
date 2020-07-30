@@ -54,6 +54,13 @@ add_subdirectory(lib/string)
 add_subdirectory(lib/fiona)
 add_subdirectory(lib/flogger)
 
+add_custom_command(
+  OUTPUT ${PROJECT_SOURCE_DIR}/build/reduce_mod.F90
+  COMMAND cpp -P -C ${PROJECT_SOURCE_DIR}/src/core/reduce_mod.F90 > ${PROJECT_SOURCE_DIR}/build/reduce_mod.F90
+  MAIN_DEPENDENCY ${PROJECT_SOURCE_DIR}/src/core/reduce_mod.F90
+  VERBATIM
+)
+
 set(source_files
   src/utils/const_mod.F90
   src/utils/formula_mod.F90
@@ -85,7 +92,7 @@ set(source_files
   src/core/interp_mod.F90
   src/core/operators_mod.F90
   src/core/reduced_types_mod.F90
-  src/core/reduce_mod.F90
+  build/reduce_mod.F90
   src/core/nest_mod.F90
   src/core/damp_mod.F90
   src/core/gmcore_mod.F90
