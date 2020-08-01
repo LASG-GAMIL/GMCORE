@@ -83,6 +83,7 @@ module reduced_types_mod
     real(r8), allocatable, dimension(:,:,:,:) :: m
     real(r8), allocatable, dimension(:,:,:,:) :: m_lon
     real(r8), allocatable, dimension(:,:,:,:) :: m_lat
+    real(r8), allocatable, dimension(:,:,:,:) :: m_vtx
     real(r8), allocatable, dimension(:,:,:,:) :: mf_lon_n
     real(r8), allocatable, dimension(:,:,:,:) :: mf_lon_t
     real(r8), allocatable, dimension(:,:,:,:) :: mf_lat_n
@@ -142,6 +143,7 @@ contains
     if (allocated(this%m          )) deallocate(this%m          )
     if (allocated(this%m_lon      )) deallocate(this%m_lon      )
     if (allocated(this%m_lat      )) deallocate(this%m_lat      )
+    if (allocated(this%m_vtx      )) deallocate(this%m_vtx      )
     if (allocated(this%mf_lon_n   )) deallocate(this%mf_lon_n   )
     if (allocated(this%mf_lon_t   )) deallocate(this%mf_lon_t   )
     if (allocated(this%mf_lat_n   )) deallocate(this%mf_lat_n   )
