@@ -296,6 +296,11 @@ contains
         end do
       end do
     end do
+#ifdef V_POLE
+    call fill_halo(block, state%div, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false., north_halo=.false.)
+#else
+    call fill_halo(block, state%div, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false., south_halo=.false.)
+#endif
 
   end subroutine calc_div
 

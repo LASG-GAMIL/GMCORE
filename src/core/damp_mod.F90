@@ -1,6 +1,7 @@
 module damp_mod
 
   use const_mod
+  use namelist_mod
   use parallel_mod
   use block_mod
 
@@ -10,6 +11,7 @@ module damp_mod
 
   public zonal_damp
   public latlon_damp_vtx
+  public div_damp
 
 contains
 
@@ -137,5 +139,43 @@ contains
     call fill_halo(block, f, full_lon=.false., full_lat=.false.)
 
   end subroutine latlon_damp_vtx
+
+  subroutine div_damp(block, old_state, new_state, dt)
+
+    type(block_type), intent(in) :: block
+    type(state_type), intent(in) :: old_state
+    type(state_type), intent(inout) :: new_state
+    real(r8), intent(in) :: dt
+
+    type(mesh_type), pointer :: mesh
+    integer i, j, k
+
+    if (baroclinic) then
+      mesh => old_state%mesh
+
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+            new_state%u(i,j,k) = new_state%u(i,j,k) + dt * div_damp_coef * (old_state%div(i+1,j,k) - old_state%div(i,j,k)) / mesh%de_lon(j)
+          end do
+        end do
+      end do
+      call fill_halo(block, new_state%u, full_lon=.false., full_lat=.true., full_lev=.true.)
+
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+#ifdef V_POLE
+            new_state%v(i,j,k) = new_state%v(i,j,k) + dt * div_damp_coef * (old_state%div(i,j,k) - old_state%div(i,j-1,k)) / mesh%de_lat(j)
+#else
+            new_state%v(i,j,k) = new_state%v(i,j,k) + dt * div_damp_coef * (old_state%div(i,j+1,k) - old_state%div(i,j,k)) / mesh%de_lat(j)
+#endif
+          end do
+        end do
+      end do
+      call fill_halo(block, new_state%v, full_lon=.true., full_lat=.false., full_lev=.true.)
+    end if
+
+  end subroutine div_damp
 
 end module damp_mod

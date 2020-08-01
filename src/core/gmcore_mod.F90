@@ -712,7 +712,7 @@ contains
           end do
         end do
       end do
-      call fill_halo(block, new_state%u, full_lon=.false., full_lat=.true., full_lev=.true.)
+      if (.not. use_div_damp) call fill_halo(block, new_state%u, full_lon=.false., full_lat=.true., full_lev=.true.)
     end if
 
     if (tend%updated_dv) then
@@ -723,10 +723,13 @@ contains
           end do
         end do
       end do
-      call fill_halo(block, new_state%v, full_lon=.true., full_lat=.false., full_lev=.true.)
+      if (.not. use_div_damp) call fill_halo(block, new_state%v, full_lon=.true., full_lat=.false., full_lev=.true.)
     end if
 
-    call damp_state(block, new_state)
+    if (tend%updated_du .and. tend%updated_dv) then
+      call damp_state(block, new_state)
+      if (use_div_damp) call div_damp(block, old_state, new_state, dt)
+    end if
 
   end subroutine update_state
 
