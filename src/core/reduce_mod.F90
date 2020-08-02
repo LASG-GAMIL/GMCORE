@@ -1100,7 +1100,7 @@ contains
 
     real(r8) u, v, le, de
     integer i, k
-
+    
     le = reduced_mesh%le_lat(buf_j)
     de = reduced_mesh%de_lat(buf_j)
     if (le == 0 .or. de == 0) return

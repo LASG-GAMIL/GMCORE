@@ -222,7 +222,14 @@ contains
               mf = mf + tend%dmfdlon(i,j,l) + tend%dmfdlat(i,j,l)
             end do
             state%wp(i,j,k) = - mf + 0.5_r8 * (state%u(i-1,j,k) * (state%ph(i  ,j,k) - state%ph(i-1,j,k)) + &
-                                               state%u(i  ,j,k) * (state%ph(i+1,j,k) - state%ph(i  ,j,k))) / mesh%de_lon(j)
+                                               state%u(i  ,j,k) * (state%ph(i+1,j,k) - state%ph(i  ,j,k))) / mesh%de_lon(j) +&
+#ifdef V_POLE
+                                     0.5_r8 * (state%v(i,j  ,k) * (state%ph(i,j  ,k) - state%ph(i,j-1,k)) / mesh%de_lat(j  ) +&
+                                               state%v(i,j+1,k) * (state%ph(j,j+1,k) - state%ph(i,j  ,k)) / mesh%de_lat(j+1))
+#else
+                                     0.5_r8 * (state%v(i,j-1,k) * (state%ph(i,j  ,k) - state%ph(i,j-1,k)) / mesh%de_lat(j-1) +&
+                                               state%v(i,j  ,k) * (state%ph(i,j+1,k) - state%ph(i,j  ,k)) / mesh%de_lat(j  ))
+#endif
           end do
         end do
       end do

@@ -42,7 +42,6 @@ module namelist_mod
   integer :: color_proc_lat_reduce(100) = 0
   integer :: num_proc_lon_reduce(100) = 0
   integer :: damp_orders(100) = 0
-
   logical :: use_div_damp = .false.
   real(r8) :: div_damp_coef = 9.0e7
   
