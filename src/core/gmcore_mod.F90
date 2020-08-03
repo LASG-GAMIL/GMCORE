@@ -67,6 +67,7 @@ contains
     call history_init()
     call restart_init()
     call reduce_init(proc%blocks)
+    call damp_init()
 
     select case (time_scheme)
     case ('debug')
@@ -131,6 +132,7 @@ contains
 
   subroutine gmcore_final()
 
+    call damp_final()
     call history_final()
     call process_final()
 

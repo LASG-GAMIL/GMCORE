@@ -9,11 +9,21 @@ module damp_mod
 
   private
 
+  public damp_init
+  public damp_final
   public zonal_damp
   public latlon_damp_vtx
   public div_damp
 
 contains
+
+  subroutine damp_init()
+
+  end subroutine damp_init
+
+  subroutine damp_final()
+
+  end subroutine damp_final
 
   subroutine zonal_damp(block, order, dt, dx, lb, ub, n, f, async)
 
@@ -156,7 +166,8 @@ contains
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            new_state%u(i,j,k) = new_state%u(i,j,k) + dt * div_damp_coef * (old_state%div(i+1,j,k) - old_state%div(i,j,k)) / mesh%de_lon(j)
+            new_state%u(i,j,k) = new_state%u(i,j,k) + dt * div_damp_coef * ( &
+              old_state%div(i+1,j,k) - old_state%div(i,j,k)) / mesh%de_lon(j)
           end do
         end do
       end do
@@ -166,9 +177,11 @@ contains
         do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
 #ifdef V_POLE
-            new_state%v(i,j,k) = new_state%v(i,j,k) + dt * div_damp_coef * (old_state%div(i,j,k) - old_state%div(i,j-1,k)) / mesh%de_lat(j)
+            new_state%v(i,j,k) = new_state%v(i,j,k) + dt * div_damp_coef * ( &
+              old_state%div(i,j,k) - old_state%div(i,j-1,k)) / mesh%de_lat(j)
 #else
-            new_state%v(i,j,k) = new_state%v(i,j,k) + dt * div_damp_coef * (old_state%div(i,j+1,k) - old_state%div(i,j,k)) / mesh%de_lat(j)
+            new_state%v(i,j,k) = new_state%v(i,j,k) + dt * div_damp_coef * ( &
+              old_state%div(i,j+1,k) - old_state%div(i,j,k)) / mesh%de_lat(j)
 #endif
           end do
         end do
