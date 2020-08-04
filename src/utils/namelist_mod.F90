@@ -42,7 +42,9 @@ module namelist_mod
   integer :: color_proc_lat_reduce(100) = 0
   integer :: num_proc_lon_reduce(100) = 0
   integer :: damp_orders(100) = 0
+
   logical :: use_div_damp = .false.
+  integer :: div_damp_order = 2
   real(r8) :: div_damp_coef = 9.0e7
   
   ! Nest settings
@@ -88,6 +90,7 @@ module namelist_mod
     num_proc_lon_reduce       , &
     damp_orders               , &
     use_div_damp              , &
+    div_damp_order            , &
     div_damp_coef             , &
     nest_time_scheme          , &
     nest_max_dom              , &

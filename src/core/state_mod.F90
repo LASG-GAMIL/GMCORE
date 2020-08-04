@@ -66,6 +66,7 @@ module state_mod
     real(r8), allocatable, dimension(:,:  ) :: phs           ! Surface hydrostatic pressure
     real(r8), allocatable, dimension(:,:,:) :: ak            ! Coefficient for calculate gz on full levels
     real(r8), allocatable, dimension(:,:,:) :: div           ! Divergence (s-1)
+    real(r8), allocatable, dimension(:,:,:) :: div2          ! Laplacian of divergence (s-1)
     real(r8), allocatable, dimension(:,:,:) :: vor           ! Vorticity (s-1)
     real(r8) tm
     real(r8) te
@@ -136,6 +137,7 @@ contains
     call allocate_array(mesh, this%phs          , full_lon=.true., full_lat=.true.                 )
     call allocate_array(mesh, this%ak           , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%div          , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%div2         , full_lon=.true., full_lat=.true., full_lev=.true.)
 
   end subroutine state_init
 
@@ -190,6 +192,7 @@ contains
     if (allocated(this%phs          )) deallocate(this%phs          )
     if (allocated(this%ak           )) deallocate(this%ak           )
     if (allocated(this%div          )) deallocate(this%div          )
+    if (allocated(this%div2         )) deallocate(this%div2         )
 
   end subroutine state_clear
 

@@ -288,12 +288,13 @@ contains
     type(state_type), intent(inout) :: state
 
     type(mesh_type), pointer :: mesh
+    real(r8) pole(global_mesh%num_full_lev)
     integer i, j, k
 
     mesh => state%mesh
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
 #ifdef V_POLE
           state%div(i,j,k) = (                                                          &
@@ -309,11 +310,65 @@ contains
         end do
       end do
     end do
-#ifdef V_POLE
-    call fill_halo(block, state%div, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false., north_halo=.false.)
-#else
-    call fill_halo(block, state%div, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false., south_halo=.false.)
+#ifndef V_POLE
+    if (mesh%has_south_pole()) then
+      j = mesh%full_lat_ibeg
+      pole = 0.0_r8
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          pole(k) = pole(k) + state%v(i,j,k)
+        end do
+      end do
+      call zonal_sum(proc%zonal_comm, pole)
+      pole = pole * mesh%le_lat(j) / global_mesh%num_full_lon / mesh%area_cell(j)
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          state%div(i,j,k) = pole(k)
+        end do
+      end do
+    end if
+    if (mesh%has_north_pole()) then
+      j = mesh%full_lat_iend
+      pole = 0.0_r8
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          pole(k) = pole(k) - state%v(i,j-1,k)
+        end do
+      end do
+      call zonal_sum(proc%zonal_comm, pole)
+      pole = pole * mesh%le_lat(j-1) / global_mesh%num_full_lon / mesh%area_cell(j)
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          state%div(i,j,k) = pole(k)
+        end do
+      end do
+    end if
 #endif
+    if (use_div_damp) then
+      call fill_halo(block, state%div, full_lon=.true., full_lat=.true., full_lev=.true.)
+    else
+#ifdef V_POLE
+      call fill_halo(block, state%div, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false., north_halo=.false.)
+#else
+      call fill_halo(block, state%div, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false., south_halo=.false.)
+#endif
+    end if
+
+    if (use_div_damp) then
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            state%div2(i,j,k) = (                                                                     &
+              state%div(i+1,j,k) - 2 * state%div(i,j,k) + state%div(i-1,j,k)                          &
+            ) / mesh%de_lon(j)**2 + (                                                                 &
+              (state%div(i,j+1,k) - state%div(i,j  ,k)) * mesh%half_cos_lat(j  ) / mesh%le_lat(j  ) - &
+              (state%div(i,j  ,k) - state%div(i,j-1,k)) * mesh%half_cos_lat(j-1) / mesh%le_lat(j-1)   &
+            ) / mesh%le_lon(j) / mesh%full_cos_lat(j)
+          end do
+        end do
+      end do
+      call fill_halo(block, state%div2, full_lon=.true., full_lat=.true., full_lev=.true.)
+    end if
 
   end subroutine calc_div
 
@@ -1033,7 +1088,7 @@ contains
         end do
       end do
       call zonal_sum(proc%zonal_comm, pole)
-      pole = pole * mesh%le_lat(j) / mesh%num_full_lon / mesh%area_cell(j)
+      pole = pole * mesh%le_lat(j) / global_mesh%num_full_lon / mesh%area_cell(j)
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           tend%dmfdlat(i,j,k) = pole(k)
@@ -1049,7 +1104,7 @@ contains
         end do
       end do
       call zonal_sum(proc%zonal_comm, pole)
-      pole = pole * mesh%le_lat(j-1) / mesh%num_full_lon / mesh%area_cell(j)
+      pole = pole * mesh%le_lat(j-1) / global_mesh%num_full_lon / mesh%area_cell(j)
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           tend%dmfdlat(i,j,k) = pole(k)
@@ -1127,7 +1182,7 @@ contains
           end do
         end do
         call zonal_sum(proc%zonal_comm, pole)
-        pole = pole * mesh%le_lat(j) / mesh%num_full_lon / mesh%area_cell(j)
+        pole = pole * mesh%le_lat(j) / global_mesh%num_full_lon / mesh%area_cell(j)
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             tend%dptfdlat(i,j,k) = pole(k)
@@ -1143,7 +1198,7 @@ contains
           end do
         end do
         call zonal_sum(proc%zonal_comm, pole)
-        pole = pole * mesh%le_lat(j-1) / mesh%num_full_lon / mesh%area_cell(j)
+        pole = pole * mesh%le_lat(j-1) / global_mesh%num_full_lon / mesh%area_cell(j)
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             tend%dptfdlat(i,j,k) = pole(k)
