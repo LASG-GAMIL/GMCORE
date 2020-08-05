@@ -257,12 +257,12 @@ contains
             end do
           end do
         end do
-#ifdef V_POLE
+#ifndef V_POLE
         if (mesh%has_south_pole()) then
           j = mesh%half_lat_ibeg
           do k = mesh%full_lev_ibeg, mesh%full_lev_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              new_state%v(i,j,k) = new_state%v(i,j,k) - dt * 3.5d4 * ( &
+              new_state%v(i,j,k) = new_state%v(i,j,k) + dt * 3.5d4 * ( &
                 old_state%div(i,j+1,k) - old_state%div(i,j,k)) / mesh%de_lat(j)
             end do
           end do
@@ -271,7 +271,7 @@ contains
           j = mesh%half_lat_iend
           do k = mesh%full_lev_ibeg, mesh%full_lev_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              new_state%v(i,j,k) = new_state%v(i,j,k) - dt * 3.5d4 * ( &
+              new_state%v(i,j,k) = new_state%v(i,j,k) + dt * 3.5d4 * ( &
                 old_state%div(i,j+1,k) - old_state%div(i,j,k)) / mesh%de_lat(j)
             end do
           end do
