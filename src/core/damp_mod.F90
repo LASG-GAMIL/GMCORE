@@ -15,13 +15,57 @@ module damp_mod
   public latlon_damp_vtx
   public div_damp
 
+  real(r8), allocatable :: cdiv_full_lat(:,:)
+  real(r8), allocatable :: cdiv_half_lat(:,:)
+
 contains
 
   subroutine damp_init()
 
+    integer j, k
+
+    integer, parameter :: r = 2
+
+    allocate(cdiv_full_lat(global_mesh%full_lat_ibeg:global_mesh%full_lat_iend,global_mesh%full_lev_ibeg:global_mesh%full_lev_iend))
+    allocate(cdiv_half_lat(global_mesh%half_lat_ibeg:global_mesh%half_lat_iend,global_mesh%full_lev_ibeg:global_mesh%full_lev_iend))
+
+    select case (div_damp_order)
+    case (2)
+      do k = global_mesh%full_lev_ibeg, global_mesh%full_lev_iend
+        do j = global_mesh%full_lat_ibeg_no_pole, global_mesh%full_lat_iend_no_pole
+          cdiv_full_lat(j,k) = div_damp_coef2 * global_mesh%full_cos_lat(j)**r * &
+            radius**2 * global_mesh%dlat(j) * global_mesh%dlon / dt_in_seconds
+        end do
+      end do
+
+      do k = global_mesh%full_lev_ibeg, global_mesh%full_lev_iend
+        do j = global_mesh%half_lat_ibeg_no_pole, global_mesh%half_lat_iend_no_pole
+          cdiv_half_lat(j,k) = div_damp_coef2 * global_mesh%half_cos_lat(j)**r * &
+            radius**2 * global_mesh%dlat(j) * global_mesh%dlon / dt_in_seconds
+        end do
+      end do
+    case (4)
+      do k = global_mesh%full_lev_ibeg, global_mesh%full_lev_iend
+        do j = global_mesh%full_lat_ibeg_no_pole, global_mesh%full_lat_iend_no_pole
+          cdiv_full_lat(j,k) = div_damp_coef4 * global_mesh%full_cos_lat(j)**r * &
+            radius**4 * global_mesh%dlat(j)**2 * global_mesh%dlon**2 / dt_in_seconds
+        end do
+      end do
+
+      do k = global_mesh%full_lev_ibeg, global_mesh%full_lev_iend
+        do j = global_mesh%half_lat_ibeg_no_pole, global_mesh%half_lat_iend_no_pole
+          cdiv_half_lat(j,k) = div_damp_coef4 * global_mesh%half_cos_lat(j)**r * &
+            radius**4 * global_mesh%dlat(j)**2 * global_mesh%dlon**2 / dt_in_seconds
+        end do
+      end do
+    end select
+
   end subroutine damp_init
 
   subroutine damp_final()
+
+    if (allocated(cdiv_full_lat)) deallocate(cdiv_full_lat)
+    if (allocated(cdiv_half_lat)) deallocate(cdiv_half_lat)
 
   end subroutine damp_final
 
@@ -168,7 +212,7 @@ contains
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              new_state%u(i,j,k) = new_state%u(i,j,k) + dt * div_damp_coef * ( &
+              new_state%u(i,j,k) = new_state%u(i,j,k) + dt * cdiv_full_lat(j,k) * ( &
                 old_state%div(i+1,j,k) - old_state%div(i,j,k)) / mesh%de_lon(j)
             end do
           end do
@@ -179,10 +223,10 @@ contains
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
 #ifdef V_POLE
-              new_state%v(i,j,k) = new_state%v(i,j,k) + dt * div_damp_coef * ( &
+              new_state%v(i,j,k) = new_state%v(i,j,k) + dt * cdiv_half_lat(j,k) * ( &
                 old_state%div(i,j,k) - old_state%div(i,j-1,k)) / mesh%de_lat(j)
 #else
-              new_state%v(i,j,k) = new_state%v(i,j,k) + dt * div_damp_coef * ( &
+              new_state%v(i,j,k) = new_state%v(i,j,k) + dt * cdiv_half_lat(j,k) * ( &
                 old_state%div(i,j+1,k) - old_state%div(i,j,k)) / mesh%de_lat(j)
 #endif
             end do
@@ -193,7 +237,7 @@ contains
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              new_state%u(i,j,k) = new_state%u(i,j,k) + dt * div_damp_coef * ( &
+              new_state%u(i,j,k) = new_state%u(i,j,k) - dt * cdiv_full_lat(j,k) * ( &
                 old_state%div2(i+1,j,k) - old_state%div2(i,j,k)) / mesh%de_lon(j)
             end do
           end do
@@ -204,15 +248,35 @@ contains
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
 #ifdef V_POLE
-              new_state%v(i,j,k) = new_state%v(i,j,k) + dt * div_damp_coef * ( &
+              new_state%v(i,j,k) = new_state%v(i,j,k) - dt * cdiv_half_lat(j,k) * ( &
                 old_state%div2(i,j,k) - old_state%div2(i,j-1,k)) / mesh%de_lat(j)
 #else
-              new_state%v(i,j,k) = new_state%v(i,j,k) + dt * div_damp_coef * ( &
+              new_state%v(i,j,k) = new_state%v(i,j,k) - dt * cdiv_half_lat(j,k) * ( &
                 old_state%div2(i,j+1,k) - old_state%div2(i,j,k)) / mesh%de_lat(j)
 #endif
             end do
           end do
         end do
+#ifdef V_POLE
+        if (mesh%has_south_pole()) then
+          j = mesh%half_lat_ibeg
+          do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              new_state%v(i,j,k) = new_state%v(i,j,k) - dt * 3.5d4 * ( &
+                old_state%div(i,j+1,k) - old_state%div(i,j,k)) / mesh%de_lat(j)
+            end do
+          end do
+        end if
+        if (mesh%has_north_pole()) then
+          j = mesh%half_lat_iend
+          do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              new_state%v(i,j,k) = new_state%v(i,j,k) - dt * 3.5d4 * ( &
+                old_state%div(i,j+1,k) - old_state%div(i,j,k)) / mesh%de_lat(j)
+            end do
+          end do
+        end if
+#endif
         call fill_halo(block, new_state%v, full_lon=.true., full_lat=.false., full_lev=.true.)
       end select
     end if

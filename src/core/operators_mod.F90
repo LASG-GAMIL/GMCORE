@@ -361,8 +361,8 @@ contains
             state%div2(i,j,k) = (                                                                     &
               state%div(i+1,j,k) - 2 * state%div(i,j,k) + state%div(i-1,j,k)                          &
             ) / mesh%de_lon(j)**2 + (                                                                 &
-              (state%div(i,j+1,k) - state%div(i,j  ,k)) * mesh%half_cos_lat(j  ) / mesh%le_lat(j  ) - &
-              (state%div(i,j  ,k) - state%div(i,j-1,k)) * mesh%half_cos_lat(j-1) / mesh%le_lat(j-1)   &
+              (state%div(i,j+1,k) - state%div(i,j  ,k)) * mesh%half_cos_lat(j  ) / mesh%de_lat(j  ) - &
+              (state%div(i,j  ,k) - state%div(i,j-1,k)) * mesh%half_cos_lat(j-1) / mesh%de_lat(j-1)   &
             ) / mesh%le_lon(j) / mesh%full_cos_lat(j)
           end do
         end do

@@ -45,7 +45,8 @@ module namelist_mod
 
   logical :: use_div_damp = .false.
   integer :: div_damp_order = 2
-  real(r8) :: div_damp_coef = 9.0e7
+  real(r8) :: div_damp_coef2 = 1.0_r8 / 128.0_r8
+  real(r8) :: div_damp_coef4 = 0.01_r8
   
   ! Nest settings
   character(30) :: nest_time_scheme   = 'pc2'
@@ -91,7 +92,8 @@ module namelist_mod
     damp_orders               , &
     use_div_damp              , &
     div_damp_order            , &
-    div_damp_coef             , &
+    div_damp_coef2            , &
+    div_damp_coef4            , &
     nest_time_scheme          , &
     nest_max_dom              , &
     nest_parent_id            , &
