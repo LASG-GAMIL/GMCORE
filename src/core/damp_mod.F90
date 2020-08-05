@@ -193,7 +193,7 @@ contains
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              new_state%u(i,j,k) = new_state%u(i,j,k) + dt * div_damp_coef * ( &
+              new_state%u(i,j,k) = new_state%u(i,j,k) - dt * div_damp_coef * ( &
                 old_state%div2(i+1,j,k) - old_state%div2(i,j,k)) / mesh%de_lon(j)
             end do
           end do
@@ -204,11 +204,16 @@ contains
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
 #ifdef V_POLE
-              new_state%v(i,j,k) = new_state%v(i,j,k) + dt * div_damp_coef * ( &
+              new_state%v(i,j,k) = new_state%v(i,j,k) - dt * div_damp_coef * ( &
                 old_state%div2(i,j,k) - old_state%div2(i,j-1,k)) / mesh%de_lat(j)
 #else
-              new_state%v(i,j,k) = new_state%v(i,j,k) + dt * div_damp_coef * ( &
-                old_state%div2(i,j+1,k) - old_state%div2(i,j,k)) / mesh%de_lat(j)
+              if (j == mesh%half_lat_ibeg_no_pole .or. j == mesh%half_lat_iend_no_pole) then
+                new_state%v(i,j,k) = new_state%v(i,j,k) + dt * div_damp_coef * ( &
+                  old_state%div(i,j+1,k) - old_state%div(i,j,k)) / mesh%de_lat(j)
+              else
+                new_state%v(i,j,k) = new_state%v(i,j,k) - dt * div_damp_coef * ( &
+                  old_state%div2(i,j+1,k) - old_state%div2(i,j,k)) / mesh%de_lat(j)
+              end if
 #endif
             end do
           end do
