@@ -106,7 +106,7 @@ contains
       do i = 1, nest_max_dom
         np2 = np2 + num_proc_lon(i) * num_proc_lat(i)
       end do
-      if (np /= np2 .and. is_root_proc()) then
+      if (np /= np2 .and. pid == 0) then
         call log_error('Namelist num_proc_lon and num_proc_lat are not compatible with MPI runtime!')
       end if
       ! Set the process topology into proc object.

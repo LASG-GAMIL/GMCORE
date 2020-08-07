@@ -23,7 +23,9 @@ module tend_mod
     logical :: updated_dgz  = .false.
     logical :: updated_dpt  = .false.
     logical :: updated_dphs = .false.
-    logical :: copy_gz = .false.
+    logical :: copy_gz  = .false.
+    logical :: copy_pt  = .false.
+    logical :: copy_phs = .false.
     ! Individual tendencies
     real(r8), allocatable, dimension(:,:,:) :: qhv
     real(r8), allocatable, dimension(:,:,:) :: qhu
@@ -91,7 +93,9 @@ contains
     this%updated_dpt  = .false.
     this%updated_dphs = .false.
 
-    this%copy_gz = .false.
+    this%copy_gz  = .false.
+    this%copy_pt  = .false.
+    this%copy_phs = .false.
 
   end subroutine tend_reset_flags
 

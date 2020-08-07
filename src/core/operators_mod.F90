@@ -425,6 +425,13 @@ contains
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             state%m(i,j,k) = state%ph_lev(i,j,k+1) - state%ph_lev(i,j,k)
+#ifndef NDEBUG
+            if (state%m(i,j,k) <= 0) then
+              print *, i, j, k
+              print *, 'phs    =', state%phs(i,j)
+              call process_stop(1)
+            end if
+#endif
           end do
         end do
       end do

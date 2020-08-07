@@ -301,7 +301,6 @@ contains
         call calc_dkedlon_dkedlat           (block, state, tend, dt)
         call calc_dpedlon_dpedlat           (block, state, tend, dt)
         call calc_dpdlon_dpdlat             (block, state, tend, dt)
-        call calc_wp                        (block, state, tend, dt)
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -358,7 +357,7 @@ contains
         tend%updated_dgz = .true.
       end if
     case (all_pass + forward_pass)
-      if (baroclinic) then
+      if (baroclinic .and. hydrostatic) then
         call calc_dmfdlon_dmfdlat           (block, state, tend, dt)
         call calc_dphs                      (block, state, tend, dt)
         call calc_wedphdlev                 (block, state, tend, dt)
@@ -366,18 +365,17 @@ contains
         call calc_wedudlev_wedvdlev         (block, state, tend, dt)
         call calc_qhu_qhv                   (block, state, tend, dt)
         call calc_dkedlon_dkedlat           (block, state, tend, dt)
-        call calc_dpedlon_dpedlat           (block, state, tend, dt)
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              tend%du(i,j,k) =   tend%qhv(i,j,k) - tend%dpedlon(i,j,k) - tend%dkedlon(i,j,k) - tend%wedudlev(i,j,k)
+              tend%du(i,j,k) =   tend%qhv(i,j,k) - tend%dkedlon(i,j,k) - tend%wedudlev(i,j,k)
             end do
           end do
 
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              tend%dv(i,j,k) = - tend%qhu(i,j,k) - tend%dpedlat(i,j,k) - tend%dkedlat(i,j,k) - tend%wedvdlev(i,j,k)
+              tend%dv(i,j,k) = - tend%qhu(i,j,k) - tend%dkedlat(i,j,k) - tend%wedvdlev(i,j,k)
             end do
           end do
 
@@ -391,22 +389,23 @@ contains
         tend%updated_dphs = .true.
         tend%updated_dpt  = .true.
       else
-
+        if (is_root_proc()) call log_error('Unfinished branch!', __FILE__, __LINE__)
       end if
     case (all_pass + backward_pass)
-      if (baroclinic) then
+      if (baroclinic .and. hydrostatic) then
+        call calc_dpedlon_dpedlat           (block, state, tend, dt)
         call calc_dpdlon_dpdlat             (block, state, tend, dt)
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              tend%du(i,j,k) = tend%du(i,j,k) - tend%dpdlon(i,j,k)
+              tend%du(i,j,k) = tend%du(i,j,k) - tend%dpedlon(i,j,k) - tend%dpdlon(i,j,k)
             end do
           end do
 
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              tend%dv(i,j,k) = tend%dv(i,j,k) - tend%dpdlat(i,j,k)
+              tend%dv(i,j,k) = tend%dv(i,j,k) - tend%dpedlat(i,j,k) - tend%dpdlat(i,j,k)
             end do
           end do
         end do
@@ -414,11 +413,42 @@ contains
         tend%updated_du = .true.
         tend%updated_dv = .true.
       else
-
+        if (is_root_proc()) call log_error('Unfinished branch!', __FILE__, __LINE__)
       end if
     case (slow_pass)
-      if (baroclinic) then
+      if (baroclinic .and. hydrostatic) then
+        call calc_dmfdlon_dmfdlat           (block, state, tend, dt)
+        call calc_dphs                      (block, state, tend, dt)
+        call calc_wedphdlev                 (block, state, tend, dt)
+        call calc_wedudlev_wedvdlev         (block, state, tend, dt)
+        call calc_qhu_qhv                   (block, state, tend, dt)
+        call calc_dkedlon_dkedlat           (block, state, tend, dt)
+        call calc_dptfdlon_dptfdlat_dptfdlev(block, state, tend, dt)
 
+        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+            do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+              tend%du(i,j,k) =   tend%qhv(i,j,k) - tend%wedudlev(i,j,k) - tend%dkedlon(i,j,k)
+            end do
+          end do
+
+          do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              tend%dv(i,j,k) = - tend%qhu(i,j,k) - tend%wedvdlev(i,j,k) - tend%dkedlat(i,j,k)
+            end do
+          end do
+
+          do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              tend%dpt(i,j,k) = - tend%dptfdlon(i,j,k) - tend%dptfdlat(i,j,k) - tend%dptfdlev(i,j,k)
+            end do
+          end do
+        end do
+
+        tend%updated_du   = .true.
+        tend%updated_dv   = .true.
+        tend%copy_phs     = .true.
+        tend%updated_dpt  = .true.
       else
         call calc_qhu_qhv(block, state, tend, dt)
 
@@ -436,15 +466,35 @@ contains
           end do
         end do
 
-        tend%dgz = 0.0_r8
-
         tend%updated_du = .true.
         tend%updated_dv = .true.
-        tend%copy_gz = .true.
+        tend%copy_gz    = .true.
       end if
     case (fast_pass)
-      if (baroclinic) then
+      if (baroclinic .and. hydrostatic) then
+        call calc_dmfdlon_dmfdlat           (block, state, tend, dt)
+        call calc_dphs                      (block, state, tend, dt)
+        call calc_dpedlon_dpedlat           (block, state, tend, dt)
+        call calc_dpdlon_dpdlat             (block, state, tend, dt)
 
+        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+            do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+              tend%du(i,j,k) = - tend%dpedlon(i,j,k) - tend%dpdlon(i,j,k)
+            end do
+          end do
+
+          do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              tend%dv(i,j,k) = - tend%dpedlat(i,j,k) - tend%dpdlat(i,j,k)
+            end do
+          end do
+        end do
+
+        tend%updated_du   = .true.
+        tend%updated_dv   = .true.
+        tend%copy_pt      = .true.
+        tend%updated_dphs = .true.
       else
         call calc_dkedlon_dkedlat(block, state, tend, dt)
         call calc_dpedlon_dpedlat(block, state, tend, dt)
@@ -567,17 +617,17 @@ contains
     integer, intent(in) :: pass
 
     call space_operators(block, block%state(old), block%tend(old), 0.5_r8 * dt, pass + forward_pass)
-    call update_state(0.5_r8 * dt, block, block%tend(old), block%state(old), block%state(new)) ! Update phs, pt
+    call update_state(0.5_r8 * dt, block, block%tend(old), block%state(old), block%state(new)) ! Update phs, pt, du, dv
     call space_operators(block, block%state(new), block%tend(old), 0.5_r8 * dt, pass + backward_pass)
     call update_state(0.5_r8 * dt, block, block%tend(old), block%state(old), block%state(new)) ! Update u, v
 
     call space_operators(block, block%state(new), block%tend(old), 0.5_r8 * dt, pass + forward_pass)
-    call update_state(0.5_r8 * dt, block, block%tend(old), block%state(old), block%state(new)) ! Update phs, pt
+    call update_state(0.5_r8 * dt, block, block%tend(old), block%state(old), block%state(new)) ! Update phs, pt, du, dv
     call space_operators(block, block%state(new), block%tend(old), 0.5_r8 * dt, pass + backward_pass)
     call update_state(0.5_r8 * dt, block, block%tend(old), block%state(old), block%state(new)) ! Update u, v
 
     call space_operators(block, block%state(new), block%tend(new),          dt, pass + forward_pass)
-    call update_state(         dt, block, block%tend(new), block%state(old), block%state(new)) ! Update phs, pt
+    call update_state(         dt, block, block%tend(new), block%state(old), block%state(new)) ! Update phs, pt, du, dv
     call space_operators(block, block%state(new), block%tend(new),          dt, pass + backward_pass)
     call update_state(         dt, block, block%tend(new), block%state(old), block%state(new)) ! Update u, v
 
@@ -678,10 +728,15 @@ contains
 
         call calc_ph_lev_ph(block, new_state)
         call calc_m        (block, new_state)
+      else if (tend%copy_phs) then
+        new_state%phs    = old_state%phs
+        new_state%ph_lev = old_state%ph_lev
+        new_state%ph     = old_state%ph
+        new_state%m      = old_state%m
       end if
 
       if (tend%updated_dpt) then
-        if (.not. tend%updated_dphs) call log_error('Mass is not updated!')
+        if (.not. tend%updated_dphs .and. .not. tend%copy_phs .and. is_root_proc()) call log_error('Mass is not updated or copied!')
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -690,6 +745,8 @@ contains
           end do
         end do
         call fill_halo(block, new_state%pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+      else if (tend%copy_pt) then
+        new_state%pt = old_state%pt
       end if
     else
       if (tend%updated_dgz) then
