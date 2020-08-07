@@ -295,7 +295,6 @@ contains
     allocate(full_lev_full_lon_dims(m        , -2:2))
     allocate(full_lev_half_lon_dims(m_lon    , -2:2))
     allocate(full_lev_full_lon_dims(m_lat    , -1:2))
-    allocate(full_lev_half_lon_dims(m_vtx    , -1:2))
     allocate(full_lev_half_lon_dims(u        , -2:2))
     allocate(full_lev_full_lon_dims(v        , -1:2))
     allocate(full_lev_half_lon_dims(pv       , -1:2))
@@ -315,7 +314,6 @@ contains
       allocate(full_lev_full_lon_dims(m          , -2:2))
       allocate(full_lev_half_lon_dims(m_lon      , -2:2))
       allocate(full_lev_full_lon_dims(m_lat      , -2:1))
-      allocate(full_lev_half_lon_dims(m_vtx      , -2:1))
       allocate(full_lev_half_lon_dims(u          , -2:2))
       allocate(full_lev_full_lon_dims(v          , -2:1))
       allocate(full_lev_half_lon_dims(pv         , -2:1))
@@ -347,7 +345,6 @@ contains
       allocate(full_lev_full_lon_dims(m          , -2:2))
       allocate(full_lev_half_lon_dims(m_lon      , -2:2))
       allocate(full_lev_full_lon_dims(m_lat      , -2:1))
-      allocate(full_lev_half_lon_dims(m_vtx      , -2:1))
       allocate(full_lev_half_lon_dims(u          , -2:2))
       allocate(full_lev_full_lon_dims(v          , -2:1))
       allocate(full_lev_half_lon_dims(pv         , -2:1))
@@ -390,7 +387,6 @@ contains
         call apply_reduce(reduce_args(mf_lat_t   , reduce_mf_lat_t   ))
         call apply_reduce(reduce_args(m_lon      , reduce_m_lon      ))
         call apply_reduce(reduce_args(m_lat      , reduce_m_lat      ))
-        call apply_reduce(reduce_args(m_vtx      , reduce_m_vtx      ))
         call apply_reduce(reduce_args(u          , reduce_u          ))
         call apply_reduce(reduce_args(v          , reduce_v          ))
         call apply_reduce(reduce_args(pv         , reduce_pv         ))
@@ -416,7 +412,6 @@ contains
       if (pass == all_pass .or. pass == slow_pass) then
         call apply_reduce(reduce_args(m_lon      , reduce_m_lon      ))
         call apply_reduce(reduce_args(m_lat      , reduce_m_lat      ))
-        call apply_reduce(reduce_args(m_vtx      , reduce_m_vtx      ))
         call apply_reduce(reduce_args(u          , reduce_u          ))
         call apply_reduce(reduce_args(v          , reduce_v          ))
         call apply_reduce(reduce_args(pv         , reduce_pv         ))
@@ -633,6 +628,7 @@ contains
     type(reduced_state_type), intent(inout) :: reduced_state
     real(r8), intent(in) :: dt
 
+    real(r8) m_vtx
     integer raw_i, i, k
 
 #ifdef V_POLE
@@ -645,6 +641,10 @@ contains
     else
       do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
         do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
+          m_vtx = (                                                                                                            &
+            (reduced_state%m(k,i,buf_j-1,move) + reduced_state%m(k,i+1,buf_j-1,move)) * reduced_mesh%area_subcell(2,buf_j-1) + &
+            (reduced_state%m(k,i,buf_j  ,move) + reduced_state%m(k,i+1,buf_j  ,move)) * reduced_mesh%area_subcell(1,buf_j  )   &
+          ) / reduced_mesh%area_vtx(buf_j)
           reduced_state%pv(k,i,buf_j,move) = (                                     &
             (                                                                      &
               reduced_state%u(k,i  ,buf_j-1,move) * reduced_mesh%de_lon(buf_j-1) - &
@@ -652,7 +652,7 @@ contains
               reduced_state%v(k,i+1,buf_j  ,move) * reduced_mesh%de_lat(buf_j  ) - &
               reduced_state%v(k,i  ,buf_j  ,move) * reduced_mesh%de_lat(buf_j  )   &
             ) / reduced_mesh%area_vtx(buf_j) + reduced_mesh%half_f(buf_j)          &
-          ) / reduced_state%m_vtx(k,i,buf_j,move)
+          ) / m_vtx
         end do
       end do
     end if
@@ -672,6 +672,10 @@ contains
       if (reduced_mesh%area_vtx(buf_j) == 0) return
       do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
         do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
+          m_vtx = (                                                                                                            &
+            (reduced_state%m(k,i,buf_j  ,move) + reduced_state%m(k,i+1,buf_j  ,move)) * reduced_mesh%area_subcell(2,buf_j  ) + &
+            (reduced_state%m(k,i,buf_j+1,move) + reduced_state%m(k,i+1,buf_j+1,move)) * reduced_mesh%area_subcell(1,buf_j+1)   &
+          ) / reduced_mesh%area_vtx(buf_j)
           reduced_state%pv(k,i,buf_j,move) = (                                     &
             (                                                                      &
               reduced_state%u(k,i  ,buf_j  ,move) * reduced_mesh%de_lon(buf_j  ) - &
@@ -679,7 +683,7 @@ contains
               reduced_state%v(k,i+1,buf_j  ,move) * reduced_mesh%de_lat(buf_j  ) - &
               reduced_state%v(k,i  ,buf_j  ,move) * reduced_mesh%de_lat(buf_j  )   &
             ) / reduced_mesh%area_vtx(buf_j) + reduced_mesh%half_f(buf_j)          &
-          ) / reduced_state%m_vtx(k,i,buf_j,move)
+          ) / m_vtx
         end do
       end do
     end if
@@ -748,48 +752,6 @@ contains
     end do
 
   end subroutine reduce_m_lat
-
-  subroutine reduce_m_vtx(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
-
-    integer, intent(in) :: j
-    integer, intent(in) :: buf_j
-    integer, intent(in) :: move
-    type(block_type), intent(in) :: block
-    type(mesh_type), intent(in) :: raw_mesh
-    type(state_type), intent(inout) :: raw_state
-    type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
-    type(reduced_state_type), intent(inout) :: reduced_state
-    real(r8), intent(in) :: dt
-
-    integer i, k
-
-    if (reduced_mesh%area_vtx(buf_j) == 0) return
-    do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
-      do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
-#ifdef V_POLE
-        reduced_state%m_vtx(k,i,buf_j,move) = (                                                                              &
-          (reduced_state%m(k,i,buf_j-1,move) + reduced_state%m(k,i+1,buf_j-1,move)) * reduced_mesh%area_subcell(2,buf_j-1) + &
-          (reduced_state%m(k,i,buf_j  ,move) + reduced_state%m(k,i+1,buf_j  ,move)) * reduced_mesh%area_subcell(1,buf_j  )   &
-        ) / reduced_mesh%area_vtx(buf_j)
-#else
-        reduced_state%m_vtx(k,i,buf_j,move) = (                                                                              &
-          (reduced_state%m(k,i,buf_j  ,move) + reduced_state%m(k,i+1,buf_j  ,move)) * reduced_mesh%area_subcell(2,buf_j  ) + &
-          (reduced_state%m(k,i,buf_j+1,move) + reduced_state%m(k,i+1,buf_j+1,move)) * reduced_mesh%area_subcell(1,buf_j+1)   &
-        ) / reduced_mesh%area_vtx(buf_j)
-#endif
-      end do
-    end do
-#ifdef V_POLE
-    if (raw_mesh%is_south_pole(j+buf_j)) then
-      call log_error('Handle pole m_vtx in reduce_m_vtx!')
-    end if
-    if (raw_mesh%is_north_pole(j+buf_j)) then
-      call log_error('Handle pole m_vtx in reduce_m_vtx!')
-    end if
-#endif
-
-  end subroutine reduce_m_vtx
 
   subroutine reduce_mf_lon_n(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
 
