@@ -29,6 +29,10 @@ module tend_mod
     ! Individual tendencies
     real(r8), allocatable, dimension(:,:,:) :: qhv
     real(r8), allocatable, dimension(:,:,:) :: qhu
+    real(r8), allocatable, dimension(:,:,:) :: fv
+    real(r8), allocatable, dimension(:,:,:) :: fu
+    real(r8), allocatable, dimension(:,:,:) :: vorv
+    real(r8), allocatable, dimension(:,:,:) :: voru
     real(r8), allocatable, dimension(:,:,:) :: dpedlon
     real(r8), allocatable, dimension(:,:,:) :: dkedlon
     real(r8), allocatable, dimension(:,:,:) :: dpedlat
@@ -67,6 +71,10 @@ contains
     call allocate_array(mesh, this%dphs    , full_lon=.true., full_lat=.true.                 )
     call allocate_array(mesh, this%qhv     , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%qhu     , full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%fv      , half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%fu      , full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%vorv    , half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%voru    , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%dpedlon , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%dkedlon , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%dpedlat , full_lon=.true., half_lat=.true., full_lev=.true.)
@@ -110,6 +118,10 @@ contains
     if (allocated(this%dphs    )) deallocate(this%dphs    )
     if (allocated(this%qhv     )) deallocate(this%qhv     )
     if (allocated(this%qhu     )) deallocate(this%qhu     )
+    if (allocated(this%fv      )) deallocate(this%fv      )
+    if (allocated(this%fu      )) deallocate(this%fu      )
+    if (allocated(this%vorv    )) deallocate(this%vorv    )
+    if (allocated(this%voru    )) deallocate(this%voru    )
     if (allocated(this%dpedlon )) deallocate(this%dpedlon )
     if (allocated(this%dpedlon )) deallocate(this%dkedlon )
     if (allocated(this%dkedlat )) deallocate(this%dpedlat )

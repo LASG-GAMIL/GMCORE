@@ -24,13 +24,15 @@ contains
 
     integer j, k
 
-    integer, parameter :: r = 2
+    integer r
 
     allocate(cdiv_full_lat(global_mesh%full_lat_ibeg:global_mesh%full_lat_iend,global_mesh%full_lev_ibeg:global_mesh%full_lev_iend))
     allocate(cdiv_half_lat(global_mesh%half_lat_ibeg:global_mesh%half_lat_iend,global_mesh%full_lev_ibeg:global_mesh%full_lev_iend))
 
     select case (div_damp_order)
     case (2)
+      r = 1
+
       do k = global_mesh%full_lev_ibeg, global_mesh%full_lev_iend
         do j = global_mesh%full_lat_ibeg_no_pole, global_mesh%full_lat_iend_no_pole
           cdiv_full_lat(j,k) = div_damp_coef2 * global_mesh%full_cos_lat(j)**r * &
@@ -45,6 +47,8 @@ contains
         end do
       end do
     case (4)
+      r = 2
+
       do k = global_mesh%full_lev_ibeg, global_mesh%full_lev_iend
         do j = global_mesh%full_lat_ibeg_no_pole, global_mesh%full_lat_iend_no_pole
           cdiv_full_lat(j,k) = div_damp_coef4 * global_mesh%full_cos_lat(j)**r * &

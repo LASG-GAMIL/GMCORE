@@ -113,6 +113,10 @@ module reduced_types_mod
   type reduced_tend_type
     real(r8), allocatable, dimension(:,:) :: qhv
     real(r8), allocatable, dimension(:,:) :: qhu
+    real(r8), allocatable, dimension(:,:) :: fv
+    real(r8), allocatable, dimension(:,:) :: fu
+    real(r8), allocatable, dimension(:,:) :: vorv
+    real(r8), allocatable, dimension(:,:) :: voru
     real(r8), allocatable, dimension(:,:) :: dmfdlon
     real(r8), allocatable, dimension(:,:) :: dpedlon
     real(r8), allocatable, dimension(:,:) :: dkedlon
@@ -173,6 +177,10 @@ contains
 
     if (allocated(this%qhv     )) deallocate(this%qhv     )
     if (allocated(this%qhu     )) deallocate(this%qhu     )
+    if (allocated(this%fv      )) deallocate(this%fv      )
+    if (allocated(this%fu      )) deallocate(this%fu      )
+    if (allocated(this%vorv    )) deallocate(this%vorv    )
+    if (allocated(this%voru    )) deallocate(this%voru    )
     if (allocated(this%dmfdlon )) deallocate(this%dmfdlon )
     if (allocated(this%dpedlon )) deallocate(this%dpedlon )
     if (allocated(this%dkedlon )) deallocate(this%dkedlon )

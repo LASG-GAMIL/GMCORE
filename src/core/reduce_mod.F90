@@ -38,6 +38,9 @@ module reduce_mod
   public reduce_init
   public reduce_run
   public reduce_append_array
+  public reduced_mesh_type
+  public reduced_tend_type
+  public reduced_state_type
 
   interface
     subroutine reduce_sub_interface(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
@@ -498,6 +501,7 @@ contains
         reduced_state%u(k,i,buf_j,move) = reduced_state%mf_lon_n(k,i,buf_j,move) / reduced_state%m_lon(k,i,buf_j,move)
       end do
     end do
+    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%u(:,:,buf_j,move), east_halo=.false.)
 
   end subroutine reduce_u
 
@@ -716,6 +720,7 @@ contains
         ) / reduced_mesh%area_lon(buf_j)
       end do
     end do
+    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%m_lon(:,:,buf_j,move), east_halo=.false.)
 
   end subroutine reduce_m_lon
 
@@ -750,6 +755,7 @@ contains
 #endif
       end do
     end do
+    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%m_lat(:,:,buf_j,move), west_halo=.false.)
 
   end subroutine reduce_m_lat
 
@@ -1341,6 +1347,8 @@ contains
     ks = reduced_mesh%full_lev_lb; ke = reduced_mesh%full_lev_ub
 
     allocate(reduced_tend%qhu     (is:ie,ks:ke))
+    allocate(reduced_tend%fu      (is:ie,ks:ke))
+    allocate(reduced_tend%voru    (is:ie,ks:ke))
     allocate(reduced_tend%dmfdlon (is:ie,ks:ke))
     allocate(reduced_tend%dptfdlon(is:ie,ks:ke))
 
@@ -1348,6 +1356,8 @@ contains
     ks = reduced_mesh%full_lev_lb; ke = reduced_mesh%full_lev_ub
 
     allocate(reduced_tend%qhv     (is:ie,ks:ke))
+    allocate(reduced_tend%fv      (is:ie,ks:ke))
+    allocate(reduced_tend%vorv    (is:ie,ks:ke))
     allocate(reduced_tend%dpedlon (is:ie,ks:ke))
     allocate(reduced_tend%dkedlon (is:ie,ks:ke))
     allocate(reduced_tend%dpdlon  (is:ie,ks:ke))
