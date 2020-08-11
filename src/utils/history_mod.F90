@@ -81,6 +81,7 @@ contains
       call fiona_add_dim('h0', 'ilev' , size=global_mesh%num_half_lev, add_var=.true., decomp=.false.)
       call fiona_add_var('h0', 't'    , long_name='temperature'                 , units='K'      , dim_names=cell_dims)
       call fiona_add_var('h0', 't850' , long_name='temperature on 850hPa'       , units='K'      , dim_names=cell_dims_2d)
+      call fiona_add_var('h0', 't700' , long_name='temperature on 700hPa'       , units='K'      , dim_names=cell_dims_2d)
       call fiona_add_var('h0', 'pt'   , long_name='potential temperature'       , units='K'      , dim_names=cell_dims)
       call fiona_add_var('h0', 'phs'  , long_name='surface hydrostatic pressure', units='Pa'     , dim_names=cell_dims_2d)
       call fiona_add_var('h0', 'ph'   , long_name='hydrostatic pressure'        , units='Pa'     , dim_names=cell_dims)
@@ -217,6 +218,7 @@ contains
       if (baroclinic) then
         call fiona_output('h0', 't'     , state%t     (is:ie,js:je,ks:ke), start=start, count=count)
         call fiona_output('h0', 't850'  , state%t850  (is:ie,js:je      ), start=start, count=count)
+        call fiona_output('h0', 't700'  , state%t700  (is:ie,js:je      ), start=start, count=count)
         call fiona_output('h0', 'pt'    , state%pt    (is:ie,js:je,ks:ke), start=start, count=count)
         call fiona_output('h0', 'phs'   , state%phs   (is:ie,js:je      ), start=start, count=count)
         call fiona_output('h0', 'ph'    , state%ph    (is:ie,js:je,ks:ke), start=start, count=count)

@@ -158,6 +158,7 @@ contains
       do iblk = 1, size(blocks)
         state => blocks(iblk)%state(itime)
         call interp_cell_to_isobaric_level(state%mesh, state%ph, state%t, 85000.0_r8, state%t850, logp=.true.)
+        call interp_cell_to_isobaric_level(state%mesh, state%ph, state%t, 70000.0_r8, state%t700, logp=.true.)
       end do
       call history_write_state(blocks, itime)
       call history_write_debug(blocks, itime)
