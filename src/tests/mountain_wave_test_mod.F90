@@ -1,4 +1,4 @@
-module mountain_induced_wave_test_mod
+module mountain_wave_test_mod
 
   use flogger
   use const_mod
@@ -11,21 +11,21 @@ module mountain_induced_wave_test_mod
 
   private
 
-  public mountain_induced_wave_test_set_initial_condition
+  public mountain_wave_test_set_initial_condition
 
-  real(r8), parameter :: T0   = 288.d0 ! K
-  real(r8), parameter :: h0   = 2000.d0 ! m
+  real(r8), parameter :: T0   = 288.d0      ! K
+  real(r8), parameter :: h0   = 2000.d0     ! m
   real(r8), parameter :: d    = 1.5e6 
-  real(r8), parameter :: u0   = 20.d0 ! m s-1
+  real(r8), parameter :: u0   = 20.d0       ! m s-1
   real(r8), parameter :: lonc = pi05
   real(r8), parameter :: latc = pi / 6.0
   real(r8), parameter :: kappa= 2.d0 / 7.d0
-  real(r8), parameter :: psp  = 93000.d0 !Pa
-  real(r8), parameter :: N    = 0.0182 !s -1
+  real(r8), parameter :: psp  = 93000.d0    ! Pa
+  real(r8), parameter :: N    = 0.0182      ! s-1
 
 contains
 
-  subroutine mountain_induced_wave_test_set_initial_condition(block)
+  subroutine mountain_wave_test_set_initial_condition(block)
 
     type(block_type), intent(inout), target :: block
     real(r8) cos_lat, sin_lat, full_lon, r
@@ -49,8 +49,7 @@ contains
     call fill_halo(block, state%u, full_lon=.false., full_lat=.true., full_lev=.true.)
 
     state%v = 0.0
-    call fill_halo(block, state%v, full_lon=.true., full_lat=.false., full_lev=.true.)
-    
+
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       sin_lat = mesh%full_sin_lat(j)
       cos_lat = mesh%full_cos_lat(j)
@@ -66,8 +65,8 @@ contains
       sin_lat = mesh%full_sin_lat(j)
       cos_lat = mesh%full_cos_lat(j)
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        state%phs(i,j) = psp * exp(-0.5_r8 * radius * N**2 * u0 / g**2 / kappa * (u0 / radius + 2.d0 * omega) * &
-                        (sin_lat**2 - 1.d0) - N**2 / g**2 / kappa * static%gzs(i,j))
+        state%phs(i,j) = psp * exp(-0.5_r8 * radius * N**2 * u0 / g**2 / kappa * (u0 / radius + 2.0_r8 * omega) * &
+                        (sin_lat**2 - 1.0_r8) - N**2 / g**2 / kappa * static%gzs(i,j))
       end do
     end do
     call fill_halo(block, state%phs, full_lon=.true., full_lat=.true.)
@@ -101,6 +100,6 @@ contains
     call fill_halo(block, state%t, full_lon=.true., full_lat=.true., full_lev=.true.)
     call fill_halo(block, state%pt, full_lon=.true., full_lat=.true., full_lev=.true.)
   
-  end subroutine mountain_induced_wave_test_set_initial_condition
+  end subroutine mountain_wave_test_set_initial_condition
   
-end module mountain_induced_wave_test_mod
+end module mountain_wave_test_mod
