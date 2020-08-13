@@ -12,6 +12,13 @@ Check barotropic test results [here](https://github.com/gmcore-project/gmcore/wi
 - [ ] Nesting at middle and low latitudes (~2020.09).
 - [ ] Acceleration using GPU (~?).
 - [ ] Baroclinic version (~2020.10).
+  - [X] Hydrostatic baroclinic version (2020.08)
+    - [X] Rossby-Haurwitz wave test
+    - [X] Mountain induced wave test
+    - [X] Steady state test
+    - [X] Baroclinic wave test
+    - [ ] Held-Suarez test 
+  - [ ] Nonhydrostatic baroclinic version (~2020.10)
 - [ ] Advection module (~2021).
 - [ ] Incorporation with physics parameterisation (~?).
 - [ ] Data assimilation (~?).
@@ -24,7 +31,7 @@ $ git clone https://github.com/LASG-GAMIL/GMCORE gmcore
 ```
 There is a shell script `run_tests.sh`, which will clone the submodules, compile the model and run several tests, but it assumes MPI to be installed:
 ```
-$ ./run_tests.sh <work_directory>
+$ ./run_tests.sh <work_directory> <process_number>
 ```
 It will take some time to run the tests. When the tests are finished, cd to `<work_directory>`, and use some visualization tools, such as Panoply, to view the results.
 
