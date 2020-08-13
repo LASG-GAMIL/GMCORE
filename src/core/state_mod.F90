@@ -140,6 +140,7 @@ contains
     call allocate_array(mesh, this%ak           , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%div          , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%div2         , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%vor          , half_lon=.true., half_lat=.true., full_lev=.true.)
 
   end subroutine state_init
 
@@ -196,6 +197,7 @@ contains
     if (allocated(this%ak           )) deallocate(this%ak           )
     if (allocated(this%div          )) deallocate(this%div          )
     if (allocated(this%div2         )) deallocate(this%div2         )
+    if (allocated(this%vor          )) deallocate(this%vor          )
 
   end subroutine state_clear
 

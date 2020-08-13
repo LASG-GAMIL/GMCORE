@@ -90,6 +90,7 @@ contains
       call fiona_add_var('h0', 'z'    , long_name='height'                      , units='m'      , dim_names=cell_dims)
       call fiona_add_var('h0', 'zs'   , long_name='surface height'              , units='m'      , dim_names=cell_dims_2d)
       call fiona_add_var('h0', 'pv'   , long_name='potential vorticity'         , units='m-1 s-1', dim_names=vtx_dims)
+      call fiona_add_var('h0', 'vor'  , long_name='relative vorticity'          , units='s-1'    , dim_names=vtx_dims)
       call fiona_add_var('h0', 'tm'   , long_name='total mass'                  , units='m'      , dim_names=['time'])
       call fiona_add_var('h0', 'te'   , long_name='total energy'                , units='m4 s-4' , dim_names=['time'], data_type='real(8)')
       call fiona_add_var('h0', 'tpe'  , long_name='total potential enstrophy'   , units='m2 s-5' , dim_names=['time'], data_type='real(8)')
@@ -100,6 +101,7 @@ contains
       call fiona_add_var('h0', 'z'    , long_name='height'                      , units='m'      , dim_names=cell_dims_2d)
       call fiona_add_var('h0', 'zs'   , long_name='surface height'              , units='m'      , dim_names=cell_dims_2d)
       call fiona_add_var('h0', 'pv'   , long_name='potential vorticity'         , units='m-1 s-1', dim_names=vtx_dims_2d)
+      call fiona_add_var('h0', 'vor'  , long_name='relative vorticity'          , units='s-1'    , dim_names=vtx_dims_2d)
       call fiona_add_var('h0', 'tm'   , long_name='total mass'                  , units='m'      , dim_names=['time'])
       call fiona_add_var('h0', 'te'   , long_name='total energy'                , units='m4 s-4' , dim_names=['time'], data_type='real(8)')
       call fiona_add_var('h0', 'tpe'  , long_name='total potential enstrophy'   , units='m2 s-5' , dim_names=['time'], data_type='real(8)')
@@ -247,6 +249,7 @@ contains
       count = [mesh%num_half_lon,mesh%num_half_lat,mesh%num_full_lev]
 
       call fiona_output('h0', 'pv' , state %pv (is:ie,js:je,ks:ke), start=start, count=count)
+      call fiona_output('h0', 'vor', state %vor(is:ie,js:je,ks:ke), start=start, count=count)
 
       call fiona_output('h0', 'tm' , state %tm)
       call fiona_output('h0', 'te' , state %te)

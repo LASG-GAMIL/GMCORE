@@ -9,6 +9,7 @@ program gmcore_driver
   use steady_state_test_mod
   use rossby_haurwitz_wave_3d_test_mod
   use mountain_wave_test_mod
+  use baroclinic_wave_test_mod
 
   implicit none
 
@@ -38,6 +39,8 @@ program gmcore_driver
     set_initial_condition => rossby_haurwitz_wave_3d_test_set_initial_condition
   case ('mountain_wave')
     set_initial_condition => mountain_wave_test_set_initial_condition
+  case ('baroclinic_wave')
+    set_initial_condition => baroclinic_wave_test_set_initial_condition
   case default
     call log_error('Unknown test case ' // trim(test_case) // '!')
   end select
