@@ -2,7 +2,11 @@ module const_mod
 
   use, intrinsic :: ieee_arithmetic
 
+#ifdef REAL_KIND
+  integer, parameter :: r8 = REAL_KIND
+#else
   integer, parameter :: r8 = 8
+#endif
 
   real(r8), parameter :: pi     = atan(1.0_r8) * 4.0_r8
   real(r8), parameter :: pi2    = pi * 2

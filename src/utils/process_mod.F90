@@ -347,18 +347,29 @@ contains
 
   subroutine process_create_blocks()
 
-    integer ingb
+    integer ingb, dtype
 
     if (.not. allocated(proc%blocks)) allocate(proc%blocks(1))
 
     call proc%blocks(1)%init(proc%id, global_mesh%lon_halo_width, global_mesh%lat_halo_width, &
                              proc%lon_ibeg, proc%lon_iend, proc%lat_ibeg, proc%lat_iend)
 
+    select case (r8)
+    case (4)
+      dtype = MPI_REAL
+    case (8)
+      dtype = MPI_DOUBLE
+    case (16)
+      dtype = MPI_REAL16
+    case default
+      call log_error('Unsupported parameter r8!')
+    end select
+
     ! Setup halos (only normal halos for the time being).
     allocate(proc%blocks(1)%halo(size(proc%ngb)))
     do ingb = 1, size(proc%ngb)
-      call proc%blocks(1)%halo(ingb)%init_normal(proc%blocks(1)%mesh, orient=proc%ngb(ingb)%orient, &
-                                                 ngb_proc_id=proc%ngb(ingb)%id)
+      call proc%blocks(1)%halo(ingb)%init_normal(proc%blocks(1)%mesh, proc%ngb(ingb)%orient, &
+                                                 dtype, ngb_proc_id=proc%ngb(ingb)%id)
     end do
 
   end subroutine process_create_blocks

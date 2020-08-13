@@ -75,26 +75,29 @@ contains
 
   end subroutine operators_prepare_1
 
-  subroutine operators_prepare_2(block, state, dt)
+  subroutine operators_prepare_2(block, state, dt, pass)
 
     type(block_type), intent(in) :: block
     type(state_type), intent(inout) :: state
     real(r8), intent(in) :: dt
+    integer, intent(in) :: pass
 
     call calc_ph_lev_ph           (block, state)
     call calc_m                   (block, state)
     call calc_ak                  (block, state)
     call calc_t                   (block, state)
     call calc_m_lon_m_lat         (block, state)
-    call calc_m_vtx               (block, state)
     call calc_mf_lon_n_mf_lat_n   (block, state)
     call calc_mf_lon_t_mf_lat_t   (block, state)
-    call calc_pv_vtx              (block, state)
-    call calc_pv_edge             (block, state, dt)
     call calc_ke_cell             (block, state)
     call calc_gz_lev_gz           (block, state)
     call calc_pt_lon_pt_lat_pt_lev(block, state)
-    call calc_div                 (block, state)
+    if (pass == all_pass .or. pass == slow_pass) then
+      call calc_m_vtx             (block, state)
+      call calc_pv_vtx            (block, state)
+      call calc_pv_edge           (block, state, dt)
+      call calc_div               (block, state)
+    end if
 
   end subroutine operators_prepare_2
 

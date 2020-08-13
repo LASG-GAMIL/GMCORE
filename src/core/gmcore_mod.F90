@@ -45,9 +45,6 @@ module gmcore_mod
   procedure(integrator_interface), pointer :: integrator
   procedure(splitter_interface), pointer :: splitter
 
-  real(r8) :: shrink_ratio = 1
-  real(r8) :: shrink_cound_down = 0
-
 contains
 
   subroutine gmcore_init(namelist_path)
@@ -283,7 +280,7 @@ contains
     call wait_halo(state%async(async_u))
     call wait_halo(state%async(async_v))
 
-    call operators_prepare(block, state, dt)
+    call operators_prepare(block, state, dt, pass)
     call reduce_run(block, state, dt, pass)
 
     mesh => state%mesh

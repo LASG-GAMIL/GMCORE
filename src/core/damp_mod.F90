@@ -77,7 +77,7 @@ contains
 
     type(block_type), intent(in) :: block
     integer, intent(in) :: order
-    real(r8), intent(in) :: dt
+    real(8), intent(in) :: dt
     real(r8), intent(in) :: dx
     integer, intent(in) :: lb
     integer, intent(in) :: ub
@@ -151,7 +151,7 @@ contains
 
     type(block_type), intent(in), target :: block
     integer, intent(in) :: order
-    real(r8), intent(in) :: dt
+    real(8), intent(in) :: dt
     real(r8), intent(inout) :: f(block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
                                  block%mesh%half_lat_lb:block%mesh%half_lat_ub)
 
@@ -203,7 +203,7 @@ contains
     type(block_type), intent(in) :: block
     type(state_type), intent(in) :: old_state
     type(state_type), intent(inout) :: new_state
-    real(r8), intent(in) :: dt
+    real(8), intent(in) :: dt
 
     type(mesh_type), pointer :: mesh
     integer i, j, k

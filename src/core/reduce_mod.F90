@@ -388,6 +388,7 @@ contains
         call apply_reduce(reduce_args(mf_lat_n   , reduce_mf_lat_n   ))
         call apply_reduce(reduce_args(mf_lon_t   , reduce_mf_lon_t   ))
         call apply_reduce(reduce_args(mf_lat_t   , reduce_mf_lat_t   ))
+      if (pass == all_pass .or. pass == slow_pass) then
         call apply_reduce(reduce_args(m_lon      , reduce_m_lon      ))
         call apply_reduce(reduce_args(m_lat      , reduce_m_lat      ))
         call apply_reduce(reduce_args(u          , reduce_u          ))
@@ -399,6 +400,7 @@ contains
         call apply_reduce(reduce_args(dpv_lon_n  , reduce_dpv_lon_n  ))
         call apply_reduce(reduce_args(pv_lon     , reduce_pv_lon_apvm))
         call apply_reduce(reduce_args(pv_lat     , reduce_pv_lat_apvm))
+      end if
         call apply_reduce(reduce_args(ke         , reduce_ke         ))
         call apply_reduce(reduce_args(ptf_lon    , reduce_ptf_lon    ))
         call apply_reduce(reduce_args(t_lnpop_lon, reduce_t_lnpop_lon))

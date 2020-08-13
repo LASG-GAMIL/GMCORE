@@ -116,7 +116,7 @@ contains
 
   subroutine time_advance(dt_in_seconds)
 
-    real(r8), intent(in), optional :: dt_in_seconds
+    real(8), intent(in), optional :: dt_in_seconds
 
     type(hash_table_iterator_type) iter
 
@@ -149,7 +149,7 @@ contains
 
   subroutine time_fast_forward(time_value, time_units)
 
-    real(r8), intent(in) :: time_value
+    real(8), intent(in) :: time_value
     character(*), intent(in) :: time_units
 
     type(timedelta_type) skipped_time
@@ -195,17 +195,17 @@ contains
   subroutine time_add_alert(name, months, days, hours, minutes, seconds)
 
     character(*), intent(in)           :: name
-    real(r8)    , intent(in), optional :: months
-    real(r8)    , intent(in), optional :: days
-    real(r8)    , intent(in), optional :: hours
-    real(r8)    , intent(in), optional :: minutes
-    real(r8)    , intent(in), optional :: seconds
+    real(8)     , intent(in), optional :: months
+    real(8)     , intent(in), optional :: days
+    real(8)     , intent(in), optional :: hours
+    real(8)     , intent(in), optional :: minutes
+    real(8)     , intent(in), optional :: seconds
 
-    real(r8) months_
-    real(r8) days_
-    real(r8) hours_
-    real(r8) minutes_
-    real(r8) seconds_
+    real(8) months_
+    real(8) days_
+    real(8) hours_
+    real(8) minutes_
+    real(8) seconds_
     type(alert_type) alert
 
     if (present(months)) then

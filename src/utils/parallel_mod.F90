@@ -90,8 +90,8 @@ contains
       i2 = i1 + halo_width - 1
       i3 = 1
       i4 = i3 + halo_width - 1
-      call MPI_SENDRECV(array(i1:i2), halo_width, MPI_DOUBLE, block%halo(east)%proc_id, 1, &
-                        array(i3:i4), halo_width, MPI_DOUBLE, block%halo(west)%proc_id, 1, &
+      call MPI_SENDRECV(array(i1:i2), halo_width, block%halo(east)%dtype, block%halo(east)%proc_id, 1, &
+                        array(i3:i4), halo_width, block%halo(west)%dtype, block%halo(west)%proc_id, 1, &
                         proc%comm, status, ierr)
     end if
     if (merge(east_halo, .true., present(east_halo))) then
@@ -106,8 +106,8 @@ contains
       i2 = i1 + halo_width - 1
       i3 = size(array) - halo_width + 1
       i4 = i3 + halo_width - 1
-      call MPI_SENDRECV(array(i1:i2), halo_width, MPI_DOUBLE, block%halo(west)%proc_id, 2, &
-                        array(i3:i4), halo_width, MPI_DOUBLE, block%halo(east)%proc_id, 2, &
+      call MPI_SENDRECV(array(i1:i2), halo_width, block%halo(west)%dtype, block%halo(west)%proc_id, 2, &
+                        array(i3:i4), halo_width, block%halo(east)%dtype, block%halo(east)%proc_id, 2, &
                         proc%comm, status, ierr)
     end if
 
@@ -137,8 +137,8 @@ contains
       i2 = i1 + halo_width - 1
       i3 = 1
       i4 = i3 + halo_width - 1
-      call MPI_ISEND(array(i1:i2), halo_width, MPI_DOUBLE, block%halo(east)%proc_id, 1, proc%comm, async%west_send_req, ierr)
-      call MPI_IRECV(array(i3:i4), halo_width, MPI_DOUBLE, block%halo(west)%proc_id, 1, proc%comm, async%west_recv_req, ierr)
+      call MPI_ISEND(array(i1:i2), halo_width, block%halo(east)%dtype, block%halo(east)%proc_id, 1, proc%comm, async%west_send_req, ierr)
+      call MPI_IRECV(array(i3:i4), halo_width, block%halo(west)%dtype, block%halo(west)%proc_id, 1, proc%comm, async%west_recv_req, ierr)
     end if
     if (merge(east_halo, .true., present(east_halo))) then
       !   west halo |                                   | east_halo
@@ -152,8 +152,8 @@ contains
       i2 = i1 + halo_width - 1
       i3 = size(array) - halo_width + 1
       i4 = i3 + halo_width - 1
-      call MPI_ISEND(array(i1:i2), halo_width, MPI_DOUBLE, block%halo(west)%proc_id, 2, proc%comm, async%east_send_req, ierr)
-      call MPI_IRECV(array(i3:i4), halo_width, MPI_DOUBLE, block%halo(east)%proc_id, 2, proc%comm, async%east_recv_req, ierr)
+      call MPI_ISEND(array(i1:i2), halo_width, block%halo(west)%dtype, block%halo(west)%proc_id, 2, proc%comm, async%east_send_req, ierr)
+      call MPI_IRECV(array(i3:i4), halo_width, block%halo(east)%dtype, block%halo(east)%proc_id, 2, proc%comm, async%east_recv_req, ierr)
     end if
 
   end subroutine fill_zonal_halo_1d_r8_async
@@ -184,8 +184,8 @@ contains
       i2 = i1 + halo_width - 1
       i3 = 1
       i4 = i3 + halo_width - 1
-      call MPI_SENDRECV(array(:,i1:i2), halo_width * nz, MPI_DOUBLE, block%halo(east)%proc_id, 1, &
-                        array(:,i3:i4), halo_width * nz, MPI_DOUBLE, block%halo(west)%proc_id, 1, &
+      call MPI_SENDRECV(array(:,i1:i2), halo_width * nz, block%halo(east)%dtype, block%halo(east)%proc_id, 1, &
+                        array(:,i3:i4), halo_width * nz, block%halo(west)%dtype, block%halo(west)%proc_id, 1, &
                         proc%comm, status, ierr)
     end if
     if (merge(east_halo, .true., present(east_halo))) then
@@ -200,8 +200,8 @@ contains
       i2 = i1 + halo_width - 1
       i3 = nx - halo_width + 1
       i4 = i3 + halo_width - 1
-      call MPI_SENDRECV(array(:,i1:i2), halo_width * nz, MPI_DOUBLE, block%halo(west)%proc_id, 2, &
-                        array(:,i3:i4), halo_width * nz, MPI_DOUBLE, block%halo(east)%proc_id, 2, &
+      call MPI_SENDRECV(array(:,i1:i2), halo_width * nz, block%halo(west)%dtype, block%halo(west)%proc_id, 2, &
+                        array(:,i3:i4), halo_width * nz, block%halo(east)%dtype, block%halo(east)%proc_id, 2, &
                         proc%comm, status, ierr)
     end if
 
@@ -234,8 +234,8 @@ contains
       i2 = i1 + halo_width - 1
       i3 = 1
       i4 = i3 + halo_width - 1
-      call MPI_ISEND(array(:,i1:i2), halo_width * nz, MPI_DOUBLE, block%halo(east)%proc_id, 1, proc%comm, async%west_send_req, ierr)
-      call MPI_IRECV(array(:,i3:i4), halo_width * nz, MPI_DOUBLE, block%halo(west)%proc_id, 1, proc%comm, async%west_recv_req, ierr)
+      call MPI_ISEND(array(:,i1:i2), halo_width * nz, block%halo(east)%dtype, block%halo(east)%proc_id, 1, proc%comm, async%west_send_req, ierr)
+      call MPI_IRECV(array(:,i3:i4), halo_width * nz, block%halo(west)%dtype, block%halo(west)%proc_id, 1, proc%comm, async%west_recv_req, ierr)
     end if
     if (merge(east_halo, .true., present(east_halo))) then
       !   west halo |                                   | east_halo
@@ -249,8 +249,8 @@ contains
       i2 = i1 + halo_width - 1
       i3 = nx - halo_width + 1
       i4 = i3 + halo_width - 1
-      call MPI_ISEND(array(:,i1:i2), halo_width * nz, MPI_DOUBLE, block%halo(west)%proc_id, 2, proc%comm, async%east_send_req, ierr)
-      call MPI_IRECV(array(:,i3:i4), halo_width * nz, MPI_DOUBLE, block%halo(east)%proc_id, 2, proc%comm, async%east_recv_req, ierr)
+      call MPI_ISEND(array(:,i1:i2), halo_width * nz, block%halo(west)%dtype, block%halo(west)%proc_id, 2, proc%comm, async%east_send_req, ierr)
+      call MPI_IRECV(array(:,i3:i4), halo_width * nz, block%halo(east)%dtype, block%halo(east)%proc_id, 2, proc%comm, async%east_recv_req, ierr)
     end if
 
   end subroutine fill_zonal_halo_2d_r8_async
@@ -522,8 +522,8 @@ contains
       i2 = i1 + block%mesh%lon_halo_width - 1
       i3 =  1 + block%mesh%lon_halo_width
       i4 = i3 + block%mesh%lon_halo_width - 1
-      call MPI_SENDRECV(array(i1:i2), block%mesh%lon_halo_width, MPI_DOUBLE, block%halo(east)%proc_id, 19, &
-                        buffer      , block%mesh%lon_halo_width, MPI_DOUBLE, block%halo(west)%proc_id, 19, &
+      call MPI_SENDRECV(array(i1:i2), block%mesh%lon_halo_width, block%halo(east)%dtype, block%halo(east)%proc_id, 19, &
+                        buffer      , block%mesh%lon_halo_width, block%halo(west)%dtype, block%halo(west)%proc_id, 19, &
                         proc%comm, status, ierr)
       array(i3:i4) = array(i3:i4) + buffer
     end if

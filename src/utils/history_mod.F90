@@ -33,7 +33,7 @@ contains
     character(4) lat_dims(4), lat_dims_2d(3)
     character(4) vtx_dims(4), vtx_dims_2d(3)
     character(4) cell_lev_dims(4), lon_lev_dims(4), lat_lev_dims(4), lev_dims(4)
-    real(r8) seconds
+    real(8) seconds
 
     if (history_interval(1) == 'N/A') call log_error('Parameter history_interval is not set!')
     if (case_name == 'N/A') call log_error('Parameter case_name is not set!')

@@ -21,6 +21,7 @@ module halo_mod
     integer :: proc_id = MPI_PROC_NULL
     integer :: iblk = 0
     integer :: orient = 0
+    integer :: dtype = 0
     integer :: type = 0
     ! (1,1): full_lon,full_lat (1,2): full_lon,half_lat
     ! (2,1): half_lon,full_lat (2,2): half_lon,half_lat
@@ -40,11 +41,12 @@ module halo_mod
 
 contains
 
-  subroutine halo_init_normal(this, mesh, orient, ngb_proc_id, iblk)
+  subroutine halo_init_normal(this, mesh, orient, dtype, ngb_proc_id, iblk)
 
     class(halo_type), intent(out) :: this
     type(mesh_type), intent(in) :: mesh
     integer, intent(in) :: orient
+    integer, intent(in) :: dtype
     integer, intent(in), optional :: ngb_proc_id
     integer, intent(in), optional :: iblk
 
@@ -61,6 +63,8 @@ contains
     else if (present(iblk)) then
       call log_error('Handle internal halo!', __FILE__, __LINE__)
     end if
+
+    this%dtype = dtype
 
     ! NOTE: MPI array index starts from zero.
 
@@ -191,11 +195,11 @@ contains
       do j = 1, 2
         do i = 1, 2
           call MPI_TYPE_CREATE_SUBARRAY(3, array_size(:,i,j), send_subarray_size(:,i,j), &
-                                        send_subarray_start(:,i,j), MPI_ORDER_FORTRAN, MPI_DOUBLE, &
+                                        send_subarray_start(:,i,j), MPI_ORDER_FORTRAN, dtype, &
                                         this%send_type_3d(i,j,k), ierr)
           call MPI_TYPE_COMMIT(this%send_type_3d(i,j,k), ierr)
           call MPI_TYPE_CREATE_SUBARRAY(3, array_size(:,i,j), recv_subarray_size(:,i,j), &
-                                        recv_subarray_start(:,i,j), MPI_ORDER_FORTRAN, MPI_DOUBLE, &
+                                        recv_subarray_start(:,i,j), MPI_ORDER_FORTRAN, dtype, &
                                         this%recv_type_3d(i,j,k), ierr)
           call MPI_TYPE_COMMIT(this%recv_type_3d(i,j,k), ierr)
         end do
@@ -205,11 +209,11 @@ contains
     do j = 1, 2
       do i = 1, 2
         call MPI_TYPE_CREATE_SUBARRAY(2, array_size(1:2,i,j), send_subarray_size(1:2,i,j), &
-                                      send_subarray_start(1:2,i,j), MPI_ORDER_FORTRAN, MPI_DOUBLE, &
+                                      send_subarray_start(1:2,i,j), MPI_ORDER_FORTRAN, dtype, &
                                       this%send_type_2d(i,j), ierr)
         call MPI_TYPE_COMMIT(this%send_type_2d(i,j), ierr)
         call MPI_TYPE_CREATE_SUBARRAY(2, array_size(1:2,i,j), recv_subarray_size(1:2,i,j), &
-                                      recv_subarray_start(1:2,i,j), MPI_ORDER_FORTRAN, MPI_DOUBLE, &
+                                      recv_subarray_start(1:2,i,j), MPI_ORDER_FORTRAN, dtype, &
                                       this%recv_type_2d(i,j), ierr)
         call MPI_TYPE_COMMIT(this%recv_type_2d(i,j), ierr)
       end do

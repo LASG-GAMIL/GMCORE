@@ -24,7 +24,7 @@ contains
   subroutine restart_init()
 
     character(10) time_value, time_units
-    real(r8) seconds
+    real(8) seconds
 
     if (restart_interval == 'N/A') then
       if (is_root_proc()) call log_warning('Parameter restart_interval is not set, so no restart file outputted.')
@@ -152,7 +152,7 @@ contains
     type(datetime_type) time
     integer iblk, time_step, is, ie, js, je, ks, ke
     integer start(3), count(3)
-    real(r8) time_value
+    real(8) time_value
     character(30) time_units
 
     if (restart_file == 'N/A') then
