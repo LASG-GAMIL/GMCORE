@@ -1,0 +1,25 @@
+&gmcore_control
+num_lon = 180
+num_lat = 90
+num_lev = 26
+num_proc_lon = 1
+num_proc_lat = 30
+test_case = 'baroclinic_wave'
+run_days = 10
+time_scheme = 'pc2'
+dt_in_seconds = 100
+!split_scheme = 'csp2'
+!fast_cycles = 6
+pv_scheme = 3
+case_name = 'bw.01.180x90.l26'
+history_interval = '6 hours'
+print_interval = '1 hours'
+reduce_factors = 6, 6, 4, 2
+damp_orders    = 4, 6, 6, 6
+use_div_damp = .true.
+div_damp_order = 2
+/
+
+&hybrid_coord
+template = 'test_l26'
+/
