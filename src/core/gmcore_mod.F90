@@ -417,36 +417,26 @@ contains
       end if
     case (slow_pass)
       if (baroclinic .and. hydrostatic) then
-        call calc_voru_vorv        (block, state, tend, dt)
-        call calc_dkedlon_dkedlat  (block, state, tend, dt)
-        call calc_dptfdlon_dptfdlat(block, state, tend, dt)
+        call calc_qhu_qhv          (block, state, tend, dt)
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              tend%du(i,j,k) =   tend%vorv(i,j,k) - tend%dkedlon(i,j,k)
+              tend%du(i,j,k) =   tend%qhv(i,j,k)
             end do
           end do
 
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              tend%dv(i,j,k) = - tend%voru(i,j,k) - tend%dkedlat(i,j,k)
-            end do
-          end do
-
-          do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              tend%dpt(i,j,k) = - tend%dptfdlon(i,j,k) - tend%dptfdlat(i,j,k)
+              tend%dv(i,j,k) = - tend%qhu(i,j,k)
             end do
           end do
         end do
 
         tend%updated_du   = .true.
         tend%updated_dv   = .true.
-        tend%copy_phs     = .true.
-        tend%updated_dpt  = .true.
       else
-        call calc_qhu_qhv(block, state, tend, dt)
+        call calc_qhu_qhv          (block, state, tend, dt)
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -473,26 +463,27 @@ contains
         call calc_wedphdlev        (block, state, tend, dt)
         call calc_wedudlev_wedvdlev(block, state, tend, dt)
         call calc_dptfdlev         (block, state, tend, dt)
+        call calc_dptfdlon_dptfdlat(block, state, tend, dt)
         call calc_dpedlon_dpedlat  (block, state, tend, dt)
+        call calc_dkedlon_dkedlat  (block, state, tend, dt)
         call calc_dpdlon_dpdlat    (block, state, tend, dt)
-        call calc_fu_fv            (block, state, tend, dt)
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              tend%du(i,j,k) =   tend%fv(i,j,k) - tend%wedudlev(i,j,k) - tend%dpedlon(i,j,k) - tend%dpdlon(i,j,k)
+              tend%du(i,j,k) = - tend%wedudlev(i,j,k) - tend%dkedlon(i,j,k) - tend%dpedlon(i,j,k) - tend%dpdlon(i,j,k)
             end do
           end do
 
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              tend%dv(i,j,k) = - tend%fu(i,j,k) - tend%wedvdlev(i,j,k) - tend%dpedlat(i,j,k) - tend%dpdlat(i,j,k)
+              tend%dv(i,j,k) = - tend%wedvdlev(i,j,k) - tend%dkedlat(i,j,k) - tend%dpedlat(i,j,k) - tend%dpdlat(i,j,k)
             end do
           end do
 
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              tend%dpt(i,j,k) = - tend%dptfdlev(i,j,k)
+              tend%dpt(i,j,k) = - tend%dptfdlon(i,j,k) - tend%dptfdlat(i,j,k) - tend%dptfdlev(i,j,k)
             end do
           end do
         end do
@@ -588,7 +579,7 @@ contains
     integer, intent(in) :: pass
 
     call space_operators(block, block%state(old), block%tend(old), dt, pass)
-    call update_state(dt, block, block%tend(old), block%state(old), block%state(new))
+    call update_state(dt, block, block%tend(old), block%state(old), block%state(new), pass)
 
   end subroutine euler_debug
 
@@ -602,15 +593,15 @@ contains
 
     ! Do first predict step.
     call space_operators(block, block%state(old), block%tend(old), 0.5_r8 * dt, pass)
-    call update_state(0.5_r8 * dt, block, block%tend(old), block%state(old), block%state(new))
+    call update_state(0.5_r8 * dt, block, block%tend(old), block%state(old), block%state(new), pass)
 
     ! Do second predict step.
     call space_operators(block, block%state(new), block%tend(old), 0.5_r8 * dt, pass)
-    call update_state(0.5_r8 * dt, block, block%tend(old), block%state(old), block%state(new))
+    call update_state(0.5_r8 * dt, block, block%tend(old), block%state(old), block%state(new), pass)
 
     ! Do correct step.
     call space_operators(block, block%state(new), block%tend(new),          dt, pass)
-    call update_state(         dt, block, block%tend(new), block%state(old), block%state(new))
+    call update_state(         dt, block, block%tend(new), block%state(old), block%state(new), pass)
 
   end subroutine predict_correct
 
@@ -623,19 +614,19 @@ contains
     integer, intent(in) :: pass
 
     call space_operators(block, block%state(old), block%tend(old), 0.5_r8 * dt, pass + forward_pass)
-    call update_state(0.5_r8 * dt, block, block%tend(old), block%state(old), block%state(new)) ! Update phs, pt, du, dv
+    call update_state(0.5_r8 * dt, block, block%tend(old), block%state(old), block%state(new), pass) ! Update phs, pt, du, dv
     call space_operators(block, block%state(new), block%tend(old), 0.5_r8 * dt, pass + backward_pass)
-    call update_state(0.5_r8 * dt, block, block%tend(old), block%state(old), block%state(new)) ! Update u, v
+    call update_state(0.5_r8 * dt, block, block%tend(old), block%state(old), block%state(new), pass) ! Update u, v
 
     call space_operators(block, block%state(new), block%tend(old), 0.5_r8 * dt, pass + forward_pass)
-    call update_state(0.5_r8 * dt, block, block%tend(old), block%state(old), block%state(new)) ! Update phs, pt, du, dv
+    call update_state(0.5_r8 * dt, block, block%tend(old), block%state(old), block%state(new), pass) ! Update phs, pt, du, dv
     call space_operators(block, block%state(new), block%tend(old), 0.5_r8 * dt, pass + backward_pass)
-    call update_state(0.5_r8 * dt, block, block%tend(old), block%state(old), block%state(new)) ! Update u, v
+    call update_state(0.5_r8 * dt, block, block%tend(old), block%state(old), block%state(new), pass) ! Update u, v
 
     call space_operators(block, block%state(new), block%tend(new),          dt, pass + forward_pass)
-    call update_state(         dt, block, block%tend(new), block%state(old), block%state(new)) ! Update phs, pt, du, dv
+    call update_state(         dt, block, block%tend(new), block%state(old), block%state(new), pass) ! Update phs, pt, du, dv
     call space_operators(block, block%state(new), block%tend(new),          dt, pass + backward_pass)
-    call update_state(         dt, block, block%tend(new), block%state(old), block%state(new)) ! Update u, v
+    call update_state(         dt, block, block%tend(new), block%state(old), block%state(new), pass) ! Update u, v
 
   end subroutine predict_correct_with_forward_backward
 
@@ -654,11 +645,11 @@ contains
     s3 = new
 
     call space_operators(block, block%state(old), block%tend(s1), 0.5_r8 * dt, pass)
-    call update_state(0.5_r8 * dt, block, block%tend(s1), block%state(old), block%state(s1))
+    call update_state(0.5_r8 * dt, block, block%tend(s1), block%state(old), block%state(s1), pass)
 
     call space_operators(block, block%state(s1) , block%tend(s2), 2.0_r8 * dt, pass)
-    call update_state(        -dt, block, block%tend(s1), block%state(old), block%state(s2))
-    call update_state(2.0_r8 * dt, block, block%tend(s2), block%state(s2) , block%state(s2))
+    call update_state(        -dt, block, block%tend(s1), block%state(old), block%state(s2), pass)
+    call update_state(2.0_r8 * dt, block, block%tend(s2), block%state(s2) , block%state(s2), pass)
 
     call space_operators(block, block%state(s2) , block%tend(s3),          dt, pass)
     block%tend(old)%du = (block%tend(s1)%du + 4.0_r8 * block%tend(s2)%du + block%tend(s3)%du) / 6.0_r8
@@ -669,7 +660,7 @@ contains
     else
       block%tend(old)%dgz = (block%tend(s1)%dgz + 4.0_r8 * block%tend(s2)%dgz + block%tend(s3)%dgz) / 6.0_r8
     end if
-    call update_state(         dt, block, block%tend(old), block%state(old), block%state(new))
+    call update_state(         dt, block, block%tend(old), block%state(old), block%state(new), pass)
 
   end subroutine runge_kutta_3rd
 
@@ -689,13 +680,13 @@ contains
     s4 = new
 
     call space_operators(block, block%state(old), block%tend(s1), 0.5_r8 * dt, pass)
-    call update_state(0.5_r8 * dt, block, block%tend(s1), block%state(old), block%state(s1))
+    call update_state(0.5_r8 * dt, block, block%tend(s1), block%state(old), block%state(s1), pass)
 
     call space_operators(block, block%state(s1) , block%tend(s2), 0.5_r8 * dt, pass)
-    call update_state(0.5_r8 * dt, block, block%tend(s2), block%state(old), block%state(s2))
+    call update_state(0.5_r8 * dt, block, block%tend(s2), block%state(old), block%state(s2), pass)
 
     call space_operators(block, block%state(s2) , block%tend(s3),          dt, pass)
-    call update_state(         dt, block, block%tend(s3), block%state(old), block%state(s3))
+    call update_state(         dt, block, block%tend(s3), block%state(old), block%state(s3), pass)
 
     call space_operators(block, block%state(s3) , block%tend(s4),          dt, pass)
     block%tend(old)%du = (block%tend(s1)%du + 2.0_r8 * block%tend(s2)%du + 2.0_r8 * block%tend(s3)%du + block%tend(s4)%du) / 6.0_r8
@@ -706,22 +697,25 @@ contains
     else
       block%tend(old)%dgz = (block%tend(s1)%dgz + 2.0_r8 * block%tend(s2)%dgz + 2.0_r8 * block%tend(s3)%dgz + block%tend(s4)%dgz) / 6.0_r8
     end if
-    call update_state(         dt, block, block%tend(old), block%state(old), block%state(new))
+    call update_state(         dt, block, block%tend(old), block%state(old), block%state(new), pass)
 
   end subroutine runge_kutta_4th
 
-  subroutine update_state(dt, block, tend, old_state, new_state)
+  subroutine update_state(dt, block, tend, old_state, new_state, pass)
 
     real(r8), intent(in) :: dt
     type(block_type), intent(inout) :: block
     type(tend_type), intent(in) :: tend
     type(state_type), intent(in) :: old_state
     type(state_type), intent(inout) :: new_state
+    integer, intent(in) :: pass
 
     type(mesh_type), pointer :: mesh
     integer i, j, k
+    logical do_div_damp
 
     mesh => old_state%mesh
+    do_div_damp = use_div_damp .and. (pass == all_pass .or. pass == slow_pass)
 
     if (baroclinic) then
       if (tend%updated_dphs) then
