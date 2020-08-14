@@ -20,7 +20,11 @@ module state_mod
     integer :: id = 0
     type(state_type), pointer :: parent => null()
     real(r8), allocatable, dimension(:,:,:) :: u             ! Zonal wind speed (m s-1)
+    real(r8), allocatable, dimension(:,:,:) :: u850          ! Zonal wind speed on 850hPa
+    real(r8), allocatable, dimension(:,:,:) :: u700          ! Zonal wind speed on 700hPa
     real(r8), allocatable, dimension(:,:,:) :: v             ! Meridional wind speed (m s-1)
+    real(r8), allocatable, dimension(:,:,:) :: v850          ! Meridional wind speed on 850hPa
+    real(r8), allocatable, dimension(:,:,:) :: v700          ! Meridional wind speed on 700hPa
     real(r8), allocatable, dimension(:,:,:) :: w             ! Vertical wind speed
     real(r8), allocatable, dimension(:,:,:) :: wp            ! ω = dp / dt (Pa s-1)
     real(r8), allocatable, dimension(:,:,:) :: wedphdlev     ! Vertical coordinate speed multiplied by 𝛛π/𝛛η
@@ -92,7 +96,11 @@ contains
     this%mesh => mesh
 
     call allocate_array(mesh, this%u            , half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%u850         , half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%u700         , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%v            , full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%v850         , full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%v700         , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%w            , full_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%wp           , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%wedphdlev    , full_lon=.true., full_lat=.true., half_lev=.true.)
@@ -149,7 +157,11 @@ contains
     class(state_type), intent(inout) :: this
 
     if (allocated(this%u            )) deallocate(this%u            )
+    if (allocated(this%u850         )) deallocate(this%u850         )
+    if (allocated(this%u700         )) deallocate(this%u700         )
     if (allocated(this%v            )) deallocate(this%v            )
+    if (allocated(this%v850         )) deallocate(this%v850         )
+    if (allocated(this%v700         )) deallocate(this%v700         )
     if (allocated(this%w            )) deallocate(this%w            )
     if (allocated(this%wp           )) deallocate(this%wp           )
     if (allocated(this%wedphdlev    )) deallocate(this%wedphdlev    )
