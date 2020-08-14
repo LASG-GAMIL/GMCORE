@@ -435,6 +435,8 @@ contains
 
         tend%updated_du   = .true.
         tend%updated_dv   = .true.
+        tend%copy_pt      = .true.
+        tend%copy_phs     = .true.
       else
         call calc_qhu_qhv          (block, state, tend, dt)
 
