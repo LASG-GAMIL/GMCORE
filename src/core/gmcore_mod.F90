@@ -154,10 +154,10 @@ contains
       ! Interpolate onto isobaric layers.
       do iblk = 1, size(blocks)
         state => blocks(iblk)%state(itime)
-        call interp_cell_to_isobaric_level(state%mesh, state%ph, state%u, 85000.0_r8, state%u850)
-        call interp_cell_to_isobaric_level(state%mesh, state%ph, state%u, 70000.0_r8, state%u700)
-        call interp_cell_to_isobaric_level(state%mesh, state%ph, state%v, 85000.0_r8, state%v850)
-        call interp_cell_to_isobaric_level(state%mesh, state%ph, state%v, 70000.0_r8, state%v700)
+        call interp_lon_edge_to_isobaric_level(state%mesh, state%ph, state%u, 85000.0_r8, state%u850, logp=.true.)
+        call interp_lon_edge_to_isobaric_level(state%mesh, state%ph, state%u, 70000.0_r8, state%u700, logp=.true.)
+        call interp_lat_edge_to_isobaric_level(state%mesh, state%ph, state%v, 85000.0_r8, state%v850, logp=.true.)
+        call interp_lat_edge_to_isobaric_level(state%mesh, state%ph, state%v, 70000.0_r8, state%v700, logp=.true.)
         call interp_cell_to_isobaric_level(state%mesh, state%ph, state%t, 85000.0_r8, state%t850, logp=.true.)
         call interp_cell_to_isobaric_level(state%mesh, state%ph, state%t, 70000.0_r8, state%t700, logp=.true.)
       end do
