@@ -57,48 +57,52 @@ module mesh_mod
     real(r8) start_lat
     real(r8) end_lat
     real(r8) dlon
-    real(r8), allocatable :: dlat(:)
+    real(r8), allocatable, dimension(:  ) :: dlat
     real(r8) total_area
-    real(r8), allocatable :: full_lon(:)
-    real(r8), allocatable :: half_lon(:)
-    real(r8), allocatable :: full_lat(:)
-    real(r8), allocatable :: half_lat(:)
-    real(r8), allocatable :: full_lev(:)
-    real(r8), allocatable :: half_lev(:)
-    real(r8), allocatable :: full_cos_lon(:)
-    real(r8), allocatable :: half_cos_lon(:)
-    real(r8), allocatable :: full_sin_lon(:)
-    real(r8), allocatable :: half_sin_lon(:)
-    real(r8), allocatable :: full_cos_lat(:)
-    real(r8), allocatable :: half_cos_lat(:)
-    real(r8), allocatable :: full_sin_lat(:)
-    real(r8), allocatable :: half_sin_lat(:)
+    real(r8), allocatable, dimension(:  ) :: full_lon
+    real(r8), allocatable, dimension(:  ) :: half_lon
+    real(r8), allocatable, dimension(:  ) :: full_lat
+    real(r8), allocatable, dimension(:  ) :: half_lat
+    real(r8), allocatable, dimension(:  ) :: full_lev
+    real(r8), allocatable, dimension(:  ) :: half_lev
+    real(r8), allocatable, dimension(:  ) :: full_cos_lon
+    real(r8), allocatable, dimension(:  ) :: half_cos_lon
+    real(r8), allocatable, dimension(:  ) :: full_sin_lon
+    real(r8), allocatable, dimension(:  ) :: half_sin_lon
+    real(r8), allocatable, dimension(:  ) :: full_cos_lat
+    real(r8), allocatable, dimension(:  ) :: half_cos_lat
+    real(r8), allocatable, dimension(:  ) :: full_sin_lat
+    real(r8), allocatable, dimension(:  ) :: half_sin_lat
     ! For output
-    real(r8), allocatable :: full_lon_deg(:)
-    real(r8), allocatable :: half_lon_deg(:)
-    real(r8), allocatable :: full_lat_deg(:)
-    real(r8), allocatable :: half_lat_deg(:)
+    real(r8), allocatable, dimension(:  ) :: full_lon_deg
+    real(r8), allocatable, dimension(:  ) :: half_lon_deg
+    real(r8), allocatable, dimension(:  ) :: full_lat_deg
+    real(r8), allocatable, dimension(:  ) :: half_lat_deg
     ! Area for weighting
-    real(r8), allocatable :: area_cell(:)
-    real(r8), allocatable :: area_lon(:)
-    real(r8), allocatable :: area_lon_west(:)
-    real(r8), allocatable :: area_lon_east(:)
-    real(r8), allocatable :: area_lat(:)
-    real(r8), allocatable :: area_lat_north(:)
-    real(r8), allocatable :: area_lat_south(:)
-    real(r8), allocatable :: area_vtx(:)
-    real(r8), allocatable :: area_subcell(:,:)
+    real(r8), allocatable, dimension(:  ) :: area_cell
+    real(r8), allocatable, dimension(:  ) :: area_lon
+    real(r8), allocatable, dimension(:  ) :: area_lon_west
+    real(r8), allocatable, dimension(:  ) :: area_lon_east
+    real(r8), allocatable, dimension(:  ) :: area_lon_north
+    real(r8), allocatable, dimension(:  ) :: area_lon_south
+    real(r8), allocatable, dimension(:  ) :: area_lat
+    real(r8), allocatable, dimension(:  ) :: area_lat_west
+    real(r8), allocatable, dimension(:  ) :: area_lat_east
+    real(r8), allocatable, dimension(:  ) :: area_lat_north
+    real(r8), allocatable, dimension(:  ) :: area_lat_south
+    real(r8), allocatable, dimension(:  ) :: area_vtx
+    real(r8), allocatable, dimension(:,:) :: area_subcell
     ! Edge length
-    real(r8), allocatable :: de_lon(:)
-    real(r8), allocatable :: de_lat(:)
-    real(r8), allocatable :: le_lat(:)
-    real(r8), allocatable :: le_lon(:)
-    ! Weight for constructing tangential wind
-    real(r8), allocatable :: full_tangent_wgt(:,:)
-    real(r8), allocatable :: half_tangent_wgt(:,:)
+    real(r8), allocatable, dimension(:  ) :: de_lon
+    real(r8), allocatable, dimension(:  ) :: de_lat
+    real(r8), allocatable, dimension(:  ) :: le_lat
+    real(r8), allocatable, dimension(:  ) :: le_lon
     ! Coriolis parameters
-    real(r8), allocatable :: full_f(:)
-    real(r8), allocatable :: half_f(:)
+    real(r8), allocatable, dimension(:  ) :: full_f
+    real(r8), allocatable, dimension(:  ) :: half_f
+    ! Weight for constructing tangential wind
+    real(r8), allocatable, dimension(:,:) :: full_tangent_wgt
+    real(r8), allocatable, dimension(:,:) :: half_tangent_wgt
   contains
     procedure :: init_global => mesh_init_global
     procedure :: init_from_parent => mesh_init_from_parent
@@ -299,12 +303,49 @@ contains
       this%area_cell(j) = radius**2 * this%dlon * (this%half_sin_lat(j+1) - this%half_sin_lat(j))
       this%area_subcell(1,j) = radius**2 * 0.5d0 * this%dlon * (this%full_sin_lat(j) - this%half_sin_lat(j))
       this%area_subcell(2,j) = radius**2 * 0.5d0 * this%dlon * (this%half_sin_lat(j+1) - this%full_sin_lat(j))
+      !
+      !          1,j+1
+      !           /|
+      !          / |
+      !         /  |
+      !        /   |
+      !    1,j \   |
+      !         \  |
+      !          \ |
+      !           \|
+      !           1,j
+      !
       call cartesian_transform(this%full_lon(1), this%full_lat(j  ), x(1), y(1), z(1))
       call cartesian_transform(this%half_lon(1), this%half_lat(j  ), x(2), y(2), z(2))
       call cartesian_transform(this%half_lon(1), this%half_lat(j+1), x(3), y(3), z(3))
       this%area_lon_west(j) = calc_area(x, y, z)
       this%area_lon_east(j) = this%area_lon_west(j)
       this%area_lon(j) = this%area_lon_west(j) + this%area_lon_east(j)
+      !
+      !         1,j+1
+      !           /\
+      !          /  \
+      !         /    \
+      !        /______\
+      !    1,j          2,j
+      !
+      call cartesian_transform(this%half_lon(1), this%half_lat(j+1), x(1), y(1), z(1))
+      call cartesian_transform(this%full_lon(1), this%full_lat(j  ), x(2), y(2), z(2))
+      call cartesian_transform(this%full_lon(2), this%full_lat(j  ), x(3), y(3), z(3))
+      this%area_lon_north(j) = calc_area_with_last_small_arc(x, y, z)
+      !
+      !    1,j          2,j
+      !        --------
+      !        \      /
+      !         \    /
+      !          \  /
+      !           \/
+      !          1,j
+      !
+      call cartesian_transform(this%half_lon(1), this%half_lat(j  ), x(1), y(1), z(1))
+      call cartesian_transform(this%full_lon(2), this%full_lat(j  ), x(2), y(2), z(2))
+      call cartesian_transform(this%full_lon(1), this%full_lat(j  ), x(3), y(3), z(3))
+      this%area_lon_south(j) = calc_area_with_last_small_arc(x, y, z)
     end do
 
     do j = this%half_lat_ibeg, this%half_lat_iend
@@ -314,10 +355,44 @@ contains
         this%area_vtx(j) = radius**2 * this%dlon * (1 - this%full_sin_lat(j-1))
       else
         this%area_vtx(j) = radius**2 * this%dlon * (this%full_sin_lat(j) - this%full_sin_lat(j-1))
+        !
+        !           2,j
+        !           /|
+        !          / |
+        !         /  |
+        !        /   |
+        !    1,j \   |
+        !         \  |
+        !          \ |
+        !           \|
+        !          2,j-1
+        !
+        call cartesian_transform(this%half_lon(1), this%half_lat(j  ), x(1), y(1), z(1))
+        call cartesian_transform(this%full_lon(2), this%full_lat(j-1), x(2), y(2), z(2))
+        call cartesian_transform(this%full_lon(2), this%full_lat(j  ), x(3), y(3), z(3))
+        this%area_lat_west(j) = calc_area(x, y, z)
+        this%area_lat_east(j) = this%area_lat_west(j)
+        !
+        !          2,j
+        !           /\
+        !          /  \
+        !         /    \
+        !        /______\
+        !    1,j          2,j
+        !
         call cartesian_transform(this%full_lon(2), this%full_lat(j  ), x(1), y(1), z(1))
         call cartesian_transform(this%half_lon(1), this%half_lat(j  ), x(2), y(2), z(2))
         call cartesian_transform(this%half_lon(2), this%half_lat(j  ), x(3), y(3), z(3))
         this%area_lat_north(j) = calc_area_with_last_small_arc(x, y, z)
+        !
+        !    1,j          2,j
+        !        --------
+        !        \      /
+        !         \    /
+        !          \  /
+        !           \/
+        !          2,j-1
+        !
         call cartesian_transform(this%full_lon(2), this%full_lat(j-1), x(1), y(1), z(1))
         call cartesian_transform(this%half_lon(2), this%half_lat(j  ), x(2), y(2), z(2))
         call cartesian_transform(this%half_lon(1), this%half_lat(j  ), x(3), y(3), z(3))
@@ -337,21 +412,92 @@ contains
         this%area_cell(j) = radius**2 * this%dlon * (this%half_sin_lat(j) - this%half_sin_lat(j-1))
         this%area_subcell(1,j) = radius**2 * 0.5d0 * this%dlon * (this%full_sin_lat(j) - this%half_sin_lat(j-1))
         this%area_subcell(2,j) = radius**2 * 0.5d0 * this%dlon * (this%half_sin_lat(j) - this%full_sin_lat(j))
+        !
+        !           1,j
+        !           /|
+        !          / |
+        !         /  |
+        !        /   |
+        !    1,j \   |
+        !         \  |
+        !          \ |
+        !           \|
+        !          1,j-1
+        !
         call cartesian_transform(this%full_lon(1), this%full_lat(j  ), x(1), y(1), z(1))
         call cartesian_transform(this%half_lon(1), this%half_lat(j-1), x(2), y(2), z(2))
         call cartesian_transform(this%half_lon(1), this%half_lat(j  ), x(3), y(3), z(3))
         this%area_lon_west(j) = calc_area(x, y, z)
         this%area_lon_east(j) = this%area_lon_west(j)
         this%area_lon(j) = this%area_lon_west(j) + this%area_lon_east(j)
+        !
+        !          1,j
+        !           /\
+        !          /  \
+        !         /    \
+        !        /______\
+        !    1,j          2,j
+        !
+        call cartesian_transform(this%half_lon(1), this%half_lat(j  ), x(1), y(1), z(1))
+        call cartesian_transform(this%full_lon(1), this%full_lat(j  ), x(2), y(2), z(2))
+        call cartesian_transform(this%full_lon(2), this%full_lat(j  ), x(3), y(3), z(3))
+        this%area_lon_north(j) = calc_area_with_last_small_arc(x, y, z)
+        !
+        !    1,j          2,j
+        !        --------
+        !        \      /
+        !         \    /
+        !          \  /
+        !           \/
+        !         1,j-1
+        !
+        call cartesian_transform(this%half_lon(1), this%half_lat(j-1), x(1), y(1), z(1))
+        call cartesian_transform(this%full_lon(2), this%full_lat(j  ), x(2), y(2), z(2))
+        call cartesian_transform(this%full_lon(1), this%full_lat(j  ), x(3), y(3), z(3))
+        this%area_lon_south(j) = calc_area_with_last_small_arc(x, y, z)
       end if
     end do
 
     do j = this%half_lat_ibeg, this%half_lat_iend
       this%area_vtx(j) = radius**2 * this%dlon * (this%full_sin_lat(j+1) - this%full_sin_lat(j))
+      !
+      !          2,j+1
+      !           /|
+      !          / |
+      !         /  |
+      !        /   |
+      !    1,j \   |
+      !         \  |
+      !          \ |
+      !           \|
+      !           2,j
+      !
+      call cartesian_transform(this%half_lon(1), this%half_lat(j  ), x(1), y(1), z(1))
+      call cartesian_transform(this%full_lon(2), this%full_lat(j  ), x(2), y(2), z(2))
+      call cartesian_transform(this%full_lon(2), this%full_lat(j+1), x(3), y(3), z(3))
+      this%area_lat_west(j) = calc_area(x, y, z)
+      this%area_lat_east(j) = this%area_lat_west(j)
+      !
+      !         2,j+1
+      !           /\
+      !          /  \
+      !         /    \
+      !        /______\
+      !    1,j          2,j
+      !
       call cartesian_transform(this%full_lon(2), this%full_lat(j+1), x(1), y(1), z(1))
       call cartesian_transform(this%half_lon(1), this%half_lat(j  ), x(2), y(2), z(2))
       call cartesian_transform(this%half_lon(2), this%half_lat(j  ), x(3), y(3), z(3))
       this%area_lat_north(j) = calc_area_with_last_small_arc(x, y, z)
+      !
+      !    1,j          2,j
+      !        --------
+      !        \      /
+      !         \    /
+      !          \  /
+      !           \/
+      !          2,j
+      !
       call cartesian_transform(this%full_lon(2), this%full_lat(j), x(1), y(1), z(1))
       call cartesian_transform(this%half_lon(2), this%half_lat(j), x(2), y(2), z(2))
       call cartesian_transform(this%half_lon(1), this%half_lat(j), x(3), y(3), z(3))
@@ -544,6 +690,8 @@ contains
       this%area_subcell(:,j) = parent%area_subcell(:,j)
       this%area_lon_west(j) = parent%area_lon_west(j)
       this%area_lon_east(j) = parent%area_lon_east(j)
+      this%area_lon_north(j) = parent%area_lon_north(j)
+      this%area_lon_south(j) = parent%area_lon_south(j)
       this%area_lon(j) = parent%area_lon(j)
       this%le_lon(j) = parent%le_lon(j)
       this%de_lon(j) = parent%de_lon(j)
@@ -556,6 +704,8 @@ contains
       this%half_sin_lat(j) = parent%half_sin_lat(j)
       this%half_cos_lat(j) = parent%half_cos_lat(j)
       this%area_vtx(j) = parent%area_vtx(j)
+      this%area_lat_west(j) = parent%area_lat_west(j)
+      this%area_lat_east(j) = parent%area_lat_east(j)
       this%area_lat_north(j) = parent%area_lat_north(j)
       this%area_lat_south(j) = parent%area_lat_south(j)
       this%area_lat(j) = parent%area_lat(j)
@@ -628,7 +778,11 @@ contains
     allocate(this%area_lon           (this%full_lat_lb:this%full_lat_ub)); this%area_lon            = 0.0_r8
     allocate(this%area_lon_west      (this%full_lat_lb:this%full_lat_ub)); this%area_lon_west       = 0.0_r8
     allocate(this%area_lon_east      (this%full_lat_lb:this%full_lat_ub)); this%area_lon_east       = 0.0_r8
+    allocate(this%area_lon_north     (this%full_lat_lb:this%full_lat_ub)); this%area_lon_north      = 0.0_r8
+    allocate(this%area_lon_south     (this%full_lat_lb:this%full_lat_ub)); this%area_lon_south      = 0.0_r8
     allocate(this%area_lat           (this%half_lat_lb:this%half_lat_ub)); this%area_lat            = 0.0_r8
+    allocate(this%area_lat_west      (this%half_lat_lb:this%half_lat_ub)); this%area_lat_west       = 0.0_r8
+    allocate(this%area_lat_east      (this%half_lat_lb:this%half_lat_ub)); this%area_lat_east       = 0.0_r8
     allocate(this%area_lat_north     (this%half_lat_lb:this%half_lat_ub)); this%area_lat_north      = 0.0_r8
     allocate(this%area_lat_south     (this%half_lat_lb:this%half_lat_ub)); this%area_lat_south      = 0.0_r8
     allocate(this%area_vtx           (this%half_lat_lb:this%half_lat_ub)); this%area_vtx            = 0.0_r8
@@ -637,10 +791,10 @@ contains
     allocate(this%de_lat             (this%half_lat_lb:this%half_lat_ub)); this%de_lat              = 0.0_r8
     allocate(this%le_lat             (this%half_lat_lb:this%half_lat_ub)); this%le_lat              = 0.0_r8
     allocate(this%le_lon             (this%full_lat_lb:this%full_lat_ub)); this%le_lon              = 0.0_r8
-    allocate(this%full_tangent_wgt (2,this%full_lat_lb:this%full_lat_ub)); this%full_tangent_wgt    = inf
-    allocate(this%half_tangent_wgt (2,this%half_lat_lb:this%half_lat_ub)); this%half_tangent_wgt    = inf
     allocate(this%full_f             (this%full_lat_lb:this%full_lat_ub)); this%full_f              = inf
     allocate(this%half_f             (this%half_lat_lb:this%half_lat_ub)); this%half_f              = inf
+    allocate(this%full_tangent_wgt (2,this%full_lat_lb:this%full_lat_ub)); this%full_tangent_wgt    = inf
+    allocate(this%half_tangent_wgt (2,this%half_lat_lb:this%half_lat_ub)); this%half_tangent_wgt    = inf
 
   end subroutine mesh_common_init
 
@@ -761,7 +915,11 @@ contains
     if (allocated(this%area_lon        )) deallocate(this%area_lon        )
     if (allocated(this%area_lon_west   )) deallocate(this%area_lon_west   )
     if (allocated(this%area_lon_east   )) deallocate(this%area_lon_east   )
+    if (allocated(this%area_lon_north  )) deallocate(this%area_lon_north  )
+    if (allocated(this%area_lon_south  )) deallocate(this%area_lon_south  )
     if (allocated(this%area_lat        )) deallocate(this%area_lat        )
+    if (allocated(this%area_lat_west   )) deallocate(this%area_lat_west   )
+    if (allocated(this%area_lat_east   )) deallocate(this%area_lat_east   )
     if (allocated(this%area_lat_north  )) deallocate(this%area_lat_north  )
     if (allocated(this%area_lat_south  )) deallocate(this%area_lat_south  )
     if (allocated(this%area_vtx        )) deallocate(this%area_vtx        )
@@ -770,10 +928,10 @@ contains
     if (allocated(this%de_lat          )) deallocate(this%de_lat          )
     if (allocated(this%le_lat          )) deallocate(this%le_lat          )
     if (allocated(this%le_lon          )) deallocate(this%le_lon          )
-    if (allocated(this%full_tangent_wgt)) deallocate(this%full_tangent_wgt)
-    if (allocated(this%half_tangent_wgt)) deallocate(this%half_tangent_wgt)
     if (allocated(this%full_f          )) deallocate(this%full_f          )
     if (allocated(this%half_f          )) deallocate(this%half_f          )
+    if (allocated(this%full_tangent_wgt)) deallocate(this%full_tangent_wgt)
+    if (allocated(this%half_tangent_wgt)) deallocate(this%half_tangent_wgt)
 
   end subroutine mesh_final
 

@@ -41,7 +41,7 @@ contains
       call log_error('Failed to calculate vertex area!', __FILE__, __LINE__)
     end if
 
-    total_area = 0.0d0
+    total_area = 0.0_r8
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       total_area = total_area + sum(mesh%area_subcell(:,j)) * mesh%num_full_lon * 2
     end do
@@ -79,12 +79,35 @@ contains
     end do
 #endif
 
-    total_area = 0.0d0
+    do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+      if (abs(mesh%area_lon_north(j) + mesh%area_lon_south(j) - mesh%area_lon(j)) / mesh%area_lon(j) > 1.0d-12) then
+        call log_error('Failed to calculate north and south subcell on lon grids!', __FILE__, __LINE__)
+      end if
+    end do
+
+    do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+      if (abs(mesh%area_lat_west(j) + mesh%area_lat_east(j) - mesh%area_lat(j)) / mesh%area_lat(j) > 1.0d-12) then
+        call log_error('Failed to calculate west and east subcell on lat grids!', __FILE__, __LINE__)
+      end if
+    end do
+
+    total_area = 0.0_r8
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       total_area = total_area + mesh%area_lon(j) * mesh%num_full_lon
     end do
     do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
       total_area = total_area + mesh%area_lat(j) * mesh%num_full_lon
+    end do
+    if (abs(global_mesh%total_area - total_area) / global_mesh%total_area > 1.0d-9) then
+      call log_error('Failed to calculate edge area!', __FILE__, __LINE__)
+    end if
+
+    total_area = 0.0_r8
+    do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+      total_area = total_area + (mesh%area_lon_north(j) + mesh%area_lon_south(j)) * mesh%num_full_lon
+    end do
+    do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+      total_area = total_area + (mesh%area_lat_west(j) + mesh%area_lat_east(j)) * mesh%num_full_lon
     end do
     if (abs(global_mesh%total_area - total_area) / global_mesh%total_area > 1.0d-9) then
       call log_error('Failed to calculate edge area!', __FILE__, __LINE__)
