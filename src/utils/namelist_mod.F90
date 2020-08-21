@@ -26,6 +26,9 @@ module namelist_mod
 
   character(30) :: tangent_wgt_scheme = 'classic'
 
+  integer :: ke_scheme = 1
+  real(r8) :: ke_cell_wgt = 3.0_r8 / 8.0_r8
+
   integer :: pv_scheme = 2
   logical :: pv_pole_stokes = .true.
 
@@ -79,6 +82,8 @@ module namelist_mod
     restart_file              , &
     restart                   , &
     tangent_wgt_scheme        , &
+    ke_scheme                 , &
+    ke_cell_wgt               , &
     pv_scheme                 , &
     pv_pole_stokes            , &
     coriolis_scheme           , &
