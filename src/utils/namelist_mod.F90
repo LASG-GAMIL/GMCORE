@@ -44,6 +44,7 @@ module namelist_mod
   integer :: damp_orders(100) = 0
 
   logical :: use_div_damp = .false.
+  integer :: div_damp_cycles = 1
   integer :: div_damp_order = 2
   real(r8) :: div_damp_coef2 = 1.0_r8 / 128.0_r8
   real(r8) :: div_damp_coef4 = 0.01_r8
@@ -91,6 +92,7 @@ module namelist_mod
     num_proc_lon_reduce       , &
     damp_orders               , &
     use_div_damp              , &
+    div_damp_cycles           , &
     div_damp_order            , &
     div_damp_coef2            , &
     div_damp_coef4            , &

@@ -6,7 +6,6 @@ module pv_mod
   use state_mod
   use block_mod
   use parallel_mod
-  use damp_mod
 
   implicit none
 

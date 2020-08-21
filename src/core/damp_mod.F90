@@ -4,6 +4,7 @@ module damp_mod
   use namelist_mod
   use parallel_mod
   use block_mod
+  use operators_mod
 
   implicit none
 
@@ -206,37 +207,42 @@ contains
     real(8), intent(in) :: dt
 
     type(mesh_type), pointer :: mesh
-    integer i, j, k
+    integer i, j, k, cyc
 
     if (baroclinic) then
       mesh => old_state%mesh
 
       select case (div_damp_order)
       case (2)
-        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-            do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              new_state%u(i,j,k) = new_state%u(i,j,k) + dt * cdiv_full_lat(j,k) * ( &
-                old_state%div(i+1,j,k) - old_state%div(i,j,k)) / mesh%de_lon(j)
+        new_state%div = old_state%div
+        do cyc = 1, div_damp_cycles
+          do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+            do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+              do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+                new_state%u(i,j,k) = new_state%u(i,j,k) + dt / div_damp_cycles * cdiv_full_lat(j,k) * ( &
+                  new_state%div(i+1,j,k) - new_state%div(i,j,k)) / mesh%de_lon(j)
+              end do
             end do
           end do
-        end do
-        call fill_halo(block, new_state%u, full_lon=.false., full_lat=.true., full_lev=.true.)
+          call fill_halo(block, new_state%u, full_lon=.false., full_lat=.true., full_lev=.true.)
 
-        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-          do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
-            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+            do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
 #ifdef V_POLE
-              new_state%v(i,j,k) = new_state%v(i,j,k) + dt * cdiv_half_lat(j,k) * ( &
-                old_state%div(i,j,k) - old_state%div(i,j-1,k)) / mesh%de_lat(j)
+                new_state%v(i,j,k) = new_state%v(i,j,k) + dt / div_damp_cycles * cdiv_half_lat(j,k) * ( &
+                  new_state%div(i,j,k) - new_state%div(i,j-1,k)) / mesh%de_lat(j)
 #else
-              new_state%v(i,j,k) = new_state%v(i,j,k) + dt * cdiv_half_lat(j,k) * ( &
-                old_state%div(i,j+1,k) - old_state%div(i,j,k)) / mesh%de_lat(j)
+                new_state%v(i,j,k) = new_state%v(i,j,k) + dt / div_damp_cycles * cdiv_half_lat(j,k) * ( &
+                  new_state%div(i,j+1,k) - new_state%div(i,j,k)) / mesh%de_lat(j)
 #endif
+              end do
             end do
           end do
+          call fill_halo(block, new_state%v, full_lon=.true., full_lat=.false., full_lev=.true.)
+
+          call calc_div(block, new_state)
         end do
-        call fill_halo(block, new_state%v, full_lon=.true., full_lat=.false., full_lev=.true.)
       case (4)
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole

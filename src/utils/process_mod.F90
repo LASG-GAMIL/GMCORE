@@ -68,7 +68,6 @@ contains
 
     integer ierr
 
-    call MPI_BARRIER(proc%comm, ierr)
     call MPI_ABORT(proc%comm, code, ierr)
 
   end subroutine process_stop
