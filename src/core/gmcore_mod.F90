@@ -542,6 +542,14 @@ contains
 
     do iblk = 1, size(blocks)
       call splitter(dt, blocks(iblk))
+
+      if (use_polar_damp) then
+        call latlon_damp_lon(blocks(iblk), polar_damp_order, dt, blocks(iblk)%state(new)%u)
+        call latlon_damp_lat(blocks(iblk), polar_damp_order, dt, blocks(iblk)%state(new)%v)
+      end if
+      if (use_div_damp) then
+        call div_damp(blocks(iblk), blocks(iblk)%state(old), blocks(iblk)%state(new), dt)
+      end if
     end do
 
   end subroutine time_integrate
@@ -718,10 +726,8 @@ contains
 
     type(mesh_type), pointer :: mesh
     integer i, j, k
-    logical do_div_damp
 
     mesh => old_state%mesh
-    do_div_damp = use_div_damp .and. (pass == all_pass .or. pass == slow_pass)
 
     if (baroclinic) then
       if (tend%updated_dphs) then
@@ -777,7 +783,7 @@ contains
           end do
         end do
       end do
-      if (.not. use_div_damp) call fill_halo(block, new_state%u, full_lon=.false., full_lat=.true., full_lev=.true.)
+      call fill_halo(block, new_state%u, full_lon=.false., full_lat=.true., full_lev=.true.)
     end if
 
     if (tend%updated_dv) then
@@ -788,12 +794,7 @@ contains
           end do
         end do
       end do
-      if (.not. use_div_damp) call fill_halo(block, new_state%v, full_lon=.true., full_lat=.false., full_lev=.true.)
-    end if
-
-    if (tend%updated_du .and. tend%updated_dv) then
-      call damp_state(block, new_state)
-      if (use_div_damp) call div_damp(block, old_state, new_state, dt)
+      call fill_halo(block, new_state%v, full_lon=.true., full_lat=.false., full_lev=.true.)
     end if
 
   end subroutine update_state
