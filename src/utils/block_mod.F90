@@ -47,18 +47,18 @@ module block_mod
     type(reduced_tend_type), allocatable :: reduced_tend(:)
     type(halo_type), allocatable :: halo(:)
     ! Work arrays
-    real(r8), allocatable :: latlon_damp_cell_gx  (:,:,:)
-    real(r8), allocatable :: latlon_damp_cell_gy  (:,:,:)
-    real(r8), allocatable :: latlon_damp_cell_dfdx(:,:,:)
-    real(r8), allocatable :: latlon_damp_cell_dfdy(:,:,:)
     real(r8), allocatable :: latlon_damp_lon_gx   (:,:,:)
-    real(r8), allocatable :: latlon_damp_lon_gy   (:,:,:)
     real(r8), allocatable :: latlon_damp_lon_dfdx (:,:,:)
+    real(r8), allocatable :: latlon_damp_lon_gy   (:,:,:)
     real(r8), allocatable :: latlon_damp_lon_dfdy (:,:,:)
     real(r8), allocatable :: latlon_damp_lat_gx   (:,:,:)
-    real(r8), allocatable :: latlon_damp_lat_gy   (:,:,:)
     real(r8), allocatable :: latlon_damp_lat_dfdx (:,:,:)
+    real(r8), allocatable :: latlon_damp_lat_gy   (:,:,:)
     real(r8), allocatable :: latlon_damp_lat_dfdy (:,:,:)
+    real(r8), allocatable :: latlon_damp_cell_gx  (:,:,:)
+    real(r8), allocatable :: latlon_damp_cell_dfdx(:,:,:)
+    real(r8), allocatable :: latlon_damp_cell_gy  (:,:,:)
+    real(r8), allocatable :: latlon_damp_cell_dfdy(:,:,:)
   contains
     procedure :: init => block_init
     final :: block_final
@@ -102,18 +102,19 @@ contains
       call this%static%init(this%mesh)
     end if
 
-    call allocate_array(this%mesh, this%latlon_damp_cell_gx  , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(this%mesh, this%latlon_damp_cell_gy  , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(this%mesh, this%latlon_damp_cell_dfdy, full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(this%mesh, this%latlon_damp_cell_dfdx, full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(this%mesh, this%latlon_damp_lon_gx   , half_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(this%mesh, this%latlon_damp_lon_gy   , half_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(this%mesh, this%latlon_damp_lon_dfdy , half_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(this%mesh, this%latlon_damp_lon_dfdx , half_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(this%mesh, this%latlon_damp_lat_gx   , full_lon=.true., half_lat=.true., full_lev=.true.)
-    call allocate_array(this%mesh, this%latlon_damp_lat_gy   , full_lon=.true., half_lat=.true., full_lev=.true.)
-    call allocate_array(this%mesh, this%latlon_damp_lat_dfdy , full_lon=.true., half_lat=.true., full_lev=.true.)
-    call allocate_array(this%mesh, this%latlon_damp_lat_dfdx , full_lon=.true., half_lat=.true., full_lev=.true.)
+    ! Allocate working arrays.
+    call allocate_array(this%mesh, this%latlon_damp_lon_gx   , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(this%mesh, this%latlon_damp_lon_dfdx , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(this%mesh, this%latlon_damp_lon_gy   , half_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(this%mesh, this%latlon_damp_lon_dfdy , half_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(this%mesh, this%latlon_damp_lat_gx   , half_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(this%mesh, this%latlon_damp_lat_dfdx , half_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(this%mesh, this%latlon_damp_lat_gy   , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(this%mesh, this%latlon_damp_lat_dfdy , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(this%mesh, this%latlon_damp_cell_gx  , half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(this%mesh, this%latlon_damp_cell_dfdx, half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(this%mesh, this%latlon_damp_cell_gy  , full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(this%mesh, this%latlon_damp_cell_dfdy, full_lon=.true., half_lat=.true., full_lev=.true.)
 
   end subroutine block_init
 
