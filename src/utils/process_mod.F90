@@ -160,7 +160,7 @@ contains
     integer, intent(out) :: lat_iend
 
     integer ierr, i, j
-    integer num_lon, num_lat, res_num, half_num
+    integer num_lon, num_lat, res_num
 
     if (idom > 1) then
       ! Get the start and end indices according to nest domain range.
@@ -225,7 +225,7 @@ contains
 
     res_num = mod(num_total_lon, cart_dims(1))
     do i = 0, cart_coords(1) - 1
-      if (res_num /= 0 .and. i < res_num - 1) then
+      if (res_num /= 0 .and. i < res_num) then
         num_lon = num_total_lon / cart_dims(1) + 1
       else
         num_lon = num_total_lon / cart_dims(1)
@@ -240,16 +240,15 @@ contains
     lon_iend = lon_ibeg + num_lon - 1
 
     res_num = mod(num_total_lat, cart_dims(2))
-    half_num = cart_dims(2) - cart_dims(2) / 2
     do j = 0, cart_coords(2) - 1
-      if (res_num /= 0 .and. j >= half_num .and. j < half_num + res_num) then
+      if (res_num /= 0 .and. j < res_num) then
         num_lat = num_total_lat / cart_dims(2) + 1
       else
         num_lat = num_total_lat / cart_dims(2)
       end if
       lat_ibeg = lat_ibeg + num_lat
     end do
-    if (res_num /= 0 .and. cart_coords(2) >= half_num .and. cart_coords(2) < half_num + res_num) then
+    if (res_num /= 0 .and. cart_coords(2) < res_num) then
       num_lat = num_total_lat / cart_dims(2) + 1
     else
       num_lat = num_total_lat / cart_dims(2)
