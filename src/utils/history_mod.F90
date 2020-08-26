@@ -237,8 +237,10 @@ contains
       count = [mesh%num_half_lon,mesh%num_full_lat,mesh%num_full_lev]
 
       call fiona_output('h0', 'u'   , state%u   (is:ie,js:je,ks:ke), start=start, count=count)
-      call fiona_output('h0', 'u850', state%u850(is:ie,js:je,ks:ke), start=start, count=count)
-      call fiona_output('h0', 'u700', state%u700(is:ie,js:je,ks:ke), start=start, count=count)
+      if (baroclinic) then
+        call fiona_output('h0', 'u850', state%u850(is:ie,js:je,ks:ke), start=start, count=count)
+        call fiona_output('h0', 'u700', state%u700(is:ie,js:je,ks:ke), start=start, count=count)
+      end if
 
       is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
       js = mesh%half_lat_ibeg; je = mesh%half_lat_iend
@@ -247,8 +249,10 @@ contains
       count = [mesh%num_full_lon,mesh%num_half_lat,mesh%num_full_lev]
 
       call fiona_output('h0', 'v'   , state%v   (is:ie,js:je,ks:ke), start=start, count=count)
-      call fiona_output('h0', 'v850', state%v850(is:ie,js:je,ks:ke), start=start, count=count)
-      call fiona_output('h0', 'v700', state%v700(is:ie,js:je,ks:ke), start=start, count=count)
+      if (baroclinic) then
+        call fiona_output('h0', 'v850', state%v850(is:ie,js:je,ks:ke), start=start, count=count)
+        call fiona_output('h0', 'v700', state%v700(is:ie,js:je,ks:ke), start=start, count=count)
+      end if
 
       is = mesh%half_lon_ibeg; ie = mesh%half_lon_iend
       js = mesh%half_lat_ibeg; je = mesh%half_lat_iend
