@@ -11,5 +11,6 @@ fast_cycles = 8
 case_name = 'jz.u_pole.reduce.split.damp.dt150.720x360'
 history_interval = '6 hours'
 reduce_factors = 8, 8, 8, 8, 6, 6, 6, 6, 4, 4, 4, 4, 2, 2
-damp_orders    = 4, 4, 4, 4, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6
+use_polar_damp = .true.
+polar_damp_order = 4
 /

@@ -13,5 +13,6 @@ pv_scheme = 3
 case_name = 'sw.u_pole.360x180'
 history_interval = '5 days'
 reduce_factors = 8, 8, 8, 6, 6, 4, 4, 2
-damp_orders    = 6, 6, 6, 6, 6, 6, 6, 6
+use_polar_damp = .true.
+polar_damp_order = 4
 /

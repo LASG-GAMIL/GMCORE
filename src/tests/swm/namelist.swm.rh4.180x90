@@ -11,5 +11,6 @@ pv_scheme = 3
 case_name = 'rh4.u_pole.reduce.split.damp.180x90'
 history_interval = '1 days'
 reduce_factors = 8, 6, 4, 2
-damp_orders    = 4, 6, 6, 6
+use_polar_damp = .true.
+polar_damp_order = 4
 /
