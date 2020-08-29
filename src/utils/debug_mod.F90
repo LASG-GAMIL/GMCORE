@@ -86,7 +86,7 @@ contains
     end do
 
     do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
-      if (abs(mesh%area_lat_west(j) + mesh%area_lat_east(j) - mesh%area_lat(j)) / mesh%area_lat(j) > 1.0d-12) then
+      if (abs(mesh%area_lat_west(j) + mesh%area_lat_east(j) - mesh%area_lat(j)) / mesh%area_lat(j) > 1.0d-11) then
         call log_error('Failed to calculate west and east subcell on lat grids!', __FILE__, __LINE__)
       end if
     end do

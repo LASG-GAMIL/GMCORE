@@ -32,7 +32,11 @@ if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
   # FIXME: OpenMP causes sigmentation faults.
   # set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fopenmp")
 elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
-  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O3 -xCORE-AVX2 -align array64byte")
+	if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+		set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O0 -check all -g -traceback")
+	else ()
+		set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O3 -xCORE-AVX2 -align array64byte")
+	endif ()
 endif ()
 
 find_package(MPI)
