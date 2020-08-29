@@ -18,6 +18,7 @@ module halo_mod
 
   type halo_type
     integer :: comm = MPI_COMM_NULL
+    integer :: host_id = MPI_PROC_NULL
     integer :: proc_id = MPI_PROC_NULL
     integer :: iblk = 0
     integer :: orient = 0
@@ -34,22 +35,31 @@ module halo_mod
     integer :: send_type_3d(2,2,2) = MPI_DATATYPE_NULL
     integer :: recv_type_3d(2,2,2) = MPI_DATATYPE_NULL
   contains
-    procedure :: init_normal => halo_init_normal
+    procedure :: init => halo_init
     procedure :: init_nest => halo_init_nest
     final :: halo_final
   end type halo_type
 
 contains
 
-  subroutine halo_init_normal(this, mesh, orient, dtype, ngb_proc_id, iblk)
+  subroutine halo_init(this, mesh, orient, dtype, host_id, ngb_proc_id, iblk, lon_ibeg, lon_iend, lat_ibeg, lat_iend)
 
     class(halo_type), intent(out) :: this
     type(mesh_type), intent(in) :: mesh
     integer, intent(in) :: orient
     integer, intent(in) :: dtype
+    integer, intent(in) :: host_id
     integer, intent(in), optional :: ngb_proc_id
     integer, intent(in), optional :: iblk
+    integer, intent(in), optional :: lon_ibeg
+    integer, intent(in), optional :: lon_iend
+    integer, intent(in), optional :: lat_ibeg
+    integer, intent(in), optional :: lat_iend
 
+    integer full_lon_ibeg, full_lon_iend
+    integer full_lat_ibeg, full_lat_iend
+    integer half_lon_ibeg, half_lon_iend
+    integer half_lat_ibeg, half_lat_iend
     integer array_size(3,2,2)
     integer send_subarray_size(3,2,2)
     integer recv_subarray_size(3,2,2)
@@ -64,7 +74,53 @@ contains
       call log_error('Handle internal halo!', __FILE__, __LINE__)
     end if
 
+    this%host_id = host_id
     this%dtype = dtype
+
+    if (present(lon_ibeg) .and. present(lon_iend)) then
+      full_lon_ibeg = lon_ibeg - mesh%full_lon_lb
+      full_lon_iend = lon_iend - mesh%full_lon_lb
+    else if (orient == west) then
+      full_lon_ibeg = 0
+      full_lon_iend = mesh%lon_halo_width - 1
+    else if (orient == east) then
+      full_lon_ibeg = mesh%num_full_lon + mesh%lon_halo_width
+      full_lon_iend = full_lon_ibeg + mesh%lon_halo_width - 1
+    end if
+    half_lon_ibeg = full_lon_ibeg
+    half_lon_iend = full_lon_iend
+    if (present(lat_ibeg) .and. present(lat_iend)) then
+#ifdef V_POLE
+      half_lat_ibeg = lat_ibeg - mesh%half_lat_lb
+      half_lat_iend = lat_iend - mesh%half_lat_lb
+#else
+      full_lat_ibeg = lat_ibeg - mesh%full_lat_lb
+      full_lat_iend = lat_iend - mesh%full_lat_lb
+#endif
+    else if (orient == south) then
+#ifdef V_POLE
+      half_lat_ibeg = 0
+      half_lat_iend = mesh%lat_halo_width - 1
+#else
+      full_lat_ibeg = 0
+      full_lat_iend = mesh%lat_halo_width - 1
+#endif
+    else if (orient == north) then
+#ifdef V_POLE
+      half_lat_ibeg = mesh%num_half_lat + mesh%lat_halo_width
+      half_lat_iend = half_lat_ibeg + mesh%lat_halo_width - 1
+#else
+      full_lat_ibeg = mesh%num_full_lat + mesh%lat_halo_width
+      full_lat_iend = full_lat_ibeg + mesh%lat_halo_width - 1
+#endif
+    end if
+#ifdef V_POLE
+    full_lat_ibeg = merge(half_lat_ibeg - 1, half_lat_ibeg, mesh%has_north_pole() .and. orient == north)
+    full_lat_iend = merge(half_lat_iend - 1, half_lat_iend, mesh%has_north_pole() .and. orient == north)
+#else
+    half_lat_ibeg = merge(full_lat_ibeg - 1, full_lat_ibeg, mesh%has_north_pole() .and. orient == north)
+    half_lat_iend = merge(full_lat_iend - 1, full_lat_iend, mesh%has_north_pole() .and. orient == north)
+#endif
 
     ! NOTE: MPI array index starts from zero.
 
@@ -106,91 +162,67 @@ contains
       array_size(:,2,1) = [mesh%num_half_lon+2*mesh%lon_halo_width,mesh%num_full_lat+2*mesh%lat_halo_width,num_lev(k)]
       array_size(:,1,2) = [mesh%num_full_lon+2*mesh%lon_halo_width,mesh%num_half_lat+2*mesh%lat_halo_width,num_lev(k)]
       array_size(:,2,2) = [mesh%num_half_lon+2*mesh%lon_halo_width,mesh%num_half_lat+2*mesh%lat_halo_width,num_lev(k)]
+      send_subarray_size(:,1,1) = [full_lon_iend-full_lon_ibeg+1,full_lat_iend-full_lat_ibeg+1,num_lev(k)]
+      recv_subarray_size(:,1,1) = send_subarray_size(:,1,1)
+      send_subarray_size(:,2,1) = [half_lon_iend-half_lon_ibeg+1,full_lat_iend-full_lat_ibeg+1,num_lev(k)]
+      recv_subarray_size(:,2,1) = send_subarray_size(:,2,1)
+      send_subarray_size(:,1,2) = [full_lon_iend-full_lon_ibeg+1,half_lat_iend-half_lat_ibeg+1,num_lev(k)]
+      recv_subarray_size(:,1,2) = send_subarray_size(:,1,2)
+      send_subarray_size(:,2,2) = [half_lon_iend-half_lon_ibeg+1,half_lat_iend-half_lat_ibeg+1,num_lev(k)]
+      recv_subarray_size(:,2,2) = send_subarray_size(:,2,2)
       select case (orient)
       case (west)
         ! full_lon + full_lat
-        send_subarray_size (:,1,1) = [mesh%lon_halo_width,mesh%num_full_lat,num_lev(k)]
-        recv_subarray_size (:,1,1) = send_subarray_size(:,1,1)
-        send_subarray_start(:,1,1) = [mesh%lon_halo_width,mesh%lat_halo_width,0]
-        recv_subarray_start(:,1,1) = [                  0,mesh%lat_halo_width,0]
+        send_subarray_start(:,1,1) = [full_lon_iend+1,full_lat_ibeg,0]
+        recv_subarray_start(:,1,1) = [full_lon_ibeg  ,full_lat_ibeg,0]
         ! half_lon + full_lat
-        send_subarray_size (:,2,1) = [mesh%lon_halo_width,mesh%num_full_lat,num_lev(k)]
-        recv_subarray_size (:,2,1) = send_subarray_size(:,2,1)
-        send_subarray_start(:,2,1) = [mesh%lon_halo_width,mesh%lat_halo_width,0]
-        recv_subarray_start(:,2,1) = [                  0,mesh%lat_halo_width,0]
+        send_subarray_start(:,2,1) = [half_lon_iend+1,full_lat_ibeg,0]
+        recv_subarray_start(:,2,1) = [half_lon_ibeg  ,full_lat_ibeg,0]
         ! full_lon + half_lat
-        send_subarray_size (:,1,2) = [mesh%lon_halo_width,mesh%num_half_lat,num_lev(k)]
-        recv_subarray_size (:,1,2) = send_subarray_size(:,1,2)
-        send_subarray_start(:,1,2) = [mesh%lon_halo_width,mesh%lat_halo_width,0]
-        recv_subarray_start(:,1,2) = [                  0,mesh%lat_halo_width,0]
+        send_subarray_start(:,1,2) = [full_lon_iend+1,half_lat_ibeg,0]
+        recv_subarray_start(:,1,2) = [full_lon_ibeg  ,half_lat_ibeg,0]
         ! half_lon + half_lat
-        send_subarray_size (:,2,2) = [mesh%lon_halo_width,mesh%num_half_lat,num_lev(k)]
-        recv_subarray_size (:,2,2) = send_subarray_size(:,2,2)
-        send_subarray_start(:,2,2) = [mesh%lon_halo_width,mesh%lat_halo_width,0]
-        recv_subarray_start(:,2,2) = [                  0,mesh%lat_halo_width,0]
+        send_subarray_start(:,2,2) = [half_lon_iend+1,half_lat_ibeg,0]
+        recv_subarray_start(:,2,2) = [half_lon_ibeg  ,half_lat_ibeg,0]
       case (east)
         ! full_lon + full_lat
-        send_subarray_size (:,1,1) = [mesh%lon_halo_width,mesh%num_full_lat,num_lev(k)]
-        recv_subarray_size (:,1,1) = send_subarray_size(:,1,1)
-        send_subarray_start(:,1,1) = [mesh%num_full_lon                    ,mesh%lat_halo_width,0]
-        recv_subarray_start(:,1,1) = [mesh%num_full_lon+mesh%lon_halo_width,mesh%lat_halo_width,0]
+        send_subarray_start(:,1,1) = [full_lon_ibeg-mesh%lon_halo_width,full_lat_ibeg,0]
+        recv_subarray_start(:,1,1) = [full_lon_ibeg                    ,full_lat_ibeg,0]
         ! half_lon + full_lat
-        send_subarray_size (:,2,1) = [mesh%lon_halo_width,mesh%num_full_lat,num_lev(k)]
-        recv_subarray_size (:,2,1) = send_subarray_size(:,2,1)
-        send_subarray_start(:,2,1) = [mesh%num_half_lon                    ,mesh%lat_halo_width,0]
-        recv_subarray_start(:,2,1) = [mesh%num_half_lon+mesh%lon_halo_width,mesh%lat_halo_width,0]
+        send_subarray_start(:,2,1) = [half_lon_ibeg-mesh%lon_halo_width,full_lat_ibeg,0]
+        recv_subarray_start(:,2,1) = [half_lon_ibeg                    ,full_lat_ibeg,0]
         ! full_lon + half_lat
-        send_subarray_size (:,1,2) = [mesh%lon_halo_width,mesh%num_half_lat,num_lev(k)]
-        recv_subarray_size (:,1,2) = send_subarray_size(:,1,2)
-        send_subarray_start(:,1,2) = [mesh%num_full_lon                    ,mesh%lat_halo_width,0]
-        recv_subarray_start(:,1,2) = [mesh%num_full_lon+mesh%lon_halo_width,mesh%lat_halo_width,0]
+        send_subarray_start(:,1,2) = [full_lon_ibeg-mesh%lon_halo_width,half_lat_ibeg,0]
+        recv_subarray_start(:,1,2) = [full_lon_ibeg                    ,half_lat_ibeg,0]
         ! half_lon + half_lat
-        send_subarray_size (:,2,2) = [mesh%lon_halo_width,mesh%num_half_lat,num_lev(k)]
-        recv_subarray_size (:,2,2) = send_subarray_size(:,2,2)
-        send_subarray_start(:,2,2) = [mesh%num_half_lon                    ,mesh%lat_halo_width,0]
-        recv_subarray_start(:,2,2) = [mesh%num_half_lon+mesh%lon_halo_width,mesh%lat_halo_width,0]
+        send_subarray_start(:,2,2) = [half_lon_ibeg-mesh%lon_halo_width,half_lat_ibeg,0]
+        recv_subarray_start(:,2,2) = [half_lon_ibeg                    ,half_lat_ibeg,0]
       case (south)
         ! full_lon + full_lat
-        send_subarray_size (:,1,1) = [array_size(1,1,1),mesh%lat_halo_width,num_lev(k)]
-        recv_subarray_size (:,1,1) = send_subarray_size(:,1,1)
-        send_subarray_start(:,1,1) = [0,mesh%lat_halo_width,0]
-        recv_subarray_start(:,1,1) = [0,0,0]
+        send_subarray_start(:,1,1) = [full_lon_ibeg,full_lat_iend+1,0]
+        recv_subarray_start(:,1,1) = [full_lon_ibeg,full_lat_ibeg  ,0]
         ! half_lon + full_lat
-        send_subarray_size (:,2,1) = [array_size(1,2,1),mesh%lat_halo_width,num_lev(k)]
-        recv_subarray_size (:,2,1) = send_subarray_size(:,2,1)
-        send_subarray_start(:,2,1) = [0,mesh%lat_halo_width,0]
-        recv_subarray_start(:,2,1) = [0,0,0]
+        send_subarray_start(:,2,1) = [half_lon_ibeg,full_lat_iend+1,0]
+        recv_subarray_start(:,2,1) = [half_lon_ibeg,full_lat_ibeg  ,0]
         ! full_lon + half_lat
-        send_subarray_size (:,1,2) = [array_size(1,1,2),mesh%lat_halo_width,num_lev(k)]
-        recv_subarray_size (:,1,2) = send_subarray_size(:,1,2)
-        send_subarray_start(:,1,2) = [0,mesh%lat_halo_width,0]
-        recv_subarray_start(:,1,2) = [0,0,0]
+        send_subarray_start(:,1,2) = [full_lon_ibeg,half_lat_iend+1,0]
+        recv_subarray_start(:,1,2) = [full_lon_ibeg,half_lat_ibeg  ,0]
         ! half_lon + half_lat
-        send_subarray_size (:,2,2) = [array_size(1,2,2),mesh%lat_halo_width,num_lev(k)]
-        recv_subarray_size (:,2,2) = send_subarray_size(:,2,2)
-        send_subarray_start(:,2,2) = [0,mesh%lat_halo_width,0]
-        recv_subarray_start(:,2,2) = [0,0,0]
+        send_subarray_start(:,2,2) = [half_lon_ibeg,half_lat_iend+1,0]
+        recv_subarray_start(:,2,2) = [half_lon_ibeg,half_lat_ibeg  ,0]
       case (north)
         ! full_lon + full_lat
-        send_subarray_size (:,1,1) = [array_size(1,1,1),mesh%lat_halo_width,num_lev(k)]
-        recv_subarray_size (:,1,1) = send_subarray_size(:,1,1)
-        send_subarray_start(:,1,1) = [0,mesh%num_full_lat,0]
-        recv_subarray_start(:,1,1) = [0,mesh%num_full_lat+mesh%lat_halo_width,0]
+        send_subarray_start(:,1,1) = [full_lon_ibeg,full_lat_ibeg-mesh%lat_halo_width,0]
+        recv_subarray_start(:,1,1) = [full_lon_ibeg,full_lat_ibeg                    ,0]
         ! half_lon + full_lat
-        send_subarray_size (:,2,1) = [array_size(1,2,1),mesh%lat_halo_width,num_lev(k)]
-        recv_subarray_size (:,2,1) = send_subarray_size(:,2,1)
-        send_subarray_start(:,2,1) = [0,mesh%num_full_lat,0]
-        recv_subarray_start(:,2,1) = [0,mesh%num_full_lat+mesh%lat_halo_width,0]
+        send_subarray_start(:,2,1) = [half_lon_ibeg,full_lat_ibeg-mesh%lat_halo_width,0]
+        recv_subarray_start(:,2,1) = [half_lon_ibeg,full_lat_ibeg                    ,0]
         ! full_lon + half_lat
-        send_subarray_size (:,1,2) = [array_size(1,1,2),mesh%lat_halo_width,num_lev(k)]
-        recv_subarray_size (:,1,2) = send_subarray_size(:,1,2)
-        send_subarray_start(:,1,2) = [0,mesh%num_half_lat,0]
-        recv_subarray_start(:,1,2) = [0,mesh%num_half_lat+mesh%lat_halo_width,0]
+        send_subarray_start(:,1,2) = [full_lon_ibeg,half_lat_ibeg-mesh%lat_halo_width,0]
+        recv_subarray_start(:,1,2) = [full_lon_ibeg,half_lat_ibeg                    ,0]
         ! half_lon + half_lat
-        send_subarray_size (:,2,2) = [array_size(1,2,2),mesh%lat_halo_width,num_lev(k)]
-        recv_subarray_size (:,2,2) = send_subarray_size(:,2,2)
-        send_subarray_start(:,2,2) = [0,mesh%num_half_lat,0]
-        recv_subarray_start(:,2,2) = [0,mesh%num_half_lat+mesh%lat_halo_width,0]
+        send_subarray_start(:,2,2) = [half_lon_ibeg,half_lat_ibeg-mesh%lat_halo_width,0]
+        recv_subarray_start(:,2,2) = [half_lon_ibeg,half_lat_ibeg                    ,0]
       end select
       do j = 1, 2
         do i = 1, 2
@@ -219,7 +251,7 @@ contains
       end do
     end do
 
-  end subroutine halo_init_normal
+  end subroutine halo_init
 
   subroutine halo_init_nest(this, parent_mesh, parent_proc_id)
 
