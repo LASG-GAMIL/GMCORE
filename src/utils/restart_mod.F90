@@ -62,17 +62,18 @@ contains
     type(static_type), pointer :: static
     integer iblk, is, ie, js, je, ks, ke
     integer start(3), count(3)
-    character(4) lon_dims(4), lat_dims(4), cell_dims(4)
-    character(4) cell_dims_2d(3)
+    character(4) lon_dims_3d(4), lat_dims_3d(4), cell_dims_3d(4)
+    character(4) lon_dims_2d(3), lat_dims_2d(3), cell_dims_2d(3)
 
     if (baroclinic) then
-       lon_dims(1) = 'ilon';  lon_dims(2) =  'lat';  lon_dims(3) =  'lev';  lon_dims(4) = 'time'
-       lat_dims(1) =  'lon';  lat_dims(2) = 'ilat';  lat_dims(3) =  'lev';  lat_dims(4) = 'time'
-      cell_dims(1) =  'lon'; cell_dims(2) =  'lat'; cell_dims(3) =  'lev'; cell_dims(4) = 'time'
+       lon_dims_3d(1) = 'ilon';  lon_dims_3d(2) =  'lat';  lon_dims_3d(3) =  'lev';  lon_dims_3d(4) = 'time'
+       lat_dims_3d(1) =  'lon';  lat_dims_3d(2) = 'ilat';  lat_dims_3d(3) =  'lev';  lat_dims_3d(4) = 'time'
+      cell_dims_3d(1) =  'lon'; cell_dims_3d(2) =  'lat'; cell_dims_3d(3) =  'lev'; cell_dims_3d(4) = 'time'
     else
-
+       lon_dims_2d(1) = 'ilon';  lon_dims_2d(2) =  'lat';  lon_dims_2d(3) = 'time'
+       lat_dims_2d(1) =  'lon';  lat_dims_2d(2) = 'ilat';  lat_dims_2d(3) = 'time'
+      cell_dims_2d(1) =  'lon'; cell_dims_2d(2) =  'lat'; cell_dims_2d(3) = 'time'
     end if
-    cell_dims_2d(1) = 'lon'; cell_dims_2d(2) = 'lat'; cell_dims_2d(3) = 'time'
 
     call fiona_create_dataset('r0', desc=case_desc, file_prefix=trim(case_name) // '.' // trim(curr_time_str), mpi_comm=proc%comm)
     call fiona_add_att('r0', 'time_step_size', dt_in_seconds)
@@ -82,19 +83,19 @@ contains
     call fiona_add_dim('r0', 'lat' , size=global_mesh%num_full_lat, add_var=.true., decomp=.true.)
     call fiona_add_dim('r0', 'ilon', size=global_mesh%num_half_lon, add_var=.true., decomp=.true.)
     call fiona_add_dim('r0', 'ilat', size=global_mesh%num_half_lat, add_var=.true., decomp=.true.)
-    if (baroclinic) then
-      call fiona_add_dim('r0', 'lev' , size=global_mesh%num_full_lev, add_var=.true.)
-      call fiona_add_dim('r0', 'ilev', size=global_mesh%num_half_lev, add_var=.true.)
-    end if
-    call fiona_add_var('r0', 'u'   , long_name='u wind component'           , units='m s-1' , dim_names=lon_dims    , data_type='real(8)')
-    call fiona_add_var('r0', 'v'   , long_name='v wind component'           , units='m s-1' , dim_names=lat_dims    , data_type='real(8)')
-    call fiona_add_var('r0', 'gzs' , long_name='surface geopotential height', units='m2 s-2', dim_names=cell_dims_2d, data_type='real(8)')
-    if (baroclinic) then
-      call fiona_add_var('r0', 'phs', long_name='hydrostatic surface pressure', units='Pa'    , dim_names=cell_dims_2d, data_type='real(8)')
-      call fiona_add_var('r0', 'pt' , long_name='potential temperature'       , units='K'     , dim_names=cell_dims   , data_type='real(8)')
-    else
-      call fiona_add_var('r0', 'gz' , long_name='geopotential height'         , units='m2 s-2', dim_names=cell_dims   , data_type='real(8)')
-    end if
+  if (baroclinic) then
+    call fiona_add_dim('r0', 'lev' , size=global_mesh%num_full_lev, add_var=.true.)
+    call fiona_add_dim('r0', 'ilev', size=global_mesh%num_half_lev, add_var=.true.)
+    call fiona_add_var('r0', 'u'   , long_name='u wind component'            , units='m s-1' , dim_names=lon_dims_3d , data_type='r8')
+    call fiona_add_var('r0', 'v'   , long_name='v wind component'            , units='m s-1' , dim_names=lat_dims_3d , data_type='r8')
+    call fiona_add_var('r0', 'phs' , long_name='hydrostatic surface pressure', units='Pa'    , dim_names=cell_dims_2d, data_type='r8')
+    call fiona_add_var('r0', 'pt'  , long_name='potential temperature'       , units='K'     , dim_names=cell_dims_3d, data_type='r8')
+  else
+    call fiona_add_var('r0', 'u'   , long_name='u wind component'            , units='m s-1' , dim_names=lon_dims_2d , data_type='r8')
+    call fiona_add_var('r0', 'v'   , long_name='v wind component'            , units='m s-1' , dim_names=lat_dims_2d , data_type='r8')
+    call fiona_add_var('r0', 'gz'  , long_name='geopotential height'         , units='m2 s-2', dim_names=cell_dims_2d, data_type='r8')
+  end if
+    call fiona_add_var('r0', 'gzs' , long_name='surface geopotential height' , units='m2 s-2', dim_names=cell_dims_2d, data_type='r8')
 
     call fiona_start_output('r0', elapsed_seconds, new_file=.true.)
     call fiona_output('r0', 'lon' , global_mesh%full_lon_deg(1:global_mesh%num_full_lon))
