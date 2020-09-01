@@ -85,7 +85,7 @@ contains
 #endif
         if (full_j >= blocks(iblk)%mesh%full_lat_lb .and. full_j <= blocks(iblk)%mesh%full_lat_ub) then
           call reduce_mesh(reduce_factors(j), full_j, blocks(iblk)%mesh, blocks(iblk)%reduced_mesh(full_j))
-          blocks(iblk)%reduced_mesh(full_j)%damp_order = damp_orders(j)
+          blocks(iblk)%reduced_mesh(full_j)%damp_order = zonal_damp_orders(j)
         end if
         ! North Pole
 #ifdef V_POLE
@@ -95,7 +95,7 @@ contains
 #endif
         if (full_j >= blocks(iblk)%mesh%full_lat_lb .and. full_j <= blocks(iblk)%mesh%full_lat_ub) then
           call reduce_mesh(reduce_factors(j), full_j, blocks(iblk)%mesh, blocks(iblk)%reduced_mesh(full_j))
-          blocks(iblk)%reduced_mesh(full_j)%damp_order = damp_orders(j)
+          blocks(iblk)%reduced_mesh(full_j)%damp_order = zonal_damp_orders(j)
         end if
       end do
       do j = blocks(iblk)%mesh%full_lat_ibeg - 1, blocks(iblk)%mesh%full_lat_iend + 1
@@ -283,7 +283,7 @@ contains
     type(reduced_mesh_type), intent(in) :: reduced_mesh
     type(reduced_state_type), intent(inout) :: reduced_state
 
-    integer is, ie, ks, ke
+    integer is, ie, ks, ke, i1, i2, i3
 
 #define full_lev_full_lon_dims(x, buf_bound) reduced_state%x(reduced_mesh%full_lev_lb:reduced_mesh%full_lev_ub,reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub,buf_bound,reduced_mesh%reduce_factor)
 #define full_lev_half_lon_dims(x, buf_bound) reduced_state%x(reduced_mesh%full_lev_lb:reduced_mesh%full_lev_ub,reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub,buf_bound,reduced_mesh%reduce_factor)
@@ -361,6 +361,15 @@ contains
     end if
 #endif
     allocate(reduced_state%async(11,-2:2,reduced_mesh%reduce_factor))
+
+    ! Initialize async objects.
+    do i1 = 1, size(reduced_state%async, 1)
+      do i2 = lbound(reduced_state%async, 2), ubound(reduced_state%async, 2)
+        do i3 = 1, size(reduced_state%async, 3)
+          call reduced_state%async(i1,i2,i3)%init(size(proc%ngb))
+        end do
+      end do
+    end do
 
   end subroutine allocate_reduced_state
 

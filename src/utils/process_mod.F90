@@ -211,6 +211,7 @@ contains
 
     hw = global_mesh%lon_halo_width
 
+    ! TODO: Support 2D decomposition.
     call proc%ngb(west )%init(west , lat_ibeg=proc%lat_ibeg, lat_iend=proc%lat_iend)
     call proc%ngb(east )%init(east , lat_ibeg=proc%lat_ibeg, lat_iend=proc%lat_iend)
     call proc%ngb(south)%init(south, lon_ibeg=proc%lon_ibeg-hw, lon_iend=proc%lon_iend+hw)
@@ -254,7 +255,7 @@ contains
 
   subroutine process_create_blocks()
 
-    integer i, dtype
+    integer i, j, dtype
 
     if (.not. allocated(proc%blocks)) allocate(proc%blocks(1))
 
@@ -285,6 +286,12 @@ contains
                                          host_id=proc%id, ngb_proc_id=proc%ngb(i)%id,                  &
                                          lon_ibeg=proc%ngb(i)%lon_ibeg, lon_iend=proc%ngb(i)%lon_iend)
       end select
+    end do
+    ! Initialize async objects.
+    do i = 1, size(proc%blocks(1)%state)
+      do j = 1, size(proc%blocks(1)%state(i)%async)
+        call proc%blocks(1)%state(i)%async(j)%init(size(proc%ngb))
+      end do
     end do
 
   end subroutine process_create_blocks

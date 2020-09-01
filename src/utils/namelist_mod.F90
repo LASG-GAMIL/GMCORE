@@ -1,4 +1,5 @@
 module namelist_mod
+
   use const_mod
   use time_mod, start_time => start_time_array, end_time => end_time_array
 
@@ -44,7 +45,7 @@ module namelist_mod
   integer :: reduce_factors(100) = 0
   integer :: color_proc_lat_reduce(100) = 0
   integer :: num_proc_lon_reduce(100) = 0
-  integer :: damp_orders(100) = 0
+  integer :: zonal_damp_orders(100) = 0
 
   logical :: use_polar_damp = .true.
   integer :: polar_damp_order = 4
@@ -97,7 +98,7 @@ module namelist_mod
     reduce_factors            , &
     color_proc_lat_reduce     , &
     num_proc_lon_reduce       , &
-    damp_orders               , &
+    zonal_damp_orders         , &
     use_polar_damp            , &
     polar_damp_order          , &
     use_div_damp              , &

@@ -280,9 +280,9 @@ contains
     type(mesh_type), pointer :: mesh
     integer i, j, k
 
-    call wait_halo(state%async(async_gz))
-    call wait_halo(state%async(async_u))
-    call wait_halo(state%async(async_v))
+    call state%async(async_gz)%wait()
+    call state%async(async_u )%wait()
+    call state%async(async_v )%wait()
 
     call operators_prepare(block, state, dt, pass)
     call reduce_run(block, state, dt, pass)

@@ -153,7 +153,7 @@ contains
 
     mesh => state%mesh
 
-    call wait_halo(state%async(async_pv))
+    call state%async(async_pv)%wait()
 
     ! Tangent pv difference
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend

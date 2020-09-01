@@ -542,7 +542,7 @@ contains
 
     mesh => state%mesh
 
-    call wait_halo(state%async(async_mf_lon_n))
+    call state%async(async_mf_lon_n)%wait()
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -557,7 +557,7 @@ contains
       end do
     end do
 
-    call wait_halo(state%async(async_mf_lat_n))
+    call state%async(async_mf_lat_n)%wait()
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
@@ -589,8 +589,8 @@ contains
       call log_error('Unknown PV scheme!')
     end select
 
-    call wait_halo(state%async(async_pv_lon))
-    call wait_halo(state%async(async_pv_lat))
+    call state%async(async_pv_lon)%wait()
+    call state%async(async_pv_lat)%wait()
 
   end subroutine calc_pv_edge
 
@@ -614,7 +614,7 @@ contains
         if (block%reduced_mesh(j-1)%reduce_factor > 0) then
           tend%qhu(:,j,k) = 0.0_r8
           do move = 1, block%reduced_mesh(j-1)%reduce_factor
-            call wait_halo(block%reduced_state(j-1)%async(async_pv_lon,0,move))
+            call block%reduced_state(j-1)%async(async_pv_lon,0,move)%wait()
             do i = block%reduced_mesh(j-1)%full_lon_ibeg, block%reduced_mesh(j-1)%full_lon_iend
               block%reduced_tend(j-1)%qhu(i,k) = (                    &
                 block%reduced_mesh(j-1)%half_tangent_wgt(1,1) * (     &
@@ -649,7 +649,7 @@ contains
         if (block%reduced_mesh(j)%reduce_factor > 0) then
           call zero_halo(block, tend%qhu(:,j,k), east_halo=.true.)
           do move = 1, block%reduced_mesh(j)%reduce_factor
-            call wait_halo(block%reduced_state(j)%async(async_pv_lon,0,move))
+            call block%reduced_state(j)%async(async_pv_lon,0,move)%wait()
             do i = block%reduced_mesh(j)%full_lon_ibeg, block%reduced_mesh(j)%full_lon_iend
               block%reduced_tend(j)%qhu(i,k) = (                    &
                 block%reduced_mesh(j)%half_tangent_wgt(2,0) * (     &
@@ -689,7 +689,7 @@ contains
         if (block%reduced_mesh(j)%reduce_factor > 0) then
           tend%qhu(:,j,k) = 0.0_r8
           do move = 1, block%reduced_mesh(j)%reduce_factor
-            call wait_halo(block%reduced_state(j)%async(async_pv_lon,0,move))
+            call block%reduced_state(j)%async(async_pv_lon,0,move)%wait()
             do i = block%reduced_mesh(j)%full_lon_ibeg, block%reduced_mesh(j)%full_lon_iend
               block%reduced_tend(j)%qhu(i,k) = (                    &
                 block%reduced_mesh(j)%half_tangent_wgt(1,0) * (     &
@@ -724,7 +724,7 @@ contains
         if (block%reduced_mesh(j+1)%reduce_factor > 0) then
           call zero_halo(block, tend%qhu(:,j,k), east_halo=.true.)
           do move = 1, block%reduced_mesh(j+1)%reduce_factor
-            call wait_halo(block%reduced_state(j+1)%async(async_pv_lon,0,move))
+            call block%reduced_state(j+1)%async(async_pv_lon,0,move)%wait()
             do i = block%reduced_mesh(j+1)%full_lon_ibeg, block%reduced_mesh(j+1)%full_lon_iend
               block%reduced_tend(j+1)%qhu(i,k) = (                     &
                 block%reduced_mesh(j+1)%half_tangent_wgt(2,-1) * (     &
@@ -766,8 +766,8 @@ contains
         if (block%reduced_mesh(j)%reduce_factor > 0) then
           tend%qhv(:,j,k) = 0.0_r8
           do move = 1, block%reduced_mesh(j)%reduce_factor
-            call wait_halo(block%reduced_state(j)%async(async_pv_lat,0,move))
-            call wait_halo(block%reduced_state(j)%async(async_pv_lat,1,move))
+            call block%reduced_state(j)%async(async_pv_lat,0,move)%wait()
+            call block%reduced_state(j)%async(async_pv_lat,1,move)%wait()
             do i = block%reduced_mesh(j)%half_lon_ibeg, block%reduced_mesh(j)%half_lon_iend
               block%reduced_tend(j)%qhv(i,k) = (                    &
                 block%reduced_mesh(j)%full_tangent_wgt(1,0) * (     &
@@ -821,8 +821,8 @@ contains
         if (block%reduced_mesh(j)%reduce_factor > 0) then
           tend%qhv(:,j,k) = 0.0_r8
           do move = 1, block%reduced_mesh(j)%reduce_factor
-            call wait_halo(block%reduced_state(j)%async(async_pv_lat,-1,move))
-            call wait_halo(block%reduced_state(j)%async(async_pv_lat, 0,move))
+            call block%reduced_state(j)%async(async_pv_lat,-1,move)%wait()
+            call block%reduced_state(j)%async(async_pv_lat, 0,move)%wait()
             do i = block%reduced_mesh(j)%half_lon_ibeg, block%reduced_mesh(j)%half_lon_iend
               block%reduced_tend(j)%qhv(i,k) = (                     &
                 block%reduced_mesh(j)%full_tangent_wgt(1,0) * (      &
@@ -886,13 +886,13 @@ contains
 
     mesh => state%mesh
 
-    call wait_halo(state%async(async_ke))
+    call state%async(async_ke)%wait()
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         if (block%reduced_mesh(j)%reduce_factor > 0) then
           tend%dkedlon(:,j,k) = 0.0_r8
           do move = 1, block%reduced_mesh(j)%reduce_factor
-            call wait_halo(block%reduced_state(j)%async(async_ke,0,move))
+            call block%reduced_state(j)%async(async_ke,0,move)%wait()
             do i = block%reduced_mesh(j)%half_lon_ibeg, block%reduced_mesh(j)%half_lon_iend
               block%reduced_tend(j)%dkedlon(i,k) = (                                            &
                 block%reduced_state(j)%ke(k,i+1,0,move) - block%reduced_state(j)%ke(k,i,0,move) &
@@ -935,7 +935,7 @@ contains
 
     mesh => state%mesh
 
-    call wait_halo(state%async(async_gz))
+    call state%async(async_gz)%wait()
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         if (block%reduced_mesh(j)%reduce_factor > 0) then
