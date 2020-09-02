@@ -1171,12 +1171,12 @@ contains
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
 #ifdef V_POLE
-            tend%dptfdlat(i,j,k) = (
+            tend%dptfdlat(i,j,k) = (                                               &
               state%mf_lat_n(i,j+1,k) * state%pt_lat(i,j+1,k) * mesh%le_lat(j+1) - &
               state%mf_lat_n(i,j  ,k) * state%pt_lat(i,j  ,k) * mesh%le_lat(j  )   &
             ) / mesh%area_cell(j)
 #else
-            tend%dptfdlat(i,j,k) = (                            &
+            tend%dptfdlat(i,j,k) = (                                               &
               state%mf_lat_n(i,j  ,k) * state%pt_lat(i,j  ,k) * mesh%le_lat(j  ) - &
               state%mf_lat_n(i,j-1,k) * state%pt_lat(i,j-1,k) * mesh%le_lat(j-1)   &
             ) / mesh%area_cell(j)

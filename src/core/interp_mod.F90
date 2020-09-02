@@ -2,6 +2,8 @@ module interp_mod
 
   use const_mod
   use block_mod
+  use process_mod
+  use parallel_mod
 
   implicit none
 
