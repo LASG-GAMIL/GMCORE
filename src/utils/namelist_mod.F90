@@ -49,11 +49,12 @@ module namelist_mod
 
   logical :: use_polar_damp = .true.
   integer :: polar_damp_order = 4
+  integer :: polar_damp_cycles = 1
   logical :: use_div_damp = .true.
   integer :: div_damp_order = 2
   real(r8) :: div_damp_coef2 = 1.0_r8 / 128.0_r8
   real(r8) :: div_damp_coef4 = 0.01_r8
-  integer :: damp_cycles = 1
+  integer :: div_damp_cycles = 1
   
   ! Nest settings
   character(30) :: nest_time_scheme   = 'pc2'
@@ -101,11 +102,12 @@ module namelist_mod
     zonal_damp_orders         , &
     use_polar_damp            , &
     polar_damp_order          , &
+    polar_damp_cycles         , &
     use_div_damp              , &
     div_damp_order            , &
     div_damp_coef2            , &
     div_damp_coef4            , &
-    damp_cycles               , &
+    div_damp_cycles           , &
     nest_time_scheme          , &
     nest_max_dom              , &
     nest_parent_id            , &

@@ -348,7 +348,7 @@ contains
       end do
     end if
 #endif
-    if (use_div_damp) then
+    if (div_damp_order == 4) then
       call fill_halo(block, state%div, full_lon=.true., full_lat=.true., full_lev=.true.)
     else
 #ifdef V_POLE
@@ -358,7 +358,7 @@ contains
 #endif
     end if
 
-    if (use_div_damp) then
+    if (div_damp_order == 4) then
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -1017,7 +1017,7 @@ contains
       end do
 
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-        do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+        do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
 #ifdef V_POLE
             tend%dpdlat(i,j,k) = Rd / mesh%de_lat(j) / state%m_lat(i,j,k) * (            &

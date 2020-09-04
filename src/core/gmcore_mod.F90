@@ -56,7 +56,7 @@ contains
 
     call log_init()
     call global_mesh%init_global(num_lon, num_lat, num_lev, lon_halo_width=max(1, maxval(reduce_factors) - 1), lat_halo_width=2)
-    call debug_check_areas()
+    !call debug_check_areas()
     call process_init()
     call vert_coord_init(num_lev, namelist_path)
     call process_create_blocks()
@@ -544,8 +544,8 @@ contains
       call splitter(dt, blocks(iblk))
 
       if (use_polar_damp) then
-        call latlon_damp_lon(blocks(iblk), polar_damp_order, dt, blocks(iblk)%state(new)%u)
-        call latlon_damp_lat(blocks(iblk), polar_damp_order, dt, blocks(iblk)%state(new)%v)
+        call latlon_damp_lon(blocks(iblk), dt, blocks(iblk)%state(new)%u)
+        call latlon_damp_lat(blocks(iblk), dt, blocks(iblk)%state(new)%v)
       end if
       if (use_div_damp) then
         call div_damp(blocks(iblk), blocks(iblk)%state(old), blocks(iblk)%state(new), dt)
@@ -797,9 +797,11 @@ contains
       call fill_halo(block, new_state%v, full_lon=.true., full_lat=.false., full_lev=.true.)
     end if
 
+    !call zonal_damp_u_v(block, new_state)
+
   end subroutine update_state
 
-  subroutine damp_state(block, state)
+  subroutine zonal_damp_u_v(block, state)
 
     type(block_type), intent(inout) :: block
     type(state_type), intent(inout) :: state
@@ -835,6 +837,6 @@ contains
       end do
     end do
 
-  end subroutine damp_state
+  end subroutine zonal_damp_u_v
 
 end module gmcore_mod

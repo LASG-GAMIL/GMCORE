@@ -30,6 +30,8 @@ module damp_mod
      1, -8,  28, -56,  70, -56,  28, - 8,  1   & ! 8
   ], [9, 7])
 
+  integer , allocatable :: ox_full_lat(:)
+  integer , allocatable :: ox_half_lat(:)
   real(r8), allocatable :: cx_full_lat(:,:,:)
   real(r8), allocatable :: cy_full_lat(:,:,:)
   real(r8), allocatable :: cx_half_lat(:,:,:)
@@ -41,28 +43,87 @@ contains
 
   subroutine damp_init()
 
-    integer j, k, o
-
-    integer r
+    integer j, jr, jr0, k, order, r
+    real(r8) c0, polar_damp_mul
 
     call damp_final()
+
+    allocate(ox_full_lat(global_mesh%full_lat_ibeg_no_pole:global_mesh%full_lat_iend_no_pole))
+    allocate(ox_half_lat(global_mesh%half_lat_ibeg_no_pole:global_mesh%half_lat_iend_no_pole))
+
+    jr0 = 0
+    do j = global_mesh%full_lat_ibeg_no_pole, global_mesh%full_lat_iend_no_pole
+      if (global_mesh%full_lat(j) <= 0) then
+        jr = j - global_mesh%full_lat_ibeg_no_pole + 1
+        if (zonal_damp_orders(jr) > 1) jr0 = jr
+      end if
+    end do
+
+    ! Set zonal damping orders.
+    do j = global_mesh%full_lat_ibeg_no_pole, global_mesh%full_lat_iend_no_pole
+      if (global_mesh%full_lat(j) <= 0) then
+        jr = j - global_mesh%full_lat_ibeg_no_pole + 1
+      else
+        jr = global_mesh%full_lat_iend_no_pole - j + 1
+      end if
+      ox_full_lat(j) = merge(zonal_damp_orders(jr), polar_damp_order, jr <= jr0)
+    end do
+    do j = global_mesh%half_lat_ibeg_no_pole, global_mesh%half_lat_iend_no_pole
+      if (global_mesh%half_lat(j) <= 0) then
+        jr = j - global_mesh%half_lat_ibeg_no_pole + 1
+      else
+        jr = global_mesh%half_lat_iend_no_pole - j + 1
+      end if
+#ifdef V_POLE
+      ox_half_lat(j) = merge(max(polar_damp_order, min(zonal_damp_orders(jr), zonal_damp_orders(jr-1))), polar_damp_order, jr <= jr0)
+#else
+      ox_half_lat(j) = merge(max(polar_damp_order, min(zonal_damp_orders(jr), zonal_damp_orders(jr+1))), polar_damp_order, jr <= jr0)
+#endif
+    end do
 
     allocate(cx_full_lat(global_mesh%full_lat_ibeg:global_mesh%full_lat_iend,global_mesh%full_lev_ibeg:global_mesh%full_lev_iend,2:4))
     allocate(cy_full_lat(global_mesh%full_lat_ibeg:global_mesh%full_lat_iend,global_mesh%full_lev_ibeg:global_mesh%full_lev_iend,2:4))
     allocate(cx_half_lat(global_mesh%half_lat_ibeg:global_mesh%half_lat_iend,global_mesh%full_lev_ibeg:global_mesh%full_lev_iend,2:4))
     allocate(cy_half_lat(global_mesh%half_lat_ibeg:global_mesh%half_lat_iend,global_mesh%full_lev_ibeg:global_mesh%full_lev_iend,2:4))
 
-    do o = 2, 4, 2
+    do order = 2, 4, 2
+      c0 = 0.5_r8**order / dt_in_seconds
+      polar_damp_mul = 2
       do k = global_mesh%full_lev_ibeg, global_mesh%full_lev_iend
         do j = global_mesh%full_lat_ibeg_no_pole, global_mesh%full_lat_iend_no_pole
-          cx_full_lat(j,k,o) = 0.5_r8**o * exp(- 100.0 * (pi05 - abs(global_mesh%full_lat(j)))**2) / dt_in_seconds
-          cy_full_lat(j,k,o) = 0.5_r8**o * exp(- 100.0 * (pi05 - abs(global_mesh%full_lat(j)))**2) / dt_in_seconds
+          ! Check if grids are reduced at this zonal circle.
+          if (global_mesh%full_lat(j) <= 0) then
+            jr = j - global_mesh%full_lat_ibeg_no_pole + 1
+          else
+            jr = global_mesh%full_lat_iend_no_pole - j + 1
+          end if
+          if (jr <= jr0) then
+            cx_full_lat(j,k,order) = c0
+            cy_full_lat(j,k,order) = c0
+          else
+            cx_full_lat(j,k,order) = c0 * exp(-polar_damp_mul * (jr - jr0)**2)
+            cy_full_lat(j,k,order) = c0 * exp(-polar_damp_mul * (jr - jr0)**2)
+          end if
+          !if (cx_full_lat(j,k,order) < 1.0e-25_r8) cx_full_lat(j,k,order) = 0.0_r8
+          !if (cy_full_lat(j,k,order) < 1.0e-25_r8) cy_full_lat(j,k,order) = 0.0_r8
         end do
       end do
       do k = global_mesh%full_lev_ibeg, global_mesh%full_lev_iend
         do j = global_mesh%half_lat_ibeg_no_pole, global_mesh%half_lat_iend_no_pole
-          cx_half_lat(j,k,o) = 0.5_r8**o * exp(- 100.0 * (pi05 - abs(global_mesh%half_lat(j)))**2) / dt_in_seconds
-          cy_half_lat(j,k,o) = 0.5_r8**o * exp(- 100.0 * (pi05 - abs(global_mesh%half_lat(j)))**2) / dt_in_seconds
+          if (global_mesh%half_lat(j) <= 0) then
+            jr = j - global_mesh%half_lat_ibeg_no_pole + 1
+          else
+            jr = global_mesh%half_lat_iend_no_pole - j + 1
+          end if
+          if (jr <= jr0) then
+            cx_half_lat(j,k,order) = c0
+            cy_half_lat(j,k,order) = c0
+          else
+            cx_half_lat(j,k,order) = c0 * exp(-polar_damp_mul * (jr - jr0)**2)
+            cy_half_lat(j,k,order) = c0 * exp(-polar_damp_mul * (jr - jr0)**2)
+          end if
+          !if (cx_half_lat(j,k,order) < 1.0e-25_r8) cx_half_lat(j,k,order) = 0.0_r8
+          !if (cy_half_lat(j,k,order) < 1.0e-25_r8) cy_half_lat(j,k,order) = 0.0_r8
         end do
       end do
     end do
@@ -109,6 +170,8 @@ contains
 
   subroutine damp_final()
 
+    if (allocated(ox_full_lat  )) deallocate(ox_full_lat  )
+    if (allocated(ox_half_lat  )) deallocate(ox_half_lat  )
     if (allocated(cx_full_lat  )) deallocate(cx_full_lat  )
     if (allocated(cy_full_lat  )) deallocate(cy_full_lat  )
     if (allocated(cx_half_lat  )) deallocate(cx_half_lat  )
@@ -172,377 +235,429 @@ contains
 
   end subroutine zonal_damp
 
-  subroutine latlon_damp_lon(block, order, dt, f)
+  subroutine latlon_damp_lon(block, dt, f)
 
     type(block_type), intent(in), target :: block
-    integer, intent(in) :: order
     real(8), intent(in) :: dt
     real(r8), intent(inout) :: f(block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
                                  block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
                                  block%mesh%full_lev_lb:block%mesh%full_lev_ub)
 
     type(mesh_type), pointer :: mesh
-    real(r8), pointer, dimension(:,:,:) :: gx, gy, dfdx, dfdy
-    integer i, j, k, ns, cyc
-    real(r8) w(9)
+    real(r8), pointer, dimension(:,:,:) :: gx, gy
+    integer i, j, k, cyc, ox, oy, nsx, nsy
+    real(r8) wx(9), wy(9)
 
     mesh => block%mesh
-
-    if (order == 2) then
+    gx   => block%latlon_damp_lon_gx
+    gy   => block%latlon_damp_lon_gy
+    oy = polar_damp_order
+    if (oy == 2) then
+      nsy = diff_halo_width(oy)
+      wy  = diff_weights(:,oy)
     else
-      ns = diff_halo_width(order - 1)
-      w  = diff_weights(:,order - 1)
-      gx   => block%latlon_damp_lon_gx
-      gy   => block%latlon_damp_lon_gy
-      dfdx => block%latlon_damp_lon_dfdx
-      dfdy => block%latlon_damp_lon_dfdy
-      cycle_loop: do cyc = 1, damp_cycles
-        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      nsy = diff_halo_width(oy - 1)
+      wy  = diff_weights(:,oy - 1)
+    end if
+    cycle_loop: do cyc = 1, polar_damp_cycles
+      ! - Zonal damping
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+          ox = ox_full_lat(j)
           ! Calculate damping flux at interfaces.
-          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              !
-              !                               i
-              !   o      |      o      |      o      |      o      |      o
-              !         i-2           i-1            i            i+1
-              !                               ^
-              !   o - cell   | - edge
-              !
-              gx  (i,j,k) = sum(f(i-ns:i+ns-1,j,k) * w(:2*ns))
-              dfdx(i,j,k) = f(i,j,k) - f(i-1,j,k)
-            end do
-          end do
-          do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
-            do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-#ifdef V_POLE
-              !
-              !                               j
-              !   |      o      |      o      |      o      |      o      |
-              !         j-2           j-1            j            j+1
-              !                               ^
-              !   o - cell   | - edge
-              !
-              gy  (i,j,k) = sum(f(i,j-ns:j+ns-1,k) * w(:2*ns))
-              dfdy(i,j,k) = f(i,j,k) - f(i,j-1,k)
-#else
-              !
-              !                               j
-              !   |      o      |      o      |      o      |      o      |
-              !         j-1            j            j+1           j+2
-              !                               ^
-              !   o - cell   | - edge
-              !
-              gy  (i,j,k) = sum(f(i,j-ns+1:j+ns,k) * w(:2*ns))
-              dfdy(i,j,k) = f(i,j+1,k) - f(i,j,k)
-#endif
-            end do
+          if (ox == 2) then
+            nsx = diff_halo_width(ox)
+            wx  = diff_weights(:,ox)
+          else
+            nsx = diff_halo_width(ox - 1)
+            wx  = diff_weights(:,ox - 1)
+          end if
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            !
+            !                               i
+            !   o      |      o      |      o      |      o      |      o
+            !         i-2           i-1            i            i+1
+            !                               ^
+            !   o - cell   | - edge
+            !
+            gx(i,j,k) = sum(f(i-nsx:i+nsx-1,j,k) * wx(:2*nsx))
           end do
           ! Limit damping flux to avoid upgradient (Xue 2000).
-          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-            gx(:,j,k) = gx(:,j,k) * (-1)**(order / 2)
+          if (ox > 2) then
+            gx(:,j,k) = gx(:,j,k) * (-1)**(ox / 2)
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              gx(i,j,k) = gx(i,j,k) * max(0.0_r8, sign(1.0_r8, -gx(i,j,k) * dfdx(i,j,k)))
+              gx(i,j,k) = gx(i,j,k) * max(0.0_r8, sign(1.0_r8, -gx(i,j,k) * (f(i,j,k) - f(i-1,j,k))))
             end do
-          end do
-          call fill_halo(block, gx, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false.)
-          do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
-            gy(:,j,k) = gy(:,j,k) * (-1)**(order / 2)
-            do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              gy(i,j,k) = gy(i,j,k) * max(0.0_r8, sign(1.0_r8, -gy(i,j,k) * dfdy(i,j,k)))
-            end do
-          end do
+          end if
+        end do
+      end do
+      call fill_halo(block, gx, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false.)
+      ! - Merdional damping
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+          ! Calculate damping flux at interfaces.
+          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
 #ifdef V_POLE
-          call fill_halo(block, gy, full_lon=.false., full_lat=.false., full_lev=.true., south_halo=.false.)
+            !
+            !                               j
+            !   |      o      |      o      |      o      |      o      |
+            !         j-2           j-1            j            j+1
+            !                               ^
+            !   o - cell   | - edge
+            !
+            gy(i,j,k) = sum(f(i,j-nsy:j+nsy-1,k) * wy(:2*nsy))
 #else
-          call fill_halo(block, gy, full_lon=.false., full_lat=.false., full_lev=.true., north_halo=.false.)
+            !
+            !                               j
+            !   |      o      |      o      |      o      |      o      |
+            !         j-1            j            j+1           j+2
+            !                               ^
+            !   o - cell   | - edge
+            !
+            gy(i,j,k) = sum(f(i,j-nsy+1:j+nsy,k) * wy(:2*nsy))
 #endif
-          ! Damp physical variable at last.
-          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+          end do
+          ! Limit damping flux to avoid upgradient (Xue 2000).
+          if (oy > 2) then
+            gy(:,j,k) = gy(:,j,k) * (-1)**(oy / 2)
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
 #ifdef V_POLE
-              !
-              !               - j+1
-              !               |
-              !               |
-              !        o------|------o
-              !        i      |     i+1
-              !               |
-              !               - j
-              !
-              f(i,j,k) = f(i,j,k) - dt / damp_cycles * (             &
-                (gx(i+1,j,k) - gx(i,j,k)) * cx_full_lat(j,k,order) + &
-                (gy(i,j+1,k) - gy(i,j,k)) * cy_full_lat(j,k,order)   &
-              )
+              gy(i,j,k) = gy(i,j,k) * max(0.0_r8, sign(1.0_r8, -gy(i,j,k) * (f(i,j,k) - f(i,j-1,k))))
 #else
-              !
-              !               - j
-              !               |
-              !               |
-              !        o------|------o
-              !        i      |     i+1
-              !               |
-              !               - j-1
-              !
-              f(i,j,k) = f(i,j,k) - dt / damp_cycles * (             &
-                (gx(i+1,j,k) - gx(i,j,k)) * cx_full_lat(j,k,order) + &
-                (gy(i,j,k) - gy(i,j-1,k)) * cy_full_lat(j,k,order)   &
-              )
+              gy(i,j,k) = gy(i,j,k) * max(0.0_r8, sign(1.0_r8, -gy(i,j,k) * (f(i,j+1,k) - f(i,j,k))))
 #endif
             end do
+          end if
+        end do
+      end do
+#ifdef V_POLE
+      call fill_halo(block, gy, full_lon=.false., full_lat=.false., full_lev=.true., south_halo=.false.)
+#else
+      call fill_halo(block, gy, full_lon=.false., full_lat=.false., full_lev=.true., north_halo=.false.)
+#endif
+      ! Damp physical variable at last.
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+          ox = ox_full_lat(j)
+          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+#ifdef V_POLE
+            !
+            !               - j+1
+            !               |
+            !               |
+            !        o------|------o
+            !        i      |     i+1
+            !               |
+            !               - j
+            !
+            f(i,j,k) = f(i,j,k) - dt / polar_damp_cycles * (    &
+              (gx(i+1,j,k) - gx(i,j,k)) * cx_full_lat(j,k,ox) + &
+              (gy(i,j+1,k) - gy(i,j,k)) * cy_full_lat(j,k,oy)   &
+            )
+#else
+            !
+            !               - j
+            !               |
+            !               |
+            !        o------|------o
+            !        i      |     i+1
+            !               |
+            !               - j-1
+            !
+            f(i,j,k) = f(i,j,k) - dt / polar_damp_cycles * (    &
+              (gx(i+1,j,k) - gx(i,j,k)) * cx_full_lat(j,k,ox) + &
+              (gy(i,j,k) - gy(i,j-1,k)) * cy_full_lat(j,k,oy)   &
+            )
+#endif
           end do
         end do
-        call fill_halo(block, f, full_lon=.false., full_lat=.true., full_lev=.true.)
-      end do cycle_loop
-    end if
+      end do
+      call fill_halo(block, f, full_lon=.false., full_lat=.true., full_lev=.true.)
+    end do cycle_loop
 
   end subroutine latlon_damp_lon
 
-  subroutine latlon_damp_lat(block, order, dt, f)
+  subroutine latlon_damp_lat(block, dt, f)
 
     type(block_type), intent(in), target :: block
-    integer, intent(in) :: order
     real(8), intent(in) :: dt
     real(r8), intent(inout) :: f(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
                                  block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
                                  block%mesh%full_lev_lb:block%mesh%full_lev_ub)
 
     type(mesh_type), pointer :: mesh
-    real(r8), pointer, dimension(:,:,:) :: gx, gy, dfdx, dfdy
-    integer i, j, k, ns, cyc
-    real(r8) w(9)
+    real(r8), pointer, dimension(:,:,:) :: gx, gy
+    integer i, j, k, cyc, ox, oy, nsx, nsy
+    real(r8) wx(9), wy(9)
 
     mesh => block%mesh
-
-    if (order == 2) then
+    gx   => block%latlon_damp_lat_gx
+    gy   => block%latlon_damp_lat_gy
+    oy = polar_damp_order
+    if (oy == 2) then
+      nsy = diff_halo_width(oy)
+      wy  = diff_weights(:,oy)
     else
-      ns = diff_halo_width(order - 1)
-      w  = diff_weights(:,order - 1)
-      gx   => block%latlon_damp_lat_gx
-      gy   => block%latlon_damp_lat_gy
-      dfdx => block%latlon_damp_lat_dfdx
-      dfdy => block%latlon_damp_lat_dfdy
-      cycle_loop: do cyc = 1, damp_cycles
-        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      nsy = diff_halo_width(oy - 1)
+      wy  = diff_weights(:,oy - 1)
+    end if
+    cycle_loop: do cyc = 1, polar_damp_cycles
+      ! - Zonal damping
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+          ox = ox_half_lat(j)
           ! Calculate damping flux at interfaces.
-          do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
-            do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              !
-              !                               i
-              !   |      o      |      o      |      o      |      o      |
-              !         i-1            i            i+1           i+2
-              !                               ^
-              !   o - cell   | - edge
-              !
-              gx  (i,j,k) = sum(f(i-ns+1:i+ns,j,k) * w(:2*ns))
-              dfdx(i,j,k) = f(i+1,j,k) - f(i,j,k)
-            end do
-          end do
-          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-#ifdef V_POLE
-              !
-              !                               j
-              !   o      |      o      |      o      |      o      |      o
-              !         j-1            j            j+1           j+2
-              !                               ^
-              !   o - cell   | - edge
-              !
-              gy  (i,j,k) = sum(f(i,j-ns+1:j+ns,k) * w(:2*ns))
-              dfdy(i,j,k) = f(i,j+1,k) - f(i,j,k)
-#else
-              !
-              !                               j
-              !   o      |      o      |      o      |      o      |      o
-              !         j-2           j-1            j            j+1
-              !                               ^
-              !   o - cell   | - edge
-              !
-              gy  (i,j,k) = sum(f(i,j-ns:j+ns-1,k) * w(:2*ns))
-              dfdy(i,j,k) = f(i,j,k) - f(i,j-1,k)
-#endif
-            end do
+          if (ox == 2) then
+            nsx = diff_halo_width(ox)
+            wx  = diff_weights(:,ox)
+          else
+            nsx = diff_halo_width(ox - 1)
+            wx  = diff_weights(:,ox - 1)
+          end if
+          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+            !
+            !                               i
+            !   |      o      |      o      |      o      |      o      |
+            !         i-1            i            i+1           i+2
+            !                               ^
+            !   o - cell   | - edge
+            !
+            gx(i,j,k) = sum(f(i-nsx+1:i+nsx,j,k) * wx(:2*nsx))
           end do
           ! Limit damping flux to avoid upgradient (Xue 2000).
-          do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
-            gx(:,j,k) = gx(:,j,k) * (-1)**(order / 2)
+          if (ox > 2) then
+            gx(:,j,k) = gx(:,j,k) * (-1)**(ox / 2)
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              gx(i,j,k) = gx(i,j,k) * max(0.0_r8, sign(1.0_r8, -gx(i,j,k) * dfdx(i,j,k)))
+              gx(i,j,k) = gx(i,j,k) * max(0.0_r8, sign(1.0_r8, -gx(i,j,k) * (f(i+1,j,k) - f(i,j,k))))
             end do
-          end do
-          call fill_halo(block, gx, full_lon=.false., full_lat=.false., full_lev=.true., east_halo=.false.)
-          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-            gy(:,j,k) = gy(:,j,k) * (-1)**(order / 2)
-            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              gy(i,j,k) = gy(i,j,k) * max(0.0_r8, sign(1.0_r8, -gy(i,j,k) * dfdy(i,j,k)))
-            end do
-          end do
+          end if
+        end do
+      end do
+      call fill_halo(block, gx, full_lon=.false., full_lat=.false., full_lev=.true., east_halo=.false.)
+      ! - Merdional damping
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+          ! Calculate damping flux at interfaces.
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
 #ifdef V_POLE
-          call fill_halo(block, gy, full_lon=.true., full_lat=.true., full_lev=.true., north_halo=.false.)
+            !
+            !                               j
+            !   o      |      o      |      o      |      o      |      o
+            !         j-1            j            j+1           j+2
+            !                               ^
+            !   o - cell   | - edge
+            !
+            gy(i,j,k) = sum(f(i,j-nsy+1:j+nsy,k) * wy(:2*nsy))
 #else
-          call fill_halo(block, gy, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false.)
+            !
+            !                               j
+            !   o      |      o      |      o      |      o      |      o
+            !         j-2           j-1            j            j+1
+            !                               ^
+            !   o - cell   | - edge
+            !
+            gy(i,j,k) = sum(f(i,j-nsy:j+nsy-1,k) * wy(:2*nsy))
 #endif
-          do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+          end do
+          ! Limit damping flux to avoid upgradient (Xue 2000).
+          if (oy > 2) then
+            gy(:,j,k) = gy(:,j,k) * (-1)**(oy / 2)
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
 #ifdef V_POLE
-              !
-              !               o j
-              !               |
-              !               |
-              !        |-------------|
-              !       i-1     |      i
-              !               |
-              !               o j-1
-              !
-              f(i,j,k) = f(i,j,k) - dt / damp_cycles * (             &
-                (gx(i,j,k) - gx(i-1,j,k)) * cx_half_lat(j,k,order) + &
-                (gy(i,j,k) - gy(i,j-1,k)) * cy_half_lat(j,k,order)   &
-              )
+              gy(i,j,k) = gy(i,j,k) * max(0.0_r8, sign(1.0_r8, -gy(i,j,k) * (f(i,j+1,k) - f(i,j,k))))
 #else
-              !
-              !               o j+1
-              !               |
-              !               |
-              !        |-------------|
-              !       i-1     |      i
-              !               |
-              !               o j
-              !
-              f(i,j,k) = f(i,j,k) - dt / damp_cycles * (             &
-                (gx(i,j,k) - gx(i-1,j,k)) * cx_half_lat(j,k,order) + &
-                (gy(i,j+1,k) - gy(i,j,k)) * cy_half_lat(j,k,order)   &
-              )
+              gy(i,j,k) = gy(i,j,k) * max(0.0_r8, sign(1.0_r8, -gy(i,j,k) * (f(i,j,k) - f(i,j-1,k))))
 #endif
             end do
+          end if
+        end do
+      end do
+#ifdef V_POLE
+      call fill_halo(block, gy, full_lon=.true., full_lat=.true., full_lev=.true., north_halo=.false.)
+#else
+      call fill_halo(block, gy, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false.)
+#endif
+      ! Damp physical variable at last.
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+          ox = ox_half_lat(j)
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+#ifdef V_POLE
+            !
+            !               o j
+            !               |
+            !               |
+            !        |-------------|
+            !       i-1     |      i
+            !               |
+            !               o j-1
+            !
+            f(i,j,k) = f(i,j,k) - dt / polar_damp_cycles * (    &
+              (gx(i,j,k) - gx(i-1,j,k)) * cx_half_lat(j,k,ox) + &
+              (gy(i,j,k) - gy(i,j-1,k)) * cy_half_lat(j,k,oy)   &
+            )
+#else
+            !
+            !               o j+1
+            !               |
+            !               |
+            !        |-------------|
+            !       i-1     |      i
+            !               |
+            !               o j
+            !
+            f(i,j,k) = f(i,j,k) - dt / polar_damp_cycles * (    &
+              (gx(i,j,k) - gx(i-1,j,k)) * cx_half_lat(j,k,ox) + &
+              (gy(i,j+1,k) - gy(i,j,k)) * cy_half_lat(j,k,oy)   &
+            )
+#endif
           end do
         end do
-        call fill_halo(block, f, full_lon=.true., full_lat=.false., full_lev=.true.)
-      end do cycle_loop
-    end if
+      end do
+      call fill_halo(block, f, full_lon=.true., full_lat=.false., full_lev=.true.)
+    end do cycle_loop
 
   end subroutine latlon_damp_lat
 
-  subroutine latlon_damp_cell(block, order, dt, f)
+  subroutine latlon_damp_cell(block, dt, f)
 
     type(block_type), intent(in), target :: block
-    integer, intent(in) :: order
     real(8), intent(in) :: dt
     real(r8), intent(inout) :: f(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
                                  block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
                                  block%mesh%full_lev_lb:block%mesh%full_lev_ub)
 
     type(mesh_type), pointer :: mesh
-    real(r8), pointer, dimension(:,:,:) :: gx, gy, dfdx, dfdy
-    integer i, j, k, ns, cyc
-    real(r8) w(9)
+    real(r8), pointer, dimension(:,:,:) :: gx, gy
+    integer i, j, k, cyc, ox, oy, nsx, nsy
+    real(r8) wx(9), wy(9)
 
     mesh => block%mesh
-
-    if (order == 2) then
+    gx   => block%latlon_damp_cell_gx
+    gy   => block%latlon_damp_cell_gy
+    oy = polar_damp_order
+    if (oy == 2) then
+      nsy = diff_halo_width(oy)
+      wy  = diff_weights(:,oy)
     else
-      ns = diff_halo_width(order - 1)
-      w  = diff_weights(:,order - 1)
-      gx   => block%latlon_damp_cell_gx
-      gy   => block%latlon_damp_cell_gy
-      dfdx => block%latlon_damp_cell_dfdx
-      dfdy => block%latlon_damp_cell_dfdy
-      cycle_loop: do cyc = 1, damp_cycles
-        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      nsy = diff_halo_width(oy - 1)
+      wy  = diff_weights(:,oy - 1)
+    end if
+    cycle_loop: do cyc = 1, polar_damp_cycles
+      ! - Zonal damping
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+          ox = ox_full_lat(j)
           ! Calculate damping flux at interfaces.
-          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-            do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              !
-              !                               i
-              !   |      o      |      o      |      o      |      o      |
-              !         i-1            i            i+1           i+2
-              !                               ^
-              !   o - cell   | - edge
-              !
-              gx  (i,j,k) = sum(f(i-ns+1:i+ns,j,k) * w(:2*ns))
-              dfdx(i,j,k) = f(i+1,j,k) - f(i,j,k)
-            end do
-          end do
-          do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
-            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-#ifdef V_POLE
-              !
-              !                               j
-              !   |      o      |      o      |      o      |      o      |
-              !         j-2           j-1            j            j+1
-              !                               ^
-              !   o - cell   | - edge
-              !
-              gy  (i,j,k) = sum(f(i,j-ns:j+ns-1,k) * w(:2*ns))
-              dfdy(i,j,k) = f(i,j,k) - f(i,j-1,k)
-#else
-              !
-              !                               j
-              !   |      o      |      o      |      o      |      o      |
-              !         j-1            j            j+1           j+2
-              !                               ^
-              !   o - cell   | - edge
-              !
-              gy  (i,j,k) = sum(f(i,j-ns+1:j+ns,k) * w(:2*ns))
-              dfdy(i,j,k) = f(i,j+1,k) - f(i,j,k)
-#endif
-            end do
+          if (ox == 2) then
+            nsx = diff_halo_width(ox)
+            wx  = diff_weights(:,ox)
+          else
+            nsx = diff_halo_width(ox - 1)
+            wx  = diff_weights(:,ox - 1)
+          end if
+          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+            !
+            !                               i
+            !   |      o      |      o      |      o      |      o      |
+            !         i-1            i            i+1           i+2
+            !                               ^
+            !   o - cell   | - edge
+            !
+            gx(i,j,k) = sum(f(i-nsx+1:i+nsx,j,k) * wx(:2*nsx))
           end do
           ! Limit damping flux to avoid upgradient (Xue 2000).
-          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-            gx(:,j,k) = gx(:,j,k) * (-1)**(order / 2)
+          if (ox > 2) then
+            gx(:,j,k) = gx(:,j,k) * (-1)**(ox / 2)
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              gx(i,j,k) = gx(i,j,k) * max(0.0_r8, sign(1.0_r8, -gx(i,j,k) * dfdx(i,j,k)))
+              gx(i,j,k) = gx(i,j,k) * max(0.0_r8, sign(1.0_r8, -gx(i,j,k) * (f(i+1,j,k) - f(i,j,k))))
             end do
-          end do
-          call fill_halo(block, gx, full_lon=.false., full_lat=.true., full_lev=.true., west_halo=.false.)
-          do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
-            gy(:,j,k) = gy(:,j,k) * (-1)**(order / 2)
-            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              gy(i,j,k) = gy(i,j,k) * max(0.0_r8, sign(1.0_r8, -gy(i,j,k) * dfdy(i,j,k)))
-            end do
-          end do
+          end if
+        end do
+      end do
+      call fill_halo(block, gx, full_lon=.false., full_lat=.true., full_lev=.true., west_halo=.false.)
+      ! - Merdional damping
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+          ! Calculate damping flux at interfaces.
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
 #ifdef V_POLE
-          call fill_halo(block, gy, full_lon=.true., full_lat=.false., full_lev=.true., south_halo=.false.)
+            !
+            !                               j
+            !   |      o      |      o      |      o      |      o      |
+            !         j-2           j-1            j            j+1
+            !                               ^
+            !   o - cell   | - edge
+            !
+            gy(i,j,k) = sum(f(i,j-nsy:j+nsy-1,k) * wy(:2*nsy))
 #else
-          call fill_halo(block, gy, full_lon=.true., full_lat=.false., full_lev=.true., north_halo=.false.)
+            !
+            !                               j
+            !   |      o      |      o      |      o      |      o      |
+            !         j-1            j            j+1           j+2
+            !                               ^
+            !   o - cell   | - edge
+            !
+            gy(i,j,k) = sum(f(i,j-nsy+1:j+nsy,k) * wy(:2*nsy))
 #endif
-          ! Damp physical variable at last.
-          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+          end do
+          ! Limit damping flux to avoid upgradient (Xue 2000).
+          if (oy > 2) then
+            gy(:,j,k) = gy(:,j,k) * (-1)**(oy / 2)
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
 #ifdef V_POLE
-              !
-              !               - j+1
-              !               |
-              !               |
-              !        o------|------o
-              !        i      |     i+1
-              !               |
-              !               - j
-              !
-              f(i,j,k) = f(i,j,k) - dt / damp_cycles * (             &
-                (gx(i+1,j,k) - gx(i,j,k)) * cx_full_lat(j,k,order) + &
-                (gy(i,j+1,k) - gy(i,j,k)) * cy_full_lat(j,k,order)   &
-              )
+              gy(i,j,k) = gy(i,j,k) * max(0.0_r8, sign(1.0_r8, -gy(i,j,k) * (f(i,j,k) - f(i,j-1,k))))
 #else
-              !
-              !               - j
-              !               |
-              !               |
-              !        o------|------o
-              !        i      |     i+1
-              !               |
-              !               - j-1
-              !
-              f(i,j,k) = f(i,j,k) - dt / damp_cycles * (             &
-                (gx(i+1,j,k) - gx(i,j,k)) * cx_full_lat(j,k,order) + &
-                (gy(i,j,k) - gy(i,j-1,k)) * cy_full_lat(j,k,order)   &
-              )
+              gy(i,j,k) = gy(i,j,k) * max(0.0_r8, sign(1.0_r8, -gy(i,j,k) * (f(i,j+1,k) - f(i,j,k))))
 #endif
             end do
+          end if
+        end do
+      end do
+#ifdef V_POLE
+      call fill_halo(block, gy, full_lon=.true., full_lat=.false., full_lev=.true., south_halo=.false.)
+#else
+      call fill_halo(block, gy, full_lon=.true., full_lat=.false., full_lev=.true., north_halo=.false.)
+#endif
+      ! Damp physical variable at last.
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+          ox = ox_full_lat(j)
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+#ifdef V_POLE
+            !
+            !               - j+1
+            !               |
+            !               |
+            !        o------|------o
+            !        i      |     i+1
+            !               |
+            !               - j
+            !
+            f(i,j,k) = f(i,j,k) - dt / polar_damp_cycles * (    &
+              (gx(i+1,j,k) - gx(i,j,k)) * cx_full_lat(j,k,ox) + &
+              (gy(i,j+1,k) - gy(i,j,k)) * cy_full_lat(j,k,oy)   &
+            )
+#else
+            !
+            !               - j
+            !               |
+            !               |
+            !        o------|------o
+            !        i      |     i+1
+            !               |
+            !               - j-1
+            !
+            f(i,j,k) = f(i,j,k) - dt / polar_damp_cycles * (    &
+              (gx(i+1,j,k) - gx(i,j,k)) * cx_full_lat(j,k,ox) + &
+              (gy(i,j,k) - gy(i,j-1,k)) * cy_full_lat(j,k,oy)   &
+            )
+#endif
           end do
         end do
-        call fill_halo(block, f, full_lon=.true., full_lat=.true., full_lev=.true.)
-      end do cycle_loop
-    end if
+      end do
+      call fill_halo(block, f, full_lon=.true., full_lat=.true., full_lev=.true.)
+    end do cycle_loop
 
   end subroutine latlon_damp_cell
 
@@ -562,11 +677,11 @@ contains
       select case (div_damp_order)
       case (2)
         new_state%div = old_state%div
-        cycle_loop: do cyc = 1, damp_cycles
+        cycle_loop: do cyc = 1, div_damp_cycles
           do k = mesh%full_lev_ibeg, mesh%full_lev_iend
             do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
               do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-                new_state%u(i,j,k) = new_state%u(i,j,k) + dt / damp_cycles * cdiv_full_lat(j,k) * ( &
+                new_state%u(i,j,k) = new_state%u(i,j,k) + dt / div_damp_cycles * cdiv_full_lat(j,k) * ( &
                   new_state%div(i+1,j,k) - new_state%div(i,j,k)) / mesh%de_lon(j)
               end do
             end do
@@ -577,10 +692,10 @@ contains
             do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
               do i = mesh%full_lon_ibeg, mesh%full_lon_iend
 #ifdef V_POLE
-                new_state%v(i,j,k) = new_state%v(i,j,k) + dt / damp_cycles * cdiv_half_lat(j,k) * ( &
+                new_state%v(i,j,k) = new_state%v(i,j,k) + dt / div_damp_cycles * cdiv_half_lat(j,k) * ( &
                   new_state%div(i,j,k) - new_state%div(i,j-1,k)) / mesh%de_lat(j)
 #else
-                new_state%v(i,j,k) = new_state%v(i,j,k) + dt / damp_cycles * cdiv_half_lat(j,k) * ( &
+                new_state%v(i,j,k) = new_state%v(i,j,k) + dt / div_damp_cycles * cdiv_half_lat(j,k) * ( &
                   new_state%div(i,j+1,k) - new_state%div(i,j,k)) / mesh%de_lat(j)
 #endif
               end do
