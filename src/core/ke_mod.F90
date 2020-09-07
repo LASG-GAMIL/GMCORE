@@ -27,8 +27,8 @@ contains
     mesh => state%mesh
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+      do j = mesh%full_lat_ibeg_no_pole - 1, mesh%full_lat_iend_no_pole + 1
+        do i = mesh%full_lon_lb + 1, mesh%full_lon_ub - 1
           state%ke(i,j,k) = (mesh%area_lon_west (j  ) * state%u(i-1,j  ,k)**2 + &
                              mesh%area_lon_east (j  ) * state%u(i  ,j  ,k)**2 + &
 #ifdef V_POLE
@@ -44,8 +44,8 @@ contains
     end do
     if (ke_scheme == 2) then ! Gassmann form
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+        do j = mesh%full_lat_ibeg_no_pole - 1, mesh%full_lat_iend_no_pole + 1
+          do i = mesh%full_lon_lb + 1, mesh%full_lon_ub - 1
             ke_vtx(1) = (mesh%area_lat_east (j  ) * state%v(i-1,j  ,k)**2 + &
                          mesh%area_lat_west (j  ) * state%v(i  ,j  ,k)**2 + &
                          mesh%area_lon_north(j  ) * state%u(i-1,j  ,k)**2 + &
@@ -109,7 +109,6 @@ contains
       end do
     end if
 #endif
-    call fill_halo(block, state%ke, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false.)
 
   end subroutine calc_ke_cell
 

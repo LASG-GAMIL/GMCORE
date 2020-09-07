@@ -284,9 +284,6 @@ contains
     call state%async(async_u )%wait()
     call state%async(async_v )%wait()
 
-    call operators_prepare(block, state, dt, pass)
-    call reduce_run(block, state, dt, pass)
-
     mesh => state%mesh
 
     call tend%reset_flags()
@@ -543,12 +540,12 @@ contains
     do iblk = 1, size(blocks)
       call splitter(dt, blocks(iblk))
 
+      if (use_div_damp) then
+        call div_damp(blocks(iblk), blocks(iblk)%state(old), blocks(iblk)%state(new), dt)
+      end if
       if (use_polar_damp) then
         call latlon_damp_lon(blocks(iblk), dt, blocks(iblk)%state(new)%u)
         call latlon_damp_lat(blocks(iblk), dt, blocks(iblk)%state(new)%v)
-      end if
-      if (use_div_damp) then
-        call div_damp(blocks(iblk), blocks(iblk)%state(old), blocks(iblk)%state(new), dt)
       end if
     end do
 
@@ -797,7 +794,7 @@ contains
       call fill_halo(block, new_state%v, full_lon=.true., full_lat=.false., full_lev=.true.)
     end if
 
-    !call zonal_damp_u_v(block, new_state)
+    call operators_prepare(block, new_state, dt, pass)
 
   end subroutine update_state
 

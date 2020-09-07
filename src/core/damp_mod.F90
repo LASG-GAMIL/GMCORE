@@ -97,13 +97,8 @@ contains
           else
             jr = global_mesh%full_lat_iend_no_pole - j + 1
           end if
-          !if (jr <= jr0) then
-            cx_full_lat(j,k,order) = c0 * exp(-jr**2 / ((-jr0 / log(0.2)) * jr0))
-            cy_full_lat(j,k,order) = c0 * exp(-jr**2 / ((-jr0 / log(0.2)) * jr0))
-          !else
-          !  cx_full_lat(j,k,order) = c0 * exp(-polar_damp_mul * (jr - jr0)**2)
-          !  cy_full_lat(j,k,order) = c0 * exp(-polar_damp_mul * (jr - jr0)**2)
-          !end if
+          cx_full_lat(j,k,order) = c0 * exp(-jr**2 / ((-jr0 / log(0.5)) * jr0))
+          cy_full_lat(j,k,order) = c0 * exp(-jr**2 / ((-jr0 / log(0.5)) * jr0))
         end do
       end do
       do k = global_mesh%full_lev_ibeg, global_mesh%full_lev_iend
@@ -113,13 +108,8 @@ contains
           else
             jr = global_mesh%half_lat_iend_no_pole - j + 1
           end if
-          !if (jr <= jr0) then
-            cx_half_lat(j,k,order) = c0 * exp(-jr**2 / ((-jr0 / log(0.2)) * jr0))
-            cy_half_lat(j,k,order) = c0 * exp(-jr**2 / ((-jr0 / log(0.2)) * jr0))
-          !else
-          !  cx_half_lat(j,k,order) = c0 * exp(-polar_damp_mul * (jr - jr0)**2)
-          !  cy_half_lat(j,k,order) = c0 * exp(-polar_damp_mul * (jr - jr0)**2)
-          !end if
+          cx_half_lat(j,k,order) = c0 * exp(-jr**2 / ((-jr0 / log(0.5)) * jr0))
+          cy_half_lat(j,k,order) = c0 * exp(-jr**2 / ((-jr0 / log(0.5)) * jr0))
         end do
       end do
     end do

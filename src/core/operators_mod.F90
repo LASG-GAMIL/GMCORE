@@ -69,13 +69,15 @@ contains
       call calc_gz_lev_gz           (blocks(iblk), blocks(iblk)%state(itime))
       call calc_pt_lon_pt_lat_pt_lev(blocks(iblk), blocks(iblk)%state(itime))
       call calc_div                 (blocks(iblk), blocks(iblk)%state(itime))
+
+      call reduce_run(blocks(iblk), blocks(iblk)%state(itime), dt, all_pass)
     end do
 
   end subroutine operators_prepare_1
 
   subroutine operators_prepare_2(block, state, dt, pass)
 
-    type(block_type), intent(in) :: block
+    type(block_type), intent(inout) :: block
     type(state_type), intent(inout) :: state
     real(r8), intent(in) :: dt
     integer, intent(in) :: pass
@@ -97,6 +99,8 @@ contains
       call calc_div               (block, state)
     end if
 
+    call reduce_run(block, state, dt, pass)
+
   end subroutine operators_prepare_2
 
   subroutine calc_ph_lev_ph(block, state)
@@ -111,17 +115,16 @@ contains
       mesh => state%mesh
 
       do k = mesh%half_lev_ibeg, mesh%half_lev_iend
-        do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+        do j = mesh%full_lat_lb, mesh%full_lat_ub
+          do i = mesh%full_lon_lb, mesh%full_lon_ub
             state%ph_lev(i,j,k) = vert_coord_calc_ph_lev(k, state%phs(i,j))
           end do
         end do
       end do
-      call fill_halo(block, state%ph_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
 
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-        do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+        do j = mesh%full_lat_lb, mesh%full_lat_ub
+          do i = mesh%full_lon_lb, mesh%full_lon_ub
             state%ph(i,j,k) = 0.5_r8 * (state%ph_lev(i,j,k) + state%ph_lev(i,j,k+1))
             ! state%m(i,j,k) = state%ph_lev(i,j,k+1) - state%ph_lev(i,j,k)
             ! if (k == 1) then
@@ -135,7 +138,6 @@ contains
           end do
         end do
       end do
-      call fill_halo(block, state%ph, full_lon=.true., full_lat=.true., full_lev=.true.)
     end if
 
   end subroutine calc_ph_lev_ph
