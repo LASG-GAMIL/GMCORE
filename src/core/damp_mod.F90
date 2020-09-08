@@ -55,7 +55,7 @@ contains
     do j = global_mesh%full_lat_ibeg_no_pole, global_mesh%full_lat_iend_no_pole
       if (global_mesh%full_lat(j) <= 0) then
         jr = j - global_mesh%full_lat_ibeg_no_pole + 1
-        if (zonal_damp_orders(jr) > 1) jr0 = jr
+        if (reduce_factors(jr) > 1) jr0 = jr
       end if
     end do
 
@@ -66,7 +66,7 @@ contains
       else
         jr = global_mesh%full_lat_iend_no_pole - j + 1
       end if
-      ox_full_lat(j) = merge(zonal_damp_orders(jr), polar_damp_order, jr <= jr0)
+      ox_full_lat(j) = merge(max(polar_damp_order, zonal_damp_orders(jr)), polar_damp_order, jr <= jr0)
     end do
     do j = global_mesh%half_lat_ibeg_no_pole, global_mesh%half_lat_iend_no_pole
       if (global_mesh%half_lat(j) <= 0) then

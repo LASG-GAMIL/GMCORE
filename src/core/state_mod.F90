@@ -77,7 +77,7 @@ module state_mod
     real(r8) te
     real(r8) tpe
     real(r8) tav
-    type(async_type) async(11)
+    type(async_type), allocatable :: async(:)
   contains
     procedure :: init => state_init
     procedure :: clear => state_clear
@@ -150,6 +150,8 @@ contains
     call allocate_array(mesh, this%div2         , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%vor          , half_lon=.true., half_lat=.true., full_lev=.true.)
 
+    allocate(this%async(11))
+
   end subroutine state_init
 
   subroutine state_clear(this)
@@ -210,6 +212,8 @@ contains
     if (allocated(this%div          )) deallocate(this%div          )
     if (allocated(this%div2         )) deallocate(this%div2         )
     if (allocated(this%vor          )) deallocate(this%vor          )
+
+    if (allocated(this%async        )) deallocate(this%async        )
 
   end subroutine state_clear
 
