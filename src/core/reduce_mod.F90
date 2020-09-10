@@ -85,7 +85,6 @@ contains
 #endif
         if (full_j >= blocks(iblk)%mesh%full_lat_lb .and. full_j <= blocks(iblk)%mesh%full_lat_ub) then
           call reduce_mesh(reduce_factors(j), full_j, blocks(iblk)%mesh, blocks(iblk)%reduced_mesh(full_j))
-          blocks(iblk)%reduced_mesh(full_j)%damp_order = zonal_damp_orders(j)
         end if
         ! North Pole
 #ifdef V_POLE
@@ -95,7 +94,6 @@ contains
 #endif
         if (full_j >= blocks(iblk)%mesh%full_lat_lb .and. full_j <= blocks(iblk)%mesh%full_lat_ub) then
           call reduce_mesh(reduce_factors(j), full_j, blocks(iblk)%mesh, blocks(iblk)%reduced_mesh(full_j))
-          blocks(iblk)%reduced_mesh(full_j)%damp_order = zonal_damp_orders(j)
         end if
       end do
       do j = blocks(iblk)%mesh%full_lat_ibeg - 1, blocks(iblk)%mesh%full_lat_iend + 1
@@ -1359,7 +1357,6 @@ contains
 
     allocate(reduced_tend%qhu     (is:ie,ks:ke))
     allocate(reduced_tend%fu      (is:ie,ks:ke))
-    allocate(reduced_tend%voru    (is:ie,ks:ke))
     allocate(reduced_tend%dmfdlon (is:ie,ks:ke))
     allocate(reduced_tend%dptfdlon(is:ie,ks:ke))
 
@@ -1368,7 +1365,6 @@ contains
 
     allocate(reduced_tend%qhv     (is:ie,ks:ke))
     allocate(reduced_tend%fv      (is:ie,ks:ke))
-    allocate(reduced_tend%vorv    (is:ie,ks:ke))
     allocate(reduced_tend%dpedlon (is:ie,ks:ke))
     allocate(reduced_tend%dkedlon (is:ie,ks:ke))
     allocate(reduced_tend%dpdlon  (is:ie,ks:ke))

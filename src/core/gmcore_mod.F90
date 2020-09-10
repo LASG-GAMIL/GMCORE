@@ -798,42 +798,4 @@ contains
 
   end subroutine update_state
 
-  subroutine zonal_damp_u_v(block, state)
-
-    type(block_type), intent(inout) :: block
-    type(state_type), intent(inout) :: state
-
-    type(mesh_type), pointer :: mesh
-    integer i, j, k, damp_order
-
-    mesh => state%mesh
-
-    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-        damp_order = block%reduced_mesh(j)%damp_order
-        if (damp_order > 0) then
-          if (damp_order == 1) cycle ! User can choose not to damp except for cases when potential enstrophy increases.
-          call zonal_damp(block, damp_order, dt_in_seconds, mesh%de_lon(j),      &
-                          mesh%half_lon_lb, mesh%half_lon_ub, mesh%num_half_lon, &
-                          state%u(:,j,k))
-        end if
-      end do
-
-      do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
-#ifdef V_POLE
-        damp_order = max(block%reduced_mesh(j)%damp_order, block%reduced_mesh(j-1)%damp_order)
-#else
-        damp_order = max(block%reduced_mesh(j)%damp_order, block%reduced_mesh(j+1)%damp_order)
-#endif
-        if (damp_order > 0) then
-          if (damp_order == 1) cycle ! User can choose not to damp except for cases when potential enstrophy increases.
-          call zonal_damp(block, damp_order, dt_in_seconds, mesh%le_lat(j),      &
-                          mesh%full_lon_lb, mesh%full_lon_ub, mesh%num_full_lon, &
-                          state%v(:,j,k))
-        end if
-      end do
-    end do
-
-  end subroutine zonal_damp_u_v
-
 end module gmcore_mod

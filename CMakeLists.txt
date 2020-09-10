@@ -75,8 +75,8 @@ add_subdirectory(lib/fiona)
 add_subdirectory(lib/flogger)
 
 add_custom_command(
-  OUTPUT ${PROJECT_SOURCE_DIR}/build/reduce_mod.F90
-  COMMAND cpp ${CPPFLAGS} -P -C ${PROJECT_SOURCE_DIR}/src/core/reduce_mod.F90 > ${PROJECT_SOURCE_DIR}/build/reduce_mod.F90
+  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/reduce_mod.F90
+  COMMAND cpp ${CPPFLAGS} -P -C ${PROJECT_SOURCE_DIR}/src/core/reduce_mod.F90 > ${CMAKE_CURRENT_BINARY_DIR}/reduce_mod.F90
   MAIN_DEPENDENCY ${PROJECT_SOURCE_DIR}/src/core/reduce_mod.F90
   VERBATIM
 )
@@ -112,7 +112,7 @@ set(source_files
   src/core/interp_mod.F90
   src/core/operators_mod.F90
   src/core/reduced_types_mod.F90
-  build/reduce_mod.F90
+  ${CMAKE_CURRENT_BINARY_DIR}/reduce_mod.F90
   src/core/nest_mod.F90
   src/core/damp_mod.F90
   src/core/gmcore_mod.F90

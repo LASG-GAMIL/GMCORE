@@ -7,7 +7,6 @@ module reduced_types_mod
 
   type reduced_mesh_type
     integer :: reduce_factor = 0
-    integer :: damp_order = 0
     integer halo_width
     integer num_full_lon
     integer num_half_lon
@@ -115,8 +114,6 @@ module reduced_types_mod
     real(r8), allocatable, dimension(:,:) :: qhu
     real(r8), allocatable, dimension(:,:) :: fv
     real(r8), allocatable, dimension(:,:) :: fu
-    real(r8), allocatable, dimension(:,:) :: vorv
-    real(r8), allocatable, dimension(:,:) :: voru
     real(r8), allocatable, dimension(:,:) :: dmfdlon
     real(r8), allocatable, dimension(:,:) :: dpedlon
     real(r8), allocatable, dimension(:,:) :: dkedlon
@@ -179,8 +176,6 @@ contains
     if (allocated(this%qhu     )) deallocate(this%qhu     )
     if (allocated(this%fv      )) deallocate(this%fv      )
     if (allocated(this%fu      )) deallocate(this%fu      )
-    if (allocated(this%vorv    )) deallocate(this%vorv    )
-    if (allocated(this%voru    )) deallocate(this%voru    )
     if (allocated(this%dmfdlon )) deallocate(this%dmfdlon )
     if (allocated(this%dpedlon )) deallocate(this%dpedlon )
     if (allocated(this%dkedlon )) deallocate(this%dkedlon )
