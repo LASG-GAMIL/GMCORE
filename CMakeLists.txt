@@ -9,16 +9,21 @@ option(R16 "Use quadruple precision" OFF)
 
 if (V_POLE)
   add_definitions(-DV_POLE)
+	set(CPPFLAGS ${CPPFLAGS} -DV_POLE)
+	message(STATUS "Place v at Poles.")
 endif ()
 if (SIGMA)
   add_definitions(-DSIGMA)
+	set(CPPFLAGS ${CPPFLAGS} -DSIGMA)
   message(STATUS "Use sigma vertical coordinate.")
 endif ()
 if (R4)
   add_definitions(-DREAL_KIND=4)
+	set(CPPFLAGS ${CPPFLAGS} -DREAL_KIND=4)
   message(STATUS "Use single precision.")
 elseif (R16)
   add_definitions(-DREAL_KIND=16)
+	set(CPPFLAGS ${CPPFLAGS} -DREAL_KIND=16)
   message(STATUS "Use quadruple precision.")
 endif ()
 
@@ -71,7 +76,7 @@ add_subdirectory(lib/flogger)
 
 add_custom_command(
   OUTPUT ${PROJECT_SOURCE_DIR}/build/reduce_mod.F90
-  COMMAND cpp -P -C ${PROJECT_SOURCE_DIR}/src/core/reduce_mod.F90 > ${PROJECT_SOURCE_DIR}/build/reduce_mod.F90
+  COMMAND cpp ${CPPFLAGS} -P -C ${PROJECT_SOURCE_DIR}/src/core/reduce_mod.F90 > ${PROJECT_SOURCE_DIR}/build/reduce_mod.F90
   MAIN_DEPENDENCY ${PROJECT_SOURCE_DIR}/src/core/reduce_mod.F90
   VERBATIM
 )
