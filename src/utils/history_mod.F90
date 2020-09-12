@@ -156,7 +156,6 @@ contains
       call fiona_add_var('h1', 'ke'       , long_name='kinetic energy on cell grid'                   , units='', dim_names=cell_dims)
       call fiona_add_var('h1', 'wp'       , long_name='omega'                                         , units='', dim_names=cell_dims)
       call fiona_add_var('h1', 'div'      , long_name='divergence'                                    , units='', dim_names=cell_dims)
-      call fiona_add_var('h1', 'div2'     , long_name='laplacian of divergence'                       , units='', dim_names=cell_dims)
     else
       call fiona_add_var('h1', 'qhv'      , long_name='nonliear zonal Coriolis force'                 , units='', dim_names=lon_dims_2d)
       call fiona_add_var('h1', 'qhu'      , long_name='nonliear meridional Coriolis force'            , units='', dim_names=lat_dims_2d)
@@ -315,7 +314,6 @@ contains
       call fiona_output('h1', 'dptfdlev', tend%dptfdlev(is:ie,js:je,ks:ke), start=start, count=count)
       call fiona_output('h1', 'wp'      , state%wp     (is:ie,js:je,ks:ke), start=start, count=count)
       call fiona_output('h1', 'div'     , state%div    (is:ie,js:je,ks:ke), start=start, count=count)
-      call fiona_output('h1', 'div2'    , state%div2   (is:ie,js:je,ks:ke), start=start, count=count)
     end if
 
     is = mesh%half_lon_ibeg; ie = mesh%half_lon_iend

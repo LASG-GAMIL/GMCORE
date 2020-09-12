@@ -515,7 +515,7 @@ contains
 
     type(mesh_type), pointer :: mesh
     real(r8), pointer, dimension(:,:,:) :: gx, gy
-    integer i, j, k, cyc, ox, oy, nsx, nsy
+    integer i, j, k, cyc, ox, oy, nsx, nsy, io
     real(r8) wx(9), wy(9)
 
     mesh => block%mesh
@@ -561,13 +561,13 @@ contains
           end if
         end do
       end do
-      call fill_halo(block, gx, full_lon=.false., full_lat=.true., full_lev=.true., west_halo=.false.)
+      call fill_halo(block, gx, full_lon=.false., full_lat=.true., full_lev=.true., east_halo=.false.)
       ! - Merdional damping
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
           ! Calculate damping flux at interfaces.
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
 #ifdef V_POLE
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             !
             !                               j
             !   |      o      |      o      |      o      |      o      |
@@ -576,17 +576,35 @@ contains
             !   o - cell   | - edge
             !
             gy(i,j,k) = sum(f(i,j-nsy:j+nsy-1,k) * wy(:2*nsy))
-#else
-            !
-            !                               j
-            !   |      o      |      o      |      o      |      o      |
-            !         j-1            j            j+1           j+2
-            !                               ^
-            !   o - cell   | - edge
-            !
-            gy(i,j,k) = sum(f(i,j-nsy+1:j+nsy,k) * wy(:2*nsy))
-#endif
           end do
+#else
+          if (mesh%is_outside_pole_full_lat(j-nsy+1)) then
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              io = i + mesh%num_full_lon / 2
+              if (io > mesh%num_full_lon) io = io - mesh%num_full_lon
+              f(i,j-nsy+1,k) = f(io,j,k)
+              gy(i,j,k) = sum(f(i,j-nsy+1:j+nsy,k) * wy(:2*nsy))
+            end do
+          else if (mesh%is_outside_pole_full_lat(j+nsy)) then
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              io = i + mesh%num_full_lon / 2
+              if (io > mesh%num_full_lon) io = io - mesh%num_full_lon
+              f(i,j+nsy,k) = f(io,j,k)
+              gy(i,j,k) = sum(f(i,j-nsy+1:j+nsy,k) * wy(:2*nsy))
+            end do
+          else
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              !
+              !                               j
+              !   |      o      |      o      |      o      |      o      |
+              !         j-1            j            j+1           j+2
+              !                               ^
+              !   o - cell   | - edge
+              !
+              gy(i,j,k) = sum(f(i,j-nsy+1:j+nsy,k) * wy(:2*nsy))
+            end do
+          end if
+#endif
           ! Limit damping flux to avoid upgradient (Xue 2000).
           if (oy > 2) then
             gy(:,j,k) = gy(:,j,k) * (-1)**(oy / 2)
@@ -616,12 +634,12 @@ contains
             !               |
             !               |
             !        o------|------o
-            !        i      |     i+1
+            !       i-1     |      i
             !               |
             !               - j
             !
             f(i,j,k) = f(i,j,k) - dt / polar_damp_cycles * (    &
-              (gx(i+1,j,k) - gx(i,j,k)) * cx_full_lat(j,k,ox) + &
+              (gx(i,j,k) - gx(i-1,j,k)) * cx_full_lat(j,k,ox) + &
               (gy(i,j+1,k) - gy(i,j,k)) * cy_full_lat(j,k,oy)   &
             )
 #else
@@ -630,12 +648,12 @@ contains
             !               |
             !               |
             !        o------|------o
-            !        i      |     i+1
+            !       i-1     |      i
             !               |
             !               - j-1
             !
             f(i,j,k) = f(i,j,k) - dt / polar_damp_cycles * (    &
-              (gx(i+1,j,k) - gx(i,j,k)) * cx_full_lat(j,k,ox) + &
+              (gx(i,j,k) - gx(i-1,j,k)) * cx_full_lat(j,k,ox) + &
               (gy(i,j,k) - gy(i,j-1,k)) * cy_full_lat(j,k,oy)   &
             )
 #endif
