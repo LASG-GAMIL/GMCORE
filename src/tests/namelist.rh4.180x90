@@ -17,7 +17,6 @@ history_interval = '1 days'
 print_interval = '1 hours'
 reduce_factors = 4, 4, 2
 use_polar_damp = .true.
-zonal_damp_orders = 4, 4, 4
 use_div_damp = .true.
 div_damp_order = 2
 /

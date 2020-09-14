@@ -119,6 +119,7 @@ module reduced_types_mod
     real(r8), allocatable, dimension(:,:) :: dkedlon
     real(r8), allocatable, dimension(:,:) :: dptfdlon
     real(r8), allocatable, dimension(:,:) :: dpdlon
+    real(r8), allocatable, dimension(:,:) :: gx
   contains
     final :: reduced_tend_final
   end type reduced_tend_type
@@ -181,6 +182,7 @@ contains
     if (allocated(this%dkedlon )) deallocate(this%dkedlon )
     if (allocated(this%dptfdlon)) deallocate(this%dptfdlon)
     if (allocated(this%dpdlon  )) deallocate(this%dpdlon  )
+    if (allocated(this%gx      )) deallocate(this%gx      )
 
   end subroutine reduced_tend_final
 

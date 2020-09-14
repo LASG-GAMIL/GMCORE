@@ -141,7 +141,7 @@ contains
     end if
 
     reduced_mesh%reduce_factor = reduce_factor
-    reduced_mesh%halo_width    = 1
+    reduced_mesh%halo_width    = 2
     reduced_mesh%num_full_lon  = raw_mesh%num_full_lon / reduce_factor
     reduced_mesh%num_half_lon  = raw_mesh%num_half_lon / reduce_factor
     reduced_mesh%full_lon_ibeg = raw_mesh%full_lon_ibeg / reduce_factor + 1
@@ -510,7 +510,7 @@ contains
         reduced_state%u(k,i,buf_j,move) = reduced_state%mf_lon_n(k,i,buf_j,move) / reduced_state%m_lon(k,i,buf_j,move)
       end do
     end do
-    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%u(:,:,buf_j,move), east_halo=.false.)
+    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%u(:,:,buf_j,move))
 
   end subroutine reduce_u
 
@@ -535,7 +535,7 @@ contains
         reduced_state%v(k,i,buf_j,move) = reduced_state%mf_lat_n(k,i,buf_j,move) / reduced_state%m_lat(k,i,buf_j,move)
       end do
     end do
-    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%v(:,:,buf_j,move), west_halo=.false.)
+    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%v(:,:,buf_j,move))
 
   end subroutine reduce_v
 
@@ -1150,7 +1150,7 @@ contains
       raw_i = raw_i + reduced_mesh%reduce_factor
     end do
     reduced_state%pt(:,:,buf_j,move) = reduced_state%pt(:,:,buf_j,move) / reduced_mesh%reduce_factor
-    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%pt(:,:,buf_j,move), west_halo=.false.)
+    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%pt(:,:,buf_j,move))
 
   end subroutine reduce_pt
 
@@ -1359,6 +1359,7 @@ contains
     allocate(reduced_tend%fu      (is:ie,ks:ke))
     allocate(reduced_tend%dmfdlon (is:ie,ks:ke))
     allocate(reduced_tend%dptfdlon(is:ie,ks:ke))
+    allocate(reduced_tend%gx      (is:ie,ks:ke))
 
     is = reduced_mesh%half_lon_lb; ie = reduced_mesh%half_lon_ub
     ks = reduced_mesh%full_lev_lb; ke = reduced_mesh%full_lev_ub

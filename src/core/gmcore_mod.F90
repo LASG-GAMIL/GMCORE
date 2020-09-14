@@ -544,8 +544,7 @@ contains
         call div_damp(blocks(iblk), blocks(iblk)%state(old), blocks(iblk)%state(new), dt)
       end if
       if (use_polar_damp) then
-        call latlon_damp_lon(blocks(iblk), dt, blocks(iblk)%state(new)%u)
-        call latlon_damp_lat(blocks(iblk), dt, blocks(iblk)%state(new)%v)
+        call polar_damp(blocks(iblk), dt, blocks(iblk)%state(new))
       end if
     end do
 

@@ -33,9 +33,9 @@
 *.out
 *.app
 
-build
+build*
 run
-test
+test*
 __pycache__
 *.nc
 *.png
