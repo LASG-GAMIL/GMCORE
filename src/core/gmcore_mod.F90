@@ -544,7 +544,8 @@ contains
         call div_damp(blocks(iblk), blocks(iblk)%state(old), blocks(iblk)%state(new), dt)
       end if
       if (use_polar_damp) then
-        call polar_damp(blocks(iblk), dt, blocks(iblk)%state(new))
+        !call polar_damp(blocks(iblk), dt, blocks(iblk)%state(new))
+        call shapiro_smooth(blocks(iblk), blocks(iblk)%state(new))
       end if
     end do
 

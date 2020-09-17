@@ -19,6 +19,7 @@ module damp_mod
   public latlon_damp_lat
   public latlon_damp_cell
   public div_damp
+  public shapiro_smooth
 
   integer, parameter :: diff_halo_width(2:8) = [1, 2, 2, 3, 3, 4, 4]
 
@@ -38,6 +39,10 @@ module damp_mod
   real(r8), allocatable :: cy_full_lat(:,:,:)
   real(r8), allocatable :: cx_half_lat(:,:,:)
   real(r8), allocatable :: cy_half_lat(:,:,:)
+  real(r8), allocatable :: sx_full_lat(:,:)   ! Shapiro filter strength coefficient
+  real(r8), allocatable :: sy_full_lat(:,:)   !
+  real(r8), allocatable :: sx_half_lat(:,:)   !
+  real(r8), allocatable :: sy_half_lat(:,:)   !
   real(r8), allocatable :: cdiv_full_lat(:,:)
   real(r8), allocatable :: cdiv_half_lat(:,:)
 
@@ -116,6 +121,36 @@ contains
       end do
     end do
 
+    allocate(sx_full_lat(global_mesh%full_lat_ibeg:global_mesh%full_lat_iend,global_mesh%full_lev_ibeg:global_mesh%full_lev_iend))
+    allocate(sy_full_lat(global_mesh%full_lat_ibeg:global_mesh%full_lat_iend,global_mesh%full_lev_ibeg:global_mesh%full_lev_iend))
+    allocate(sx_half_lat(global_mesh%half_lat_ibeg:global_mesh%half_lat_iend,global_mesh%full_lev_ibeg:global_mesh%full_lev_iend))
+    allocate(sy_half_lat(global_mesh%half_lat_ibeg:global_mesh%half_lat_iend,global_mesh%full_lev_ibeg:global_mesh%full_lev_iend))
+
+    polar_damp_mul = 2
+    do k = global_mesh%full_lev_ibeg, global_mesh%full_lev_iend
+      do j = global_mesh%full_lat_ibeg_no_pole, global_mesh%full_lat_iend_no_pole
+        ! Check if grids are reduced at this zonal circle.
+        if (global_mesh%full_lat(j) <= 0) then
+          jr = j - global_mesh%full_lat_ibeg_no_pole + 1
+        else
+          jr = global_mesh%full_lat_iend_no_pole - j + 1
+        end if
+        sx_full_lat(j,k) = exp(-jr**2 / ((-jr0 / log(0.5)) * jr0))
+        sy_full_lat(j,k) = exp(-jr**2 / ((-jr0 / log(0.5)) * jr0))
+      end do
+    end do
+    do k = global_mesh%full_lev_ibeg, global_mesh%full_lev_iend
+      do j = global_mesh%half_lat_ibeg_no_pole, global_mesh%half_lat_iend_no_pole
+        if (global_mesh%half_lat(j) <= 0) then
+          jr = j - global_mesh%half_lat_ibeg_no_pole + 1
+        else
+          jr = global_mesh%half_lat_iend_no_pole - j + 1
+        end if
+        sx_half_lat(j,k) = exp(-jr**2 / ((-jr0 / log(0.5)) * jr0))
+        sy_half_lat(j,k) = exp(-jr**2 / ((-jr0 / log(0.5)) * jr0))
+      end do
+    end do
+
     allocate(cdiv_full_lat(global_mesh%full_lat_ibeg:global_mesh%full_lat_iend,global_mesh%full_lev_ibeg:global_mesh%full_lev_iend))
     allocate(cdiv_half_lat(global_mesh%half_lat_ibeg:global_mesh%half_lat_iend,global_mesh%full_lev_ibeg:global_mesh%full_lev_iend))
 
@@ -164,6 +199,10 @@ contains
     if (allocated(cy_full_lat  )) deallocate(cy_full_lat  )
     if (allocated(cx_half_lat  )) deallocate(cx_half_lat  )
     if (allocated(cy_half_lat  )) deallocate(cy_half_lat  )
+    if (allocated(sx_full_lat  )) deallocate(sx_full_lat  )
+    if (allocated(sy_full_lat  )) deallocate(sy_full_lat  )
+    if (allocated(sx_half_lat  )) deallocate(sx_half_lat  )
+    if (allocated(sy_half_lat  )) deallocate(sy_half_lat  )
     if (allocated(cdiv_full_lat)) deallocate(cdiv_full_lat)
     if (allocated(cdiv_half_lat)) deallocate(cdiv_half_lat)
 
@@ -1261,5 +1300,61 @@ contains
     end if
 
   end subroutine div_damp
+
+  subroutine shapiro_smooth(block, state)
+
+    type(block_type), intent(in) :: block
+    type(state_type), intent(inout) :: state
+
+    type(mesh_type), pointer :: mesh
+    integer i, j, k
+
+    mesh => state%mesh
+    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+          state%u(i,j,k) = state%u(i,j,k) + sx_full_lat(j,k) * ( &
+            -6 * state%u(i  ,j,k) + &
+             4 * state%u(i-1,j,k) + &
+             4 * state%u(i+1,j,k) + &
+            -1 * state%u(i-2,j,k) + &
+            -1 * state%u(i+2,j,k)   &
+          ) / 16.0_r8
+        end do
+      end do
+    end do
+    call fill_halo(block, state%u, full_lon=.false., full_lat=.true., full_lev=.true.)
+
+    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          state%v(i,j,k) = state%v(i,j,k) + sx_half_lat(j,k) * ( &
+            -6 * state%v(i  ,j,k) + &
+             4 * state%v(i-1,j,k) + &
+             4 * state%v(i+1,j,k) + &
+            -1 * state%v(i-2,j,k) + &
+            -1 * state%v(i+2,j,k)   &
+          ) / 16.0_r8
+        end do
+      end do
+    end do
+    call fill_halo(block, state%v, full_lon=.true., full_lat=.false., full_lev=.true.)
+
+    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          state%pt(i,j,k) = state%pt(i,j,k) + sx_full_lat(j,k) * ( &
+            -6 * state%pt(i  ,j,k) + &
+             4 * state%pt(i-1,j,k) + &
+             4 * state%pt(i+1,j,k) + &
+            -1 * state%pt(i-2,j,k) + &
+            -1 * state%pt(i+2,j,k)   &
+          ) / 16.0_r8
+        end do
+      end do
+    end do
+    call fill_halo(block, state%pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+
+  end subroutine shapiro_smooth
 
 end module damp_mod
