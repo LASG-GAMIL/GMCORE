@@ -433,7 +433,8 @@ contains
         call apply_reduce(reduce_args(dpv_lon_n  , reduce_dpv_lon_n  ))
         call apply_reduce(reduce_args(pv_lon     , reduce_pv_lon_apvm))
         call apply_reduce(reduce_args(pv_lat     , reduce_pv_lat_apvm))
-      else
+      end if
+      if (pass == all_pass .or. pass == fast_pass) then
         call apply_reduce(reduce_args(ke         , reduce_ke         ))
       end if
     end if
