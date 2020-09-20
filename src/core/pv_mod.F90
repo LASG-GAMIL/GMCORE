@@ -153,8 +153,6 @@ contains
 
     mesh => state%mesh
 
-    call state%async(async_pv)%wait()
-
     ! Tangent pv difference
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole

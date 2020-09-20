@@ -30,7 +30,7 @@ module namelist_mod
   integer :: ke_scheme = 1
   real(r8) :: ke_cell_wgt = 3.0_r8 / 8.0_r8
 
-  integer :: pv_scheme = 2
+  integer :: pv_scheme = 3
   logical :: pv_pole_stokes = .true.
 
   integer :: coriolis_scheme = 1
