@@ -133,6 +133,7 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(reduced_mesh_type), intent(inout) :: reduced_mesh
 
+    real(r8) r0
     integer i, buf_j
 
     ! Check if decomposition is OK for reduce.
@@ -141,7 +142,15 @@ contains
     end if
 
     reduced_mesh%reduce_factor = reduce_factor
-    reduced_mesh%halo_width    = 2
+
+    allocate(reduced_mesh%weights(reduce_factor))
+    r0 = (reduce_factor + 1.0_r8) * 0.5_r8
+    do i = 1, reduce_factor
+      reduced_mesh%weights(i) = exp((i - r0)**2 * log(0.1) / (1 - r0)**2)
+    end do
+    reduced_mesh%weights = reduced_mesh%weights / sum(reduced_mesh%weights)
+
+    reduced_mesh%halo_width    = 1
     reduced_mesh%num_full_lon  = raw_mesh%num_full_lon / reduce_factor
     reduced_mesh%num_half_lon  = raw_mesh%num_half_lon / reduce_factor
     reduced_mesh%full_lon_ibeg = raw_mesh%full_lon_ibeg / reduce_factor + 1
@@ -457,10 +466,9 @@ contains
     if (raw_mesh%is_inside_with_halo_full_lat(j+buf_j)) then
       raw_i = raw_mesh%full_lon_ibeg + move - 1
       do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
-        reduced_static%gzs(i,buf_j,move) = sum(raw_static%gzs(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j))
+        reduced_static%gzs(i,buf_j,move) = sum(raw_static%gzs(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j) * reduced_mesh%weights)
         raw_i = raw_i + reduced_mesh%reduce_factor
       end do
-      reduced_static%gzs(:,buf_j,move) = reduced_static%gzs(:,buf_j,move) / reduced_mesh%reduce_factor
       call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_static%gzs(:,buf_j,move))
     end if
 
@@ -590,11 +598,10 @@ contains
       raw_i = raw_mesh%full_lon_ibeg + move - 1
       do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
         do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
-          reduced_state%gz(k,i,buf_j,move) = sum(raw_state%gz(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j,k))
+          reduced_state%gz(k,i,buf_j,move) = sum(raw_state%gz(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j,k) * reduced_mesh%weights)
         end do
         raw_i = raw_i + reduced_mesh%reduce_factor
       end do
-      reduced_state%gz(:,:,buf_j,move) = reduced_state%gz(:,:,buf_j,move) / reduced_mesh%reduce_factor
       call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%gz(:,:,buf_j,move), west_halo=.false.)
     end if
 
@@ -619,11 +626,10 @@ contains
       raw_i = raw_mesh%full_lon_ibeg + move - 1
       do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
         do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
-          reduced_state%m(k,i,buf_j,move) = sum(raw_state%m(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j,k))
+          reduced_state%m(k,i,buf_j,move) = sum(raw_state%m(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j,k) * reduced_mesh%weights)
         end do
         raw_i = raw_i + reduced_mesh%reduce_factor
       end do
-      reduced_state%m(:,:,buf_j,move) = reduced_state%m(:,:,buf_j,move) / reduced_mesh%reduce_factor
       call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%m(:,:,buf_j,move), west_halo=.false.)
     end if
 
@@ -677,11 +683,10 @@ contains
       raw_i = raw_mesh%half_lon_ibeg + move - 1
       do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
         do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
-          reduced_state%pv(k,i,buf_j,move) = sum(raw_state%pv(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j,k))
+          reduced_state%pv(k,i,buf_j,move) = sum(raw_state%pv(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j,k) * reduced_mesh%weights)
         end do
         raw_i = raw_i + reduced_mesh%reduce_factor
       end do
-      reduced_state%pv(:,:,buf_j,move) = reduced_state%pv(:,:,buf_j,move) / reduced_mesh%reduce_factor
     else
       if (reduced_mesh%area_vtx(buf_j) == 0) return
       do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
@@ -788,11 +793,10 @@ contains
       raw_i = raw_mesh%half_lon_ibeg + move - 1
       do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
         do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
-          reduced_state%mf_lon_n(k,i,buf_j,move) = sum(raw_state%mf_lon_n(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j,k))
+          reduced_state%mf_lon_n(k,i,buf_j,move) = sum(raw_state%mf_lon_n(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j,k) * reduced_mesh%weights)
         end do
         raw_i = raw_i + reduced_mesh%reduce_factor
       end do
-      reduced_state%mf_lon_n(:,:,buf_j,move) = reduced_state%mf_lon_n(:,:,buf_j,move) / reduced_mesh%reduce_factor
       call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%mf_lon_n(:,:,buf_j,move), east_halo=.false.)
     end if
 
@@ -817,11 +821,10 @@ contains
       raw_i = raw_mesh%full_lon_ibeg + move - 1
       do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
         do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
-          reduced_state%mf_lat_n(k,i,buf_j,move) = sum(raw_state%mf_lat_n(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j,k))
+          reduced_state%mf_lat_n(k,i,buf_j,move) = sum(raw_state%mf_lat_n(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j,k) * reduced_mesh%weights)
         end do
         raw_i = raw_i + reduced_mesh%reduce_factor
       end do
-      reduced_state%mf_lat_n(:,:,buf_j,move) = reduced_state%mf_lat_n(:,:,buf_j,move) / reduced_mesh%reduce_factor
       call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%mf_lat_n(:,:,buf_j,move), west_halo=.false.)
     end if
 
@@ -1116,11 +1119,10 @@ contains
     raw_i = raw_mesh%full_lon_ibeg + move - 1
     do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
       do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
-        reduced_state%ke(k,i,buf_j,move) = sum(raw_state%ke(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j,k))
+        reduced_state%ke(k,i,buf_j,move) = sum(raw_state%ke(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j,k) * reduced_mesh%weights)
       end do
       raw_i = raw_i + reduced_mesh%reduce_factor
     end do
-    reduced_state%ke(:,:,buf_j,move) = reduced_state%ke(:,:,buf_j,move) / reduced_mesh%reduce_factor
     call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%ke(:,:,buf_j,move), west_halo=.false.)
 
   end subroutine reduce_ke
@@ -1143,11 +1145,10 @@ contains
     raw_i = raw_mesh%full_lon_ibeg + move - 1
     do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
       do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
-        reduced_state%pt(k,i,buf_j,move) = sum(raw_state%pt(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j,k))
+        reduced_state%pt(k,i,buf_j,move) = sum(raw_state%pt(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j,k) * reduced_mesh%weights)
       end do
       raw_i = raw_i + reduced_mesh%reduce_factor
     end do
-    reduced_state%pt(:,:,buf_j,move) = reduced_state%pt(:,:,buf_j,move) / reduced_mesh%reduce_factor
     call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%pt(:,:,buf_j,move))
 
   end subroutine reduce_pt
@@ -1299,13 +1300,13 @@ contains
     raw_i = raw_mesh%full_lon_ibeg + move - 1
     do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
       do k = reduced_mesh%half_lev_ibeg, reduced_mesh%half_lev_iend
-        reduced_state%ph_lev(k,i,buf_j,move) = sum(                            &
-          raw_state%ph_lev(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j,k) &
+        reduced_state%ph_lev(k,i,buf_j,move) = sum(                              &
+          raw_state%ph_lev(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j,k) * &
+          reduced_mesh%weights                                                   &
         )
       end do
       raw_i = raw_i + reduced_mesh%reduce_factor
     end do
-    reduced_state%ph_lev(:,:,buf_j,move) = reduced_state%ph_lev(:,:,buf_j,move) / reduced_mesh%reduce_factor
     call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%ph_lev(:,:,buf_j,move), west_halo=.false.)
 
     do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
@@ -1328,7 +1329,7 @@ contains
 
     raw_i = raw_mesh%full_lon_ibeg + move - 1
     do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
-      raw_array(raw_i:raw_i+reduced_mesh%reduce_factor-1) = raw_array(raw_i:raw_i+reduced_mesh%reduce_factor-1) + reduced_array(i) / reduced_mesh%reduce_factor
+      raw_array(raw_i:raw_i+reduced_mesh%reduce_factor-1) = raw_array(raw_i:raw_i+reduced_mesh%reduce_factor-1) + reduced_array(i) * reduced_mesh%weights
       raw_i = raw_i + reduced_mesh%reduce_factor
     end do
 

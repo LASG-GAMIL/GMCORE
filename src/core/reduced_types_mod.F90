@@ -7,6 +7,7 @@ module reduced_types_mod
 
   type reduced_mesh_type
     integer :: reduce_factor = 0
+    real(r8), allocatable :: weights(:)
     integer halo_width
     integer num_full_lon
     integer num_half_lon
@@ -67,6 +68,8 @@ module reduced_types_mod
     real(r8), dimension(2,-1:0) :: half_tangent_wgt = inf
     real(r8), dimension(  -2:1) :: half_f           = inf
 #endif
+  contains
+    final :: reduced_mesh_final
   end type reduced_mesh_type
 
   type reduced_static_type
@@ -125,6 +128,14 @@ module reduced_types_mod
   end type reduced_tend_type
 
 contains
+
+  subroutine reduced_mesh_final(this)
+
+    type(reduced_mesh_type), intent(inout) :: this
+
+    if (allocated(this%weights)) deallocate(this%weights)
+
+  end subroutine reduced_mesh_final
 
   subroutine reduced_static_final(this)
 

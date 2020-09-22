@@ -115,20 +115,22 @@ contains
       mesh => state%mesh
 
       do k = mesh%half_lev_ibeg, mesh%half_lev_iend
-        do j = mesh%full_lat_lb, mesh%full_lat_ub
-          do i = mesh%full_lon_lb, mesh%full_lon_ub
+        do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             state%ph_lev(i,j,k) = vert_coord_calc_ph_lev(k, state%phs(i,j))
           end do
         end do
       end do
+      call fill_halo(block, state%ph_lev, full_lon=.true., full_lat=.true., full_lev=.true.)
 
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-        do j = mesh%full_lat_lb, mesh%full_lat_ub
-          do i = mesh%full_lon_lb, mesh%full_lon_ub
+        do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             state%ph(i,j,k) = 0.5_r8 * (state%ph_lev(i,j,k) + state%ph_lev(i,j,k+1))
           end do
         end do
       end do
+      call fill_halo(block, state%ph, full_lon=.true., full_lat=.true., full_lev=.true.)
     end if
 
   end subroutine calc_ph_lev_ph
@@ -433,8 +435,8 @@ contains
         end do
       end do
     else
-      do j = mesh%full_lat_lb, mesh%full_lat_ub
-        do i = mesh%full_lon_lb, mesh%full_lon_ub
+      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           state%m(i,j,1) = (state%gz(i,j,1) - block%static%gzs(i,j)) / g
         end do
       end do

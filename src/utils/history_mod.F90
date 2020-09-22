@@ -181,6 +181,7 @@ contains
       call fiona_add_var('h1', 'pv_lon'   , long_name='pv on U grid'                                  , units='', dim_names=lon_dims_2d)
       call fiona_add_var('h1', 'pv_lat'   , long_name='pv on V grid'                                  , units='', dim_names=lat_dims_2d)
       call fiona_add_var('h1', 'ke'       , long_name='kinetic energy on cell grid'                   , units='', dim_names=cell_dims_2d)
+      call fiona_add_var('h1', 'div'      , long_name='divergence'                                    , units='', dim_names=cell_dims_2d)
     end if
 
     call time_add_alert('history_write', seconds=seconds)
@@ -312,6 +313,7 @@ contains
     call fiona_output('h1', 'dmfdlon' , tend%dmfdlon  (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dmfdlat' , tend%dmfdlat  (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'ke'      , state%ke      (is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'div'     , state%div     (is:ie,js:je,ks:ke), start=start, count=count)
     if (baroclinic) then
       call fiona_output('h1', 'm'       , state%m      (is:ie,js:je,ks:ke), start=start, count=count)
       call fiona_output('h1', 'dphsdt'  , tend%dphs    (is:ie,js:je      ), start=start, count=count)
@@ -320,7 +322,6 @@ contains
       call fiona_output('h1', 'dptfdlat', tend%dptfdlat(is:ie,js:je,ks:ke), start=start, count=count)
       call fiona_output('h1', 'dptfdlev', tend%dptfdlev(is:ie,js:je,ks:ke), start=start, count=count)
       call fiona_output('h1', 'wp'      , state%wp     (is:ie,js:je,ks:ke), start=start, count=count)
-      call fiona_output('h1', 'div'     , state%div    (is:ie,js:je,ks:ke), start=start, count=count)
     end if
 
     is = mesh%half_lon_ibeg; ie = mesh%half_lon_iend

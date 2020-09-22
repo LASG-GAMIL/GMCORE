@@ -539,11 +539,13 @@ contains
       call splitter(dt, blocks(iblk))
 
       if (use_div_damp) then
-        call div_damp(blocks(iblk), blocks(iblk)%state(old), blocks(iblk)%state(new), dt)
+        call div_damp(blocks(iblk), dt, blocks(iblk)%state(old), blocks(iblk)%state(new))
       end if
       if (use_polar_damp) then
-        !call polar_damp(blocks(iblk), dt, blocks(iblk)%state(new))
-        call shapiro_smooth(blocks(iblk), blocks(iblk)%state(new))
+        call polar_damp(blocks(iblk), dt, blocks(iblk)%state(new))
+      end if
+      if (use_div_damp .or. use_polar_damp) then
+        call operators_prepare(blocks(iblk), blocks(iblk)%state(new), dt, all_pass)
       end if
     end do
 
