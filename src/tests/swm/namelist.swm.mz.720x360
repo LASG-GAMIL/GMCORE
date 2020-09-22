@@ -1,21 +1,20 @@
-&gmcore_swm_control
-num_lon = 720
-num_lat = 360
-num_proc_lon = 1
-num_proc_lat = 10
-! mountain_zonal_flow, rossby_haurwitz_wave, jet_zonal_flow, steady_geostrophic_flow, cross_pole_flow
-test_case = 'mountain_zonal_flow'
-run_days = 50
-time_scheme = 'pc2'
-dt_in_seconds = 150
-split_scheme = 'csp2'
-coarse_polar_lats_exp = 50
-coarse_polar_lats_mul = 4
-fast_cycles = 5
-pv_scheme = 3
-case_name = 'mz.u_pole.reduce.split.damp.dt150.720x360'
-history_interval = '1 days'
-reduce_factors = 8, 8, 8, 8, 6, 6, 6, 6, 4, 4, 4, 4, 2, 2
-use_polar_damp = .true.
-polar_damp_order = 4
+&gmcore_control
+num_lon           = 720
+num_lat           = 360
+num_proc_lon      = 1
+num_proc_lat      = 30
+test_case         = 'mountain_zonal_flow'
+run_days          = 50
+time_scheme       = 'pc2'
+dt_in_seconds     = 150
+split_scheme      = 'csp2'
+fast_cycles       = 5
+case_name         = 'mz.swm.720x360'
+history_interval  = '1 days'
+reduce_factors    = 12, 12, 12, 10, 10 10, 8, 8, 8, 6, 6, 6, 4, 4, 4, 2, 2, 2
+use_polar_damp    = .true.
+polar_damp_order  = 4
+use_div_damp      = .false.
+div_damp_order    = 2
+div_damp_cycles   = 1
 /

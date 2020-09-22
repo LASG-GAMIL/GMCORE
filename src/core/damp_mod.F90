@@ -140,6 +140,13 @@ contains
                     block%mesh%half_lat_lb, block%mesh%half_lat_ub, &
                     block%mesh%full_lev_lb, block%mesh%full_lev_ub, &
                     zonal_damp_on_half_lat)
+    if (baroclinic) then
+      call zonal_damp(block, polar_damp_order, dt, state%pt, &
+                      block%mesh%full_lon_lb, block%mesh%full_lon_ub, &
+                      block%mesh%full_lat_lb, block%mesh%full_lat_ub, &
+                      block%mesh%full_lev_lb, block%mesh%full_lev_ub, &
+                      zonal_damp_on_full_lat)
+    end if
 
   end subroutine polar_damp
 
