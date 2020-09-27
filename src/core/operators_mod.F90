@@ -620,7 +620,7 @@ contains
             end do
             call reduce_append_array(move, block%reduced_mesh(j-1), block%reduced_tend(j-1)%qhu(:,k), mesh, tend%qhu(:,j,k))
           end do
-          call overlay_inner_halo(block, tend%qhu(:,j,k), west_halo=.true., east_halo=.true.)
+          call overlay_inner_halo(block, tend%qhu(:,j,k), west_halo=.true.)
         else
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             if (coriolis_scheme == 1) then
@@ -654,7 +654,7 @@ contains
             end do
             call reduce_append_array(move, block%reduced_mesh(j), block%reduced_tend(j)%qhu(:,k), mesh, tend%qhu(:,j,k))
           end do
-          call overlay_inner_halo(block, tend%qhu(:,j,k), west_halo=.true., east_halo=.true.)
+          call overlay_inner_halo(block, tend%qhu(:,j,k), west_halo=.true.)
         else
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             if (coriolis_scheme == 1) then
@@ -693,7 +693,7 @@ contains
             end do
             call reduce_append_array(move, block%reduced_mesh(j), block%reduced_tend(j)%qhu(:,k), mesh, tend%qhu(:,j,k))
           end do
-          call overlay_inner_halo(block, tend%qhu(:,j,k), west_halo=.true., east_halo=.true.)
+          call overlay_inner_halo(block, tend%qhu(:,j,k), west_halo=.true.)
         else
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             if (coriolis_scheme == 1) then
@@ -727,7 +727,7 @@ contains
             end do
             call reduce_append_array(move, block%reduced_mesh(j+1), block%reduced_tend(j+1)%qhu(:,k), mesh, tend%qhu(:,j,k))
           end do
-          call overlay_inner_halo(block, tend%qhu(:,j,k), west_halo=.true., east_halo=.true.)
+          call overlay_inner_halo(block, tend%qhu(:,j,k), west_halo=.true.)
         else
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             if (coriolis_scheme == 1) then
@@ -778,7 +778,7 @@ contains
             end do
             call reduce_append_array(move, block%reduced_mesh(j), block%reduced_tend(j)%qhv(:,k), mesh, tend%qhv(:,j,k))
           end do
-          call overlay_inner_halo(block, tend%qhv(:,j,k), west_halo=.true., east_halo=.true.)
+          call overlay_inner_halo(block, tend%qhv(:,j,k), west_halo=.true.)
         else
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
             if (coriolis_scheme == 1) then
@@ -831,7 +831,7 @@ contains
             end do
             call reduce_append_array(move, block%reduced_mesh(j), block%reduced_tend(j)%qhv(:,k), mesh, tend%qhv(:,j,k))
           end do
-          call overlay_inner_halo(block, tend%qhv(:,j,k), west_halo=.true., east_halo=.true.)
+          call overlay_inner_halo(block, tend%qhv(:,j,k), west_halo=.true.)
         else
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
             if (coriolis_scheme == 1) then
@@ -880,7 +880,7 @@ contains
             end do
             call reduce_append_array(move, block%reduced_mesh(j), block%reduced_tend(j)%dkedlon(:,k), mesh, tend%dkedlon(:,j,k))
           end do
-          call overlay_inner_halo(block, tend%dkedlon(:,j,k), west_halo=.true., east_halo=.true.)
+          call overlay_inner_halo(block, tend%dkedlon(:,j,k), west_halo=.true.)
         else
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
             tend%dkedlon(i,j,k) = (state%ke(i+1,j,k) - state%ke(i,j,k)) / mesh%de_lon(j)
@@ -927,7 +927,7 @@ contains
             end do
             call reduce_append_array(move, block%reduced_mesh(j), block%reduced_tend(j)%dpedlon(:,k), mesh, tend%dpedlon(:,j,k))
           end do
-          call overlay_inner_halo(block, tend%dpedlon(:,j,k), west_halo=.true., east_halo=.true.)
+          call overlay_inner_halo(block, tend%dpedlon(:,j,k), west_halo=.true.)
         else
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
             tend%dpedlon(i,j,k) = (state%gz(i+1,j,k) - state%gz(i,j,k)) / mesh%de_lon(j)
@@ -983,7 +983,7 @@ contains
               end do
               call reduce_append_array(move, block%reduced_mesh(j), block%reduced_tend(j)%dpdlon(:,k), mesh, tend%dpdlon(:,j,k))
             end do
-            call overlay_inner_halo(block, tend%dpdlon(:,j,k), west_halo=.true., east_halo=.true.)
+            call overlay_inner_halo(block, tend%dpdlon(:,j,k), west_halo=.true.)
           else
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
               tend%dpdlon(i,j,k) = Rd / mesh%de_lon(j) / state%m_lon(i,j,k) * (            &
@@ -1041,7 +1041,7 @@ contains
             end do
             call reduce_append_array(move, block%reduced_mesh(j), block%reduced_tend(j)%dmfdlon(:,k), mesh, tend%dmfdlon(:,j,k))
           end do
-          call overlay_inner_halo(block, tend%dmfdlon(:,j,k), west_halo=.true., east_halo=.true.)
+          call overlay_inner_halo(block, tend%dmfdlon(:,j,k), west_halo=.true.)
         else
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             tend%dmfdlon(i,j,k) = (                           &
@@ -1134,7 +1134,7 @@ contains
               end do
               call reduce_append_array(move, block%reduced_mesh(j), block%reduced_tend(j)%dptfdlon(:,k), mesh, tend%dptfdlon(:,j,k))
             end do
-            call overlay_inner_halo(block, tend%dptfdlon(:,j,k), west_halo=.true., east_halo=.true.)
+            call overlay_inner_halo(block, tend%dptfdlon(:,j,k), west_halo=.true.)
           else
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
               tend%dptfdlon(i,j,k) = (                            &

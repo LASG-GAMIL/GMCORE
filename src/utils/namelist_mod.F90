@@ -54,6 +54,11 @@ module namelist_mod
   real(r8) :: div_damp_coef2 = 1.0_r8 / 128.0_r8
   real(r8) :: div_damp_coef4 = 0.01_r8
   integer :: div_damp_cycles = 1
+  logical :: use_vor_damp = .true.
+  integer :: vor_damp_order = 2
+  real(r8) :: vor_damp_coef2 = 0.001_r8
+  real(r8) :: vor_damp_coef4 = 0.01_r8
+  integer :: vor_damp_cycles = 1
   
   ! Nest settings
   character(30) :: nest_time_scheme   = 'pc2'
@@ -106,6 +111,10 @@ module namelist_mod
     div_damp_coef2            , &
     div_damp_coef4            , &
     div_damp_cycles           , &
+    use_vor_damp              , &
+    vor_damp_order            , &
+    vor_damp_coef2            , &
+    vor_damp_cycles           , &
     nest_time_scheme          , &
     nest_max_dom              , &
     nest_parent_id            , &

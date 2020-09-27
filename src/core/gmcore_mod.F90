@@ -526,6 +526,23 @@ contains
 
     ! call debug_check_space_operators(block, state, tend)
 
+    if (use_vor_damp) then
+      call vor_damp(block, state, tend)
+
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+            tend%du(i,j,k) = tend%du(i,j,k) - tend%dvordlat(i,j,k)
+          end do
+        end do
+        do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            tend%dv(i,j,k) = tend%dv(i,j,k) + tend%dvordlon(i,j,k)
+          end do
+        end do
+      end do
+    end if
+
   end subroutine space_operators
 
   subroutine time_integrate(dt, blocks)
@@ -539,7 +556,7 @@ contains
       call splitter(dt, blocks(iblk))
 
       if (use_div_damp) then
-        call div_damp(blocks(iblk), dt, blocks(iblk)%state(old), blocks(iblk)%state(new))
+        call div_damp(blocks(iblk), dt, blocks(iblk)%state(new))
       end if
       if (use_polar_damp) then
         call polar_damp(blocks(iblk), dt, blocks(iblk)%state(new))

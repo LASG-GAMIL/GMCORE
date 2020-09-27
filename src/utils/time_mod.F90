@@ -160,6 +160,8 @@ contains
 
     curr_time = create_datetime(tmp2)
     select case (tmp1)
+    case ('minutes')
+      call curr_time%add_minutes(time_value)
     case ('hours')
       call curr_time%add_hours(time_value)
     case ('days')

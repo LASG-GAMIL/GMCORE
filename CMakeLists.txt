@@ -114,7 +114,11 @@ set(source_files
   src/core/reduced_types_mod.F90
   ${CMAKE_CURRENT_BINARY_DIR}/reduce_mod.F90
   src/core/nest_mod.F90
-  src/core/damp_mod.F90
+  src/core/damp/zonal_damp_mod.F90
+  src/core/damp/meridional_damp_mod.F90
+  src/core/damp/div_damp_mod.F90
+  src/core/damp/vor_damp_mod.F90
+  src/core/damp/damp_mod.F90
   src/core/gmcore_mod.F90
   src/tests/swm/rossby_haurwitz_wave_test_mod.F90
   src/tests/swm/mountain_zonal_flow_test_mod.F90

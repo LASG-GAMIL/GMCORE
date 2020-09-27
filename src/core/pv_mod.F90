@@ -11,6 +11,7 @@ module pv_mod
 
   private
 
+  public calc_vor_vtx
   public calc_pv_vtx
   public calc_pv_edge_midpoint
   public calc_pv_edge_apvm
