@@ -50,7 +50,7 @@ contains
           else
             jr = global_mesh%full_lat_iend_no_pole - j + 1
           end if
-          cv_full_lat(j,k) = vor_damp_coef2 * exp(jr**2 * log(0.8_r8) / jr0**2) * &
+          cv_full_lat(j,k) = vor_damp_coef2 * exp(jr**2 * log(0.5_r8) / jr0**2) * &
             radius**2 * global_mesh%dlat(j) * global_mesh%dlon / dt_in_seconds
         end do
       end do
@@ -62,7 +62,7 @@ contains
           else
             jr = global_mesh%half_lat_iend_no_pole - j + 1
           end if
-          cv_half_lat(j,k) = vor_damp_coef2 * exp(jr**2 * log(0.8_r8) / jr0**2) * &
+          cv_half_lat(j,k) = vor_damp_coef2 * exp(jr**2 * log(0.5_r8) / jr0**2) * &
             radius**2 * global_mesh%dlat(j) * global_mesh%dlon / dt_in_seconds
         end do
       end do
@@ -104,17 +104,19 @@ contains
         end do
       end do
 
-      !sv = 0.0_r8
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
 #ifdef V_POLE
+          if (block%reduced_mesh(j)%reduce_factor > block%reduced_mesh(j+1)%reduce_factor) then
+            jr = j - 1; jb =  1
+          else
+            jr = j    ; jb =  0
+          end if
 #else
           if (block%reduced_mesh(j)%reduce_factor > block%reduced_mesh(j+1)%reduce_factor) then
-            jr = j
-            jb = 0
+            jr = j    ; jb =  0
           else
-            jr = j + 1
-            jb = -1
+            jr = j + 1; jb = -1
           end if
 #endif
           if (block%reduced_mesh(jr)%reduce_factor > 1) then

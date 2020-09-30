@@ -149,8 +149,7 @@ contains
       reduced_mesh%weights(i) = exp((i - r0)**2 * log(0.1) / (1 - r0)**2)
     end do
     reduced_mesh%weights = reduced_mesh%weights / sum(reduced_mesh%weights)
-
-    reduced_mesh%weights = 1.0_r8 / reduce_factor
+    ! reduced_mesh%weights = 1.0_r8 / reduce_factor
 
     reduced_mesh%halo_width    = 1
     reduced_mesh%num_full_lon  = raw_mesh%num_full_lon / reduce_factor
@@ -552,37 +551,6 @@ contains
     call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%v(:,:,buf_j,move))
 
   end subroutine reduce_v
-
-  subroutine reduce_gz_hydro(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
-
-    integer, intent(in) :: j
-    integer, intent(in) :: buf_j
-    integer, intent(in) :: move
-    type(block_type), intent(in) :: block
-    type(mesh_type), intent(in) :: raw_mesh
-    type(state_type), intent(inout) :: raw_state
-    type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
-    type(reduced_state_type), intent(inout) :: reduced_state
-    real(r8), intent(in) :: dt
-
-    integer i, k, l
-    real(r8) dgz
-
-    if (raw_mesh%is_inside_with_halo_full_lat(j+buf_j)) then
-      do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
-        do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
-          dgz = 0.0_r8
-          do l = k + 1, reduced_mesh%num_full_lev
-            dgz = dgz + Rd * reduced_state%t(l,i,buf_j,move) * log(reduced_state%ph_lev(l+1,i,buf_j,move) / reduced_state%ph_lev(l,i,buf_j,move))
-          end do
-          reduced_state%gz(k,i,buf_j,move) = reduced_static%gzs(i,buf_j,move) + dgz + reduced_state%ak(k,i,buf_j,move) * Rd * reduced_state%t(k,i,buf_j,move)
-        end do
-      end do
-      call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%gz(:,:,buf_j,move), west_halo=.false.)
-    end if
-
-  end subroutine reduce_gz_hydro
 
   subroutine reduce_gz(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
 

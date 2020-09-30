@@ -601,7 +601,7 @@ contains
 #ifdef V_POLE
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
-        if (block%reduced_mesh(j-1)%reduce_factor > 0) then
+        if (block%reduced_mesh(j-1)%reduce_factor > 1) then
           tend%qhu(:,j,k) = 0.0_r8
           do move = 1, block%reduced_mesh(j-1)%reduce_factor
             do i = block%reduced_mesh(j-1)%full_lon_ibeg, block%reduced_mesh(j-1)%full_lon_iend
@@ -635,7 +635,7 @@ contains
             end if
           end do
         end if
-        if (block%reduced_mesh(j)%reduce_factor > 0) then
+        if (block%reduced_mesh(j)%reduce_factor > 1) then
           call zero_halo(block, tend%qhu(:,j,k), east_halo=.true.)
           do move = 1, block%reduced_mesh(j)%reduce_factor
             do i = block%reduced_mesh(j)%full_lon_ibeg, block%reduced_mesh(j)%full_lon_iend
@@ -674,7 +674,7 @@ contains
 #else
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
-        if (block%reduced_mesh(j)%reduce_factor > 0) then
+        if (block%reduced_mesh(j)%reduce_factor > 1) then
           tend%qhu(:,j,k) = 0.0_r8
           do move = 1, block%reduced_mesh(j)%reduce_factor
             do i = block%reduced_mesh(j)%full_lon_ibeg, block%reduced_mesh(j)%full_lon_iend
@@ -708,7 +708,7 @@ contains
             end if
           end do
         end if
-        if (block%reduced_mesh(j+1)%reduce_factor > 0) then
+        if (block%reduced_mesh(j+1)%reduce_factor > 1) then
           call zero_halo(block, tend%qhu(:,j,k), east_halo=.true.)
           do move = 1, block%reduced_mesh(j+1)%reduce_factor
             do i = block%reduced_mesh(j+1)%full_lon_ibeg, block%reduced_mesh(j+1)%full_lon_iend
@@ -749,7 +749,7 @@ contains
 #ifdef V_POLE
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-        if (block%reduced_mesh(j)%reduce_factor > 0) then
+        if (block%reduced_mesh(j)%reduce_factor > 1) then
           tend%qhv(:,j,k) = 0.0_r8
           do move = 1, block%reduced_mesh(j)%reduce_factor
             do i = block%reduced_mesh(j)%half_lon_ibeg, block%reduced_mesh(j)%half_lon_iend
@@ -802,7 +802,7 @@ contains
 #else
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-        if (block%reduced_mesh(j)%reduce_factor > 0) then
+        if (block%reduced_mesh(j)%reduce_factor > 1) then
           tend%qhv(:,j,k) = 0.0_r8
           do move = 1, block%reduced_mesh(j)%reduce_factor
             do i = block%reduced_mesh(j)%half_lon_ibeg, block%reduced_mesh(j)%half_lon_iend
@@ -870,7 +870,7 @@ contains
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-        if (block%reduced_mesh(j)%reduce_factor > 0) then
+        if (block%reduced_mesh(j)%reduce_factor > 1) then
           tend%dkedlon(:,j,k) = 0.0_r8
           do move = 1, block%reduced_mesh(j)%reduce_factor
             do i = block%reduced_mesh(j)%half_lon_ibeg, block%reduced_mesh(j)%half_lon_iend
@@ -917,7 +917,7 @@ contains
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-        if (block%reduced_mesh(j)%reduce_factor > 0) then
+        if (block%reduced_mesh(j)%reduce_factor > 1) then
           tend%dpedlon(:,j,k) = 0.0_r8
           do move = 1, block%reduced_mesh(j)%reduce_factor
             do i = block%reduced_mesh(j)%full_lon_ibeg, block%reduced_mesh(j)%full_lon_iend
@@ -965,7 +965,7 @@ contains
 
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-          if (block%reduced_mesh(j)%reduce_factor > 0) then
+          if (block%reduced_mesh(j)%reduce_factor > 1) then
             tend%dpdlon(:,j,k) = 0.0_r8
             do move = 1, block%reduced_mesh(j)%reduce_factor
               do i = block%reduced_mesh(j)%half_lon_ibeg, block%reduced_mesh(j)%half_lon_iend
@@ -1031,7 +1031,7 @@ contains
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-        if (block%reduced_mesh(j)%reduce_factor > 0) then
+        if (block%reduced_mesh(j)%reduce_factor > 1) then
           tend%dmfdlon(:,j,k) = 0.0_r8
           do move = 1, block%reduced_mesh(j)%reduce_factor
             do i = block%reduced_mesh(j)%full_lon_ibeg, block%reduced_mesh(j)%full_lon_iend
@@ -1123,7 +1123,7 @@ contains
 
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-          if (block%reduced_mesh(j)%reduce_factor > 0) then
+          if (block%reduced_mesh(j)%reduce_factor > 1) then
             tend%dptfdlon(:,j,k) = 0.0_r8
             do move = 1, block%reduced_mesh(j)%reduce_factor
               do i = block%reduced_mesh(j)%full_lon_ibeg, block%reduced_mesh(j)%full_lon_iend

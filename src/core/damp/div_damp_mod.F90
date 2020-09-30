@@ -23,9 +23,17 @@ contains
 
   subroutine div_damp_init()
 
-    integer j, k, r
+    integer j, k, r, jr, jr0
 
     call div_damp_final()
+
+    jr0 = 0
+    do j = global_mesh%full_lat_ibeg_no_pole, global_mesh%full_lat_iend_no_pole
+      if (global_mesh%full_lat(j) <= 0) then
+        jr = j - global_mesh%full_lat_ibeg_no_pole + 1
+        if (reduce_factors(jr) > 1) jr0 = jr
+      end if
+    end do
 
     allocate(cd_full_lat(global_mesh%num_full_lat,global_mesh%num_full_lev))
     allocate(cd_half_lat(global_mesh%num_half_lat,global_mesh%num_full_lev))
@@ -36,15 +44,43 @@ contains
 
       do k = global_mesh%full_lev_ibeg, global_mesh%full_lev_iend
         do j = global_mesh%full_lat_ibeg_no_pole, global_mesh%full_lat_iend_no_pole
-          cd_full_lat(j,k) = div_damp_coef2 * global_mesh%full_cos_lat(j)**r * &
-            radius**2 * global_mesh%dlat(j) * global_mesh%dlon / dt_in_seconds
+          if (global_mesh%full_lat(j) <= 0) then
+            jr = j - global_mesh%full_lat_ibeg_no_pole + 1
+          else
+            jr = global_mesh%full_lat_iend_no_pole - j + 1
+          end if
+          if (baroclinic) then
+            cd_full_lat(j,k) = div_damp_coef2 * &
+              !(1.0_r8 + 2.0_r8 * exp(k**2 * log(0.5_r8) / 4**2)) * &
+              !(global_mesh%full_cos_lat(j)**r + 0.01 * exp(jr**2 * log(0.01) / jr0**2)) * &
+              global_mesh%full_cos_lat(j)**r * &
+              radius**2 * global_mesh%dlat(j) * global_mesh%dlon / dt_in_seconds
+          else
+            cd_full_lat(j,k) = div_damp_coef2 * &
+              global_mesh%full_cos_lat(j)**r * &
+              radius**2 * global_mesh%dlat(j) * global_mesh%dlon / dt_in_seconds
+          end if
         end do
       end do
 
       do k = global_mesh%full_lev_ibeg, global_mesh%full_lev_iend
         do j = global_mesh%half_lat_ibeg_no_pole, global_mesh%half_lat_iend_no_pole
-          cd_half_lat(j,k) = div_damp_coef2 * global_mesh%half_cos_lat(j)**r * &
-            radius**2 * global_mesh%dlat(j) * global_mesh%dlon / dt_in_seconds
+          if (global_mesh%half_lat(j) <= 0) then
+            jr = j - global_mesh%half_lat_ibeg_no_pole + 1
+          else
+            jr = global_mesh%half_lat_iend_no_pole - j + 1
+          end if
+          if (baroclinic) then
+            cd_half_lat(j,k) = div_damp_coef2 * &
+              !(1.0_r8 + 2.0_r8 * exp(k**2 * log(0.5_r8) / 4**2)) * &
+              !(global_mesh%half_cos_lat(j)**r + 0.01 * exp(jr**2 * log(0.01) / jr0**2)) * &
+              global_mesh%half_cos_lat(j)**r * &
+              radius**2 * global_mesh%dlat(j) * global_mesh%dlon / dt_in_seconds
+          else
+            cd_half_lat(j,k) = div_damp_coef2 * &
+              global_mesh%half_cos_lat(j)**r * &
+              radius**2 * global_mesh%dlat(j) * global_mesh%dlon / dt_in_seconds
+          end if
         end do
       end do
     case (4)
