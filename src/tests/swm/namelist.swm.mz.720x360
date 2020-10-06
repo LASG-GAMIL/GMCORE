@@ -2,19 +2,19 @@
 num_lon           = 720
 num_lat           = 360
 num_proc_lon      = 1
-num_proc_lat      = 30
+num_proc_lat      = 120
 test_case         = 'mountain_zonal_flow'
 run_days          = 50
 time_scheme       = 'pc2'
 dt_in_seconds     = 150
 split_scheme      = 'csp2'
 fast_cycles       = 5
-case_name         = 'mz.swm.720x360'
+case_name         = 'swm.mz.720x360'
 history_interval  = '1 days'
 reduce_factors    = 12, 12, 12, 10, 10 10, 8, 8, 8, 6, 6, 6, 4, 4, 4, 2, 2, 2
-use_polar_damp    = .true.
-polar_damp_order  = 4
-use_div_damp      = .false.
+use_div_damp      = .true.
 div_damp_order    = 2
-div_damp_cycles   = 1
+use_vor_damp      = .true.
+vor_damp_order    = 2
+vor_damp_coef2    = 0.0005d0
 /

@@ -322,6 +322,8 @@ contains
       call fiona_output('h1', 'dptfdlat', tend%dptfdlat(is:ie,js:je,ks:ke), start=start, count=count)
       call fiona_output('h1', 'dptfdlev', tend%dptfdlev(is:ie,js:je,ks:ke), start=start, count=count)
       call fiona_output('h1', 'wp'      , state%wp     (is:ie,js:je,ks:ke), start=start, count=count)
+    else
+      call fiona_output('h1', 'dgzdt'   , tend%dgz     (is:ie,js:je,ks:ke), start=start, count=count)
     end if
 
     is = mesh%half_lon_ibeg; ie = mesh%half_lon_iend

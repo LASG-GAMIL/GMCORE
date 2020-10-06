@@ -46,20 +46,18 @@ module namelist_mod
   integer :: color_proc_lat_reduce(100) = 0
   integer :: num_proc_lon_reduce(100) = 0
 
-  logical :: use_polar_damp = .true.
+  logical :: use_polar_damp = .false.
   integer :: polar_damp_order = 4
   integer :: polar_damp_cycles = 1
-  logical :: use_div_damp = .true.
+  logical :: use_div_damp = .false.
   integer :: div_damp_order = 2
   real(r8) :: div_damp_coef2 = 1.0_r8 / 128.0_r8
   real(r8) :: div_damp_coef4 = 0.01_r8
-  integer :: div_damp_cycles = 1
-  logical :: use_vor_damp = .true.
+  logical :: use_vor_damp = .false.
   integer :: vor_damp_order = 2
   real(r8) :: vor_damp_coef2 = 0.001_r8
   real(r8) :: vor_damp_coef4 = 0.01_r8
-  integer :: vor_damp_cycles = 1
-  
+
   ! Nest settings
   character(30) :: nest_time_scheme   = 'pc2'
   integer       :: nest_max_dom       = 1
@@ -68,7 +66,7 @@ module namelist_mod
   real(r8)      :: nest_lon_end(20) = inf
   real(r8)      :: nest_lat_beg(20) = inf
   real(r8)      :: nest_lat_end(20) = inf
-  
+
   namelist /gmcore_control/     &
     case_name                 , &
     test_case                 , &
@@ -110,11 +108,9 @@ module namelist_mod
     div_damp_order            , &
     div_damp_coef2            , &
     div_damp_coef4            , &
-    div_damp_cycles           , &
     use_vor_damp              , &
     vor_damp_order            , &
     vor_damp_coef2            , &
-    vor_damp_cycles           , &
     nest_time_scheme          , &
     nest_max_dom              , &
     nest_parent_id            , &

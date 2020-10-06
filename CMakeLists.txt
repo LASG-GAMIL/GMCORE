@@ -40,7 +40,7 @@ elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
 	if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 		set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -no-wrap-margin -O0 -check bounds -g -traceback")
 	else ()
-		set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -no-wrap-margin -O3 -align array64byte")
+		set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -no-wrap-margin -O3 -align array64byte -mkl")
 	endif ()
 endif ()
 
@@ -66,6 +66,16 @@ else ()
   else ()
     message(FATAL_ERROR "Unable to find pkg-config library!")
   endif ()
+endif ()
+
+if (DEFINED ENV{MKLROOT})
+  include_directories("$ENV{MKLROOT}/include")
+  link_directories("$ENV{MKLROOT}/lib")
+elseif (DEFINED ENV{MKL_INC} AND DEFINED ENV{MKL_LIB})
+  include_directories("$ENV{MKL_INC}")
+  link_directories("$ENV{MKL_LIB}")
+else ()
+  message (FATAL_ERROR "Unable to find MKL library!")
 endif ()
 
 add_subdirectory(lib/container)
@@ -97,6 +107,7 @@ set(source_files
   src/utils/allocator_mod.F90
   src/utils/parallel_types_mod.F90
   src/utils/parallel_mod.F90
+  src/utils/tridiag_mod.F90
   src/utils/debug_mod.F90
   src/core/mesh_mod.F90
   src/core/sigma_coord_mod.F90
