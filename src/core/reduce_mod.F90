@@ -1350,9 +1350,8 @@ contains
 
     allocate(reduced_tend%qhv     (is:ie,ks:ke))
     allocate(reduced_tend%fv      (is:ie,ks:ke))
-    allocate(reduced_tend%dpedlon (is:ie,ks:ke))
+    allocate(reduced_tend%pgf_lon (is:ie,ks:ke))
     allocate(reduced_tend%dkedlon (is:ie,ks:ke))
-    allocate(reduced_tend%dpdlon  (is:ie,ks:ke))
 
   end subroutine allocate_reduced_tend
 

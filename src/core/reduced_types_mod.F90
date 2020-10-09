@@ -119,10 +119,9 @@ module reduced_types_mod
     real(r8), allocatable, dimension(:,:) :: fv
     real(r8), allocatable, dimension(:,:) :: fu
     real(r8), allocatable, dimension(:,:) :: dmfdlon
-    real(r8), allocatable, dimension(:,:) :: dpedlon
+    real(r8), allocatable, dimension(:,:) :: pgf_lon
     real(r8), allocatable, dimension(:,:) :: dkedlon
     real(r8), allocatable, dimension(:,:) :: dptfdlon
-    real(r8), allocatable, dimension(:,:) :: dpdlon
     real(r8), allocatable, dimension(:,:) :: dvordlon
   contains
     final :: reduced_tend_final
@@ -191,10 +190,9 @@ contains
     if (allocated(this%fv      )) deallocate(this%fv      )
     if (allocated(this%fu      )) deallocate(this%fu      )
     if (allocated(this%dmfdlon )) deallocate(this%dmfdlon )
-    if (allocated(this%dpedlon )) deallocate(this%dpedlon )
+    if (allocated(this%pgf_lon )) deallocate(this%pgf_lon )
     if (allocated(this%dkedlon )) deallocate(this%dkedlon )
     if (allocated(this%dptfdlon)) deallocate(this%dptfdlon)
-    if (allocated(this%dpdlon  )) deallocate(this%dpdlon  )
     if (allocated(this%dvordlon)) deallocate(this%dvordlon)
 
   end subroutine reduced_tend_final

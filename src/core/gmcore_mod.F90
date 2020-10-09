@@ -304,13 +304,13 @@ contains
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              tend%du(i,j,k) =   tend%qhv(i,j,k) - tend%dpedlon(i,j,k) - tend%dkedlon(i,j,k) - tend%dpdlon(i,j,k) - tend%wedudlev(i,j,k)
+              tend%du(i,j,k) =   tend%qhv(i,j,k) - tend%pgf_lon(i,j,k) - tend%dkedlon(i,j,k) - tend%wedudlev(i,j,k)
             end do
           end do
 
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              tend%dv(i,j,k) = - tend%qhu(i,j,k) - tend%dpedlat(i,j,k) - tend%dkedlat(i,j,k) - tend%dpdlat(i,j,k) - tend%wedvdlev(i,j,k)
+              tend%dv(i,j,k) = - tend%qhu(i,j,k) - tend%pgf_lat(i,j,k) - tend%dkedlat(i,j,k) - tend%wedvdlev(i,j,k)
             end do
           end do
 
@@ -334,13 +334,13 @@ contains
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              tend%du(i,j,k) =   tend%qhv(i,j,k) - tend%dpedlon(i,j,k) - tend%dkedlon(i,j,k)
+              tend%du(i,j,k) =   tend%qhv(i,j,k) - tend%pgf_lon(i,j,k) - tend%dkedlon(i,j,k)
             end do
           end do
 
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              tend%dv(i,j,k) = - tend%qhu(i,j,k) - tend%dpedlat(i,j,k) - tend%dkedlat(i,j,k)
+              tend%dv(i,j,k) = - tend%qhu(i,j,k) - tend%pgf_lat(i,j,k) - tend%dkedlat(i,j,k)
             end do
           end do
 
@@ -398,13 +398,13 @@ contains
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              tend%du(i,j,k) = tend%du(i,j,k) - tend%dpedlon(i,j,k) - tend%dpdlon(i,j,k)
+              tend%du(i,j,k) = tend%du(i,j,k) - tend%pgf_lon(i,j,k)
             end do
           end do
 
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              tend%dv(i,j,k) = tend%dv(i,j,k) - tend%dpedlat(i,j,k) - tend%dpdlat(i,j,k)
+              tend%dv(i,j,k) = tend%dv(i,j,k) - tend%pgf_lat(i,j,k)
             end do
           end do
         end do
@@ -471,13 +471,13 @@ contains
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              tend%du(i,j,k) = - tend%wedudlev(i,j,k) - tend%dkedlon(i,j,k) - tend%dpedlon(i,j,k) - tend%dpdlon(i,j,k)
+              tend%du(i,j,k) = - tend%wedudlev(i,j,k) - tend%dkedlon(i,j,k) - tend%pgf_lon(i,j,k)
             end do
           end do
 
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              tend%dv(i,j,k) = - tend%wedvdlev(i,j,k) - tend%dkedlat(i,j,k) - tend%dpedlat(i,j,k) - tend%dpdlat(i,j,k)
+              tend%dv(i,j,k) = - tend%wedvdlev(i,j,k) - tend%dkedlat(i,j,k) - tend%pgf_lat(i,j,k)
             end do
           end do
 
@@ -500,13 +500,13 @@ contains
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              tend%du(i,j,k) = - tend%dpedlon(i,j,k) - tend%dkedlon(i,j,k)
+              tend%du(i,j,k) = - tend%pgf_lon(i,j,k) - tend%dkedlon(i,j,k)
             end do
           end do
 
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              tend%dv(i,j,k) = - tend%dpedlat(i,j,k) - tend%dkedlat(i,j,k)
+              tend%dv(i,j,k) = - tend%pgf_lat(i,j,k) - tend%dkedlat(i,j,k)
             end do
           end do
 
@@ -539,7 +539,6 @@ contains
 
       if (use_div_damp) then
         call div_damp(blocks(iblk), dt, blocks(iblk)%state(new))
-        call polar_damp(blocks(iblk), dt, blocks(iblk)%state(new))
       end if
       if (use_vor_damp) then
         call vor_damp(blocks(iblk), dt, blocks(iblk)%state(new))
