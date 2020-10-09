@@ -134,15 +134,13 @@ contains
       call fiona_add_var('h1', 'wedphdlev', long_name='vertical coordinate velocity'                  , units='', dim_names=lev_dims)
       call fiona_add_var('h1', 'wedphdlev_lon', long_name='vertical coordinate velocity'              , units='', dim_names=lon_lev_dims)
       call fiona_add_var('h1', 'wedphdlev_lat', long_name='vertical coordinate velocity'              , units='', dim_names=lat_lev_dims)
-      call fiona_add_var('h1', 'dpdlon'   , long_name='zonal pressure gradient force'                 , units='', dim_names=lon_dims)
+      call fiona_add_var('h1', 'pgf_lon'  , long_name='zonal pressure gradient force'                 , units='', dim_names=lon_dims)
       call fiona_add_var('h1', 'wedudlev' , long_name='vertical advection of u'                       , units='', dim_names=lon_dims)
-      call fiona_add_var('h1', 'dpdlat'   , long_name='meridional pressure gradient force'            , units='', dim_names=lat_dims)
+      call fiona_add_var('h1', 'pgf_lat'  , long_name='meridional pressure gradient force'            , units='', dim_names=lat_dims)
       call fiona_add_var('h1', 'wedvdlev' , long_name='vertical advection of v'                       , units='', dim_names=lat_dims)
       call fiona_add_var('h1', 'qhv'      , long_name='nonliear zonal Coriolis force'                 , units='', dim_names=lon_dims)
       call fiona_add_var('h1', 'qhu'      , long_name='nonliear meridional Coriolis force'            , units='', dim_names=lat_dims)
-      call fiona_add_var('h1', 'dpedlon'  , long_name='zonal geopotential energy gradient force'      , units='', dim_names=lon_dims)
       call fiona_add_var('h1', 'dkedlon'  , long_name='zonal kinetic energy gradient force'           , units='', dim_names=lon_dims)
-      call fiona_add_var('h1', 'dpedlat'  , long_name='meridional geopotential energy gradient force' , units='', dim_names=lat_dims)
       call fiona_add_var('h1', 'dkedlat'  , long_name='meridional kinetic energy gradient force'      , units='', dim_names=lat_dims)
       call fiona_add_var('h1', 'dmfdlon'  , long_name='zonal mass flux divergence'                    , units='', dim_names=cell_dims)
       call fiona_add_var('h1', 'dmfdlat'  , long_name='meridional mass flux divergence'               , units='', dim_names=cell_dims)
@@ -165,9 +163,9 @@ contains
       call fiona_add_var('h1', 'dgzdt'    , long_name='geopotential tendency'                         , units='', dim_names=cell_dims_2d)
       call fiona_add_var('h1', 'qhv'      , long_name='nonliear zonal Coriolis force'                 , units='', dim_names=lon_dims_2d)
       call fiona_add_var('h1', 'qhu'      , long_name='nonliear meridional Coriolis force'            , units='', dim_names=lat_dims_2d)
-      call fiona_add_var('h1', 'dpedlon'  , long_name='zonal geopotential energy gradient force'      , units='', dim_names=lon_dims_2d)
+      call fiona_add_var('h1', 'pgf_lon'  , long_name='zonal geopotential energy gradient force'      , units='', dim_names=lon_dims_2d)
       call fiona_add_var('h1', 'dkedlon'  , long_name='zonal kinetic energy gradient force'           , units='', dim_names=lon_dims_2d)
-      call fiona_add_var('h1', 'dpedlat'  , long_name='meridional geopotential energy gradient force' , units='', dim_names=lat_dims_2d)
+      call fiona_add_var('h1', 'pgf_lat'  , long_name='meridional geopotential energy gradient force' , units='', dim_names=lat_dims_2d)
       call fiona_add_var('h1', 'dkedlat'  , long_name='meridional kinetic energy gradient force'      , units='', dim_names=lat_dims_2d)
       call fiona_add_var('h1', 'dmfdlon'  , long_name='zonal mass flux divergence'                    , units='', dim_names=cell_dims_2d)
       call fiona_add_var('h1', 'dmfdlat'  , long_name='meridional mass flux divergence'               , units='', dim_names=cell_dims_2d)
@@ -333,7 +331,7 @@ contains
     count = [mesh%num_half_lon,mesh%num_full_lat,mesh%num_full_lev]
 
     call fiona_output('h1', 'qhv'     , tend%qhv      (is:ie,js:je,ks:ke), start=start, count=count)
-    call fiona_output('h1', 'dpedlon' , tend%dpedlon  (is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'pgf_lon' , tend%pgf_lon  (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dkedlon' , tend%dkedlon  (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dudt   ' , tend%du       (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'm_lon'   , state%m_lon   (is:ie,js:je,ks:ke), start=start, count=count)
@@ -342,7 +340,6 @@ contains
     call fiona_output('h1', 'pv_lon'  , state%pv_lon  (is:ie,js:je,ks:ke), start=start, count=count)
 
     if (baroclinic) then
-      call fiona_output('h1', 'dpdlon'  , tend%dpdlon  (is:ie,js:je,ks:ke), start=start, count=count)
       call fiona_output('h1', 'wedudlev', tend%wedudlev(is:ie,js:je,ks:ke), start=start, count=count)
     end if
 
@@ -353,7 +350,7 @@ contains
     count = [mesh%num_full_lon,mesh%num_half_lat,mesh%num_full_lev]
 
     call fiona_output('h1', 'qhu'     , tend%qhu      (is:ie,js:je,ks:ke), start=start, count=count)
-    call fiona_output('h1', 'dpedlat' , tend%dpedlat  (is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'pgf_lat' , tend%pgf_lat  (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dkedlat' , tend%dkedlat  (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dvdt'    , tend%dv       (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'm_lat'   , state%m_lat   (is:ie,js:je,ks:ke), start=start, count=count)
@@ -362,7 +359,6 @@ contains
     call fiona_output('h1', 'pv_lat'  , state%pv_lat  (is:ie,js:je,ks:ke), start=start, count=count)
 
     if (baroclinic) then
-      call fiona_output('h1', 'dpdlat'  , tend%dpdlat  (is:ie,js:je,ks:ke), start=start, count=count)
       call fiona_output('h1', 'wedvdlev', tend%wedvdlev(is:ie,js:je,ks:ke), start=start, count=count)
     end if
 

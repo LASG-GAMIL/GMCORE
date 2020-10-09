@@ -191,7 +191,7 @@ contains
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
             ip_cf = ip_cf  + tend%qhv    (i,j,k) * state%mf_lon_n(i,j,k) * mesh%area_lon(j)
             ip_ke = ip_ke + tend%dkedlon(i,j,k) * state%mf_lon_n(i,j,k) * mesh%area_lon(j) * 2
-            ip_pe = ip_pe + tend%dpedlon(i,j,k) * state%mf_lon_n(i,j,k) * mesh%area_lon(j) * 2
+            ip_pe = ip_pe + tend%pgf_lon(i,j,k) * state%mf_lon_n(i,j,k) * mesh%area_lon(j) * 2
           end do
         end do
       end do
@@ -201,7 +201,7 @@ contains
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             ip_cf = ip_cf - tend%qhu    (i,j,k) * state%mf_lat_n(i,j,k) * mesh%area_lat(j)
             ip_ke = ip_ke + tend%dkedlat(i,j,k) * state%mf_lat_n(i,j,k) * mesh%area_lat(j) * 2
-            ip_pe = ip_pe + tend%dpedlat(i,j,k) * state%mf_lat_n(i,j,k) * mesh%area_lat(j) * 2
+            ip_pe = ip_pe + tend%pgf_lat(i,j,k) * state%mf_lat_n(i,j,k) * mesh%area_lat(j) * 2
           end do
         end do
       end do
