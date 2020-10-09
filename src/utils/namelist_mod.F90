@@ -32,7 +32,7 @@ module namelist_mod
 
   integer :: pv_scheme = 3
   logical :: pv_pole_stokes = .true.
-
+  character(8) :: pgf_scheme = 'sb81'
   integer :: coriolis_scheme = 1
 
   integer :: fast_cycles = 1
@@ -92,6 +92,7 @@ module namelist_mod
     ke_cell_wgt               , &
     pv_scheme                 , &
     pv_pole_stokes            , &
+    pgf_scheme                , &
     coriolis_scheme           , &
     split_scheme              , &
     time_scheme               , &

@@ -15,6 +15,7 @@ module gmcore_mod
   use interp_mod
   use reduce_mod
   use debug_mod
+  use pgf_mod
   use damp_mod
 
   implicit none
@@ -64,6 +65,7 @@ contains
     call history_init()
     call restart_init()
     call reduce_init(proc%blocks)
+    call pgf_init()
     call damp_init()
 
     select case (time_scheme)
@@ -297,8 +299,7 @@ contains
         call calc_dptfdlev         (block, state, tend, dt)
         call calc_qhu_qhv          (block, state, tend, dt)
         call calc_dkedlon_dkedlat  (block, state, tend, dt)
-        call calc_dpedlon_dpedlat  (block, state, tend, dt)
-        call calc_dpdlon_dpdlat    (block, state, tend, dt)
+        call pgf_run               (block, state, tend)
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -328,7 +329,7 @@ contains
         call calc_dmfdlon_dmfdlat(block, state, tend, dt)
         call calc_qhu_qhv        (block, state, tend, dt)
         call calc_dkedlon_dkedlat(block, state, tend, dt)
-        call calc_dpedlon_dpedlat(block, state, tend, dt)
+        call pgf_run             (block, state, tend    )
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -392,8 +393,7 @@ contains
       end if
     case (all_pass + backward_pass)
       if (baroclinic .and. hydrostatic) then
-        call calc_dpedlon_dpedlat  (block, state, tend, dt)
-        call calc_dpdlon_dpdlat    (block, state, tend, dt)
+        call pgf_run(block, state, tend)
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -465,9 +465,8 @@ contains
         call calc_wedudlev_wedvdlev(block, state, tend, dt)
         call calc_dptfdlev         (block, state, tend, dt)
         call calc_dptfdlon_dptfdlat(block, state, tend, dt)
-        call calc_dpedlon_dpedlat  (block, state, tend, dt)
         call calc_dkedlon_dkedlat  (block, state, tend, dt)
-        call calc_dpdlon_dpdlat    (block, state, tend, dt)
+        call pgf_run               (block, state, tend    )
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -495,7 +494,7 @@ contains
         tend%updated_dphs = .true.
       else
         call calc_dkedlon_dkedlat(block, state, tend, dt)
-        call calc_dpedlon_dpedlat(block, state, tend, dt)
+        call pgf_run             (block, state, tend    )
         call calc_dmfdlon_dmfdlat(block, state, tend, dt)
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
@@ -540,6 +539,7 @@ contains
 
       if (use_div_damp) then
         call div_damp(blocks(iblk), dt, blocks(iblk)%state(new))
+        call polar_damp(blocks(iblk), dt, blocks(iblk)%state(new))
       end if
       if (use_vor_damp) then
         call vor_damp(blocks(iblk), dt, blocks(iblk)%state(new))

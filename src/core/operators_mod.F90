@@ -7,8 +7,10 @@ module operators_mod
   use formula_mod
   use namelist_mod
   use log_mod
+  use pgf_mod
   use pv_mod
   use ke_mod
+  use pgf_mod
   use interp_mod
   use reduce_mod
 
@@ -19,7 +21,6 @@ module operators_mod
   public operators_prepare
   public calc_ph_lev_ph
   public calc_gz_lev_gz
-  public calc_ak
   public calc_t
   public calc_wp
   public calc_wedphdlev
@@ -31,8 +32,6 @@ module operators_mod
   public calc_mf_lon_t_mf_lat_t
   public calc_qhu_qhv
   public calc_dkedlon_dkedlat
-  public calc_dpedlon_dpedlat
-  public calc_dpdlon_dpdlat
   public calc_dmfdlon_dmfdlat
   public calc_dptfdlon_dptfdlat
   public calc_dptfdlev
@@ -57,8 +56,8 @@ contains
     do iblk = 1, size(blocks)
       call calc_ph_lev_ph           (blocks(iblk), blocks(iblk)%state(itime))
       call calc_m                   (blocks(iblk), blocks(iblk)%state(itime))
-      call calc_ak                  (blocks(iblk), blocks(iblk)%state(itime))
       call calc_t                   (blocks(iblk), blocks(iblk)%state(itime))
+      call pgf_prepare              (blocks(iblk), blocks(iblk)%state(itime))
       call calc_m_lon_m_lat         (blocks(iblk), blocks(iblk)%state(itime))
       call calc_m_vtx               (blocks(iblk), blocks(iblk)%state(itime))
       call calc_mf_lon_n_mf_lat_n   (blocks(iblk), blocks(iblk)%state(itime))
@@ -84,8 +83,8 @@ contains
 
     call calc_ph_lev_ph           (block, state)
     call calc_m                   (block, state)
-    call calc_ak                  (block, state)
     call calc_t                   (block, state)
+    call pgf_prepare              (block, state)
     call calc_m_lon_m_lat         (block, state)
     call calc_mf_lon_n_mf_lat_n   (block, state)
     call calc_mf_lon_t_mf_lat_t   (block, state)
@@ -135,33 +134,6 @@ contains
 
   end subroutine calc_ph_lev_ph
 
-  subroutine calc_ak(block, state)
-
-    type(block_type), intent(in) :: block
-    type(state_type), intent(inout) :: state
-
-    type(mesh_type), pointer :: mesh
-    integer i, j, k
-    real(r8), parameter :: ln2 = log(2.0_r8)
-
-    if (baroclinic) then
-      mesh => state%mesh
-
-      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-        do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            if (k == 1) then
-              state%ak(i,j,k) = ln2
-            else
-              state%ak(i,j,k) = 1.0_r8 - state%ph_lev(i,j,k) / state%m(i,j,k) * log(state%ph_lev(i,j,k+1) / state%ph_lev(i,j,k))
-            end if
-          end do
-        end do
-      end do
-    end if
-
-  end subroutine calc_ak
-
   subroutine calc_t(block, state)
 
     type(block_type), intent(in) :: block
@@ -181,20 +153,6 @@ contains
         end do
       end do
       call fill_halo(block, state%t, full_lon=.true., full_lat=.true., full_lev=.true.)
-
-      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-        do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            state%t_lnpop(i,j,k) = state%t(i,j,k) * log(state%ph_lev(i,j,k+1) / state%ph_lev(i,j,k))
-            state%ak_t(i,j,k) = state%ak(i,j,k) * state%t(i,j,k)
-          end do
-        end do
-      end do
-      call fill_halo(block, state%t_lnpop, full_lon=.true., full_lat=.true., full_lev=.true.)
-      call fill_halo(block, state%ak_t   , full_lon=.true., full_lat=.true., full_lev=.true.)
-
-      call interp_cell_to_edge_on_full_level(mesh, state%t_lnpop, state%t_lnpop_lon, state%t_lnpop_lat)
-      call interp_cell_to_edge_on_full_level(mesh, state%ak_t   , state%ak_t_lon   , state%ak_t_lat   )
     end if
 
   end subroutine calc_t

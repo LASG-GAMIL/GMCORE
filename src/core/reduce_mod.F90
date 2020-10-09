@@ -343,10 +343,12 @@ contains
       allocate(full_lev_half_lon_dims(ptf_lon    ,  0:0))
       allocate(full_lev_full_lon_dims(ph         ,  0:0))
       allocate(half_lev_full_lon_dims(ph_lev     ,  0:0))
-      allocate(full_lev_full_lon_dims(ak         ,  0:0))
       allocate(full_lev_full_lon_dims(t          ,  0:0))
+    if (pgf_scheme == 'sb81') then
+      allocate(full_lev_full_lon_dims(ak         ,  0:0))
       allocate(full_lev_half_lon_dims(t_lnpop_lon,  0:0))
       allocate(full_lev_half_lon_dims(ak_t_lon   ,  0:0))
+    end if
     else if (baroclinic .and. .not. hydrostatic) then
 
     else
@@ -423,8 +425,10 @@ contains
       end if
         call apply_reduce(reduce_args(ke         , reduce_ke         ))
         call apply_reduce(reduce_args(ptf_lon    , reduce_ptf_lon    ))
+      if (pgf_scheme == 'sb81') then
         call apply_reduce(reduce_args(t_lnpop_lon, reduce_t_lnpop_lon))
         call apply_reduce(reduce_args(ak_t_lon   , reduce_ak_t_lon   ))
+      end if
     else if (baroclinic .and. .not. hydrostatic) then
       ! Not yet implemented
     else
