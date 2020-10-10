@@ -120,7 +120,7 @@ contains
           end do
         end do
       end do
-      call fill_halo(block, state%ph_lev, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call fill_halo(block, state%ph_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
 
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
