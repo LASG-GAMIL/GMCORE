@@ -19,7 +19,7 @@ module mountain_wave_test_mod
   real(r8), parameter :: u0   = 20.d0       ! m s-1
   real(r8), parameter :: lonc = pi05
   real(r8), parameter :: latc = pi / 6.0
-  real(r8), parameter :: kappa= 2.d0 / 7.d0
+  real(r8), parameter :: kap  = 2.d0 / 7.d0
   real(r8), parameter :: psp  = 93000.d0    ! Pa
   real(r8), parameter :: N    = 0.0182      ! s-1
 
@@ -65,8 +65,8 @@ contains
       sin_lat = mesh%full_sin_lat(j)
       cos_lat = mesh%full_cos_lat(j)
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        state%phs(i,j) = psp * exp(-0.5_r8 * radius * N**2 * u0 / g**2 / kappa * (u0 / radius + 2.0_r8 * omega) * &
-                        (sin_lat**2 - 1.0_r8) - N**2 / g**2 / kappa * static%gzs(i,j))
+        state%phs(i,j) = psp * exp(-0.5_r8 * radius * N**2 * u0 / g**2 / kap * (u0 / radius + 2.0_r8 * omega) * &
+                        (sin_lat**2 - 1.0_r8) - N**2 / g**2 / kap * static%gzs(i,j))
       end do
     end do
     call fill_halo(block, state%phs, full_lon=.true., full_lat=.true.)
