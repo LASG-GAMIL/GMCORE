@@ -29,6 +29,24 @@ contains
 
     mesh => state%mesh
 
+    !                    o
+    !                   /|
+    !                  / |
+    !                 /  |
+    !                /   |
+    !   o-----------/------------o
+    !   |          /|            |
+    !   |         / |            |
+    !   |        /  |            |
+    !   |       /   |            |
+    !   |      o    |            |
+    !   o------|    -------------o
+    !          |   /
+    !          |  /
+    !          | /
+    !          |/
+    !          o
+
     if (baroclinic .and. hydrostatic) then
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         !

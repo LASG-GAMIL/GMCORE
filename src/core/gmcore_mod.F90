@@ -18,6 +18,8 @@ module gmcore_mod
   use pgf_mod
   use damp_mod
 
+  use held_suarez_test_mod
+
   implicit none
 
   private
@@ -543,6 +545,7 @@ contains
       if (use_vor_damp) then
         call vor_damp(blocks(iblk), dt, blocks(iblk)%state(new))
       end if
+      call held_suarez_test_apply_forcing(blocks(iblk), dt, blocks(iblk)%state(new))
       if (use_div_damp .or. use_vor_damp) then
         call operators_prepare(blocks(iblk), blocks(iblk)%state(new), dt, all_pass)
       end if
