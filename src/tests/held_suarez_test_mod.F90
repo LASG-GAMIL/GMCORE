@@ -68,7 +68,7 @@ contains
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           p_p0 = state%ph(i,j,k) / p0
           teq = max(200.0_r8, (315.0_r8 - dt_lat * mesh%full_sin_lat(j)**2 - dpt_lev * log(p_p0) * mesh%full_cos_lat(j)**2) * p_p0**kappa)
-          state%pt(i,j,k) = state%pt(i,j,k) - dt * kt * (1.0_r8 - teq / state%t(i,j,k))
+          state%pt(i,j,k) = state%pt(i,j,k) - dt * kt * state%pt(i,j,k) * (1.0_r8 - teq / state%t(i,j,k))
         end do
       end do
     end do

@@ -16,7 +16,6 @@ case_name = 'mz.02.180x90.l26'
 history_interval = '6 hours'
 print_interval = '1 hours'
 reduce_factors = 6, 6, 4, 2
-damp_orders    = 4, 6, 6, 6
 use_div_damp = .true.
 div_damp_order = 2
 /
