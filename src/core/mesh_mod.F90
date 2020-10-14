@@ -261,6 +261,20 @@ contains
     end do
 #endif
 
+    ! Ensure the grids are equatorial symmetry.
+    do j = 1, this%num_full_lat
+      if (this%full_lat(j) > 0) then
+        this%full_lat(j) = -this%full_lat(this%num_full_lat-j+1)
+        this%full_lat_deg(j) = -this%full_lat_deg(this%num_full_lat-j+1)
+      end if
+    end do
+    do j = 1, this%num_half_lat
+      if (this%half_lat(j) > 0) then
+        this%half_lat(j) = -this%half_lat(this%num_half_lat-j+1)
+        this%half_lat_deg(j) = -this%half_lat_deg(this%num_half_lat-j+1)
+      end if
+    end do
+
     do i = this%full_lon_lb, this%full_lon_ub
       this%full_cos_lon(i) = cos(this%full_lon(i))
       this%full_sin_lon(i) = sin(this%full_lon(i))

@@ -63,7 +63,7 @@ contains
     call fill_halo(block, state%v, full_lon=.true., full_lat=.false., full_lev=.true.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         kt = ka + (ks - ka) * max(0.0_r8, (mesh%full_lev(k) - sig_b) / (1.0_r8 - sig_b)) * mesh%full_cos_lat(j)**4
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           p_p0 = state%ph(i,j,k) / p0
