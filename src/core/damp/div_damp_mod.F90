@@ -57,7 +57,7 @@ contains
           if (baroclinic) then
             cd_full_lat(j,k) = div_damp_coef2 * &
               (1.0_r8 + 2.0_r8 * exp(k**2 * log(0.2_r8) / 3**2)) * &
-              (global_mesh%full_cos_lat(j)**r + 0.1 * exp(jr**2 * log(0.01) / jr0**2)) * &
+              (global_mesh%full_cos_lat(j)**r + 0.5 * exp(jr**2 * log(0.01) / jr0**2)) * &
               radius**2 * global_mesh%dlat(j) * global_mesh%dlon / dt_in_seconds
           else
             cd_full_lat(j,k) = div_damp_coef2 * &
@@ -77,7 +77,7 @@ contains
           if (baroclinic) then
             cd_half_lat(j,k) = div_damp_coef2 * &
               (1.0_r8 + 2.0_r8 * exp(k**2 * log(0.2_r8) / 3**2)) * &
-              (global_mesh%half_cos_lat(j)**r + 0.1 * exp(jr**2 * log(0.01) / jr0**2)) * &
+              (global_mesh%half_cos_lat(j)**r + 0.5 * exp(jr**2 * log(0.01) / jr0**2)) * &
               radius**2 * global_mesh%dlat(j) * global_mesh%dlon / dt_in_seconds
           else
             cd_half_lat(j,k) = div_damp_coef2 * &
