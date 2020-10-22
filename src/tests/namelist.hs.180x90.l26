@@ -1,0 +1,26 @@
+&gmcore_control
+  num_lon           = 180
+  num_lat           = 90
+  num_lev           = 26
+  num_proc_lon      = 1
+  num_proc_lat      = 45
+  test_case         = 'held_suarez'
+  run_days          = 1200
+  dt_in_seconds     = 180
+  time_scheme       = 'pc2'
+  pgf_scheme        = 'lin97'
+  case_name         = 'hs.180x90.l26'
+  history_interval  = '1 days'
+  restart_interval  = '10 days'
+  reduce_factors    = 10, 10, 10, 6, 6, 6, 4, 4, 4, 2, 2, 2
+  use_div_damp      = .true.
+  div_damp_order    = 2
+  use_vor_damp      = .true.
+  vor_damp_order    = 2
+  vor_damp_coef2    = 0.01d0
+  use_polar_damp    = .true.
+/
+
+&hybrid_coord
+  template          = 'test_l26'
+/

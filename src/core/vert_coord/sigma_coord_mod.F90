@@ -12,6 +12,7 @@ module sigma_coord_mod
 
   public sigma_coord_init
   public sigma_coord_final
+  public sigma_coord_calc_ph
   public sigma_coord_calc_ph_lev
   public sigma_coord_calc_dphdt_lev
 
@@ -89,6 +90,15 @@ contains
     deallocate(sig )
 
   end subroutine sigma_coord_final
+
+  pure real(r8) function sigma_coord_calc_ph(k, phs) result(res)
+
+    integer, intent(in) :: k
+    real(r8), intent(in) :: phs
+
+    res = sig(k) * (phs - pt) + pt
+
+  end function sigma_coord_calc_ph
 
   pure real(r8) function sigma_coord_calc_ph_lev(k, phs) result(res)
 

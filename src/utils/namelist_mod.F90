@@ -11,6 +11,7 @@ module namelist_mod
   character(30) :: history_interval(1) = 'N/A'
   character(30) :: restart_interval    = 'N/A'
   character(30) :: print_interval = '1 hours'
+  character(256) :: initial_file = 'N/A'
   character(256) :: restart_file = 'N/A'
 
   logical :: restart = .false.
@@ -27,12 +28,15 @@ module namelist_mod
 
   character(30) :: tangent_wgt_scheme = 'classic'
 
+  character(30) :: vert_coord_scheme = 'hybrid'
+  character(30) :: refer_state_scheme = 'wrf'
+
   integer :: ke_scheme = 1
   real(r8) :: ke_cell_wgt = 3.0_r8 / 8.0_r8
 
   integer :: pv_scheme = 3
   logical :: pv_pole_stokes = .true.
-  character(8) :: pgf_scheme = 'sb81'
+  character(8) :: pgf_scheme = 'lin97'
   integer :: coriolis_scheme = 1
 
   integer :: fast_cycles = 1
@@ -42,15 +46,20 @@ module namelist_mod
   real(r8) :: coarse_polar_lats_exp = 0
   real(r8) :: coarse_polar_lats_mul = 2
 
+  ! Reduce settings
   integer :: reduce_factors(100) = 0
   integer :: color_proc_lat_reduce(100) = 0
   integer :: num_proc_lon_reduce(100) = 0
 
+  ! Damping settings
   logical :: use_polar_damp = .false.
   integer :: polar_damp_order = 4
   integer :: polar_damp_cycles = 1
   logical :: use_div_damp = .false.
   integer :: div_damp_order = 2
+  integer :: div_damp_j0 = 0
+  real(r8) :: div_damp_exp = 0.01_r8
+  real(r8) :: div_damp_mul = 0.5_r8
   real(r8) :: div_damp_coef2 = 1.0_r8 / 128.0_r8
   real(r8) :: div_damp_coef4 = 0.01_r8
   logical :: use_vor_damp = .false.
@@ -85,9 +94,12 @@ module namelist_mod
     history_interval          , &
     restart_interval          , &
     print_interval            , &
+    initial_file              , &
     restart_file              , &
     restart                   , &
     tangent_wgt_scheme        , &
+    vert_coord_scheme         , &
+    refer_state_scheme        , &
     ke_scheme                 , &
     ke_cell_wgt               , &
     pv_scheme                 , &
@@ -107,6 +119,9 @@ module namelist_mod
     polar_damp_cycles         , &
     use_div_damp              , &
     div_damp_order            , &
+    div_damp_j0               , &
+    div_damp_exp              , &
+    div_damp_mul              , &
     div_damp_coef2            , &
     div_damp_coef4            , &
     use_vor_damp              , &

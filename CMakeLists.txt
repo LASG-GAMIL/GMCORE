@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.0)
 project(gmcore LANGUAGES Fortran)
 
 option(V_POLE "Stagger V on the two Poles" OFF)
-option(SIGMA "Use sigma vertical coordinate" OFF)
 option(R4 "Use single precision" OFF)
 option(R16 "Use quadruple precision" OFF)
 
@@ -11,11 +10,6 @@ if (V_POLE)
   add_definitions(-DV_POLE)
 	set(CPPFLAGS ${CPPFLAGS} -DV_POLE)
 	message(STATUS "Place v at Poles.")
-endif ()
-if (SIGMA)
-  add_definitions(-DSIGMA)
-	set(CPPFLAGS ${CPPFLAGS} -DSIGMA)
-  message(STATUS "Use sigma vertical coordinate.")
 endif ()
 if (R4)
   add_definitions(-DREAL_KIND=4)
@@ -114,11 +108,13 @@ set(source_files
   src/core/pgf/pgf_sb81_mod.F90
   src/core/pgf/pgf_lin97_mod.F90
   src/core/mesh_mod.F90
-  src/core/sigma_coord_mod.F90
-  src/core/hybrid_coord_test_mod.F90
-  src/core/hybrid_coord_ecmwf_mod.F90
-  src/core/hybrid_coord_mod.F90
-  src/core/vert_coord_mod.F90
+  src/core/vert_coord/sigma_coord_mod.F90
+  src/core/vert_coord/hybrid_coord_test_mod.F90
+  src/core/vert_coord/hybrid_coord_ecmwf_mod.F90
+  src/core/vert_coord/hybrid_coord_mod.F90
+  src/core/vert_coord/vert_coord_mod.F90
+  src/core/refer_state_mod.F90
+  src/core/refer_state_wrf_mod.F90
   src/core/state_mod.F90
   src/core/static_mod.F90
   src/core/tend_mod.F90

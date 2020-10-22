@@ -14,6 +14,7 @@ module hybrid_coord_mod
 
   public hybrid_coord_init
   public hybrid_coord_final
+  public hybrid_coord_calc_ph
   public hybrid_coord_calc_ph_lev
   public hybrid_coord_calc_dphdt_lev
 
@@ -98,6 +99,15 @@ contains
     deallocate(hybm)
 
   end subroutine hybrid_coord_final
+
+  pure real(r8) function hybrid_coord_calc_ph(k, phs) result(res)
+
+    integer, intent(in) :: k
+    real(r8), intent(in) :: phs
+
+    res = hyai(k) * p0 + hybm(k) * phs
+
+  end function hybrid_coord_calc_ph
 
   pure real(r8) function hybrid_coord_calc_ph_lev(k, phs) result(res)
 

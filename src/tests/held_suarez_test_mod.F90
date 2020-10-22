@@ -2,6 +2,8 @@ module held_suarez_test_mod
 
   use flogger
   use const_mod
+  use formula_mod
+  use vert_coord_mod
   use block_mod
   use parallel_mod
   use rossby_haurwitz_wave_3d_test_mod
@@ -27,7 +29,35 @@ contains
 
     type(block_type), intent(inout), target :: block
 
+    type(mesh_type), pointer :: mesh
+    type(state_type), pointer :: state
+    integer i, j, k
+    real(r8) random
+
     call rossby_haurwitz_wave_3d_test_set_initial_condition(block)
+
+    mesh => block%mesh
+    state => block%state(1)
+
+    call random_seed()
+
+    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+        call random_number(random)
+        state%phs(i,j) = state%phs(i,j) - (0.5_r8 + random) * mesh%full_cos_lat(j)**2
+      end do
+    end do
+    call fill_halo(block, state%phs, full_lon=.true., full_lat=.true.)
+
+    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          call random_number(random)
+          state%pt(i,j,k) = potential_temperature(state%t(i,j,k), state%ph(i,j,k)) - (0.5_r8 + random) * mesh%full_cos_lat(j)**2
+        end do
+      end do
+    end do
+    call fill_halo(block, state%pt, full_lon=.true., full_lat=.true., full_lev=.true.)
 
   end subroutine held_suarez_test_set_initial_condition
 
