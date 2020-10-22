@@ -1,19 +1,15 @@
-module refer_state_mod
+module refer_state_types_mod
 
-  use flogger
   use const_mod
-  use namelist_mod
   use allocator_mod
   use mesh_mod
   use static_mod
-  use process_mod
-  use parallel_mod
-  use refer_state_wrf_mod
-  use vert_coord_mod
 
   implicit none
 
   private
+
+  public refer_state_type
 
   type refer_profile_type
     integer num_lev
@@ -26,6 +22,7 @@ module refer_state_mod
     real(r8), allocatable, dimension(:,:,:) :: gz
     real(r8), allocatable, dimension(:,:,:) :: t 
     real(r8), allocatable, dimension(:,:,:) :: pt
+    real(r8), allocatable, dimension(:,:,:) :: rhod
   contains
     procedure :: init  => refer_state_init
     procedure :: clear => refer_state_clear
@@ -34,38 +31,21 @@ module refer_state_mod
 
 contains
 
-  subroutine refer_state_init(this, mesh, static)
+  subroutine refer_state_init(this, static)
 
     class(refer_state_type), intent(inout) :: this
-    type(mesh_type), intent(in), target :: mesh
     type(static_type), intent(in) :: static
-
-    integer i, j, k
 
     call this%clear()
 
-    this%mesh => mesh
+    this%mesh => static%mesh
 
-    call allocate_array(mesh, this%phs, full_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%ph , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%gz , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%t  , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%pt , full_lon=.true., full_lat=.true., full_lev=.true.)
-
-    select case (refer_state_scheme)
-    case ('wrf')
-      call refer_state_wrf_set_phs(mesh, static%gzs, this%phs)
-    case default
-      if (is_root_proc()) call log_error('Unknown refer_state_scheme ' // trim(refer_state_scheme) // '!')
-    end select
-
-    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          this%ph(i,j,k) = vert_coord_calc_ph(k, this%phs(i,j))
-        end do
-      end do
-    end do
+    call allocate_array(this%mesh, this%phs , full_lon=.true., full_lat=.true.)
+    call allocate_array(this%mesh, this%ph  , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(this%mesh, this%gz  , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(this%mesh, this%t   , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(this%mesh, this%pt  , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(this%mesh, this%rhod, full_lon=.true., full_lat=.true., full_lev=.true.)
 
   end subroutine refer_state_init
 
@@ -89,4 +69,4 @@ contains
 
   end subroutine refer_state_final
 
-end module refer_state_mod
+end module refer_state_types_mod

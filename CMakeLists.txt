@@ -113,8 +113,9 @@ set(source_files
   src/core/vert_coord/hybrid_coord_ecmwf_mod.F90
   src/core/vert_coord/hybrid_coord_mod.F90
   src/core/vert_coord/vert_coord_mod.F90
-  src/core/refer_state_mod.F90
-  src/core/refer_state_wrf_mod.F90
+  src/core/refer_state/refer_state_types_mod.F90
+  src/core/refer_state/refer_state_mod.F90
+  src/core/refer_state/refer_state_wrf_mod.F90
   src/core/state_mod.F90
   src/core/static_mod.F90
   src/core/tend_mod.F90

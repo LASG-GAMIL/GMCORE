@@ -19,11 +19,13 @@ module const_mod
   real(r8), parameter :: eps    = epsilon(1.0_r8)
   real(r8), parameter :: inf    = huge(1.0_r8)
 
-  real(r8), parameter :: Rd     = 287.04_r8                 ! J kg-1 K-1
-  real(r8), parameter :: Rv     = 461.497_r8                ! J kg-1 K-1
-  real(r8), parameter :: cp     = 1004.0_r8                 ! J kg-1 K-1
-  real(r8), parameter :: cv     = 717.0_r8                  ! J kg-1 K-1
-  real(r8), parameter :: kappa  = Rd / cp
+  real(r8), parameter :: Rd      = 287.04_r8                 ! J kg-1 K-1
+  real(r8), parameter :: Rv      = 461.497_r8                ! J kg-1 K-1
+  real(r8), parameter :: cp      = 1004.0_r8                 ! J kg-1 K-1
+  real(r8), parameter :: cv      = 717.0_r8                  ! J kg-1 K-1
+  real(r8), parameter :: Rd_o_cp = Rd / cp
+  real(r8), parameter :: cp_o_cv = cp / cv
+  real(r8), parameter :: cv_o_cp = cv / cp
   
   integer, parameter :: nest_ratio = 3
   integer, parameter :: inf_i4 = 10000000
