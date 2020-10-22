@@ -1,6 +1,7 @@
 module state_mod
 
   use const_mod
+  use namelist_mod
   use mesh_mod
   use allocator_mod
   use parallel_types_mod
@@ -101,13 +102,11 @@ contains
     call allocate_array(mesh, this%v            , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%v850         , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%v700         , full_lon=.true., half_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%w            , full_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%wp           , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%wedphdlev    , full_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%wedphdlev_lon, half_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%wedphdlev_lat, full_lon=.true., half_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%gz           , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%gz_p         , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%gz_lev       , full_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%m            , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%m_vtx        , half_lon=.true., half_lat=.true., full_lev=.true.)
@@ -129,26 +128,34 @@ contains
     call allocate_array(mesh, this%pt_lon       , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%pt_lat       , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%pt_lev       , full_lon=.true., full_lat=.true., half_lev=.true.)
-    call allocate_array(mesh, this%pt_p         , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%t            , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%t850         , full_lon=.true., full_lat=.true.                 )
     call allocate_array(mesh, this%t700         , full_lon=.true., full_lat=.true.                 )
-    call allocate_array(mesh, this%t_lnpop      , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%t_lnpop_lon  , half_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%t_lnpop_lat  , full_lon=.true., half_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%ak_t         , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%ak_t_lon     , half_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%ak_t_lat     , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%p            , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%p_p          , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%p_lev        , full_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%ph           , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%ph_lev       , full_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%phs          , full_lon=.true., full_lat=.true.                 )
-    call allocate_array(mesh, this%ak           , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%div          , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%div2         , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%vor          , half_lon=.true., half_lat=.true., full_lev=.true.)
+
+    if (baroclinic .and. .not. hydrostatic) then
+      call allocate_array(mesh, this%w            , full_lon=.true., full_lat=.true., half_lev=.true.)
+    end if
+
+    if (pgf_scheme == 'sb81') then
+      call allocate_array(mesh, this%t_lnpop      , full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%t_lnpop_lon  , half_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%t_lnpop_lat  , full_lon=.true., half_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%ak           , full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%ak_t         , full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%ak_t_lon     , half_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%ak_t_lat     , full_lon=.true., half_lat=.true., full_lev=.true.)
+    end if
+
+    if (div_damp_order == 4) then
+      call allocate_array(mesh, this%div2         , full_lon=.true., full_lat=.true., full_lev=.true.)
+    end if
 
     allocate(this%async(11))
 

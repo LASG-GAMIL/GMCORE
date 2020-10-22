@@ -1375,7 +1375,6 @@ contains
     allocate(reduced_tend%fu      (is:ie,ks:ke))
     allocate(reduced_tend%dmfdlon (is:ie,ks:ke))
     allocate(reduced_tend%dptfdlon(is:ie,ks:ke))
-    allocate(reduced_tend%dvordlon(is:ie,ks:ke))
 
     is = reduced_mesh%half_lon_lb; ie = reduced_mesh%half_lon_ub
     ks = reduced_mesh%full_lev_lb; ke = reduced_mesh%full_lev_ub

@@ -188,7 +188,7 @@ contains
     dlat0 = (this%end_lat - this%start_lat) / this%num_full_lat
     do j = 1, this%num_full_lat
       this%full_lat(j) = this%start_lat + (j - 0.5_r8) * dlat0
-      if (abs(this%full_lat(j)) < 1.0e-14) this%full_lat(j) = 0.0_r8
+      if (abs(this%full_lat(j)) < 1.0e-12) this%full_lat(j) = 0.0_r8
     end do
 
     ! Calculate real dlat which is large at polar region.
@@ -208,7 +208,7 @@ contains
     this%half_lat_deg(1) = this%start_lat * deg
     do j = 2, this%num_half_lat - 1
       this%half_lat(j) = this%half_lat(j-1) + this%dlat(j-1)
-      if (abs(this%half_lat(j)) < 1.0e-14) this%half_lat(j) = 0.0_r8
+      if (abs(this%half_lat(j)) < 1.0e-12) this%half_lat(j) = 0.0_r8
       this%half_lat_deg(j) = this%half_lat(j) * deg
     end do
     this%half_lat(this%num_half_lat) = this%end_lat
@@ -218,7 +218,7 @@ contains
     do j = 1, this%num_full_lat
       if (is_inf(this%half_lat(j)) .or. this%half_lat(j) == pi05) cycle
       this%full_lat(j) = this%half_lat(j) + 0.5_r8 * this%dlat(j)
-      if (abs(this%full_lat(j)) < 1.0e-14) this%full_lat(j) = 0.0_r8
+      if (abs(this%full_lat(j)) < 1.0e-12) this%full_lat(j) = 0.0_r8
       this%full_lat_deg(j) = this%full_lat(j) * deg
     end do
 #else
@@ -226,7 +226,7 @@ contains
     dlat0 = (this%end_lat - this%start_lat) / this%num_half_lat
     do j = 1, this%num_half_lat
       this%half_lat(j) = this%start_lat + (j - 0.5_r8) * dlat0
-      if (abs(this%half_lat(j)) < 1.0e-14) this%half_lat(j) = 0.0_r8
+      if (abs(this%half_lat(j)) < 1.0e-12) this%half_lat(j) = 0.0_r8
     end do
 
     ! Calculate real dlat which is large at polar region.
@@ -246,7 +246,7 @@ contains
     this%full_lat_deg(1) = this%start_lat * deg
     do j = 2, this%num_full_lat - 1
       this%full_lat(j) = this%full_lat(j-1) + this%dlat(j-1)
-      if (abs(this%full_lat(j)) < 1.0e-14) this%full_lat(j) = 0.0_r8
+      if (abs(this%full_lat(j)) < 1.0e-12) this%full_lat(j) = 0.0_r8
       this%full_lat_deg(j) = this%full_lat(j) * deg
     end do
     this%full_lat(this%num_full_lat) = this%end_lat
@@ -256,7 +256,7 @@ contains
     do j = 1, this%num_half_lat
       if (is_inf(this%full_lat(j)) .or. this%full_lat(j) == pi05) cycle
       this%half_lat(j) = this%full_lat(j) + 0.5_r8 * this%dlat(j)
-      if (abs(this%half_lat(j)) < 1.0e-14) this%half_lat(j) = 0.0_r8
+      if (abs(this%half_lat(j)) < 1.0e-12) this%half_lat(j) = 0.0_r8
       this%half_lat_deg(j) = this%half_lat(j) * deg
     end do
 #endif
