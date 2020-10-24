@@ -138,6 +138,7 @@ contains
     call allocate_array(mesh, this%phs          , full_lon=.true., full_lat=.true.                 )
     call allocate_array(mesh, this%div          , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%vor          , half_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%ak           , full_lon=.true., full_lat=.true., full_lev=.true.)
 
     if (baroclinic .and. .not. hydrostatic) then
       call allocate_array(mesh, this%w            , full_lon=.true., full_lat=.true., half_lev=.true.)
@@ -147,7 +148,6 @@ contains
       call allocate_array(mesh, this%t_lnpop      , full_lon=.true., full_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%t_lnpop_lon  , half_lon=.true., full_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%t_lnpop_lat  , full_lon=.true., half_lat=.true., full_lev=.true.)
-      call allocate_array(mesh, this%ak           , full_lon=.true., full_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%ak_t         , full_lon=.true., full_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%ak_t_lon     , half_lon=.true., full_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%ak_t_lat     , full_lon=.true., half_lat=.true., full_lev=.true.)
