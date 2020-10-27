@@ -1,25 +1,21 @@
 &gmcore_control
-num_lon = 180
-num_lat = 90
-num_lev = 26
-num_proc_lon = 1
-num_proc_lat = 30
-! steay_state
-test_case = 'mountain_wave'
-run_days = 30
-time_scheme = 'pc2'
-dt_in_seconds = 100
-!split_scheme = 'csp2'
-!fast_cycles = 6
-pv_scheme = 3
-case_name = 'mz.02.180x90.l26'
-history_interval = '6 hours'
-print_interval = '1 hours'
-reduce_factors = 6, 6, 4, 2
-use_div_damp = .true.
-div_damp_order = 2
+  num_lon           = 180
+  num_lat           = 90
+  num_lev           = 26
+  num_proc_lon      = 1
+  num_proc_lat      = 4
+  test_case         = 'mountain_wave'
+  run_days          = 30
+  time_scheme       = 'pc2'
+  dt_in_seconds     = 180
+  case_name         = 'mz.180x90.l26'
+  history_interval  = '1 days'
+  print_interval    = '1 hours'
+  reduce_factors    = 10, 10, 10, 6, 6, 6, 4, 4, 4, 2, 2, 2
+  use_div_damp      = .true.
+  use_vor_damp      = .true.
 /
 
 &hybrid_coord
-template = 'test_l26'
+  template          = 'test_l26'
 /

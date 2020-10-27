@@ -31,11 +31,11 @@ if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
   # FIXME: OpenMP causes sigmentation faults.
   # set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fopenmp")
 elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
-	if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-		set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -no-wrap-margin -O0 -check bounds -g -traceback -mkl")
-	else ()
-		set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -no-wrap-margin -O3 -align array64byte -mkl")
-	endif ()
+  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -no-wrap-margin -O0 -check bounds -g -traceback -mkl")
+  else ()
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -no-wrap-margin -O3 -align array64byte -mkl")
+  endif ()
 endif ()
 
 find_package(MPI)
@@ -70,6 +70,10 @@ elseif (DEFINED ENV{MKL_INC} AND DEFINED ENV{MKL_LIB})
   link_directories("$ENV{MKL_LIB}")
 else ()
   message (FATAL_ERROR "Unable to find MKL library!")
+endif ()
+
+if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
+  set(MKL_LIBRARIES "lapack64")
 endif ()
 
 add_subdirectory(lib/container)
@@ -148,7 +152,7 @@ set(source_files
 )
 
 add_library(gmcore ${source_files})
-target_link_libraries(gmcore netcdff fortran_container fortran_datetime fiona flogger ${MPI_Fortran_LIBRARIES})
+target_link_libraries(gmcore netcdff fortran_container fortran_datetime fiona flogger ${MPI_Fortran_LIBRARIES} ${MKL_LIBRARIES})
 
 add_executable(gmcore_swm_driver.exe src/drivers/gmcore_swm_driver.F90)
 target_link_libraries(gmcore_swm_driver.exe gmcore)
