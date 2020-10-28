@@ -239,7 +239,7 @@ contains
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%half_lat_ibeg, mesh%half_lat_iend
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            tav = tav + state%m_vtx(i,j,k) * state%pv(i,j,k) * mesh%area_vtx(j)
+            tav = tav + state%pv(i,j,k) * mesh%area_vtx(j)
           end do
         end do
       end do
@@ -265,6 +265,7 @@ contains
     do iblk = 1, size(blocks)
       blocks(iblk)%state(itime)%tm  = tm
       blocks(iblk)%state(itime)%te  = te
+      blocks(iblk)%state(itime)%tav = tav
       blocks(iblk)%state(itime)%tpe = tpe
     end do
 
