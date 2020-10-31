@@ -616,7 +616,7 @@ contains
         else
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             if (coriolis_scheme == 1) then
-              tend%qhu(i,j,k) = tend%qhu(i,j,k) + (                                               &
+              tend%qhu(i,j,k) = tend%qhu(i,j,k) + (                                             &
                 mesh%half_tangent_wgt(2,j) * (                                                  &
                   state%mf_lon_n(i-1,j  ,k) * (state%pv_lat(i,j,k) + state%pv_lon(i-1,j  ,k)) + &
                   state%mf_lon_n(i  ,j  ,k) * (state%pv_lat(i,j,k) + state%pv_lon(i  ,j  ,k))   &
