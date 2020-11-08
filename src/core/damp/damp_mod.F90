@@ -51,6 +51,8 @@ contains
 
     if (baroclinic) then
       call zonal_damp_on_cell(block, polar_damp_order, dt, state%pt)
+      call zonal_damp_on_cell(block, polar_damp_order, dt, state%pt)
+      call zonal_damp_on_cell(block, polar_damp_order, dt, state%pt)
     end if
 
   end subroutine polar_damp
