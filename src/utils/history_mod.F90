@@ -95,6 +95,7 @@ contains
       call fiona_add_var('h0', 'zs'   , long_name='surface height'              , units='m'      , dim_names=cell_dims_2d)
       call fiona_add_var('h0', 'pv'   , long_name='potential vorticity'         , units='m-1 s-1', dim_names=vtx_dims)
       call fiona_add_var('h0', 'vor'  , long_name='relative vorticity'          , units='s-1'    , dim_names=vtx_dims)
+      call fiona_add_var('h0', 'div'  , long_name='divergence'                  , units='s-1'    , dim_names=cell_dims)
       call fiona_add_var('h0', 'tm'   , long_name='total mass'                  , units='m'      , dim_names=['time'])
       call fiona_add_var('h0', 'te'   , long_name='total energy'                , units='m4 s-4' , dim_names=['time'], data_type='real(8)')
       call fiona_add_var('h0', 'tpe'  , long_name='total potential enstrophy'   , units='m2 s-5' , dim_names=['time'], data_type='real(8)')
@@ -106,6 +107,7 @@ contains
       call fiona_add_var('h0', 'zs'   , long_name='surface height'              , units='m'      , dim_names=cell_dims_2d)
       call fiona_add_var('h0', 'pv'   , long_name='potential vorticity'         , units='m-1 s-1', dim_names=vtx_dims_2d)
       call fiona_add_var('h0', 'vor'  , long_name='relative vorticity'          , units='s-1'    , dim_names=vtx_dims_2d)
+      call fiona_add_var('h0', 'div'  , long_name='divergence'                  , units='s-1'    , dim_names=cell_dims_2d)
       call fiona_add_var('h0', 'tm'   , long_name='total mass'                  , units='m'      , dim_names=['time'])
       call fiona_add_var('h0', 'te'   , long_name='total energy'                , units='m4 s-4' , dim_names=['time'], data_type='real(8)')
       call fiona_add_var('h0', 'tpe'  , long_name='total potential enstrophy'   , units='m2 s-5' , dim_names=['time'], data_type='real(8)')
@@ -132,8 +134,6 @@ contains
       call fiona_add_var('h1', 'dptfdlat' , long_name='meridional potential temperature flux gradient', units='', dim_names=cell_dims)
       call fiona_add_var('h1', 'dptfdlev' , long_name='vertical potential temperature flux gradient'  , units='', dim_names=cell_dims)
       call fiona_add_var('h1', 'wedphdlev', long_name='vertical coordinate velocity'                  , units='', dim_names=lev_dims)
-      call fiona_add_var('h1', 'wedphdlev_lon', long_name='vertical coordinate velocity'              , units='', dim_names=lon_lev_dims)
-      call fiona_add_var('h1', 'wedphdlev_lat', long_name='vertical coordinate velocity'              , units='', dim_names=lat_lev_dims)
       call fiona_add_var('h1', 'pgf_lon'  , long_name='zonal pressure gradient force'                 , units='', dim_names=lon_dims)
       call fiona_add_var('h1', 'wedudlev' , long_name='vertical advection of u'                       , units='', dim_names=lon_dims)
       call fiona_add_var('h1', 'pgf_lat'  , long_name='meridional pressure gradient force'            , units='', dim_names=lat_dims)
@@ -156,7 +156,6 @@ contains
       call fiona_add_var('h1', 'pv_lat'   , long_name='pv on V grid'                                  , units='', dim_names=lat_dims)
       call fiona_add_var('h1', 'ke'       , long_name='kinetic energy on cell grid'                   , units='', dim_names=cell_dims)
       call fiona_add_var('h1', 'wp'       , long_name='omega'                                         , units='', dim_names=cell_dims)
-      call fiona_add_var('h1', 'div'      , long_name='divergence'                                    , units='', dim_names=cell_dims)
     else
       call fiona_add_var('h1', 'dudt'     , long_name='u wind component tendency'                     , units='', dim_names=lon_dims_2d)
       call fiona_add_var('h1', 'dvdt'     , long_name='v wind component tendency'                     , units='', dim_names=lat_dims_2d)
@@ -179,7 +178,6 @@ contains
       call fiona_add_var('h1', 'pv_lon'   , long_name='pv on U grid'                                  , units='', dim_names=lon_dims_2d)
       call fiona_add_var('h1', 'pv_lat'   , long_name='pv on V grid'                                  , units='', dim_names=lat_dims_2d)
       call fiona_add_var('h1', 'ke'       , long_name='kinetic energy on cell grid'                   , units='', dim_names=cell_dims_2d)
-      call fiona_add_var('h1', 'div'      , long_name='divergence'                                    , units='', dim_names=cell_dims_2d)
     end if
 
     call time_add_alert('history_write', seconds=seconds)
@@ -224,6 +222,7 @@ contains
 
       call fiona_output('h0', 'zs' , static%gzs(is:ie,js:je      ) / g, start=start, count=count)
       call fiona_output('h0', 'z'  , state %gz (is:ie,js:je,ks:ke) / g, start=start, count=count)
+      call fiona_output('h0', 'div', state%div (is:ie,js:je,ks:ke)    , start=start, count=count)
 
       if (baroclinic) then
         call fiona_output('h0', 't'     , state%t     (is:ie,js:je,ks:ke), start=start, count=count)
@@ -311,7 +310,6 @@ contains
     call fiona_output('h1', 'dmfdlon' , tend%dmfdlon  (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dmfdlat' , tend%dmfdlat  (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'ke'      , state%ke      (is:ie,js:je,ks:ke), start=start, count=count)
-    call fiona_output('h1', 'div'     , state%div     (is:ie,js:je,ks:ke), start=start, count=count)
     if (baroclinic) then
       call fiona_output('h1', 'm'       , state%m      (is:ie,js:je,ks:ke), start=start, count=count)
       call fiona_output('h1', 'dphsdt'  , tend%dphs    (is:ie,js:je      ), start=start, count=count)
@@ -380,26 +378,6 @@ contains
       call fiona_output('h1', 'wedphdlev', state%wedphdlev(is:ie,js:je,ks:ke), start=start, count=count)
       call fiona_output('h1', 'pt_lev'   , state%pt_lev   (is:ie,js:je,ks:ke), start=start, count=count)
       call fiona_output('h1', 'ph_lev'   , state%ph_lev   (is:ie,js:je,ks:ke), start=start, count=count)
-    end if
-
-    is = mesh%half_lon_ibeg; ie = mesh%half_lon_iend
-    js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
-    ks = mesh%half_lev_ibeg; ke = mesh%half_lev_iend
-    start = [is,js,ks]
-    count = [mesh%num_half_lon,mesh%num_full_lat,mesh%num_half_lev]
-
-    if (baroclinic) then
-      call fiona_output('h1', 'wedphdlev_lon', state%wedphdlev_lon(is:ie,js:je,ks:ke), start=start, count=count)
-    end if
-
-    is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
-    js = mesh%half_lat_ibeg; je = mesh%half_lat_iend
-    ks = mesh%half_lev_ibeg; ke = mesh%half_lev_iend
-    start = [is,js,ks]
-    count = [mesh%num_full_lon,mesh%num_half_lat,mesh%num_half_lev]
-
-    if (baroclinic) then
-      call fiona_output('h1', 'wedphdlev_lat', state%wedphdlev_lat(is:ie,js:je,ks:ke), start=start, count=count)
     end if
 
     call fiona_end_output('h1')
