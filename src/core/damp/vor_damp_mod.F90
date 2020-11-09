@@ -87,6 +87,12 @@ contains
         end if
         if (reduce_factors(jr) > 1) then
           use_implicit_solver(j) = .true.
+          if (k > 1) then
+            if (cv_half_lat(j,k) == cv_half_lat(j,k-1)) then
+              call zonal_solver(j,k)%clone(zonal_solver(j,k-1))
+              cycle
+            end if
+          end if
           b = -cv_half_lat(j,k) * (1 - beta) * dt_in_seconds / global_mesh%le_lat(j)**2
           a = 2 * (-b) + 1
           call zonal_solver(j,k)%init_sym_const(global_mesh%num_full_lon, a, b)

@@ -35,6 +35,7 @@ module tridiag_mod
     type(sparse_matrix_type) A
   contains
     procedure :: init_sym_const => tridiag_solver_init_sym_const
+    procedure :: clone => tridiag_solver_clone
     procedure :: solve => tridiag_solver_solve
   end type tridiag_solver_type
 
@@ -137,6 +138,15 @@ contains
     if (allocated(this%row_idx)) deallocate(this%row_idx)
 
   end subroutine sparse_matrix_final
+
+  subroutine tridiag_solver_clone(this, other)
+
+    class(tridiag_solver_type), intent(inout) :: this
+    type(tridiag_solver_type), intent(in) :: other
+
+    this%handle = other%handle
+
+  end subroutine tridiag_solver_clone
 
   subroutine tridiag_solver_solve(this, rhs, x)
 
