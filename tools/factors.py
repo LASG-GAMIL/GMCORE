@@ -20,4 +20,4 @@ def factors(n):
 		r += [a*b for a in r for b in e]
 	return sorted(r)
 
-print(factors(int(sys.argv[1])))
+print(list(reversed(factors(int(sys.argv[1])))))

@@ -828,7 +828,7 @@ contains
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-        if (block%reduced_mesh(j)%reduce_factor > 1) then
+        if (.false. .and. block%reduced_mesh(j)%reduce_factor > 1) then
           tend%dkedlon(:,j,k) = 0.0_r8
           do move = 1, block%reduced_mesh(j)%reduce_factor
             do i = block%reduced_mesh(j)%half_lon_ibeg, block%reduced_mesh(j)%half_lon_iend

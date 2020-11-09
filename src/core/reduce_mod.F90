@@ -303,7 +303,6 @@ contains
     allocate(full_lev_full_lon_dims(m_lat    , -1:2))
     allocate(full_lev_half_lon_dims(u        , -2:2))
     allocate(full_lev_full_lon_dims(v        , -1:2))
-    allocate(full_lev_half_lon_dims(vor      , -1:2))
     allocate(full_lev_half_lon_dims(pv       , -1:2))
     allocate(full_lev_half_lon_dims(pv_lon   ,  0:0))
     allocate(full_lev_full_lon_dims(pv_lat   ,  0:1))
@@ -319,11 +318,10 @@ contains
       allocate(full_lev_full_lon_dims(mf_lat_n   , -2:1))
       allocate(full_lev_full_lon_dims(mf_lat_t   , -1:0))
       allocate(full_lev_full_lon_dims(m          , -2:2))
-      allocate(full_lev_half_lon_dims(m_lon      , -2:2))
-      allocate(full_lev_full_lon_dims(m_lat      , -2:1))
-      allocate(full_lev_half_lon_dims(u          , -2:2))
-      allocate(full_lev_full_lon_dims(v          , -2:1))
-      allocate(full_lev_half_lon_dims(vor        , -2:1))
+      !allocate(full_lev_half_lon_dims(m_lon      , -2:2))
+      !allocate(full_lev_full_lon_dims(m_lat      , -2:1))
+      !allocate(full_lev_half_lon_dims(u          , -2:2))
+      !allocate(full_lev_full_lon_dims(v          , -2:1))
       allocate(full_lev_half_lon_dims(pv         , -2:1))
       allocate(full_lev_half_lon_dims(pv_lon     ,  0:0))
       allocate(full_lev_full_lon_dims(pv_lat     , -1:0))
@@ -331,7 +329,7 @@ contains
       allocate(full_lev_half_lon_dims(dpv_lat_t  , -1:0))
       allocate(full_lev_full_lon_dims(dpv_lon_t  , -1:1))
       allocate(full_lev_full_lon_dims(dpv_lat_n  , -1:0))
-      allocate(full_lev_full_lon_dims(ke         ,  0:0))
+      !allocate(full_lev_full_lon_dims(ke         ,  0:0))
       allocate(full_lev_full_lon_dims(gz         ,  0:0))
       allocate(full_lev_full_lon_dims(pt         ,  0:0))
       allocate(full_lev_half_lon_dims(pt_lon     ,  0:0))
@@ -350,16 +348,15 @@ contains
 
     else
       allocate(full_lev_half_lon_dims(mf_lon_n   , -2:2))
-      allocate(full_lev_half_lon_dims(mf_lon_t   ,  0:0))
+      !allocate(full_lev_half_lon_dims(mf_lon_t   ,  0:0))
       allocate(full_lev_full_lon_dims(mf_lat_n   , -2:1))
-      allocate(full_lev_full_lon_dims(mf_lat_t   , -1:0))
+      !allocate(full_lev_full_lon_dims(mf_lat_t   , -1:0))
       allocate(full_lev_full_lon_dims(gz         , -2:2))
-      allocate(full_lev_full_lon_dims(m          , -2:2))
-      allocate(full_lev_half_lon_dims(m_lon      , -2:2))
-      allocate(full_lev_full_lon_dims(m_lat      , -2:1))
-      allocate(full_lev_half_lon_dims(u          , -2:2))
-      allocate(full_lev_full_lon_dims(v          , -2:1))
-      allocate(full_lev_half_lon_dims(vor        , -2:1))
+      !allocate(full_lev_full_lon_dims(m          , -2:2))
+      !allocate(full_lev_half_lon_dims(m_lon      , -2:2))
+      !allocate(full_lev_full_lon_dims(m_lat      , -2:1))
+      !allocate(full_lev_half_lon_dims(u          , -2:2))
+      !allocate(full_lev_full_lon_dims(v          , -2:1))
       allocate(full_lev_half_lon_dims(pv         , -2:1))
       allocate(full_lev_half_lon_dims(pv_lon     ,  0:0))
       allocate(full_lev_full_lon_dims(pv_lat     , -1:0))
@@ -367,7 +364,7 @@ contains
       allocate(full_lev_half_lon_dims(dpv_lat_t  , -1:0))
       allocate(full_lev_full_lon_dims(dpv_lon_t  , -1:1))
       allocate(full_lev_full_lon_dims(dpv_lat_n  , -1:0))
-      allocate(full_lev_full_lon_dims(ke         ,  0:0))
+      !allocate(full_lev_full_lon_dims(ke         ,  0:0))
     end if
 #endif
     allocate(reduced_state%async(11,-2:2,reduced_mesh%reduce_factor))
@@ -399,19 +396,19 @@ contains
 
     if (baroclinic .and. hydrostatic) then
         call apply_reduce(reduce_args(ph_lev  , reduce_ph_lev     ))
-        call apply_reduce(reduce_args(m       , reduce_m          ))
+        !call apply_reduce(reduce_args(m       , reduce_m          ))
         call apply_reduce(reduce_args(pt      , reduce_pt         ))
         call apply_reduce(reduce_args(t       , reduce_t          ))
         call apply_reduce(reduce_args(gz      , reduce_gz         ))
         call apply_reduce(reduce_args(mf_lon_n, reduce_mf_lon_n   ))
         call apply_reduce(reduce_args(mf_lat_n, reduce_mf_lat_n   ))
         if (pass == all_pass .or. pass == slow_pass) then
-          call apply_reduce(reduce_args(m_lon , reduce_m_lon      ))
-          call apply_reduce(reduce_args(m_lat , reduce_m_lat      ))
-          call apply_reduce(reduce_args(u     , reduce_u          ))
-          call apply_reduce(reduce_args(v     , reduce_v          ))
           call apply_reduce(reduce_args(pv    , reduce_pv         ))
           if (pv_scheme == 3) then
+            call apply_reduce(reduce_args(m_lon    , reduce_m_lon      ))
+            call apply_reduce(reduce_args(m_lat    , reduce_m_lat      ))
+            call apply_reduce(reduce_args(u        , reduce_u          ))
+            call apply_reduce(reduce_args(v        , reduce_v          ))
             call apply_reduce(reduce_args(mf_lon_t , reduce_mf_lon_t   ))
             call apply_reduce(reduce_args(mf_lat_t , reduce_mf_lat_t   ))
             call apply_reduce(reduce_args(dpv_lon_t, reduce_dpv_lon_t  ))
@@ -425,7 +422,6 @@ contains
             call apply_reduce(reduce_args(pv_lat   , reduce_pv_lat_midpoint))
           end if
         end if
-        call apply_reduce(reduce_args(ke         , reduce_ke         ))
         call apply_reduce(reduce_args(ptf_lon    , reduce_ptf_lon    ))
         if (pgf_scheme == 'sb81') then
           call apply_reduce(reduce_args(t_lnpop_lon, reduce_t_lnpop_lon))
@@ -439,14 +435,14 @@ contains
         call apply_reduce(reduce_args(mf_lon_n, reduce_mf_lon_n   ))
         call apply_reduce(reduce_args(mf_lat_n, reduce_mf_lat_n   ))
         call apply_reduce(reduce_args(gz      , reduce_gz         ))
-        call apply_reduce(reduce_args(m       , reduce_m          ))
         if (pass == all_pass .or. pass == slow_pass) then
-          call apply_reduce(reduce_args(m_lon , reduce_m_lon      ))
-          call apply_reduce(reduce_args(m_lat , reduce_m_lat      ))
-          call apply_reduce(reduce_args(u     , reduce_u          ))
-          call apply_reduce(reduce_args(v     , reduce_v          ))
           call apply_reduce(reduce_args(pv    , reduce_pv         ))
           if (pv_scheme == 3) then
+            call apply_reduce(reduce_args(m        , reduce_m          ))
+            call apply_reduce(reduce_args(m_lon    , reduce_m_lon      ))
+            call apply_reduce(reduce_args(m_lat    , reduce_m_lat      ))
+            call apply_reduce(reduce_args(u        , reduce_u          ))
+            call apply_reduce(reduce_args(v        , reduce_v          ))
             call apply_reduce(reduce_args(mf_lon_t , reduce_mf_lon_t   ))
             call apply_reduce(reduce_args(mf_lat_t , reduce_mf_lat_t   ))
             call apply_reduce(reduce_args(dpv_lon_t, reduce_dpv_lon_t  ))
@@ -459,9 +455,6 @@ contains
             call apply_reduce(reduce_args(pv_lon   , reduce_pv_lon_midpoint))
             call apply_reduce(reduce_args(pv_lat   , reduce_pv_lat_midpoint))
           end if
-        end if
-        if (pass == all_pass .or. pass == fast_pass) then
-          call apply_reduce(reduce_args(ke         , reduce_ke         ))
         end if
     end if
 
@@ -662,73 +655,17 @@ contains
     type(reduced_state_type), intent(inout) :: reduced_state
     real(r8), intent(in) :: dt
 
-    real(r8) m_vtx
     integer raw_i, i, k
 
-#ifdef V_POLE
-    if (raw_mesh%is_outside_pole_half_lat(j+buf_j)) then
-      return
-    else if (raw_mesh%is_south_pole(j+buf_j)) then
-      reduced_state%pv(:,:,buf_j,move) = raw_state%pv(raw_mesh%full_lon_ibeg,raw_mesh%half_lat_ibeg,1)
-    else if (raw_mesh%is_north_pole(j+buf_j)) then
-      reduced_state%pv(:,:,buf_j,move) = raw_state%pv(raw_mesh%full_lon_ibeg,raw_mesh%half_lat_iend,1)
-    else
-      do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
-        do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
-          m_vtx = (                                                                                                            &
-            (reduced_state%m(k,i,buf_j-1,move) + reduced_state%m(k,i+1,buf_j-1,move)) * reduced_mesh%area_subcell(2,buf_j-1) + &
-            (reduced_state%m(k,i,buf_j  ,move) + reduced_state%m(k,i+1,buf_j  ,move)) * reduced_mesh%area_subcell(1,buf_j  )   &
-          ) / reduced_mesh%area_vtx(buf_j)
-          reduced_state%pv(k,i,buf_j,move) = (                                     &
-            (                                                                      &
-              reduced_state%u(k,i  ,buf_j-1,move) * reduced_mesh%de_lon(buf_j-1) - &
-              reduced_state%u(k,i  ,buf_j  ,move) * reduced_mesh%de_lon(buf_j  ) + &
-              reduced_state%v(k,i+1,buf_j  ,move) * reduced_mesh%de_lat(buf_j  ) - &
-              reduced_state%v(k,i  ,buf_j  ,move) * reduced_mesh%de_lat(buf_j  )   &
-            ) / reduced_mesh%area_vtx(buf_j) + reduced_mesh%half_f(buf_j)          &
-          ) / m_vtx
-        end do
-      end do
-    end if
-#else
-    if (raw_mesh%is_outside_pole_half_lat(j+buf_j)) then
-      return
-    else if (raw_mesh%is_south_pole(j+buf_j) .or. raw_mesh%is_north_pole(j+buf_j+1)) then
+    if (.not. raw_mesh%is_outside_pole_half_lat(j+buf_j)) then
       raw_i = raw_mesh%half_lon_ibeg + move - 1
       do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
         do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
-          reduced_state%vor(k,i,buf_j,move) = sum(raw_state%vor(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j,k) * reduced_mesh%weights)
-          reduced_state%pv (k,i,buf_j,move) = sum(raw_state%pv (raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j,k) * reduced_mesh%weights)
+          reduced_state%pv(k,i,buf_j,move) = sum(raw_state%pv(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j,k) * reduced_mesh%weights)
         end do
         raw_i = raw_i + reduced_mesh%reduce_factor
       end do
-    else
-      if (reduced_mesh%area_vtx(buf_j) == 0) return
-      do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
-        do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
-          m_vtx = (                                                                                                            &
-            (reduced_state%m(k,i,buf_j  ,move) + reduced_state%m(k,i+1,buf_j  ,move)) * reduced_mesh%area_subcell(2,buf_j  ) + &
-            (reduced_state%m(k,i,buf_j+1,move) + reduced_state%m(k,i+1,buf_j+1,move)) * reduced_mesh%area_subcell(1,buf_j+1)   &
-          ) / reduced_mesh%area_vtx(buf_j)
-          reduced_state%vor(k,i,buf_j,move) = (                                  &
-            reduced_state%u(k,i  ,buf_j  ,move) * reduced_mesh%de_lon(buf_j  ) - &
-            reduced_state%u(k,i  ,buf_j+1,move) * reduced_mesh%de_lon(buf_j+1) + &
-            reduced_state%v(k,i+1,buf_j  ,move) * reduced_mesh%de_lat(buf_j  ) - &
-            reduced_state%v(k,i  ,buf_j  ,move) * reduced_mesh%de_lat(buf_j  )   &
-          ) / reduced_mesh%area_vtx(buf_j)
-          reduced_state%pv(k,i,buf_j,move) = (reduced_state%vor(k,i,buf_j,move) + reduced_mesh%half_f(buf_j)) / m_vtx
-        end do
-      end do
     end if
-    !raw_i = raw_mesh%half_lon_ibeg + move - 1
-    !do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
-    !  do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
-    !    reduced_state%pv(k,i,buf_j,move) = sum(raw_state%pv(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j,k) * reduced_mesh%weights)
-    !  end do
-    !  raw_i = raw_i + reduced_mesh%reduce_factor
-    !end do
-#endif
-    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%vor(:,:,buf_j,move), east_halo=.false.)
     call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%pv (:,:,buf_j,move))
 
   end subroutine reduce_pv
