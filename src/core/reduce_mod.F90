@@ -318,10 +318,10 @@ contains
       allocate(full_lev_full_lon_dims(mf_lat_n   , -2:1))
       allocate(full_lev_full_lon_dims(mf_lat_t   , -1:0))
       allocate(full_lev_full_lon_dims(m          , -2:2))
-      !allocate(full_lev_half_lon_dims(m_lon      , -2:2))
-      !allocate(full_lev_full_lon_dims(m_lat      , -2:1))
-      !allocate(full_lev_half_lon_dims(u          , -2:2))
-      !allocate(full_lev_full_lon_dims(v          , -2:1))
+      allocate(full_lev_half_lon_dims(m_lon      , -2:2))
+      allocate(full_lev_full_lon_dims(m_lat      , -2:1))
+      allocate(full_lev_half_lon_dims(u          , -2:2))
+      allocate(full_lev_full_lon_dims(v          , -2:1))
       allocate(full_lev_half_lon_dims(pv         , -2:1))
       allocate(full_lev_half_lon_dims(pv_lon     ,  0:0))
       allocate(full_lev_full_lon_dims(pv_lat     , -1:0))
@@ -329,7 +329,7 @@ contains
       allocate(full_lev_half_lon_dims(dpv_lat_t  , -1:0))
       allocate(full_lev_full_lon_dims(dpv_lon_t  , -1:1))
       allocate(full_lev_full_lon_dims(dpv_lat_n  , -1:0))
-      !allocate(full_lev_full_lon_dims(ke         ,  0:0))
+      allocate(full_lev_full_lon_dims(ke         ,  0:0))
       allocate(full_lev_full_lon_dims(gz         ,  0:0))
       allocate(full_lev_full_lon_dims(pt         ,  0:0))
       allocate(full_lev_half_lon_dims(pt_lon     ,  0:0))
@@ -348,15 +348,15 @@ contains
 
     else
       allocate(full_lev_half_lon_dims(mf_lon_n   , -2:2))
-      !allocate(full_lev_half_lon_dims(mf_lon_t   ,  0:0))
+      allocate(full_lev_half_lon_dims(mf_lon_t   ,  0:0))
       allocate(full_lev_full_lon_dims(mf_lat_n   , -2:1))
-      !allocate(full_lev_full_lon_dims(mf_lat_t   , -1:0))
+      allocate(full_lev_full_lon_dims(mf_lat_t   , -1:0))
       allocate(full_lev_full_lon_dims(gz         , -2:2))
-      !allocate(full_lev_full_lon_dims(m          , -2:2))
-      !allocate(full_lev_half_lon_dims(m_lon      , -2:2))
-      !allocate(full_lev_full_lon_dims(m_lat      , -2:1))
-      !allocate(full_lev_half_lon_dims(u          , -2:2))
-      !allocate(full_lev_full_lon_dims(v          , -2:1))
+      allocate(full_lev_full_lon_dims(m          , -2:2))
+      allocate(full_lev_half_lon_dims(m_lon      , -2:2))
+      allocate(full_lev_full_lon_dims(m_lat      , -2:1))
+      allocate(full_lev_half_lon_dims(u          , -2:2))
+      allocate(full_lev_full_lon_dims(v          , -2:1))
       allocate(full_lev_half_lon_dims(pv         , -2:1))
       allocate(full_lev_half_lon_dims(pv_lon     ,  0:0))
       allocate(full_lev_full_lon_dims(pv_lat     , -1:0))
@@ -364,7 +364,7 @@ contains
       allocate(full_lev_half_lon_dims(dpv_lat_t  , -1:0))
       allocate(full_lev_full_lon_dims(dpv_lon_t  , -1:1))
       allocate(full_lev_full_lon_dims(dpv_lat_n  , -1:0))
-      !allocate(full_lev_full_lon_dims(ke         ,  0:0))
+      allocate(full_lev_full_lon_dims(ke         ,  0:0))
     end if
 #endif
     allocate(reduced_state%async(11,-2:2,reduced_mesh%reduce_factor))
@@ -396,7 +396,6 @@ contains
 
     if (baroclinic .and. hydrostatic) then
         call apply_reduce(reduce_args(ph_lev  , reduce_ph_lev     ))
-        !call apply_reduce(reduce_args(m       , reduce_m          ))
         call apply_reduce(reduce_args(pt      , reduce_pt         ))
         call apply_reduce(reduce_args(t       , reduce_t          ))
         call apply_reduce(reduce_args(gz      , reduce_gz         ))
@@ -405,6 +404,7 @@ contains
         if (pass == all_pass .or. pass == slow_pass) then
           call apply_reduce(reduce_args(pv    , reduce_pv         ))
           if (pv_scheme == 3) then
+            call apply_reduce(reduce_args(m        , reduce_m          ))
             call apply_reduce(reduce_args(m_lon    , reduce_m_lon      ))
             call apply_reduce(reduce_args(m_lat    , reduce_m_lat      ))
             call apply_reduce(reduce_args(u        , reduce_u          ))
@@ -422,7 +422,8 @@ contains
             call apply_reduce(reduce_args(pv_lat   , reduce_pv_lat_midpoint))
           end if
         end if
-        call apply_reduce(reduce_args(ptf_lon    , reduce_ptf_lon    ))
+        !call apply_reduce(reduce_args(ke      , reduce_ke         ))
+        call apply_reduce(reduce_args(ptf_lon , reduce_ptf_lon    ))
         if (pgf_scheme == 'sb81') then
           call apply_reduce(reduce_args(t_lnpop_lon, reduce_t_lnpop_lon))
           call apply_reduce(reduce_args(ak_t_lon   , reduce_ak_t_lon   ))
@@ -435,6 +436,7 @@ contains
         call apply_reduce(reduce_args(mf_lon_n, reduce_mf_lon_n   ))
         call apply_reduce(reduce_args(mf_lat_n, reduce_mf_lat_n   ))
         call apply_reduce(reduce_args(gz      , reduce_gz         ))
+        !call apply_reduce(reduce_args(ke      , reduce_ke         ))
         if (pass == all_pass .or. pass == slow_pass) then
           call apply_reduce(reduce_args(pv    , reduce_pv         ))
           if (pv_scheme == 3) then

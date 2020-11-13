@@ -13,6 +13,7 @@ module operators_mod
   use pgf_mod
   use interp_mod
   use reduce_mod
+  use zonal_damp_mod
 
   implicit none
 
@@ -822,7 +823,7 @@ contains
     real(r8), intent(in) :: dt
 
     type(mesh_type), pointer :: mesh
-    integer i, j, k, move
+    integer i, j, k, move, cyc
 
     mesh => state%mesh
 
@@ -843,6 +844,12 @@ contains
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
             tend%dkedlon(i,j,k) = (state%ke(i+1,j,k) - state%ke(i,j,k)) / mesh%de_lon(j)
           end do
+          if (abs(mesh%full_lat_deg(j)) > 85.0_r8) then
+            call fill_zonal_halo(block, mesh%lon_halo_width, tend%dkedlon(:,j,k))
+            do cyc = 1, 5
+              call zonal_damp_1d(block, 4, dt, mesh%half_lon_lb, mesh%half_lon_ub, mesh%lon_halo_width, tend%dkedlon(:,j,k))
+            end do
+          end if
         end if
       end do
     end do
@@ -856,6 +863,12 @@ contains
           tend%dkedlat(i,j,k) = (state%ke(i,j+1,k) - state%ke(i,j  ,k)) / mesh%de_lat(j)
 #endif
         end do
+        if (abs(mesh%half_lat_deg(j)) > 85.0_r8) then
+          call fill_zonal_halo(block, mesh%lon_halo_width, tend%dkedlat(:,j,k))
+          do cyc = 1, 5
+            call zonal_damp_1d(block, 4, dt, mesh%full_lon_lb, mesh%full_lon_ub, mesh%lon_halo_width, tend%dkedlat(:,j,k))
+          end do
+        end if
       end do
     end do
 
