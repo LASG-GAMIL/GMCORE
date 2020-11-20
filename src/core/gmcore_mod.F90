@@ -9,6 +9,7 @@ module gmcore_mod
   use time_mod, old => old_time_idx, new => new_time_idx
   use history_mod
   use restart_mod
+  use tend_mod
   use block_mod
   use vert_coord_mod
   use operators_mod
@@ -668,14 +669,7 @@ contains
     call update_state(2.0_r8 * dt, block, block%tend(s2), block%state(s2) , block%state(s2), pass)
 
     call space_operators(block, block%state(s2) , block%tend(s3),          dt, pass)
-    block%tend(old)%du = (block%tend(s1)%du + 4.0_r8 * block%tend(s2)%du + block%tend(s3)%du) / 6.0_r8
-    block%tend(old)%dv = (block%tend(s1)%dv + 4.0_r8 * block%tend(s2)%dv + block%tend(s3)%dv) / 6.0_r8
-    if (baroclinic) then
-      block%tend(old)%dpt  = (block%tend(s1)%dpt  + 4.0_r8 * block%tend(s2)%dpt  + block%tend(s3)%dpt ) / 6.0_r8
-      block%tend(old)%dphs = (block%tend(s1)%dphs + 4.0_r8 * block%tend(s2)%dphs + block%tend(s3)%dphs) / 6.0_r8
-    else
-      block%tend(old)%dgz = (block%tend(s1)%dgz + 4.0_r8 * block%tend(s2)%dgz + block%tend(s3)%dgz) / 6.0_r8
-    end if
+    block%tend(old) = (block%tend(s1) + 4.0_r8 * block%tend(s2) + block%tend(s3)) / 6.0_r8
     call update_state(         dt, block, block%tend(old), block%state(old), block%state(new), pass)
 
   end subroutine runge_kutta_3rd
@@ -705,14 +699,7 @@ contains
     call update_state(         dt, block, block%tend(s3), block%state(old), block%state(s3), pass)
 
     call space_operators(block, block%state(s3) , block%tend(s4),          dt, pass)
-    block%tend(old)%du = (block%tend(s1)%du + 2.0_r8 * block%tend(s2)%du + 2.0_r8 * block%tend(s3)%du + block%tend(s4)%du) / 6.0_r8
-    block%tend(old)%dv = (block%tend(s1)%dv + 2.0_r8 * block%tend(s2)%dv + 2.0_r8 * block%tend(s3)%dv + block%tend(s4)%dv) / 6.0_r8
-    if (baroclinic) then
-      block%tend(old)%dpt  = (block%tend(s1)%dpt  + 2.0_r8 * block%tend(s2)%dpt  + 2.0_r8 * block%tend(s3)%dpt  + block%tend(s4)%dpt ) / 6.0_r8
-      block%tend(old)%dphs = (block%tend(s1)%dphs + 2.0_r8 * block%tend(s2)%dphs + 2.0_r8 * block%tend(s3)%dphs + block%tend(s4)%dphs) / 6.0_r8
-    else
-      block%tend(old)%dgz = (block%tend(s1)%dgz + 2.0_r8 * block%tend(s2)%dgz + 2.0_r8 * block%tend(s3)%dgz + block%tend(s4)%dgz) / 6.0_r8
-    end if
+    block%tend(old) = (block%tend(s1) + 2.0_r8 * block%tend(s2) + 2.0_r8 * block%tend(s3) + block%tend(s4)) / 6.0_r8
     call update_state(         dt, block, block%tend(old), block%state(old), block%state(new), pass)
 
   end subroutine runge_kutta_4th

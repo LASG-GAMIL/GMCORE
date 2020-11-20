@@ -10,6 +10,10 @@ module tend_mod
   private
 
   public tend_type
+  public operator(+)
+  public operator(*)
+  public operator(/)
+  public assignment(=)
 
   type tend_type
     type(mesh_type), pointer :: mesh => null()
@@ -46,6 +50,22 @@ module tend_mod
     procedure :: clear => tend_clear
     final :: tend_final
   end type tend_type
+
+  interface operator(+)
+    module procedure add_tends
+  end interface operator(+)
+
+  interface operator(*)
+    module procedure mult_scalar
+  end interface operator(*)
+
+  interface operator(/)
+    module procedure div_scalar
+  end interface operator(/)
+
+  interface assignment(=)
+    module procedure assign_tend
+  end interface assignment(=)
 
 contains
 
@@ -127,5 +147,167 @@ contains
     call this%clear()
 
   end subroutine tend_final
+
+  function add_tends(x, y) result(res)
+
+    type(tend_type), intent(in) :: x
+    type(tend_type), intent(in) :: y
+
+    type(tend_type) res
+
+    if (x%updated_du .and. y%updated_du) then
+      res%du = x%du + y%du
+      res%updated_du = .true.
+    else
+      res%updated_du = .false.
+    end if
+    if (x%updated_dv .and. y%updated_dv) then
+      res%dv = x%dv + y%dv
+      res%updated_dv = .true.
+    else
+      res%updated_dv = .false.
+    end if
+    if (baroclinic) then
+      if (x%updated_dphs .and. y%updated_dphs) then
+        res%dphs = x%dphs + y%dphs
+        res%updated_dphs = .true.
+      else
+        res%updated_dphs = .false.
+      end if
+      if (x%updated_dpt .and. y%updated_dpt) then
+        res%dpt = x%dpt + y%dpt
+        res%updated_dpt = .true.
+      else
+        res%updated_dpt = .false.
+      end if
+    else if (x%updated_dgz .and. y%updated_dgz) then
+      res%dgz = x%dgz + y%dgz
+      res%updated_dgz = .true.
+    else
+      res%updated_dgz = .false.
+    end if
+
+  end function add_tends
+
+  function mult_scalar(s, x) result(res)
+
+    real(r8), intent(in) :: s
+    type(tend_type), intent(in) :: x
+
+    type(tend_type) res
+
+    if (x%updated_du) then
+      res%du = s * x%du
+      res%updated_du = .true.
+    else
+      res%updated_du = .false.
+    end if
+    if (x%updated_dv) then
+      res%dv = s * x%dv
+      res%updated_dv = .true.
+    else
+      res%updated_dv = .false.
+    end if
+    if (baroclinic) then
+      if (x%updated_dphs) then
+        res%dphs = s * x%dphs
+        res%updated_dphs = .true.
+      else
+        res%updated_dphs = .false.
+      end if
+      if (x%updated_dpt) then
+        res%dpt = s * x%dpt
+        res%updated_dpt = .true.
+      else
+        res%updated_dpt = .false.
+      end if
+    else if (x%updated_dgz) then
+      res%dgz = s * x%dgz
+      res%updated_dgz = .true.
+    else
+      res%updated_dgz = .false.
+    end if
+
+  end function mult_scalar
+
+  function div_scalar(x, s) result(res)
+
+    real(r8), intent(in) :: s
+    type(tend_type), intent(in) :: x
+
+    type(tend_type) res
+
+    if (x%updated_du) then
+      res%du = x%du / s
+      res%updated_du = .true.
+    else
+      res%updated_du = .false.
+    end if
+    if (x%updated_dv) then
+      res%dv = x%dv / s
+      res%updated_dv = .true.
+    else
+      res%updated_dv = .false.
+    end if
+    if (baroclinic) then
+      if (x%updated_dphs) then
+        res%dphs = x%dphs / s
+        res%updated_dphs = .true.
+      else
+        res%updated_dphs = .false.
+      end if
+      if (x%updated_dpt) then
+        res%dpt = x%dpt / s
+        res%updated_dpt = .true.
+      else
+        res%updated_dpt = .false.
+      end if
+    else if (x%updated_dgz) then
+      res%dgz = x%dgz / s
+      res%updated_dgz = .true.
+    else
+      res%updated_dgz = .false.
+    end if
+
+  end function div_scalar
+
+  subroutine assign_tend(x, y)
+
+    type(tend_type), intent(inout) :: x
+    type(tend_type), intent(in) :: y
+
+    if (y%updated_du) then
+      x%du = y%du
+      x%updated_du = .true.
+    else
+      x%updated_du = .false.
+    end if
+    if (y%updated_dv) then
+      x%dv = y%dv
+      x%updated_dv = .true.
+    else
+      x%updated_dv = .false.
+    end if
+    if (baroclinic) then
+      if (y%updated_dphs) then
+        x%dphs = y%dphs
+        x%updated_dphs = .true.
+      else
+        x%updated_dphs = .false.
+      end if
+      if (y%updated_dpt) then
+        x%dpt = y%dpt
+        x%updated_dpt = .true.
+      else
+        x%updated_dphs = .false.
+      end if
+    else if (y%updated_dgz) then
+      x%dgz = y%dgz
+      x%updated_dgz = .true.
+    else
+      x%updated_dgz = .false.
+    end if
+
+  end subroutine assign_tend
 
 end module tend_mod

@@ -166,6 +166,8 @@ contains
       call curr_time%add_hours(time_value)
     case ('days')
       call curr_time%add_days(time_value)
+    case ('seconds')
+      call curr_time%add_seconds(time_value)
     case default
       call log_error('Unsupported time units ' // trim(time_units) // '!')
     end select
