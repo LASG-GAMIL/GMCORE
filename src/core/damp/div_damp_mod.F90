@@ -87,22 +87,6 @@ contains
           end if
         end do
       end do
-    case (4)
-      r = 2
-
-      do k = global_mesh%full_lev_ibeg, global_mesh%full_lev_iend
-        do j = global_mesh%full_lat_ibeg_no_pole, global_mesh%full_lat_iend_no_pole
-          cd_full_lat(j,k) = div_damp_coef4 * global_mesh%full_cos_lat(j)**r * &
-            radius**4 * global_mesh%dlat(j)**2 * global_mesh%dlon**2 / dt_in_seconds
-        end do
-      end do
-
-      do k = global_mesh%full_lev_ibeg, global_mesh%full_lev_iend
-        do j = global_mesh%half_lat_ibeg_no_pole, global_mesh%half_lat_iend_no_pole
-          cd_half_lat(j,k) = div_damp_coef4 * global_mesh%half_cos_lat(j)**r * &
-            radius**4 * global_mesh%dlat(j)**2 * global_mesh%dlon**2 / dt_in_seconds
-        end do
-      end do
     case default
       call log_error('Unsupported div_damp_order ' // trim(to_string(div_damp_order)) // '!')
     end select
