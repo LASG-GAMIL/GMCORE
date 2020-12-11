@@ -7,7 +7,6 @@ module damp_mod
   use parallel_mod
   use block_mod
   use zonal_damp_mod
-  use meridional_damp_mod
   use div_damp_mod
   use vor_damp_mod
 
@@ -28,7 +27,6 @@ contains
     integer j, jr, k, r
 
     call zonal_damp_init()
-    call meridional_damp_init()
     call div_damp_init()
     call vor_damp_init()
 
@@ -37,7 +35,6 @@ contains
   subroutine damp_final()
 
     call zonal_damp_final()
-    call meridional_damp_final()
     call div_damp_final()
     call vor_damp_final()
 

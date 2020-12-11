@@ -131,7 +131,6 @@ set(source_files
   ${CMAKE_CURRENT_BINARY_DIR}/reduce_mod.F90
   src/core/nest_mod.F90
   src/core/damp/zonal_damp_mod.F90
-  src/core/damp/meridional_damp_mod.F90
   src/core/damp/div_damp_mod.F90
   src/core/damp/vor_damp_mod.F90
   src/core/damp/damp_mod.F90
