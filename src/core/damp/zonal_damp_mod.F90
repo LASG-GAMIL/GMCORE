@@ -50,23 +50,17 @@ contains
       else
         jr = global_mesh%full_lat_iend_no_pole - j + 1
       end if
+      if (jr > size(reduce_factors)) exit
       if (reduce_factors(jr) > 1) then
         zonal_damp_on_full_lat(j) = .true.
       end if
     end do
     do j = global_mesh%half_lat_ibeg_no_pole, global_mesh%half_lat_iend_no_pole
-      if (global_mesh%half_lat(j) <= 0) then
-        jr = j - global_mesh%half_lat_ibeg_no_pole + 1
-      else
-        jr = global_mesh%half_lat_iend_no_pole - j + 1
-      end if
 #ifdef V_POLE
-      if (reduce_factors(jr) > 1 .or. reduce_factors(jr-1) > 1) then
+      zonal_damp_on_half_lat(j) = zonal_damp_on_full_lat(j) .or. zonal_damp_on_full_lat(j-1)
 #else
-      if (reduce_factors(jr) > 1 .or. reduce_factors(jr+1) > 1) then
+      zonal_damp_on_half_lat(j) = zonal_damp_on_full_lat(j) .or. zonal_damp_on_full_lat(j+1)
 #endif
-        zonal_damp_on_half_lat(j) = .true.
-      end if
     end do
 
   end subroutine zonal_damp_init

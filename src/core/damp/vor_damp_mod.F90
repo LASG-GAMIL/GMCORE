@@ -36,11 +36,14 @@ contains
     ! First, find the interface when reduce starts.
     j0 = 0
     do j = global_mesh%full_lat_ibeg_no_pole, global_mesh%full_lat_iend_no_pole
-      if (global_mesh%full_lat(j) <= 0) then
-        jr = j - global_mesh%full_lat_ibeg_no_pole + 1
-        if (reduce_factors(jr) > 1) j0 = jr
+      if (global_mesh%full_lat_deg(j) >= -vor_damp_lat0) then
+        j0 = j
+        exit
       end if
     end do
+    if (is_root_proc()) then
+      call log_notice('Vorticity damping control latitude index is ' // to_string(j0) // '.')
+    end if
 
     allocate(cv_full_lat(global_mesh%num_full_lat,global_mesh%num_full_lev))
     allocate(cv_half_lat(global_mesh%num_half_lat,global_mesh%num_full_lev))
@@ -85,6 +88,7 @@ contains
         else
           jr = global_mesh%half_lat_iend_no_pole - j + 1
         end if
+        if (jr > size(reduce_factors)) cycle
         if (reduce_factors(jr) > 1) then
           use_implicit_solver(j) = .true.
           if (k > 1) then

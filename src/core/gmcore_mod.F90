@@ -71,12 +71,8 @@ contains
     call damp_init()
 
     select case (time_scheme)
-    case ('debug')
-      integrator => euler_debug
     case ('pc2')
       integrator => predict_correct
-    case ('pc2+fb')
-      integrator => predict_correct_with_forward_backward
     case ('rk3')
       integrator => runge_kutta_3rd
     case ('rk4')
@@ -358,65 +354,6 @@ contains
         tend%updated_dv  = .true.
         tend%updated_dgz = .true.
       end if
-    case (all_pass + forward_pass)
-      if (baroclinic .and. hydrostatic) then
-        call calc_dmfdlon_dmfdlat  (block, state, tend, dt)
-        call calc_dphs             (block, state, tend, dt)
-        call calc_wedphdlev        (block, state, tend, dt)
-        call calc_dptfdlon_dptfdlat(block, state, tend, dt)
-        call calc_dptfdlev         (block, state, tend, dt)
-        call calc_wedudlev_wedvdlev(block, state, tend, dt)
-        call calc_qhu_qhv          (block, state, tend, dt)
-        call calc_dkedlon_dkedlat  (block, state, tend, dt)
-
-        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-            do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              tend%du(i,j,k) =   tend%qhv(i,j,k) - tend%dkedlon(i,j,k) - tend%wedudlev(i,j,k)
-            end do
-          end do
-
-          do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
-            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              tend%dv(i,j,k) = - tend%qhu(i,j,k) - tend%dkedlat(i,j,k) - tend%wedvdlev(i,j,k)
-            end do
-          end do
-
-          do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              tend%dpt(i,j,k) = - tend%dptfdlon(i,j,k) - tend%dptfdlat(i,j,k) - tend%dptfdlev(i,j,k)
-            end do
-          end do
-        end do
-
-        tend%updated_dphs = .true.
-        tend%updated_dpt  = .true.
-      else
-        if (is_root_proc()) call log_error('Unfinished branch!', __FILE__, __LINE__)
-      end if
-    case (all_pass + backward_pass)
-      if (baroclinic .and. hydrostatic) then
-        call pgf_run(block, state, tend)
-
-        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-            do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              tend%du(i,j,k) = tend%du(i,j,k) - tend%pgf_lon(i,j,k)
-            end do
-          end do
-
-          do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
-            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              tend%dv(i,j,k) = tend%dv(i,j,k) - tend%pgf_lat(i,j,k)
-            end do
-          end do
-        end do
-
-        tend%updated_du = .true.
-        tend%updated_dv = .true.
-      else
-        if (is_root_proc()) call log_error('Unfinished branch!', __FILE__, __LINE__)
-      end if
     case (slow_pass)
       if (baroclinic .and. hydrostatic) then
         call calc_qhu_qhv          (block, state, tend, dt)
@@ -587,19 +524,6 @@ contains
 
   end subroutine no_splitting
 
-  subroutine euler_debug(dt, block, old, new, pass)
-
-    real(r8), intent(in) :: dt
-    type(block_type), intent(inout) :: block
-    integer, intent(in) :: old
-    integer, intent(in) :: new
-    integer, intent(in) :: pass
-
-    call space_operators(block, block%state(old), block%tend(old), dt, pass)
-    call update_state(dt, block, block%tend(old), block%state(old), block%state(new), pass)
-
-  end subroutine euler_debug
-
   subroutine predict_correct(dt, block, old, new, pass)
 
     real(r8), intent(in) :: dt
@@ -621,31 +545,6 @@ contains
     call update_state(         dt, block, block%tend(new), block%state(old), block%state(new), pass)
 
   end subroutine predict_correct
-
-  subroutine predict_correct_with_forward_backward(dt, block, old, new, pass)
-
-    real(r8), intent(in) :: dt
-    type(block_type), intent(inout) :: block
-    integer, intent(in) :: old
-    integer, intent(in) :: new
-    integer, intent(in) :: pass
-
-    call space_operators(block, block%state(old), block%tend(old), 0.5_r8 * dt, pass + forward_pass)
-    call update_state(0.5_r8 * dt, block, block%tend(old), block%state(old), block%state(new), pass) ! Update phs, pt, du, dv
-    call space_operators(block, block%state(new), block%tend(old), 0.5_r8 * dt, pass + backward_pass)
-    call update_state(0.5_r8 * dt, block, block%tend(old), block%state(old), block%state(new), pass) ! Update u, v
-
-    call space_operators(block, block%state(new), block%tend(old), 0.5_r8 * dt, pass + forward_pass)
-    call update_state(0.5_r8 * dt, block, block%tend(old), block%state(old), block%state(new), pass) ! Update phs, pt, du, dv
-    call space_operators(block, block%state(new), block%tend(old), 0.5_r8 * dt, pass + backward_pass)
-    call update_state(0.5_r8 * dt, block, block%tend(old), block%state(old), block%state(new), pass) ! Update u, v
-
-    call space_operators(block, block%state(new), block%tend(new),          dt, pass + forward_pass)
-    call update_state(         dt, block, block%tend(new), block%state(old), block%state(new), pass) ! Update phs, pt, du, dv
-    call space_operators(block, block%state(new), block%tend(new),          dt, pass + backward_pass)
-    call update_state(         dt, block, block%tend(new), block%state(old), block%state(new), pass) ! Update u, v
-
-  end subroutine predict_correct_with_forward_backward
 
   subroutine runge_kutta_3rd(dt, block, old, new, pass)
 

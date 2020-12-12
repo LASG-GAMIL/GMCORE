@@ -36,6 +36,7 @@ contains
     do j = global_mesh%full_lat_ibeg_no_pole, global_mesh%full_lat_iend_no_pole
       if (global_mesh%full_lat(j) <= 0) then
         jr = j - global_mesh%full_lat_ibeg_no_pole + 1
+        if (jr > size(reduce_factors)) exit
         if (reduce_factors(jr) > 1) j0 = jr
       end if
     end do
@@ -102,6 +103,7 @@ contains
         else
           jr = global_mesh%full_lat_iend_no_pole - j + 1
         end if
+        if (jr > size(reduce_factors)) cycle
         if (reduce_factors(jr) > 1) then
           use_implicit_solver(j) = .true.
           if (k > 1) then
