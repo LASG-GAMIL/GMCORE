@@ -50,6 +50,7 @@ module namelist_mod
   integer :: reduce_factors(100) = 0
   integer :: color_proc_lat_reduce(100) = 0
   integer :: num_proc_lon_reduce(100) = 0
+  logical :: reduce_pv_directly = .true.
 
   ! Damping settings
   logical :: use_polar_damp = .false.
@@ -115,6 +116,7 @@ module namelist_mod
     reduce_factors            , &
     color_proc_lat_reduce     , &
     num_proc_lon_reduce       , &
+    reduce_pv_directly        , &
     use_polar_damp            , &
     polar_damp_order          , &
     polar_damp_cycles         , &
