@@ -12,6 +12,7 @@ module gmcore_mod
   use tend_mod
   use block_mod
   use vert_coord_mod
+  use time_schemes_mod
   use operators_mod
   use interp_mod
   use reduce_mod
@@ -29,15 +30,6 @@ module gmcore_mod
   public gmcore_final
 
   interface
-    subroutine integrator_interface(dt, block, old, new, pass)
-      import r8, block_type, tend_type, state_type
-      real(r8), intent(in) :: dt
-      type(block_type), intent(inout) :: block
-      integer, intent(in) :: old
-      integer, intent(in) :: new
-      integer, intent(in) :: pass
-    end subroutine integrator_interface
-
     subroutine splitter_interface(dt, block)
       import r8, block_type
       real(r8), intent(in) :: dt
@@ -45,7 +37,6 @@ module gmcore_mod
     end subroutine splitter_interface
   end interface
 
-  procedure(integrator_interface), pointer :: integrator
   procedure(splitter_interface), pointer :: splitter
 
 contains
@@ -67,20 +58,9 @@ contains
     call history_init()
     call restart_init()
     call reduce_init(proc%blocks)
+    call time_scheme_init()
     call pgf_init()
     call damp_init()
-
-    select case (time_scheme)
-    case ('pc2')
-      integrator => predict_correct
-    case ('rk3')
-      integrator => runge_kutta_3rd
-    case ('rk4')
-      integrator => runge_kutta_4th
-    case default
-      integrator => predict_correct
-      call log_notice('Use pc2 integrator.')
-    end select
 
     select case (split_scheme)
     case ('csp2')
@@ -107,6 +87,8 @@ contains
     end select
 
     call time_add_alert('print', seconds=seconds)
+
+    if (is_root_proc()) call print_namelist()
 
   end subroutine gmcore_init
 
@@ -506,12 +488,12 @@ contains
     t1 = 3
     t2 = old
 
-    call integrator(0.5_r8 * dt, block, old, t1, slow_pass)
+    call time_integrator(space_operators, 0.5_r8 * dt, block, old, t1, slow_pass)
     do subcycle = 1, fast_cycles
-      call integrator(fast_dt, block, t1, t2, fast_pass)
+      call time_integrator(space_operators, fast_dt, block, t1, t2, fast_pass)
       call time_swap_indices(t1, t2)
     end do
-    call integrator(0.5_r8 * dt, block, t1, new, slow_pass)
+    call time_integrator(space_operators, 0.5_r8 * dt, block, t1, new, slow_pass)
 
   end subroutine csp2_splitting
 
@@ -520,173 +502,8 @@ contains
     real(r8), intent(in) :: dt
     type(block_type), intent(inout) :: block
 
-    call integrator(dt, block, old, new, all_pass)
+    call time_integrator(space_operators, dt, block, old, new, all_pass)
 
   end subroutine no_splitting
-
-  subroutine predict_correct(dt, block, old, new, pass)
-
-    real(r8), intent(in) :: dt
-    type(block_type), intent(inout) :: block
-    integer, intent(in) :: old
-    integer, intent(in) :: new
-    integer, intent(in) :: pass
-
-    ! Do first predict step.
-    call space_operators(block, block%state(old), block%tend(old), 0.5_r8 * dt, pass)
-    call update_state(0.5_r8 * dt, block, block%tend(old), block%state(old), block%state(new), pass)
-
-    ! Do second predict step.
-    call space_operators(block, block%state(new), block%tend(old), 0.5_r8 * dt, pass)
-    call update_state(0.5_r8 * dt, block, block%tend(old), block%state(old), block%state(new), pass)
-
-    ! Do correct step.
-    call space_operators(block, block%state(new), block%tend(new),          dt, pass)
-    call update_state(         dt, block, block%tend(new), block%state(old), block%state(new), pass)
-
-  end subroutine predict_correct
-
-  subroutine runge_kutta_3rd(dt, block, old, new, pass)
-
-    real(r8), intent(in) :: dt
-    type(block_type), intent(inout) :: block
-    integer, intent(in) :: old
-    integer, intent(in) :: new
-    integer, intent(in) :: pass
-
-    integer s1, s2, s3
-
-    s1 = 3
-    s2 = 4
-    s3 = new
-
-    call space_operators(block, block%state(old), block%tend(s1), 0.5_r8 * dt, pass)
-    call update_state(0.5_r8 * dt, block, block%tend(s1), block%state(old), block%state(s1), pass)
-
-    call space_operators(block, block%state(s1) , block%tend(s2), 2.0_r8 * dt, pass)
-    call update_state(        -dt, block, block%tend(s1), block%state(old), block%state(s2), pass)
-    call update_state(2.0_r8 * dt, block, block%tend(s2), block%state(s2) , block%state(s2), pass)
-
-    call space_operators(block, block%state(s2) , block%tend(s3),          dt, pass)
-    block%tend(old) = (block%tend(s1) + 4.0_r8 * block%tend(s2) + block%tend(s3)) / 6.0_r8
-    call update_state(         dt, block, block%tend(old), block%state(old), block%state(new), pass)
-
-  end subroutine runge_kutta_3rd
-
-  subroutine runge_kutta_4th(dt, block, old, new, pass)
-
-    real(r8), intent(in) :: dt
-    type(block_type), intent(inout) :: block
-    integer, intent(in) :: old
-    integer, intent(in) :: new
-    integer, intent(in) :: pass
-
-    integer s1, s2, s3, s4
-
-    s1 = 3
-    s2 = 4
-    s3 = 5
-    s4 = new
-
-    call space_operators(block, block%state(old), block%tend(s1), 0.5_r8 * dt, pass)
-    call update_state(0.5_r8 * dt, block, block%tend(s1), block%state(old), block%state(s1), pass)
-
-    call space_operators(block, block%state(s1) , block%tend(s2), 0.5_r8 * dt, pass)
-    call update_state(0.5_r8 * dt, block, block%tend(s2), block%state(old), block%state(s2), pass)
-
-    call space_operators(block, block%state(s2) , block%tend(s3),          dt, pass)
-    call update_state(         dt, block, block%tend(s3), block%state(old), block%state(s3), pass)
-
-    call space_operators(block, block%state(s3) , block%tend(s4),          dt, pass)
-    block%tend(old) = (block%tend(s1) + 2.0_r8 * block%tend(s2) + 2.0_r8 * block%tend(s3) + block%tend(s4)) / 6.0_r8
-    call update_state(         dt, block, block%tend(old), block%state(old), block%state(new), pass)
-
-  end subroutine runge_kutta_4th
-
-  subroutine update_state(dt, block, tend, old_state, new_state, pass)
-
-    real(r8), intent(in) :: dt
-    type(block_type), intent(inout) :: block
-    type(tend_type), intent(in) :: tend
-    type(state_type), intent(in) :: old_state
-    type(state_type), intent(inout) :: new_state
-    integer, intent(in) :: pass
-
-    type(mesh_type), pointer :: mesh
-    integer i, j, k
-
-    mesh => old_state%mesh
-
-    if (baroclinic) then
-      if (tend%updated_dphs) then
-        do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            new_state%phs(i,j) = old_state%phs(i,j) + dt * tend%dphs(i,j)
-          end do
-        end do
-        call fill_halo(block, new_state%phs, full_lon=.true., full_lat=.true.)
-
-        call calc_ph_lev_ph(block, new_state)
-        call calc_m        (block, new_state)
-      else if (tend%copy_phs) then
-        new_state%phs    = old_state%phs
-        new_state%ph_lev = old_state%ph_lev
-        new_state%ph     = old_state%ph
-        new_state%m      = old_state%m
-      end if
-
-      if (tend%updated_dpt) then
-        if (.not. tend%updated_dphs .and. .not. tend%copy_phs .and. is_root_proc()) call log_error('Mass is not updated or copied!')
-        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-          do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              new_state%pt(i,j,k) = (old_state%pt(i,j,k) * old_state%m(i,j,k) + dt * tend%dpt(i,j,k)) / new_state%m(i,j,k)
-            end do
-          end do
-        end do
-        call fill_halo(block, new_state%pt, full_lon=.true., full_lat=.true., full_lev=.true.)
-      else if (tend%copy_pt) then
-        new_state%pt = old_state%pt
-      end if
-    else
-      if (tend%updated_dgz) then
-        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-          do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              new_state%gz(i,j,k) = old_state%gz(i,j,k) + dt * tend%dgz(i,j,k)
-            end do
-          end do
-        end do
-        call fill_halo(block, new_state%gz, full_lon=.true., full_lat=.true.)
-      else if (tend%copy_gz) then
-        new_state%gz = old_state%gz
-      end if
-    end if
-
-    if (tend%updated_du) then
-      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            new_state%u(i,j,k) = old_state%u(i,j,k) + dt * tend%du(i,j,k)
-          end do
-        end do
-      end do
-      call fill_halo(block, new_state%u, full_lon=.false., full_lat=.true., full_lev=.true.)
-    end if
-
-    if (tend%updated_dv) then
-      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-        do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            new_state%v(i,j,k) = old_state%v(i,j,k) + dt * tend%dv(i,j,k)
-          end do
-        end do
-      end do
-      call fill_halo(block, new_state%v, full_lon=.true., full_lat=.false., full_lev=.true.)
-    end if
-
-    call operators_prepare(block, new_state, dt, pass)
-
-  end subroutine update_state
 
 end module gmcore_mod

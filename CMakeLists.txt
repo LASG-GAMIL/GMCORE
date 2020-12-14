@@ -107,6 +107,7 @@ set(source_files
   src/utils/parallel_mod.F90
   src/utils/tridiag_mod.F90
   src/utils/debug_mod.F90
+  src/core/time_schemes_mod.F90
   src/core/pgf/pgf_mod.F90
   src/core/pgf/pgf_swm_mod.F90
   src/core/pgf/pgf_sb81_mod.F90

@@ -57,7 +57,7 @@ contains
           else
             jr = global_mesh%full_lat_iend_no_pole - j + 1
           end if
-          cv_full_lat(j,k) = vor_damp_coef2 * exp(jr**2 * log(0.5_r8) / j0**2) * &
+          cv_full_lat(j,k) = vor_damp_coef2 * exp(jr**2 * log(vor_damp_decay) / j0**2) * &
             radius**2 * global_mesh%dlat(j) * global_mesh%dlon / dt_in_seconds
         end do
       end do
@@ -69,7 +69,7 @@ contains
           else
             jr = global_mesh%half_lat_iend_no_pole - j + 1
           end if
-          cv_half_lat(j,k) = vor_damp_coef2 * exp(jr**2 * log(0.5_r8) / j0**2) * &
+          cv_half_lat(j,k) = vor_damp_coef2 * exp(jr**2 * log(vor_damp_decay) / j0**2) * &
             radius**2 * global_mesh%dlat(j) * global_mesh%dlon / dt_in_seconds
         end do
       end do
