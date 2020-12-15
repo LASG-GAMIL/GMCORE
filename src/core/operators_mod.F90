@@ -429,7 +429,8 @@ contains
     if (baroclinic) then
       mesh => state%mesh
 
-      call interp_cell_to_edge_on_full_level(mesh, state%pt, state%pt_lon, state%pt_lat, reversed_area=.true.)
+      call interp_cell_to_edge_on_full_level(mesh, state%pt, state%pt_lon, state%pt_lat, reversed_area=.true., &
+                                             u=state%u, v=state%v)
       call fill_halo(block, state%pt_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
 #ifdef V_POLE
       call fill_halo(block, state%pt_lat, full_lon=.true., full_lat=.false., full_lev=.true., south_halo=.false.)

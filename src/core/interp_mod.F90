@@ -1,6 +1,7 @@
 module interp_mod
 
   use const_mod
+  use namelist_mod
   use block_mod
   use process_mod
   use parallel_mod
@@ -19,7 +20,7 @@ module interp_mod
 
 contains
 
-  subroutine interp_cell_to_edge_on_full_level(mesh, x, x_lon, x_lat, reversed_area)
+  subroutine interp_cell_to_edge_on_full_level(mesh, x, x_lon, x_lat, reversed_area, u, v)
 
     type(mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: x(mesh%full_lon_lb:mesh%full_lon_ub, &
@@ -32,14 +33,61 @@ contains
                                      mesh%half_lat_lb:mesh%half_lat_ub, &
                                      mesh%full_lev_lb:mesh%full_lev_ub)
     logical, intent(in), optional :: reversed_area
+    real(r8), intent(in), optional :: u(mesh%half_lon_lb:mesh%half_lon_ub, &
+                                        mesh%full_lat_lb:mesh%full_lat_ub, &
+                                        mesh%full_lev_lb:mesh%full_lev_ub)
+    real(r8), intent(in), optional :: v(mesh%full_lon_lb:mesh%full_lon_ub, &
+                                        mesh%half_lat_lb:mesh%half_lat_ub, &
+                                        mesh%full_lev_lb:mesh%full_lev_ub)
 
+    real(r8), parameter :: beta = 1.0_r8
+    real(r8), parameter :: c11 =  0.5_r8
+    real(r8), parameter :: c12 = -0.5_r8
     integer i, j, k
+
+    if (present(u) .and. present(v)) then
+      ! Upwind-biased interpolation
+      select case (upwind_order)
+      case (1)
+        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+            do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+              x_lon(i,j,k) = c11 * (x(i+1,j,k) + x(i,j,k)) + &
+                             c12 * (x(i+1,j,k) - x(i,j,k)) * &
+                             beta * sign(1.0_r8, u(i,j,k))
+            end do
+          end do
+        end do
+
+        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+          do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+#ifdef V_POLE
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              x_lat(i,j,k) = c11 * (x(i,j,k) + x(i,j-1,k)) + &
+                             c12 * (x(i,j,k) - x(i,j-1,k)) * &
+                             beta * sign(1.0_r8, v(i,j,k))
+            end do
+#else
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              x_lat(i,j,k) = c11 * (x(i,j+1,k) + x(i,j,k)) + &
+                             c12 * (x(i,j+1,k) - x(i,j,k)) * &
+                             beta * sign(1.0_r8, v(i,j,k))
+            end do
+#endif
+          end do
+        end do
+
+        return
+      end select
+    end if
 
     if (merge(reversed_area, .false., present(reversed_area))) then
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            x_lon(i,j,k) = (mesh%area_lon_west(j) * x(i,j,k) + mesh%area_lon_east(j) * x(i+1,j,k)) / mesh%area_lon(j)
+            x_lon(i,j,k) = (mesh%area_lon_west(j) * x(i  ,j,k) + &
+                            mesh%area_lon_east(j) * x(i+1,j,k)   &
+                           ) / mesh%area_lon(j)
           end do
         end do
       end do
@@ -48,18 +96,24 @@ contains
         do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
 #ifdef V_POLE
-            x_lat(i,j,k) = (mesh%area_lat_north(j) * x(i,j,k) + mesh%area_lat_south(j) * x(i,j-1,k)) / mesh%area_lat(j)
+            x_lat(i,j,k) = (mesh%area_lat_north(j) * x(i,j  ,k) + &
+                            mesh%area_lat_south(j) * x(i,j-1,k)   &
+                           ) / mesh%area_lat(j)
 #else
-            x_lat(i,j,k) = (mesh%area_lat_north(j) * x(i,j+1,k) + mesh%area_lat_south(j) * x(i,j,k)) / mesh%area_lat(j)
+            x_lat(i,j,k) = (mesh%area_lat_north(j) * x(i,j+1,k) + &
+                            mesh%area_lat_south(j) * x(i,j  ,k)   &
+                           ) / mesh%area_lat(j)
 #endif
           end do
         end do
       end do
-    else
+    else ! reversed_area == .true.
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            x_lon(i,j,k) = (mesh%area_lon_east(j) * x(i,j,k) + mesh%area_lon_west(j) * x(i+1,j,k)) / mesh%area_lon(j)
+            x_lon(i,j,k) = (mesh%area_lon_east(j) * x(i  ,j,k) + &
+                            mesh%area_lon_west(j) * x(i+1,j,k)   &
+                           ) / mesh%area_lon(j)
           end do
         end do
       end do
@@ -68,9 +122,13 @@ contains
         do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
 #ifdef V_POLE
-            x_lat(i,j,k) = (mesh%area_lat_south(j) * x(i,j,k) + mesh%area_lat_north(j) * x(i,j-1,k)) / mesh%area_lat(j)
+            x_lat(i,j,k) = (mesh%area_lat_south(j) * x(i,j  ,k) + &
+                            mesh%area_lat_north(j) * x(i,j-1,k)   &
+                           ) / mesh%area_lat(j)
 #else
-            x_lat(i,j,k) = (mesh%area_lat_south(j) * x(i,j+1,k) + mesh%area_lat_north(j) * x(i,j,k)) / mesh%area_lat(j)
+            x_lat(i,j,k) = (mesh%area_lat_south(j) * x(i,j+1,k) + &
+                            mesh%area_lat_north(j) * x(i,j  ,k)   &
+                           ) / mesh%area_lat(j)
 #endif
           end do
         end do
