@@ -162,22 +162,22 @@ contains
   subroutine print_namelist()
 
     write(*, *) '====================== Parameters ======================'
-    write(*, *) 'num_lon =', num_lon
-    write(*, *) 'num_lat =', num_lat
-    write(*, *) 'dt_in_seconds =', dt_in_seconds
-    write(*, *) 'pgf_scheme =', pgf_scheme
-    write(*, *) 'ke_scheme =', ke_scheme
-    write(*, *) 'pv_scheme =', pv_scheme
-    write(*, *) 'pv_pole_stokes =', pv_pole_stokes
-    write(*, *) 'time_scheme =', time_scheme
-    write(*, *) 'upwind_order =', upwind_order
-    write(*, *) 'use_div_damp =', use_div_damp
-    write(*, *) 'div_damp_coef2 =', div_damp_coef2
-    write(*, *) 'use_vor_damp =', use_vor_damp
-    write(*, *) 'vor_damp_lat0 =', vor_damp_lat0
-    write(*, *) 'vor_damp_decay =', vor_damp_decay
-    write(*, *) 'vor_damp_coef2 =', vor_damp_coef2
-    write(*, *) 'use_polar_damp =', use_polar_damp
+    write(*, *) 'num_lon            = ', num_lon
+    write(*, *) 'num_lat            = ', num_lat
+    write(*, *) 'dt_in_seconds      = ', dt_in_seconds
+    write(*, *) 'pgf_scheme         = ', pgf_scheme
+    write(*, *) 'ke_scheme          = ', ke_scheme
+    write(*, *) 'pv_scheme          = ', pv_scheme
+    write(*, *) 'pv_pole_stokes     = ', pv_pole_stokes
+    write(*, *) 'time_scheme        = ', time_scheme
+    write(*, *) 'upwind_order       = ', upwind_order
+    write(*, *) 'use_div_damp       = ', use_div_damp
+    write(*, *) 'div_damp_coef2     = ', div_damp_coef2
+    write(*, *) 'use_vor_damp       = ', use_vor_damp
+    write(*, *) 'vor_damp_lat0      = ', vor_damp_lat0
+    write(*, *) 'vor_damp_decay     = ', vor_damp_decay
+    write(*, *) 'vor_damp_coef2     = ', vor_damp_coef2
+    write(*, *) 'use_polar_damp     = ', use_polar_damp
     write(*, *) '========================================================'
 
   end subroutine print_namelist

@@ -1,6 +1,7 @@
 module block_mod
 
   use mpi
+  use flogger
   use namelist_mod
   use mesh_mod
   use state_mod
@@ -72,7 +73,7 @@ contains
 
     if (.not. allocated(this%state)) then
       select case (trim(time_scheme))
-      case ('debug', 'pc2', 'pc2+fb', 'rk2')
+      case ('pc2', 'rk2')
         allocate(this%state(3))
         allocate(this%tend (3))
       case ('rk3')
@@ -81,6 +82,8 @@ contains
       case ('rk4')
         allocate(this%state(5))
         allocate(this%tend (5))
+      case default
+        if (id == 0) call log_error('Unknown time scheme ' // trim(time_scheme))
       end select
       do i = 1, size(this%state)
         call this%state(i)%init(this%mesh)
