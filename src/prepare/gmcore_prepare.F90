@@ -2,6 +2,7 @@ program gmcore_prepare
 
   use fiona
   use topo_mod
+  use bkg_mod
   use mesh_mod
   use process_mod
   use block_mod
@@ -12,7 +13,9 @@ program gmcore_prepare
 
   character(256) namelist_file
   character(256) topo_file
+  character(256) bkg_file
   character(256) initial_file
+  character(30) bkg_type
   character(30) initial_time
   character(30) vert_coord_template
   integer num_lon
@@ -23,6 +26,8 @@ program gmcore_prepare
 
   namelist /gmcore_prepare_params/ &
     topo_file                    , &
+    bkg_type                     , &
+    bkg_file                     , &
     initial_file                 , &
     num_lon                      , &
     num_lat                      , &
@@ -52,9 +57,12 @@ program gmcore_prepare
     call topo_regrid(proc%blocks(iblk))
   end do
 
+  call bkg_read(bkg_type, bkg_file)
+
   call initial_write(initial_file)
 
   call topo_final()
+  call bkg_final()
   call process_final()
 
 end program gmcore_prepare

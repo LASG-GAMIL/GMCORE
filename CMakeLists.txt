@@ -157,6 +157,8 @@ target_link_libraries(gmcore netcdff fortran_container fortran_datetime fiona fl
 
 set(gmcore_prepare_files
   src/prepare/topo_mod.F90
+  src/prepare/era5_reader_mod.F90
+  src/prepare/bkg_mod.F90
   src/prepare/gmcore_prepare.F90
 )
 
