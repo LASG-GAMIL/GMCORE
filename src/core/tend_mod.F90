@@ -299,7 +299,7 @@ contains
         x%dpt = y%dpt
         x%updated_dpt = .true.
       else
-        x%updated_dphs = .false.
+        x%updated_dpt = .false.
       end if
     else if (y%updated_dgz) then
       x%dgz = y%dgz

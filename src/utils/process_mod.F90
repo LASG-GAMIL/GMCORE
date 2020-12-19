@@ -140,7 +140,8 @@ contains
         np = np + num_proc_lon(i) * num_proc_lat(i)
       end do
       if (proc%np /= np .and. is_root_proc()) then
-        call log_error('Namelist num_proc_lon and num_proc_lat are not compatible with MPI runtime!')
+        call log_notice('Namelist num_proc_lon and num_proc_lat are not compatible with MPI runtime. Reset to MPI runtime.')
+        num_proc_lat(1) = proc%np
       end if
       ! Set the process topology into proc object.
       np = 0

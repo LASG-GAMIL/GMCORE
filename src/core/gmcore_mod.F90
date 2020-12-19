@@ -31,8 +31,8 @@ module gmcore_mod
 
   interface
     subroutine splitter_interface(dt, block)
-      import r8, block_type
-      real(r8), intent(in) :: dt
+      import block_type
+      real(8), intent(in) :: dt
       type(block_type), intent(inout) :: block
     end subroutine splitter_interface
   end interface
@@ -46,7 +46,7 @@ contains
     character(*), intent(in) :: namelist_path
 
     character(10) time_value, time_units
-    real(r8) seconds
+    real(8) seconds
 
     call log_init()
     call global_mesh%init_global(num_lon, num_lat, num_lev, lon_halo_width=max(2, maxval(reduce_factors) - 1), lat_halo_width=2)
@@ -123,7 +123,7 @@ contains
     integer, intent(in) :: itime
 
     type(state_type), pointer :: state
-    real(r8), save :: time1 = 0, time2
+    real(8), save :: time1 = 0, time2
     integer i, j, k, iblk
 
     if (time_is_alerted('history_write')) then
@@ -259,7 +259,7 @@ contains
     type(block_type), intent(inout) :: block
     type(state_type), intent(inout) :: state
     type(tend_type), intent(inout) :: tend
-    real(r8), intent(in) :: dt
+    real(8), intent(in) :: dt
     integer, intent(in) :: pass
 
     type(mesh_type), pointer :: mesh
@@ -451,7 +451,7 @@ contains
 
   subroutine time_integrate(dt, blocks)
 
-    real(r8), intent(in) :: dt
+    real(8), intent(in) :: dt
     type(block_type), intent(inout) :: blocks(:)
 
     integer iblk
@@ -478,7 +478,7 @@ contains
 
   subroutine csp2_splitting(dt, block)
 
-    real(r8), intent(in) :: dt
+    real(8), intent(in) :: dt
     type(block_type), intent(inout) :: block
 
     real(r8) fast_dt
@@ -499,7 +499,7 @@ contains
 
   subroutine no_splitting(dt, block)
 
-    real(r8), intent(in) :: dt
+    real(8), intent(in) :: dt
     type(block_type), intent(inout) :: block
 
     call time_integrator(space_operators, dt, block, old, new, all_pass)

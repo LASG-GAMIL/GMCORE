@@ -17,21 +17,22 @@ module time_schemes_mod
   public predict_correct
   public runge_kutta_3rd
   public runge_kutta_4th
+  public euler
 
   interface
     subroutine space_operators_interface(block, state, tend, dt, pass)
-      import r8, block_type, state_type, tend_type
+      import block_type, state_type, tend_type
       type(block_type), intent(inout) :: block
       type(state_type), intent(inout) :: state
       type(tend_type), intent(inout) :: tend
-      real(r8), intent(in) :: dt
+      real(8), intent(in) :: dt
       integer, intent(in) :: pass
     end subroutine space_operators_interface
 
     subroutine time_integrator_interface(space_operators, dt, block, old, new, pass)
-      import r8, block_type, tend_type, state_type, space_operators_interface
+      import block_type, tend_type, state_type, space_operators_interface
       procedure(space_operators_interface), intent(in), pointer :: space_operators
-      real(r8), intent(in) :: dt
+      real(8), intent(in) :: dt
       type(block_type), intent(inout) :: block
       integer, intent(in) :: old
       integer, intent(in) :: new
@@ -222,5 +223,19 @@ contains
     call update_state(         dt, block, block%tend(old), block%state(old), block%state(new), pass)
 
   end subroutine runge_kutta_4th
+
+  subroutine euler(space_operators, dt, block, old, new, pass)
+
+    procedure(space_operators_interface), intent(in), pointer :: space_operators
+    real(r8), intent(in) :: dt
+    type(block_type), intent(inout) :: block
+    integer, intent(in) :: old
+    integer, intent(in) :: new
+    integer, intent(in) :: pass
+
+    call space_operators(block, block%state(old), block%tend(new), dt, pass)
+    call update_state(dt, block, block%tend(new), block%state(old), block%state(new), pass)
+
+  end subroutine euler
 
 end module time_schemes_mod
