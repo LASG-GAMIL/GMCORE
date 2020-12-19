@@ -159,9 +159,6 @@ contains
       call MPI_DIMS_CREATE(proc%np, 2, proc%cart_dims, ierr)
     end if
     periods = [.true.,.false.]
-    if (proc%idom > 1 .and. (nest_lon_beg(proc%idom) /= 0 .or. nest_lon_end(proc%idom) /= 360)) then
-      periods(1) = .false.
-    end if
     ! Set MPI process topology.
     call MPI_COMM_SPLIT(proc%comm, proc%idom, proc%id, tmp_comm, ierr)
     call MPI_CART_CREATE(tmp_comm, 2, proc%cart_dims, periods, .true., proc%cart_comm, ierr)

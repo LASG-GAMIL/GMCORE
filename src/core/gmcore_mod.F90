@@ -96,7 +96,7 @@ contains
 
     call operators_prepare(proc%blocks, old, dt_in_seconds)
     call diagnose(proc%blocks, old)
-    call output(proc%blocks, old)
+    call output(old)
 
     do while (.not. time_is_finished())
       call time_integrate(dt_in_seconds, proc%blocks)
@@ -104,7 +104,7 @@ contains
       call time_advance(dt_in_seconds)
       call operators_prepare(proc%blocks, old, dt_in_seconds)
       call diagnose(proc%blocks, old)
-      call output(proc%blocks, old)
+      call output(old)
     end do
 
   end subroutine gmcore_run
@@ -117,12 +117,10 @@ contains
 
   end subroutine gmcore_final
 
-  subroutine output(blocks, itime)
+  subroutine output(itime)
 
-    type(block_type), intent(in), target :: blocks(:)
     integer, intent(in) :: itime
 
-    type(state_type), pointer :: state
     real(8), save :: time1 = 0, time2
     integer i, j, k, iblk
 
@@ -135,21 +133,22 @@ contains
       end if
       if (baroclinic) then
         ! Interpolate onto isobaric layers.
-        do iblk = 1, size(blocks)
-          state => blocks(iblk)%state(itime)
-          call interp_lon_edge_to_isobaric_level(state%mesh, state%ph, state%u, 85000.0_r8, state%u850, logp=.true.)
-          call interp_lon_edge_to_isobaric_level(state%mesh, state%ph, state%u, 70000.0_r8, state%u700, logp=.true.)
-          call interp_lat_edge_to_isobaric_level(state%mesh, state%ph, state%v, 85000.0_r8, state%v850, logp=.true.)
-          call interp_lat_edge_to_isobaric_level(state%mesh, state%ph, state%v, 70000.0_r8, state%v700, logp=.true.)
-          call interp_cell_to_isobaric_level(state%mesh, state%ph, state%t, 85000.0_r8, state%t850, logp=.true.)
-          call interp_cell_to_isobaric_level(state%mesh, state%ph, state%t, 70000.0_r8, state%t700, logp=.true.)
+        do iblk = 1, size(proc%blocks)
+          associate (state => proc%blocks(iblk)%state(itime))
+            call interp_lon_edge_to_isobaric_level(state%mesh, state%ph, state%u, 85000.0_r8, state%u850, logp=.true.)
+            call interp_lon_edge_to_isobaric_level(state%mesh, state%ph, state%u, 70000.0_r8, state%u700, logp=.true.)
+            call interp_lat_edge_to_isobaric_level(state%mesh, state%ph, state%v, 85000.0_r8, state%v850, logp=.true.)
+            call interp_lat_edge_to_isobaric_level(state%mesh, state%ph, state%v, 70000.0_r8, state%v700, logp=.true.)
+            call interp_cell_to_isobaric_level(state%mesh, state%ph, state%t, 85000.0_r8, state%t850, logp=.true.)
+            call interp_cell_to_isobaric_level(state%mesh, state%ph, state%t, 70000.0_r8, state%t700, logp=.true.)
+          end associate
         end do
       end if
-      call history_write_state(blocks, itime)
-      call history_write_debug(blocks, itime)
+      call history_write_state(proc%blocks, itime)
+      call history_write_debug(proc%blocks, itime)
     end if
     if (time_is_alerted('restart_write')) then
-      call restart_write(blocks, itime)
+      call restart_write(itime)
     end if
 
   end subroutine output

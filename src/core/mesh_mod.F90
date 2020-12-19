@@ -165,6 +165,9 @@ contains
     this%half_lev_ibeg = 1
     this%half_lev_iend = this%num_half_lev
 
+    ! Here we set baroclinic according to levels.
+    baroclinic = this%num_full_lev > 1
+
     this%id             = merge(id            , -1, present(id))
     this%lon_halo_width = merge(lon_halo_width,  1, present(lon_halo_width))
     this%lat_halo_width = merge(lat_halo_width,  1, present(lat_halo_width))

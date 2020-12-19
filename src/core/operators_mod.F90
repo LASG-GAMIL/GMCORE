@@ -325,7 +325,11 @@ contains
           end do
         end do
       end do
-      call fill_halo(block, state%div2, full_lon=.true., full_lat=.true., full_lev=.true.)
+#ifdef V_POLE
+      call fill_halo(block, state%div2, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false., north_halo=.false.)
+#else
+      call fill_halo(block, state%div2, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false., south_halo=.false.)
+#endif
     end if
 
   end subroutine calc_div

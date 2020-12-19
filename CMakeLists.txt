@@ -89,7 +89,7 @@ add_custom_command(
   VERBATIM
 )
 
-set(source_files
+set(gmcore_files
   src/utils/const_mod.F90
   src/utils/formula_mod.F90
   src/utils/namelist_mod.F90
@@ -152,8 +152,16 @@ set(source_files
   lib/quadpack.f90
 )
 
-add_library(gmcore ${source_files})
+add_library(gmcore ${gmcore_files})
 target_link_libraries(gmcore netcdff fortran_container fortran_datetime fiona flogger ${MPI_Fortran_LIBRARIES} ${MKL_LIBRARIES})
+
+set(gmcore_prepare_files
+  src/prepare/topo_mod.F90
+  src/prepare/gmcore_prepare.F90
+)
+
+add_executable(gmcore_prepare.exe ${gmcore_prepare_files})
+target_link_libraries(gmcore_prepare.exe gmcore)
 
 add_executable(gmcore_swm_driver.exe src/drivers/gmcore_swm_driver.F90)
 target_link_libraries(gmcore_swm_driver.exe gmcore)

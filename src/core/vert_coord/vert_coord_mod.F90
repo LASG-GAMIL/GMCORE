@@ -41,19 +41,20 @@ module vert_coord_mod
 
 contains
 
-  subroutine vert_coord_init(num_lev, namelist_path)
+  subroutine vert_coord_init(num_lev, namelist_file, template)
 
     integer, intent(in) :: num_lev
-    character(*), intent(in) :: namelist_path
+    character(*), intent(in), optional :: namelist_file
+    character(*), intent(in), optional :: template
 
     select case (vert_coord_scheme)
     case ('sigma')
-      call sigma_coord_init(num_lev, namelist_path)
+      call sigma_coord_init(num_lev, namelist_file, template)
       vert_coord_calc_ph => sigma_coord_calc_ph
       vert_coord_calc_ph_lev => sigma_coord_calc_ph_lev
       vert_coord_calc_dphdt_lev => sigma_coord_calc_dphdt_lev
     case ('hybrid')
-      call hybrid_coord_init(num_lev, namelist_path)
+      call hybrid_coord_init(num_lev, namelist_file, template)
       vert_coord_calc_ph => hybrid_coord_calc_ph
       vert_coord_calc_ph_lev => hybrid_coord_calc_ph_lev
       vert_coord_calc_dphdt_lev => hybrid_coord_calc_dphdt_lev

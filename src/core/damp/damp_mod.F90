@@ -17,8 +17,8 @@ module damp_mod
   public damp_init
   public damp_final
   public polar_damp
-  public div_damp
-  public vor_damp
+  public div_damp_run
+  public vor_damp_run
 
 contains
 
