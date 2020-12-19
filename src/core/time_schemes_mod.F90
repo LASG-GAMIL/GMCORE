@@ -18,6 +18,7 @@ module time_schemes_mod
   public runge_kutta_3rd
   public runge_kutta_4th
   public euler
+  public ssp_runge_kutta_3rd
 
   interface
     subroutine space_operators_interface(block, state, tend, dt, pass)
@@ -53,6 +54,8 @@ contains
       time_integrator => runge_kutta_3rd
     case ('rk4')
       time_integrator => runge_kutta_4th
+    case ('ssprk3')
+      time_integrator => ssp_runge_kutta_3rd
     case default
       time_integrator => predict_correct
     end select
@@ -237,5 +240,34 @@ contains
     call update_state(dt, block, block%tend(new), block%state(old), block%state(new), pass)
 
   end subroutine euler
+
+  subroutine ssp_runge_kutta_3rd(space_operators, dt, block, old, new, pass)
+
+    procedure(space_operators_interface), intent(in), pointer :: space_operators
+    real(r8), intent(in) :: dt
+    type(block_type), intent(inout) :: block
+    integer, intent(in) :: old
+    integer, intent(in) :: new
+    integer, intent(in) :: pass
+
+    integer s1, s2, s3
+
+    s1 = 3
+    s2 = 4
+    s3 = new
+
+    call space_operators(block, block%state(old), block%tend(s1), dt, pass)
+    call update_state(dt, block, block%tend(s1), block%state(old), block%state(s1), pass)
+
+    call space_operators(block, block%state(s1), block%tend(s2), dt, pass)
+    block%tend(s3) = block%tend(s1) + block%tend(s2)
+    call update_state(0.25_r8 * dt, block, block%tend(s3), block%state(old), block%state(s2), pass)
+
+    call space_operators(block, block%state(s2), block%tend(s3), 0.5_r8 * dt, pass)
+
+    block%tend(old) = (block%tend(s1) + block%tend(s2) + 4.0_r8 * block%tend(s3)) / 6.0_r8
+    call update_state(dt, block, block%tend(old), block%state(old), block%state(new), pass)
+
+  end subroutine ssp_runge_kutta_3rd
 
 end module time_schemes_mod

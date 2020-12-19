@@ -76,7 +76,7 @@ contains
       case ('pc2', 'rk2')
         allocate(this%state(3))
         allocate(this%tend (3))
-      case ('rk3')
+      case ('rk3', 'ssprk3')
         allocate(this%state(4))
         allocate(this%tend (4))
       case ('rk4')
