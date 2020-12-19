@@ -34,26 +34,26 @@ program gmcore_swm_driver
   call parse_namelist(namelist_path)
   call gmcore_init(namelist_path)
 
-  select case (test_case)
-  case ('mountain_zonal_flow')
-    set_initial_condition => mountain_zonal_flow_test_set_initial_condition
-  case ('rossby_haurwitz_wave')
-    set_initial_condition => rossby_haurwitz_wave_test_set_initial_condition
-  case ('jet_zonal_flow')
-    set_initial_condition => jet_zonal_flow_test_set_initial_condition
-  case ('steady_geostrophic_flow')
-    set_initial_condition => steady_geostrophic_flow_test_set_initial_condition
-  case ('cross_pole_flow')
-    set_initial_condition => cross_pole_flow_test_set_initial_condition
-  case ('shallow_water_waves')
-    set_initial_condition => shallow_water_waves_test_set_initial_condition
-  case default
-    call log_error('Unknown test case ' // trim(test_case) // '!')
-  end select
-
   if (restart) then
-    call restart_read(proc%blocks, old_time_idx)
+    call restart_read()
   else
+    select case (test_case)
+    case ('mountain_zonal_flow')
+      set_initial_condition => mountain_zonal_flow_test_set_initial_condition
+    case ('rossby_haurwitz_wave')
+      set_initial_condition => rossby_haurwitz_wave_test_set_initial_condition
+    case ('jet_zonal_flow')
+      set_initial_condition => jet_zonal_flow_test_set_initial_condition
+    case ('steady_geostrophic_flow')
+      set_initial_condition => steady_geostrophic_flow_test_set_initial_condition
+    case ('cross_pole_flow')
+      set_initial_condition => cross_pole_flow_test_set_initial_condition
+    case ('shallow_water_waves')
+      set_initial_condition => shallow_water_waves_test_set_initial_condition
+    case default
+      call log_error('Unknown test case ' // trim(test_case) // '!')
+    end select
+
     do iblk = 1, size(proc%blocks)
       call set_initial_condition(proc%blocks(iblk))
     end do

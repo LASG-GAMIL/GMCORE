@@ -96,6 +96,7 @@ set(source_files
   src/utils/time_mod.F90
   src/utils/math_mod.F90
   src/utils/history_mod.F90
+  src/utils/initial_mod.F90
   src/utils/restart_mod.F90
   src/utils/time_mod.F90
   src/utils/sphere_geometry_mod.F90

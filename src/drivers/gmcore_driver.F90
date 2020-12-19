@@ -4,6 +4,7 @@ program gmcore_driver
   use namelist_mod
   use block_mod
   use parallel_mod
+  use initial_mod
   use restart_mod
   use gmcore_mod
   use steady_state_test_mod
@@ -33,24 +34,26 @@ program gmcore_driver
   call parse_namelist(namelist_path)
   call gmcore_init(namelist_path)
 
-  select case (test_case)
-  case ('steady_state')
-    set_initial_condition => steady_state_test_set_initial_condition
-  case ('rossby_haurwitz_wave')
-    set_initial_condition => rossby_haurwitz_wave_3d_test_set_initial_condition
-  case ('mountain_wave')
-    set_initial_condition => mountain_wave_test_set_initial_condition
-  case ('baroclinic_wave')
-    set_initial_condition => baroclinic_wave_test_set_initial_condition
-  case ('held_suarez')
-    set_initial_condition => held_suarez_test_set_initial_condition
-  case default
-    call log_error('Unknown test case ' // trim(test_case) // '!')
-  end select
-
-  if (restart) then
-    call restart_read(proc%blocks, old_time_idx)
+  if (initial_file /= 'N/A') then
+    call initial_read()
+  else if (restart) then
+    call restart_read()
   else
+    select case (test_case)
+    case ('steady_state')
+      set_initial_condition => steady_state_test_set_initial_condition
+    case ('rossby_haurwitz_wave')
+      set_initial_condition => rossby_haurwitz_wave_3d_test_set_initial_condition
+    case ('mountain_wave')
+      set_initial_condition => mountain_wave_test_set_initial_condition
+    case ('baroclinic_wave')
+      set_initial_condition => baroclinic_wave_test_set_initial_condition
+    case ('held_suarez')
+      set_initial_condition => held_suarez_test_set_initial_condition
+    case default
+      call log_error('Unknown test case ' // trim(test_case) // '!')
+    end select
+
     do iblk = 1, size(proc%blocks)
       call set_initial_condition(proc%blocks(iblk))
     end do
