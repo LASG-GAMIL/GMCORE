@@ -8,19 +8,21 @@ Check barotropic test results [here](https://github.com/gmcore-project/gmcore/wi
 
 - [ ] Parallelization using MPI:
   - [X] 1D latitudional decomposition (done)
-  - [ ] 2D decomposition (~2020.06)
-- [ ] Nesting at middle and low latitudes (~2020.09).
+  - [X] 2D decomposition (partially done)
+  - [ ] Optimize for X86 (~2021.01)
+- [ ] Nesting at middle and low latitudes (~2021.09).
 - [ ] Acceleration using GPU (~?).
-- [ ] Baroclinic version (~2020.10).
-  - [X] Hydrostatic baroclinic version (2020.08)
+- [ ] Baroclinic version (~2021.01).
+  - [X] Hydrostatic baroclinic version (done)
     - [X] Rossby-Haurwitz wave test
     - [X] Mountain induced wave test
     - [X] Steady state test
     - [X] Baroclinic wave test
-    - [ ] Held-Suarez test 
-  - [ ] Nonhydrostatic baroclinic version (~2020.10)
-- [ ] Advection module (~2021).
-- [ ] Incorporation with physics parameterisation (~?).
+    - [X] Held-Suarez test 
+  - [ ] Nonhydrostatic baroclinic version (~2021.01)
+    - [ ] X-Z version (done)
+- [ ] Advection module (~2021.02).
+- [ ] Incorporation with physics parameterisation (~2021.03).
 - [ ] Data assimilation (~?).
 
 # Usage
