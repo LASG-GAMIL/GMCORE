@@ -17,9 +17,9 @@ module topo_mod
 
   integer num_topo_lon
   integer num_topo_lat
-  real(r8), allocatable :: topo_lon(:)
-  real(r8), allocatable :: topo_lat(:)
-  real(r8), allocatable :: topo(:,:)
+  real(r8), allocatable, dimension(:  ) :: topo_lon
+  real(r8), allocatable, dimension(:  ) :: topo_lat
+  real(r8), allocatable, dimension(:,:) :: topo
 
 contains
 
@@ -60,7 +60,7 @@ contains
 
     real(8) lon1, lon2
     real(8) lat1, lat2
-    real(8) gzs0, landfrac0, sgh0, num_topo_grid, num_topo_grid0
+    real(8) gzs0, landfrac0, sgh0, grid_count, grid_count0
 
     integer i, j, k, l, i1, i2, j1, j2
 
@@ -130,55 +130,27 @@ contains
         j1 = jy1(j)
         j2 = jy2(j)
 
-        if (ix1(mesh%full_lon_ibeg) > ix2(mesh%full_lon_ibeg)) then
-          ! Split into two parts
-          i1 = 1
-          i2 = ix2(mesh%full_lon_ibeg)
-          call termask(gzs0, sgh0, landfrac0, num_topo_grid, i1, i2, j1, j2)
-          gzs(mesh%full_lon_ibeg,j) = gzs0
-          num_topo_grid0 = num_topo_grid
-
-          i1 = ix1(mesh%full_lon_ibeg)
-          i2 = num_topo_lon
-          call termask(gzs0, sgh0, landfrac0, num_topo_grid, i1, i2, j1, j2)
-          gzs(mesh%full_lon_ibeg,j) = gzs(mesh%full_lon_ibeg,j) + gzs0
-          num_topo_grid0 = num_topo_grid + num_topo_grid0
-
-          gzs(mesh%full_lon_ibeg,j) = gzs(mesh%full_lon_ibeg,j) / num_topo_grid0
-        else
-          i1 = ix1(mesh%full_lon_ibeg)
-          i2 = ix2(mesh%full_lon_ibeg)
-          call termask(gzs0, sgh0, landfrac0, num_topo_grid, i1, i2, j1, j2)
-          gzs(mesh%full_lon_ibeg,j) = gzs0 / num_topo_grid
-        end if
-
-        do i = mesh%full_lon_ibeg + 1, mesh%full_lon_iend - 1
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           i1 = ix1(i)
           i2 = ix2(i)
-          call termask(gzs0, sgh0, landfrac0, num_topo_grid, i1, i2, j1, j2)
-          gzs(i,j) = gzs0 / num_topo_grid
+          if (i1 > i2) then
+            ! Split into two parts
+            i1 = 1
+            i2 = ix2(i)
+            call count_topo_grids(gzs0, sgh0, landfrac0, grid_count, i1, i2, j1, j2)
+            gzs(i,j) = gzs0
+            grid_count0 = grid_count
+            i1 = ix1(i)
+            i2 = num_topo_lon
+            call count_topo_grids(gzs0, sgh0, landfrac0, grid_count, i1, i2, j1, j2)
+            gzs(i,j) = gzs(i,j) + gzs0
+            grid_count0 = grid_count + grid_count0
+            gzs(i,j) = gzs(i,j) / grid_count0
+          else
+            call count_topo_grids(gzs0, sgh0, landfrac0, grid_count, i1, i2, j1, j2)
+            gzs(i,j) = gzs0 / grid_count
+          end if
         end do
-
-        if (ix1(mesh%full_lon_iend) > ix2(mesh%full_lon_iend)) then
-          i1 = 1
-          i2 = ix2(mesh%full_lon_iend)
-          call termask(gzs0, sgh0, landfrac0, num_topo_grid, i1, i2, j1, j2)
-          gzs(mesh%full_lon_iend,j) = gzs0
-          num_topo_grid0 = num_topo_grid
-
-          i1 = ix1(mesh%full_lon_ibeg)
-          i2 = num_topo_lon
-          call termask(gzs0, sgh0, landfrac0, num_topo_grid, i1, i2, j1, j2)
-          gzs(mesh%full_lon_iend,j) = gzs(mesh%full_lon_iend,j) + gzs0
-          num_topo_grid0 = num_topo_grid + num_topo_grid0
-
-          gzs(mesh%full_lon_iend,j) = gzs(mesh%full_lon_iend,j) / num_topo_grid0
-        else
-          i1 = ix1(mesh%full_lon_iend)
-          i2 = ix2(mesh%full_lon_iend)
-          call termask(gzs0, sgh0, landfrac0, num_topo_grid, i1, i2, j1, j2)
-          gzs(mesh%full_lon_iend,j) = gzs0 / num_topo_grid
-        end if
       end do
 
       ! For the poles
@@ -188,9 +160,9 @@ contains
         j2 = jy2(j)
         i1 = 1
         i2 = num_topo_lon
-        call termask(gzs0, sgh0, landfrac0, num_topo_grid, i1, i2, j1, j2)
-        gzs0 = gzs0 / num_topo_grid
-        sgh0 = sgh0 / num_topo_grid
+        call count_topo_grids(gzs0, sgh0, landfrac0, grid_count, i1, i2, j1, j2)
+        gzs0 = gzs0 / grid_count
+        sgh0 = sgh0 / grid_count
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           gzs(i,j) = gzs0
         end do
@@ -201,9 +173,9 @@ contains
         j2 = jy2(j)
         i1 = 1
         i2 = num_topo_lon
-        call termask(gzs0, sgh0, landfrac0, num_topo_grid, i1, i2, j1, j2)
-        gzs0 = gzs0 / num_topo_grid
-        sgh0 = sgh0 / num_topo_grid
+        call count_topo_grids(gzs0, sgh0, landfrac0, grid_count, i1, i2, j1, j2)
+        gzs0 = gzs0 / grid_count
+        sgh0 = sgh0 / grid_count
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           gzs(i,j) = gzs0
         end do
@@ -212,27 +184,27 @@ contains
 
   end subroutine topo_regrid
 
-  subroutine termask(gzs, sgh, landfrac, num_topo_grid, i1, i2, j1, j2)
+  subroutine count_topo_grids(gzs, sgh, landfrac, grid_count, i1, i2, j1, j2)
 
     integer, intent(in) :: i1, i2, j1, j2
-    real(r8), intent(out) :: gzs, sgh, landfrac, num_topo_grid
+    real(r8), intent(out) :: gzs, sgh, landfrac, grid_count
 
     real(r8) osmm, oshs, stdgs
     integer k, l
   
-    gzs           = 0.0d0
-    landfrac      = 0.0d0
-    num_topo_grid = 0.0d0
+    gzs        = 0.0d0
+    landfrac   = 0.0d0
+    grid_count = 0.0d0
     do k = j1, j2
       do l = i1, i2
         if (topo(l,k) > 0.0d0) then
           gzs      = gzs      + topo(l,k)
           landfrac = landfrac + 1.0d0
         end if
-        num_topo_grid = num_topo_grid + 1.0d0
+        grid_count = grid_count + 1.0d0
       end do
     end do
-    osmm = gzs / num_topo_grid
+    osmm = gzs / grid_count
   
     sgh = 0.0d0
     do k = j1, j2
@@ -244,7 +216,7 @@ contains
       end do
     end do
   
-  end subroutine termask
+  end subroutine count_topo_grids
 
   subroutine topo_final()
 

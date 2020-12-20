@@ -20,9 +20,9 @@ Check barotropic test results [here](https://github.com/gmcore-project/gmcore/wi
     - [X] Baroclinic wave test
     - [X] Held-Suarez test 
   - [ ] Nonhydrostatic baroclinic version (~2021.01)
-    - [ ] X-Z version (done)
+    - [X] X-Z version (done)
 - [ ] Advection module (~2021.02).
-- [ ] Incorporation with physics parameterisation (~2021.03).
+- [ ] Incorporation with physics parameterisation (2021.03-2021.09).
 - [ ] Data assimilation (~?).
 
 # Usage
