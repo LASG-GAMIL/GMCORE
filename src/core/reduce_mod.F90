@@ -449,7 +449,9 @@ contains
     end if
     call apply_reduce(reduce_args(mf_lon_n, reduce_mf_lon_n))
     call apply_reduce(reduce_args(mf_lat_n, reduce_mf_lat_n))
-    !call apply_reduce(reduce_args(ke      , reduce_ke      ))
+    if (do_reduce_ke) then
+      call apply_reduce(reduce_args(ke    , reduce_ke      ))
+    end if
 
     if (pass == all_pass .or. pass == slow_pass) then
       if (.not. reduce_pv_directly) then

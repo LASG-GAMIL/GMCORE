@@ -34,8 +34,8 @@ module const_mod
   integer, parameter :: all_pass      = 0
   integer, parameter :: slow_pass     = 1
   integer, parameter :: fast_pass     = 2
-  integer, parameter :: forward_pass  = 3
-  integer, parameter :: backward_pass = 7
+  integer, parameter :: div_damp_pass = 3
+  integer, parameter :: vor_damp_pass = 4
 
   integer, parameter :: west  = 1
   integer, parameter :: east  = 2

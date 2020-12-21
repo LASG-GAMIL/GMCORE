@@ -17,6 +17,10 @@ module interp_mod
   public interp_cell_to_isobaric_level
   public interp_lon_edge_to_isobaric_level
   public interp_lat_edge_to_isobaric_level
+  public interp_cell_to_lon_edge
+  public interp_cell_to_lat_edge
+  public interp_lon_edge_to_cell
+  public interp_lat_edge_to_cell
 
 contains
 
@@ -412,5 +416,101 @@ contains
     end do
 
   end subroutine interp_lat_edge_to_isobaric_level
+
+  subroutine interp_cell_to_lon_edge(mesh, x, x_lon)
+
+    type(mesh_type), intent(in) :: mesh
+    real(r8), intent(in) :: x(mesh%full_lon_lb:mesh%full_lon_ub, &
+                              mesh%full_lat_lb:mesh%full_lat_ub, &
+                              mesh%full_lev_lb:mesh%full_lev_ub)
+    real(r8), intent(inout) :: x_lon(mesh%half_lon_lb:mesh%half_lon_ub, &
+                                     mesh%full_lat_lb:mesh%full_lat_ub, &
+                                     mesh%full_lev_lb:mesh%full_lev_ub)
+
+    integer i, j, k
+
+    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+          x_lon(i,j,k) = 0.5_r8 * (x(i,j,k) + x(i+1,j,k))
+        end do
+      end do
+    end do
+
+  end subroutine interp_cell_to_lon_edge
+
+  subroutine interp_lon_edge_to_cell(mesh, x_lon, x)
+
+    type(mesh_type), intent(in) :: mesh
+    real(r8), intent(in) :: x_lon(mesh%half_lon_lb:mesh%half_lon_ub, &
+                                  mesh%full_lat_lb:mesh%full_lat_ub, &
+                                  mesh%full_lev_lb:mesh%full_lev_ub)
+    real(r8), intent(out) :: x(mesh%full_lon_lb:mesh%full_lon_ub, &
+                               mesh%full_lat_lb:mesh%full_lat_ub, &
+                               mesh%full_lev_lb:mesh%full_lev_ub)
+
+    integer i, j, k
+
+    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          x(i,j,k) = 0.5_r8 * (x_lon(i-1,j,k) + x_lon(i,j,k))
+        end do
+      end do
+    end do
+
+  end subroutine interp_lon_edge_to_cell
+
+  subroutine interp_cell_to_lat_edge(mesh, x, x_lat)
+
+    type(mesh_type), intent(in) :: mesh
+    real(r8), intent(in) :: x(mesh%full_lon_lb:mesh%full_lon_ub, &
+                              mesh%full_lat_lb:mesh%full_lat_ub, &
+                              mesh%full_lev_lb:mesh%full_lev_ub)
+    real(r8), intent(inout) :: x_lat(mesh%full_lon_lb:mesh%full_lon_ub, &
+                                     mesh%half_lat_lb:mesh%half_lat_ub, &
+                                     mesh%full_lev_lb:mesh%full_lev_ub)
+
+    integer i, j, k
+
+    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+#ifdef V_POLE
+          x_lat(i,j,k) = 0.5_r8 * (x(i,j,k) + x(i,j-1,k))
+#else
+          x_lat(i,j,k) = 0.5_r8 * (x(i,j,k) + x(i,j+1,k))
+#endif
+        end do
+      end do
+    end do
+
+  end subroutine interp_cell_to_lat_edge
+
+  subroutine interp_lat_edge_to_cell(mesh, x_lat, x)
+
+    type(mesh_type), intent(in) :: mesh
+    real(r8), intent(in) :: x_lat(mesh%full_lon_lb:mesh%full_lon_ub, &
+                                  mesh%half_lat_lb:mesh%half_lat_ub, &
+                                  mesh%full_lev_lb:mesh%full_lev_ub)
+    real(r8), intent(out) :: x(mesh%full_lon_lb:mesh%full_lon_ub, &
+                               mesh%full_lat_lb:mesh%full_lat_ub, &
+                               mesh%full_lev_lb:mesh%full_lev_ub)
+
+    integer i, j, k
+
+    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+#ifdef V_POLE
+          x(i,j,k) = 0.5_r8 * (x_lat(i,j,k) + x_lat(i,j+1,k))
+#else
+          x(i,j,k) = 0.5_r8 * (x_lat(i,j,k) + x_lat(i,j-1,k))
+#endif
+        end do
+      end do
+    end do
+
+  end subroutine interp_lat_edge_to_cell
 
 end module interp_mod

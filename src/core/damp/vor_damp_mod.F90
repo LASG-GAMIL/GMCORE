@@ -14,7 +14,7 @@ module vor_damp_mod
 
   public vor_damp_init
   public vor_damp_final
-  public vor_damp
+  public vor_damp_run
 
   real(r8), allocatable :: cv_full_lat(:,:)
   real(r8), allocatable :: cv_half_lat(:,:)
@@ -116,7 +116,7 @@ contains
 
   end subroutine vor_damp_final
 
-  subroutine vor_damp(block, dt, state)
+  subroutine vor_damp_run(block, dt, state)
 
     type(block_type), intent(in) :: block
     real(8), intent(in) :: dt
@@ -177,6 +177,6 @@ contains
     case (4)
     end select
 
-  end subroutine vor_damp
+  end subroutine vor_damp_run
 
 end module vor_damp_mod

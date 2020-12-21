@@ -23,21 +23,18 @@ module hybrid_coord_mod
   real(r8), allocatable, dimension(:) :: hyam
   real(r8), allocatable, dimension(:) :: hybm
 
-  character(10) :: template = '' ! Template:
-                                 ! - ecmwf_l50
-
   real(r8) :: p0 = 1d5 ! Reference pressure (Pa)
 
   namelist /hybrid_coord/ &
-    hyai, hybi, hyam, hybm, p0, template
+    hyai, hybi, hyam, hybm, p0
 
 contains
 
-  subroutine hybrid_coord_init(num_lev, namelist_file, template_)
+  subroutine hybrid_coord_init(num_lev, namelist_file, template)
 
     integer, intent(in) :: num_lev
     character(*), intent(in), optional :: namelist_file
-    character(*), intent(in), optional :: template_
+    character(*), intent(in), optional :: template
 
     integer ierr, k
 
@@ -55,30 +52,29 @@ contains
       open(10, file=namelist_file, status='old')
       read(10, nml=hybrid_coord, iostat=ierr)
       close(10)
-    else if (present(template_)) then
-      template = template_
     end if
 
-    if (ierr /= 0) then
-      if (.not. baroclinic) then
-        if (is_root_proc()) call log_notice('Run shallow-water model.')
-        return
-      else
-        call log_error('No hybrid_coord parameters in ' // trim(namelist_file) // '!')
-      end if
+    if (ierr /= 0 .and. .not. baroclinic .and. is_root_proc()) then
+      call log_notice('Run shallow-water model.')
     end if
 
-    select case (template)
-    case ('test_l15')
-      call hybrid_coord_test_l15(p0, hyai, hybi)
-    case ('test_l26')
-      call hybrid_coord_test_l26(p0, hyai, hybi)
-    case ('test_l30')
-      call hybrid_coord_test_l30(p0, hyai, hybi)
-    case ('ecmwf_l50')
-      call hybrid_coord_ecmwf_l50(p0, hyai, hybi)
-    case default
-    end select
+    if (present(template)) then
+      select case (template)
+      case ('test_l15')
+        call hybrid_coord_test_l15(p0, hyai, hybi)
+      case ('test_l26')
+        call hybrid_coord_test_l26(p0, hyai, hybi)
+      case ('test_l30')
+        call hybrid_coord_test_l30(p0, hyai, hybi)
+      case ('ecmwf_l50')
+        call hybrid_coord_ecmwf_l50(p0, hyai, hybi)
+      case default
+      end select
+    end if
+
+    if (all(hyai == 0) .and. is_root_proc()) then
+      call log_error('Hybrid coordinate parameters are not set!')
+    end if
 
     if (all(hyam == 0)) then
       do k = 1, num_lev

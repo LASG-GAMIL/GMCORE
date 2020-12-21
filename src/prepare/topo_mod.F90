@@ -19,7 +19,7 @@ module topo_mod
   integer num_topo_lat
   real(r8), allocatable, dimension(:  ) :: topo_lon
   real(r8), allocatable, dimension(:  ) :: topo_lat
-  real(r8), allocatable, dimension(:,:) :: topo
+  real(r8), allocatable, dimension(:,:) :: topo_gzs
 
 contains
 
@@ -39,13 +39,15 @@ contains
 
     allocate(topo_lon(num_topo_lon))
     allocate(topo_lat(num_topo_lat))
-    allocate(topo(num_topo_lon,num_topo_lat))
+    allocate(topo_gzs(num_topo_lon,num_topo_lat))
 
     call fiona_start_input('topo')
     call fiona_input('topo', 'x', topo_lon)
     call fiona_input('topo', 'y', topo_lat)
-    call fiona_input('topo', 'z', topo)
+    call fiona_input('topo', 'z', topo_gzs)
     call fiona_end_input('topo')
+
+    topo_gzs = topo_gzs * g
 
   end subroutine topo_read
 
@@ -197,8 +199,8 @@ contains
     grid_count = 0.0d0
     do k = j1, j2
       do l = i1, i2
-        if (topo(l,k) > 0.0d0) then
-          gzs      = gzs      + topo(l,k)
+        if (topo_gzs(l,k) > 0.0d0) then
+          gzs      = gzs      + topo_gzs(l,k)
           landfrac = landfrac + 1.0d0
         end if
         grid_count = grid_count + 1.0d0
@@ -209,7 +211,7 @@ contains
     sgh = 0.0d0
     do k = j1, j2
       do l = i1, i2
-        oshs = topo(l,k)
+        oshs = topo_gzs(l,k)
         if (oshs <= 0.0d0) oshs = 0.0
         stdgs = oshs - osmm
         sgh = sgh + stdgs * stdgs
@@ -222,7 +224,7 @@ contains
 
     if (allocated(topo_lon)) deallocate(topo_lon)
     if (allocated(topo_lat)) deallocate(topo_lat)
-    if (allocated(topo    )) deallocate(topo    )
+    if (allocated(topo_gzs)) deallocate(topo_gzs)
 
   end subroutine topo_final
 

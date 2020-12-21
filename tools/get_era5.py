@@ -7,6 +7,7 @@ import os
 
 parser = argparse.ArgumentParser(description='Get ERA5 reanalysis data for creating initial data.')
 parser.add_argument('-t', dest='time', help='Time (YYYYMMDDHH)', required=True)
+parser.add_argument('--res', help='Resoultion (1p0, 0p25)', default='0p5')
 args = parser.parse_args()
 
 args.time = pendulum.from_format(args.time, 'YYYYMMDDHH')
@@ -14,12 +15,15 @@ args.time = pendulum.from_format(args.time, 'YYYYMMDDHH')
 plev_file = f'era5_{args.time.format("YYYYMMDDHH")}_plev.nc'
 sfc_file  = f'era5_{args.time.format("YYYYMMDDHH")}_sfc.nc'
 
+grids = { '1p0': '1.0/1.0', '0p25': '0.25/0.25' }
+
 c = cdsapi.Client()
 
 c.retrieve(
 	'reanalysis-era5-pressure-levels',
 	{
 		'product_type': 'reanalysis',
+		'grid': grids[args.res],
 		'format': 'netcdf',
 		'variable': [
 			'temperature', 'u_component_of_wind', 'v_component_of_wind',
@@ -51,10 +55,10 @@ c.retrieve(
 	'reanalysis-era5-single-levels',
 	{
 		'product_type': 'reanalysis',
+		'grid': grids[args.res],
 		'format': 'netcdf',
 		'variable': [
-			'orography',
-			'surface_pressure',
+			'mean_sea_level_pressure',
 		],
 		'year': args.time.format('YYYY'),
 		'month': args.time.format('MM'),
@@ -65,3 +69,4 @@ c.retrieve(
 )
 
 os.system(f'cdo merge {plev_file} {sfc_file} era5_{args.time.format("YYYYMMDDHH")}.nc')
+os.system(f'rm -f {plev_file} {sfc_file}')

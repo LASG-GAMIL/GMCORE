@@ -26,11 +26,11 @@ module sigma_coord_mod
 
 contains
 
-  subroutine sigma_coord_init(num_lev, namelist_file, template_)
+  subroutine sigma_coord_init(num_lev, namelist_file, template)
 
     integer, intent(in) :: num_lev
     character(*), intent(in), optional :: namelist_file
-    character(*), intent(in), optional :: template_
+    character(*), intent(in), optional :: template
 
     integer ierr, k
 
@@ -44,8 +44,8 @@ contains
       open(10, file=namelist_file, status='old')
       read(10, nml=sigma_coord, iostat=ierr)
       close(10)
-    else
-      if (is_root_proc()) call log_error('Module sigma_coord_mod needs namelist_file argument!')
+    !else
+    !  if (is_root_proc()) call log_error('Module sigma_coord_mod needs namelist_file argument!')
     end if
 
     if (ierr /= 0) then

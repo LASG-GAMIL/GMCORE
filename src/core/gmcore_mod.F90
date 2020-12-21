@@ -459,13 +459,13 @@ contains
       call splitter(dt, blocks(iblk))
 
       if (use_div_damp) then
-        call div_damp(blocks(iblk), dt, blocks(iblk)%state(new))
+        call div_damp_run(blocks(iblk), dt, blocks(iblk)%state(new))
       end if
       if (use_vor_damp) then
-        call vor_damp(blocks(iblk), dt, blocks(iblk)%state(new))
+        call vor_damp_run(blocks(iblk), dt, blocks(iblk)%state(new))
       end if
       if (use_polar_damp) then
-        call polar_damp(blocks(iblk), dt, blocks(iblk)%state(new))
+        call polar_damp_run(blocks(iblk), dt, blocks(iblk)%state(new))
       end if
       call test_forcing_run(blocks(iblk), dt, blocks(iblk)%state(new))
       if (use_div_damp .or. use_vor_damp .or. use_vor_damp) then

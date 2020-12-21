@@ -26,6 +26,7 @@ module operators_mod
   public calc_wp
   public calc_wedphdlev
   public calc_div
+  public calc_vor_vtx
   public calc_m
   public calc_m_lon_m_lat
   public calc_m_vtx
@@ -82,24 +83,30 @@ contains
     real(r8), intent(in) :: dt
     integer, intent(in) :: pass
 
-    call calc_ph_lev_ph           (block, state)
-    call calc_m                   (block, state)
-    call calc_t                   (block, state)
-    call pgf_prepare              (block, state)
-    call calc_m_lon_m_lat         (block, state)
-    call calc_mf_lon_n_mf_lat_n   (block, state)
-    call calc_mf_lon_t_mf_lat_t   (block, state)
-    call calc_ke_cell             (block, state)
-    call calc_gz_lev_gz           (block, state)
-    call calc_pt_lon_pt_lat_pt_lev(block, state)
-    if (pass == all_pass .or. pass == slow_pass) then
-      call calc_m_vtx             (block, state)
-      call calc_pv_vtx            (block, state)
-      call calc_pv_edge           (block, state, dt)
-      call calc_div               (block, state)
-    end if
+    if (pass == vor_damp_pass) then
+      call calc_vor_vtx             (block, state)
+    else if (pass == div_damp_pass) then
+      call calc_div                 (block, state)
+    else
+      call calc_ph_lev_ph           (block, state)
+      call calc_m                   (block, state)
+      call calc_t                   (block, state)
+      call pgf_prepare              (block, state)
+      call calc_m_lon_m_lat         (block, state)
+      call calc_mf_lon_n_mf_lat_n   (block, state)
+      call calc_mf_lon_t_mf_lat_t   (block, state)
+      call calc_ke_cell             (block, state)
+      call calc_gz_lev_gz           (block, state)
+      call calc_pt_lon_pt_lat_pt_lev(block, state)
+      if (pass == all_pass .or. pass == slow_pass) then
+        call calc_m_vtx             (block, state)
+        call calc_pv_vtx            (block, state)
+        call calc_pv_edge           (block, state, dt)
+        call calc_div               (block, state)
+      end if
 
-    call reduce_run(block, state, dt, pass)
+      call reduce_run(block, state, dt, pass)
+    end if
 
   end subroutine operators_prepare_2
 
@@ -834,7 +841,7 @@ contains
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-        if (.false. .and. block%reduced_mesh(j)%reduce_factor > 1) then
+        if (do_reduce_ke .and. block%reduced_mesh(j)%reduce_factor > 1) then
           tend%dkedlon(:,j,k) = 0.0_r8
           do move = 1, block%reduced_mesh(j)%reduce_factor
             do i = block%reduced_mesh(j)%half_lon_ibeg, block%reduced_mesh(j)%half_lon_iend

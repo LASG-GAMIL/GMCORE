@@ -14,7 +14,7 @@ module div_damp_mod
 
   public div_damp_init
   public div_damp_final
-  public div_damp
+  public div_damp_run
 
   real(r8), allocatable :: cd_full_lat(:,:)
   real(r8), allocatable :: cd_half_lat(:,:)
@@ -131,7 +131,7 @@ contains
 
   end subroutine div_damp_final
 
-  subroutine div_damp(block, dt, state)
+  subroutine div_damp_run(block, dt, state)
 
     type(block_type), intent(in) :: block
     real(8), intent(in) :: dt
@@ -192,6 +192,6 @@ contains
     case (4)
     end select
 
-  end subroutine div_damp
+  end subroutine div_damp_run
 
 end module div_damp_mod
