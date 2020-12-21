@@ -1,0 +1,11 @@
+&gmcore_prepare_params
+  num_lon             = 360
+  num_lat             = 180
+  num_lev             = 26
+  topo_file           = '/data/geog/ETOPO1_Ice_g_gmt4.grd'
+  bkg_type            = 'era5'
+  bkg_file            = './era5_2020121200.nc'
+  vert_coord_scheme   = 'hybrid'
+  vert_coord_template = 'test_l26'
+  initial_file        = 'test.nc'
+/
