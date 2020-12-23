@@ -155,8 +155,7 @@ contains
         end if
       end do
     else
-      proc%cart_dims = 0
-      call MPI_DIMS_CREATE(proc%np, 2, proc%cart_dims, ierr)
+      proc%cart_dims = [1, proc%np]
     end if
     periods = [.true.,.false.]
     ! Set MPI process topology.

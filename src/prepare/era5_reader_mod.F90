@@ -55,7 +55,9 @@ contains
     call fiona_input('era5', 'u'        , era5_u   )
     call fiona_input('era5', 'v'        , era5_v   )
     call fiona_input('era5', 't'        , era5_t   )
-    call fiona_input('era5', 'sp'       , era5_ps  )
+    if (fiona_has_var('era5', 'sp')) then
+      call fiona_input('era5', 'sp'     , era5_ps  )
+    end if
     call fiona_input('era5', 'msl'      , era5_mslp)
     call fiona_end_input('era5')
 

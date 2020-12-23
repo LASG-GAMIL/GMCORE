@@ -61,7 +61,7 @@ contains
         call log_notice('Change vert_coord_template to ' // trim(template) // '.')
       end if
       vert_coord_template = template
-    else if (vert_coord_template == 'N/A' .and. is_root_proc()) then
+    else if (baroclinic .and. vert_coord_template == 'N/A' .and. is_root_proc()) then
       call log_error('Parameter vert_coord_template is not set!')
     end if
 

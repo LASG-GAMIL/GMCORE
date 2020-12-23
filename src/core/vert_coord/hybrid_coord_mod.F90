@@ -72,7 +72,7 @@ contains
       end select
     end if
 
-    if (all(hyai == 0) .and. is_root_proc()) then
+    if (baroclinic .and. all(hyai == 0) .and. is_root_proc()) then
       call log_error('Hybrid coordinate parameters are not set!')
     end if
 
