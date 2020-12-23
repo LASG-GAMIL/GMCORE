@@ -10,21 +10,45 @@ module interp_mod
 
   private
 
-  public interp_cell_to_edge_on_full_level
-  public interp_cell_to_edge_on_half_level
-  public interp_cell_to_vertex_on_full_level
-  public interp_full_level_to_half_level_on_cell
+  !                              / lev_lat_edge
+  !               o-------------o------------o lev_vtx
+  !              /|            /            /|
+  !             / |                        / |
+  !            /  |        |              /  |
+  !           o   |        o lev_edge   -o- lev_lon_edge
+  !          /    |        |            /    |
+  !         /     o vtx                /     o vtx
+  !        /      |                   /      |
+  !       o-------+-----o------------o       |
+  !       |       |                  |       |
+  ! lon_edge -o-  |        o cell    |  -o- lon_edge
+  !       |       |                  |       |
+  !       |       o------------------+-------o
+  !       |      /       /           |      /
+  !       o vtx /       o lat_edge   o vtx /
+  !       |    /       /             |    /
+  !       |   o                      |   o
+  !       |  /                       |  /
+  !       | /                        | /
+  !       |/                         |/
+  !       o-------------o------------o
+  !
+
+  public interp_cell_to_lon_edge
+  public interp_cell_to_lat_edge
+  public interp_cell_to_lev_edge
+  public interp_cell_to_vtx
+  public interp_lon_edge_to_cell
+  public interp_lat_edge_to_cell
+  public interp_lev_edge_to_lev_lon_edge
+  public interp_lev_edge_to_lev_lat_edge
   public interp_cell_to_isobaric_level
   public interp_lon_edge_to_isobaric_level
   public interp_lat_edge_to_isobaric_level
-  public interp_cell_to_lon_edge
-  public interp_cell_to_lat_edge
-  public interp_lon_edge_to_cell
-  public interp_lat_edge_to_cell
 
 contains
 
-  subroutine interp_cell_to_edge_on_full_level(mesh, x, x_lon, x_lat, reversed_area, u, v)
+  subroutine interp_cell_to_lon_edge(mesh, x, x_lon, reversed_area, u)
 
     type(mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: x(mesh%full_lon_lb:mesh%full_lon_ub, &
@@ -33,15 +57,9 @@ contains
     real(r8), intent(inout) :: x_lon(mesh%half_lon_lb:mesh%half_lon_ub, &
                                      mesh%full_lat_lb:mesh%full_lat_ub, &
                                      mesh%full_lev_lb:mesh%full_lev_ub)
-    real(r8), intent(inout) :: x_lat(mesh%full_lon_lb:mesh%full_lon_ub, &
-                                     mesh%half_lat_lb:mesh%half_lat_ub, &
-                                     mesh%full_lev_lb:mesh%full_lev_ub)
     logical, intent(in), optional :: reversed_area
     real(r8), intent(in), optional :: u(mesh%half_lon_lb:mesh%half_lon_ub, &
                                         mesh%full_lat_lb:mesh%full_lat_ub, &
-                                        mesh%full_lev_lb:mesh%full_lev_ub)
-    real(r8), intent(in), optional :: v(mesh%full_lon_lb:mesh%full_lon_ub, &
-                                        mesh%half_lat_lb:mesh%half_lat_ub, &
                                         mesh%full_lev_lb:mesh%full_lev_ub)
 
     real(r8), parameter :: beta = 1.0_r8
@@ -49,7 +67,7 @@ contains
     real(r8), parameter :: c12 = -0.5_r8
     integer i, j, k
 
-    if (present(u) .and. present(v)) then
+    if (present(u)) then
       ! Upwind-biased interpolation
       select case (upwind_order)
       case (1)
@@ -62,7 +80,57 @@ contains
             end do
           end do
         end do
+        return
+      end select
+    end if
 
+    if (merge(reversed_area, .false., present(reversed_area))) then
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+            x_lon(i,j,k) = (mesh%area_lon_west(j) * x(i  ,j,k) + &
+                            mesh%area_lon_east(j) * x(i+1,j,k)   &
+                           ) / mesh%area_lon(j)
+          end do
+        end do
+      end do
+    else ! reversed_area == .true.
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+            x_lon(i,j,k) = (mesh%area_lon_east(j) * x(i  ,j,k) + &
+                            mesh%area_lon_west(j) * x(i+1,j,k)   &
+                           ) / mesh%area_lon(j)
+          end do
+        end do
+      end do
+    end if
+
+  end subroutine interp_cell_to_lon_edge
+
+  subroutine interp_cell_to_lat_edge(mesh, x, x_lat, reversed_area, v)
+
+    type(mesh_type), intent(in) :: mesh
+    real(r8), intent(in) :: x(mesh%full_lon_lb:mesh%full_lon_ub, &
+                              mesh%full_lat_lb:mesh%full_lat_ub, &
+                              mesh%full_lev_lb:mesh%full_lev_ub)
+    real(r8), intent(inout) :: x_lat(mesh%full_lon_lb:mesh%full_lon_ub, &
+                                     mesh%half_lat_lb:mesh%half_lat_ub, &
+                                     mesh%full_lev_lb:mesh%full_lev_ub)
+    logical, intent(in), optional :: reversed_area
+    real(r8), intent(in), optional :: v(mesh%full_lon_lb:mesh%full_lon_ub, &
+                                        mesh%half_lat_lb:mesh%half_lat_ub, &
+                                        mesh%full_lev_lb:mesh%full_lev_ub)
+
+    real(r8), parameter :: beta = 1.0_r8
+    real(r8), parameter :: c11 =  0.5_r8
+    real(r8), parameter :: c12 = -0.5_r8
+    integer i, j, k
+
+    if (present(v)) then
+      ! Upwind-biased interpolation
+      select case (upwind_order)
+      case (1)
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
 #ifdef V_POLE
@@ -80,22 +148,11 @@ contains
 #endif
           end do
         end do
-
         return
       end select
     end if
 
     if (merge(reversed_area, .false., present(reversed_area))) then
-      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            x_lon(i,j,k) = (mesh%area_lon_west(j) * x(i  ,j,k) + &
-                            mesh%area_lon_east(j) * x(i+1,j,k)   &
-                           ) / mesh%area_lon(j)
-          end do
-        end do
-      end do
-
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -113,16 +170,6 @@ contains
       end do
     else ! reversed_area == .true.
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            x_lon(i,j,k) = (mesh%area_lon_east(j) * x(i  ,j,k) + &
-                            mesh%area_lon_west(j) * x(i+1,j,k)   &
-                           ) / mesh%area_lon(j)
-          end do
-        end do
-      end do
-
-      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
 #ifdef V_POLE
@@ -139,46 +186,63 @@ contains
       end do
     end if
 
-  end subroutine interp_cell_to_edge_on_full_level
+  end subroutine interp_cell_to_lat_edge
 
-  subroutine interp_cell_to_edge_on_half_level(mesh, x, x_lon, x_lat)
+  subroutine interp_lev_edge_to_lev_lon_edge(mesh, x_lev, x_lev_lon)
 
     type(mesh_type), intent(in) :: mesh
-    real(r8), intent(in) :: x(mesh%full_lon_lb:mesh%full_lon_ub, &
-                              mesh%full_lat_lb:mesh%full_lat_ub, &
-                              mesh%half_lev_lb:mesh%half_lev_ub)
-    real(r8), intent(inout) :: x_lon(mesh%half_lon_lb:mesh%half_lon_ub, &
-                                     mesh%full_lat_lb:mesh%full_lat_ub, &
-                                     mesh%half_lev_lb:mesh%half_lev_ub)
-    real(r8), intent(inout) :: x_lat(mesh%full_lon_lb:mesh%full_lon_ub, &
-                                     mesh%half_lat_lb:mesh%half_lat_ub, &
-                                     mesh%half_lev_lb:mesh%half_lev_ub)
+    real(r8), intent(in) :: x_lev(mesh%full_lon_lb:mesh%full_lon_ub, &
+                                  mesh%full_lat_lb:mesh%full_lat_ub, &
+                                  mesh%half_lev_lb:mesh%half_lev_ub)
+    real(r8), intent(inout) :: x_lev_lon(mesh%half_lon_lb:mesh%half_lon_ub, &
+                                         mesh%full_lat_lb:mesh%full_lat_ub, &
+                                         mesh%half_lev_lb:mesh%half_lev_ub)
 
     integer i, j, k
 
     do k = mesh%half_lev_ibeg, mesh%half_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          x_lon(i,j,k) = (mesh%area_lon_west(j) * x(i,j,k) + mesh%area_lon_east(j) * x(i+1,j,k)) / mesh%area_lon(j)
+          x_lev_lon(i,j,k) = (mesh%area_lon_west(j) * x_lev(i  ,j,k) + &
+                              mesh%area_lon_east(j) * x_lev(i+1,j,k)   &
+                             ) / mesh%area_lon(j)
         end do
       end do
     end do
+
+  end subroutine interp_lev_edge_to_lev_lon_edge
+
+  subroutine interp_lev_edge_to_lev_lat_edge(mesh, x_lev, x_lev_lat)
+
+    type(mesh_type), intent(in) :: mesh
+    real(r8), intent(in) :: x_lev(mesh%full_lon_lb:mesh%full_lon_ub, &
+                                  mesh%full_lat_lb:mesh%full_lat_ub, &
+                                  mesh%half_lev_lb:mesh%half_lev_ub)
+    real(r8), intent(inout) :: x_lev_lat(mesh%full_lon_lb:mesh%full_lon_ub, &
+                                         mesh%half_lat_lb:mesh%half_lat_ub, &
+                                         mesh%half_lev_lb:mesh%half_lev_ub)
+
+    integer i, j, k
 
     do k = mesh%half_lev_ibeg, mesh%half_lev_iend
       do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
 #ifdef V_POLE
-          x_lat(i,j,k) = (mesh%area_lat_north(j) * x(i,j,k) + mesh%area_lat_south(j) * x(i,j-1,k)) / mesh%area_lat(j)
+          x_lev_lat(i,j,k) = (mesh%area_lat_north(j) * x_lev(i,j  ,k) + &
+                              mesh%area_lat_south(j) * x_lev(i,j-1,k)   &
+                             ) / mesh%area_lat(j)
 #else
-          x_lat(i,j,k) = (mesh%area_lat_north(j) * x(i,j+1,k) + mesh%area_lat_south(j) * x(i,j,k)) / mesh%area_lat(j)
+          x_lev_lat(i,j,k) = (mesh%area_lat_north(j) * x_lev(i,j+1,k) + &
+                              mesh%area_lat_south(j) * x_lev(i,j  ,k)   &
+                             ) / mesh%area_lat(j)
 #endif
         end do
       end do
     end do
 
-  end subroutine interp_cell_to_edge_on_half_level
+  end subroutine interp_lev_edge_to_lev_lat_edge
 
-  subroutine interp_cell_to_vertex_on_full_level(mesh, x, x_vtx)
+  subroutine interp_cell_to_vtx(mesh, x, x_vtx)
 
     type(mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: x(mesh%full_lon_lb:mesh%full_lon_ub, &
@@ -243,9 +307,9 @@ contains
     end if
 #endif
 
-  end subroutine interp_cell_to_vertex_on_full_level
+  end subroutine interp_cell_to_vtx
 
-  subroutine interp_full_level_to_half_level_on_cell(mesh, x, x_lev)
+  subroutine interp_cell_to_lev_edge(mesh, x, x_lev)
 
     type(mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: x(mesh%full_lon_lb:mesh%full_lon_ub, &
@@ -280,7 +344,7 @@ contains
       end do
     end do
 
-  end subroutine interp_full_level_to_half_level_on_cell
+  end subroutine interp_cell_to_lev_edge
 
   subroutine interp_cell_to_isobaric_level(mesh, p, x, po, y, logp)
 
@@ -417,28 +481,6 @@ contains
 
   end subroutine interp_lat_edge_to_isobaric_level
 
-  subroutine interp_cell_to_lon_edge(mesh, x, x_lon)
-
-    type(mesh_type), intent(in) :: mesh
-    real(r8), intent(in) :: x(mesh%full_lon_lb:mesh%full_lon_ub, &
-                              mesh%full_lat_lb:mesh%full_lat_ub, &
-                              mesh%full_lev_lb:mesh%full_lev_ub)
-    real(r8), intent(inout) :: x_lon(mesh%half_lon_lb:mesh%half_lon_ub, &
-                                     mesh%full_lat_lb:mesh%full_lat_ub, &
-                                     mesh%full_lev_lb:mesh%full_lev_ub)
-
-    integer i, j, k
-
-    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          x_lon(i,j,k) = 0.5_r8 * (x(i,j,k) + x(i+1,j,k))
-        end do
-      end do
-    end do
-
-  end subroutine interp_cell_to_lon_edge
-
   subroutine interp_lon_edge_to_cell(mesh, x_lon, x)
 
     type(mesh_type), intent(in) :: mesh
@@ -454,38 +496,14 @@ contains
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          x(i,j,k) = 0.5_r8 * (x_lon(i-1,j,k) + x_lon(i,j,k))
+          x(i,j,k) = (mesh%area_lon_east(j) * x_lon(i-1,j,k) + &
+                      mesh%area_lon_west(j) * x_lon(i  ,j,k)   &
+                     ) / mesh%area_lon(j)
         end do
       end do
     end do
 
   end subroutine interp_lon_edge_to_cell
-
-  subroutine interp_cell_to_lat_edge(mesh, x, x_lat)
-
-    type(mesh_type), intent(in) :: mesh
-    real(r8), intent(in) :: x(mesh%full_lon_lb:mesh%full_lon_ub, &
-                              mesh%full_lat_lb:mesh%full_lat_ub, &
-                              mesh%full_lev_lb:mesh%full_lev_ub)
-    real(r8), intent(inout) :: x_lat(mesh%full_lon_lb:mesh%full_lon_ub, &
-                                     mesh%half_lat_lb:mesh%half_lat_ub, &
-                                     mesh%full_lev_lb:mesh%full_lev_ub)
-
-    integer i, j, k
-
-    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-#ifdef V_POLE
-          x_lat(i,j,k) = 0.5_r8 * (x(i,j,k) + x(i,j-1,k))
-#else
-          x_lat(i,j,k) = 0.5_r8 * (x(i,j,k) + x(i,j+1,k))
-#endif
-        end do
-      end do
-    end do
-
-  end subroutine interp_cell_to_lat_edge
 
   subroutine interp_lat_edge_to_cell(mesh, x_lat, x)
 
@@ -503,9 +521,13 @@ contains
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
 #ifdef V_POLE
-          x(i,j,k) = 0.5_r8 * (x_lat(i,j,k) + x_lat(i,j+1,k))
+          x(i,j,k) = (mesh%area_lat_north(j  ) * x_lat(i,j  ,k) + &
+                      mesh%area_lat_south(j+1) * x_lat(i,j+1,k)   &
+                     ) / (mesh%area_lat_north(j) + mesh%area_lat_south(j+1))
 #else
-          x(i,j,k) = 0.5_r8 * (x_lat(i,j,k) + x_lat(i,j-1,k))
+          x(i,j,k) = (mesh%area_lat_south(j  ) * x_lat(i,j  ,k) + &
+                      mesh%area_lat_north(j-1) * x_lat(i,j-1,k)   &
+                     ) / (mesh%area_lat_south(j) + mesh%area_lat_north(j-1))
 #endif
         end do
       end do

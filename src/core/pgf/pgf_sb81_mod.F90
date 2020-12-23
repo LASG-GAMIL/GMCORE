@@ -45,8 +45,10 @@ contains
       call fill_halo(block, state%t_lnpop, full_lon=.true., full_lat=.true., full_lev=.true.)
       call fill_halo(block, state%ak_t   , full_lon=.true., full_lat=.true., full_lev=.true.)
 
-      call interp_cell_to_edge_on_full_level(mesh, state%t_lnpop, state%t_lnpop_lon, state%t_lnpop_lat)
-      call interp_cell_to_edge_on_full_level(mesh, state%ak_t   , state%ak_t_lon   , state%ak_t_lat   )
+      call interp_cell_to_lon_edge(mesh, state%t_lnpop, state%t_lnpop_lon)
+      call interp_cell_to_lat_edge(mesh, state%t_lnpop, state%t_lnpop_lat)
+      call interp_cell_to_lon_edge(mesh, state%ak_t, state%ak_t_lon)
+      call interp_cell_to_lat_edge(mesh, state%ak_t, state%ak_t_lat)
     end if
 
   end subroutine pgf_sb81_prepare

@@ -242,7 +242,8 @@ contains
       call fill_halo(block, state%wedphdlev, full_lon=.true., full_lat=.true., full_lev=.false., west_halo=.false., south_halo=.false.)
 #endif
 
-      call interp_cell_to_edge_on_half_level(mesh, state%wedphdlev, state%wedphdlev_lon, state%wedphdlev_lat)
+      call interp_lev_edge_to_lev_lon_edge(mesh, state%wedphdlev, state%wedphdlev_lon)
+      call interp_lev_edge_to_lev_lat_edge(mesh, state%wedphdlev, state%wedphdlev_lat)
     end if
 
   end subroutine calc_wedphdlev
@@ -424,7 +425,8 @@ contains
 
     mesh => state%mesh
 
-    call interp_cell_to_edge_on_full_level(mesh, state%m, state%m_lon, state%m_lat)
+    call interp_cell_to_lon_edge(mesh, state%m, state%m_lon)
+    call interp_cell_to_lat_edge(mesh, state%m, state%m_lat)
     call fill_halo(block, state%m_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
     call fill_halo(block, state%m_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
 
@@ -440,15 +442,15 @@ contains
     if (baroclinic) then
       mesh => state%mesh
 
-      call interp_cell_to_edge_on_full_level(mesh, state%pt, state%pt_lon, state%pt_lat, reversed_area=.true., &
-                                             u=state%u, v=state%v)
+      call interp_cell_to_lon_edge(mesh, state%pt, state%pt_lon, reversed_area=.true., u=state%u)
+      call interp_cell_to_lat_edge(mesh, state%pt, state%pt_lat, reversed_area=.true., v=state%v)
       call fill_halo(block, state%pt_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
 #ifdef V_POLE
       call fill_halo(block, state%pt_lat, full_lon=.true., full_lat=.false., full_lev=.true., south_halo=.false.)
 #else
       call fill_halo(block, state%pt_lat, full_lon=.true., full_lat=.false., full_lev=.true., north_halo=.false.)
 #endif
-      call interp_full_level_to_half_level_on_cell(mesh, state%pt, state%pt_lev)
+      call interp_cell_to_lev_edge(mesh, state%pt, state%pt_lev)
     end if
 
   end subroutine calc_pt_lon_pt_lat_pt_lev
@@ -464,7 +466,7 @@ contains
 
     mesh => state%mesh
 
-    call interp_cell_to_vertex_on_full_level(mesh, state%m, state%m_vtx)
+    call interp_cell_to_vtx(mesh, state%m, state%m_vtx)
 
   end subroutine calc_m_vtx
 
