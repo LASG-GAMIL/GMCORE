@@ -301,6 +301,8 @@ contains
           end do
         end do
 
+        if (use_rayleigh_damp) call rayleigh_damp_append_tend(block, state, tend)
+
         tend%updated_du   = .true.
         tend%updated_dv   = .true.
         tend%updated_dphs = .true.

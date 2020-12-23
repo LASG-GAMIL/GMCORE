@@ -61,8 +61,9 @@ module namelist_mod
   logical :: use_div_damp = .false.
   integer :: div_damp_order = 2
   integer :: div_damp_j0 = 0
+  real(r8) :: div_damp_upper = 2.0_r8
+  real(r8) :: div_damp_polar = 0.5_r8
   real(r8) :: div_damp_exp = 0.01_r8
-  real(r8) :: div_damp_mul = 0.5_r8
   real(r8) :: div_damp_coef2 = 1.0_r8 / 128.0_r8
   real(r8) :: div_damp_coef4 = 0.01_r8
   logical :: use_vor_damp = .false.
@@ -71,6 +72,7 @@ module namelist_mod
   real(r8) :: vor_damp_decay = 0.2_r8
   real(r8) :: vor_damp_coef2 = 0.001_r8
   real(r8) :: vor_damp_coef4 = 0.01_r8
+  logical :: use_rayleigh_damp = .false.
 
   ! Nest settings
   character(30) :: nest_time_scheme   = 'pc2'
@@ -126,9 +128,10 @@ module namelist_mod
     polar_damp_cycles         , &
     use_div_damp              , &
     div_damp_order            , &
+    div_damp_polar            , &
+    div_damp_upper            , &
     div_damp_j0               , &
     div_damp_exp              , &
-    div_damp_mul              , &
     div_damp_coef2            , &
     div_damp_coef4            , &
     use_vor_damp              , &
@@ -136,6 +139,7 @@ module namelist_mod
     vor_damp_lat0             , &
     vor_damp_decay            , &
     vor_damp_coef2            , &
+    use_rayleigh_damp         , &
     nest_time_scheme          , &
     nest_max_dom              , &
     nest_parent_id            , &
@@ -164,7 +168,7 @@ contains
     write(*, *) 'num_lev             = ', to_string(num_lev)
     write(*, *) 'vert_coord_scheme   = ', trim(vert_coord_scheme)
     write(*, *) 'vert_coord_template = ', trim(vert_coord_template)
-    write(*, *) 'dt_in_seconds       = ', to_string(dt_in_seconds, 0)
+    write(*, *) 'dt_in_seconds       = ', to_string(int(dt_in_seconds))
     write(*, *) 'pgf_scheme          = ', trim(pgf_scheme)
     write(*, *) 'ke_scheme           = ', to_string(ke_scheme)
     write(*, *) 'pv_scheme           = ', to_string(pv_scheme)
@@ -178,6 +182,7 @@ contains
     write(*, *) 'vor_damp_decay      = ', to_string(vor_damp_decay, 3)
     write(*, *) 'vor_damp_coef2      = ', to_string(vor_damp_coef2, 3)
     write(*, *) 'use_polar_damp      = ', to_string(use_polar_damp)
+    write(*, *) 'use_rayleigh_damp   = ', to_string(use_rayleigh_damp)
     write(*, *) '========================================================='
 
   end subroutine print_namelist
