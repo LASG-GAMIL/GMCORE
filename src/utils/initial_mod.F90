@@ -48,7 +48,7 @@ contains
       call fiona_add_var('i0', 'u'    , long_name='u wind component'            , units='m s-1'  , dim_names=lon_dims)
       call fiona_add_var('i0', 'v'    , long_name='v wind component'            , units='m s-1'  , dim_names=lat_dims)
     end if
-    call fiona_add_var('i0', 'gzs'  , long_name='surface geopotential'        , units='m2 s-2' , dim_names=cell_dims_2d)
+    call fiona_add_var('i0', 'zs', long_name='surface height', units='m' , dim_names=cell_dims_2d)
 
     call fiona_start_output('i0', 0.0d0)
     call fiona_output('i0', 'lon' , global_mesh%full_lon_deg(1:global_mesh%num_full_lon))
@@ -74,7 +74,7 @@ contains
           call fiona_output('i0', 'pt' , state%pt (is:ie,js:je,ks:ke), start=start, count=count)
           call fiona_output('i0', 'phs', state%phs(is:ie,js:je      ), start=start, count=count)
         end if
-        call fiona_output('i0', 'gzs' , static%gzs(is:ie,js:je), start=start, count=count)
+        call fiona_output('i0', 'zs' , static%gzs(is:ie,js:je) / g, start=start, count=count)
 
         is = mesh%half_lon_ibeg; ie = mesh%half_lon_iend
         js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
@@ -124,7 +124,8 @@ contains
         start = [is,js,ks]
         count = [mesh%num_full_lon,mesh%num_full_lat,mesh%num_full_lev]
 
-        call fiona_input('i0', 'gzs', static%gzs(is:ie,js:je), start=start, count=count)
+        call fiona_input('i0', 'zs', static%gzs(is:ie,js:je), start=start, count=count)
+        static%gzs = static%gzs * g
         call fill_halo(block, static%gzs, full_lon=.true., full_lat=.true.)
         if (baroclinic) then
           call fiona_input('i0', 'phs', state%phs(is:ie,js:je      ), start=start, count=count)
@@ -132,7 +133,8 @@ contains
           call fiona_input('i0', 'pt' , state%pt (is:ie,js:je,ks:ke), start=start, count=count)
           call fill_halo(block, state%pt, full_lon=.true., full_lat=.true., full_lev=.true.)
         else
-          call fiona_input('i0', 'gz' , state%gz (is:ie,js:je,ks:ke), start=start, count=count)
+          call fiona_input('i0', 'z' , state%gz (is:ie,js:je,ks:ke), start=start, count=count)
+          state%gz = state%gz * g
           call fill_halo(block, state%gz, full_lon=.true., full_lat=.true., full_lev=.true.)
         end if
 
