@@ -162,7 +162,7 @@ contains
         case ('era5')
           allocate(tmp(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,num_era5_lev))
           do k = 1, num_era5_lev
-            call latlon_interp_bilinear(era5_lon, era5_lat, era5_u(:,:,k), mesh, tmp(:,:,k))
+            call latlon_interp_bilinear(era5_lon, era5_lat, era5_u(:,:,k), mesh, tmp(:,:,k), zero_pole=.true.)
           end do
           allocate(ua(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_ibeg:mesh%full_lev_iend))
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -195,7 +195,7 @@ contains
         case ('era5')
           allocate(tmp(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,num_era5_lev))
           do k = 1, num_era5_lev
-            call latlon_interp_bilinear(era5_lon, era5_lat, era5_v(:,:,k), mesh, tmp(:,:,k))
+            call latlon_interp_bilinear(era5_lon, era5_lat, era5_v(:,:,k), mesh, tmp(:,:,k), zero_pole=.true.)
           end do
           allocate(va(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_ibeg:mesh%full_lev_iend))
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend

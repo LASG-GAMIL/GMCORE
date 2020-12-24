@@ -133,7 +133,7 @@ contains
     proc%decomp_type = decomp_1d_lat
     proc%decomp_loc  = decomp_normal_region
 
-    if (num_proc_lon(1) /= 0 .and. num_proc_lat(1) /= 0) then
+    if (num_proc_lon(1) * num_proc_lat(1) == proc%np) then
       ! Check if process topology in namelist is compatible with MPI runtime.
       np = 0
       do i = 1, nest_max_dom
@@ -156,6 +156,7 @@ contains
       end do
     else
       proc%cart_dims = [1, proc%np]
+      proc%idom = 1
     end if
     periods = [.true.,.false.]
     ! Set MPI process topology.
