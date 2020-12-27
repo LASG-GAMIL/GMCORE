@@ -46,8 +46,8 @@ module namelist_mod
   character(30) :: split_scheme = ''
   character(30) :: time_scheme = 'pc2'
 
-  real(r8) :: coarse_polar_lats_exp = 0
-  real(r8) :: coarse_polar_lats_mul = 2
+  real(r8) :: coarse_polar_lat0 = 0
+  real(r8) :: coarse_polar_decay = 0.2
 
   ! Reduce settings
   integer :: reduce_factors(100) = 0
@@ -118,8 +118,8 @@ module namelist_mod
     split_scheme              , &
     time_scheme               , &
     fast_cycles               , &
-    coarse_polar_lats_exp     , &
-    coarse_polar_lats_mul     , &
+    coarse_polar_lat0         , &
+    coarse_polar_decay        , &
     reduce_factors            , &
     reduce_pv_directly        , &
     do_reduce_ke              , &

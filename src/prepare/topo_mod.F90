@@ -13,6 +13,8 @@ module topo_mod
 
   public topo_read
   public topo_regrid
+  public topo_zero
+  public topo_smooth
   public topo_final
 
   integer num_topo_lon
@@ -227,5 +229,96 @@ contains
     if (allocated(topo_gzs)) deallocate(topo_gzs)
 
   end subroutine topo_final
+
+  subroutine topo_zero(block, min_lon, max_lon, min_lat, max_lat)
+
+    type(block_type), intent(inout) :: block
+    real(r8), intent(in) :: min_lon
+    real(r8), intent(in) :: max_lon
+    real(r8), intent(in) :: min_lat
+    real(r8), intent(in) :: max_lat
+
+    integer ibeg, iend, jbeg, jend
+
+    associate (mesh => block%mesh, gzs => block%static%gzs)
+      do ibeg = mesh%full_lon_ibeg, mesh%full_lon_iend
+        if (block%mesh%full_lon_deg(ibeg) >= min_lon) exit
+      end do
+      do iend = mesh%full_lon_ibeg, mesh%full_lon_iend
+        if (block%mesh%full_lon_deg(iend) >= max_lon) exit
+      end do
+      do jbeg = mesh%full_lat_ibeg, mesh%full_lat_iend
+        if (block%mesh%full_lat_deg(jbeg) >= min_lat) exit
+      end do
+      do jend = mesh%full_lat_ibeg, mesh%full_lat_iend
+        if (block%mesh%full_lat_deg(jend) >= max_lat) exit
+      end do
+      if (ibeg > mesh%full_lon_iend .or. iend > mesh%full_lon_iend .or. &
+          jbeg > mesh%full_lat_iend .or. jend > mesh%full_lat_iend) then
+        call log_error('Invalid region parameters for topo_zero!', __FILE__, __LINE__)
+      end if
+      call log_notice('Zero topography in (' // to_string(ibeg) // '-' // to_string(iend) // ',' // &
+                                                to_string(jbeg) // '-' // to_string(jend) // ').')
+      gzs(ibeg:iend,jbeg:jend) = 0.0_r8
+    end associate
+
+  end subroutine topo_zero
+
+  subroutine topo_smooth(block, min_lon, max_lon, min_lat, max_lat, steps)
+
+    type(block_type), intent(inout) :: block
+    real(r8), intent(in) :: min_lon
+    real(r8), intent(in) :: max_lon
+    real(r8), intent(in) :: min_lat
+    real(r8), intent(in) :: max_lat
+    integer, intent(in) :: steps
+
+    real(r8), allocatable :: smooth_kernel(:,:)
+    real(r8), allocatable :: smoothed_gzs(:,:)
+    integer ibeg, iend, jbeg, jend, i, j, ig, jg, step
+
+    associate (mesh => block%mesh, gzs => block%static%gzs)
+      do ibeg = mesh%full_lon_ibeg, mesh%full_lon_iend
+        if (block%mesh%full_lon_deg(ibeg) >= min_lon) exit
+      end do
+      do iend = mesh%full_lon_ibeg, mesh%full_lon_iend
+        if (block%mesh%full_lon_deg(iend) >= max_lon) exit
+      end do
+      do jbeg = mesh%full_lat_ibeg, mesh%full_lat_iend
+        if (block%mesh%full_lat_deg(jbeg) >= min_lat) exit
+      end do
+      do jend = mesh%full_lat_ibeg, mesh%full_lat_iend
+        if (block%mesh%full_lat_deg(jend) >= max_lat) exit
+      end do
+      if (ibeg > mesh%full_lon_iend .or. iend > mesh%full_lon_iend .or. &
+          jbeg > mesh%full_lat_iend .or. jend > mesh%full_lat_iend) then
+        call log_error('Invalid region parameters for topo_smooth!', __FILE__, __LINE__)
+      end if
+      call log_notice('Smooth topography in (' // to_string(ibeg) // '-' // to_string(iend) // ',' // &
+                                                  to_string(jbeg) // '-' // to_string(jend) // ').')
+      allocate(smooth_kernel(-5:5,-5:5))
+      do j = -5, 5
+        do i = -5, 5
+          smooth_kernel(i,j) = exp(-0.5_r8 * (i**2 + j**2))
+        end do
+      end do
+      smooth_kernel = smooth_kernel / sum(smooth_kernel)
+      allocate(smoothed_gzs(ibeg:iend,jbeg:jend))
+      do step = 1, steps
+        do j = jbeg, jend
+          do i = ibeg, iend
+            if (gzs(i,j) == 0) then
+              smoothed_gzs(i,j) = gzs(i,j)
+            else
+              smoothed_gzs(i,j) = sum(smooth_kernel * gzs(i-5:i+5,j-5:j+5))
+            end if
+          end do
+        end do
+        gzs(ibeg:iend,jbeg:jend) = smoothed_gzs(ibeg:iend,jbeg:jend)
+      end do
+      deallocate(smooth_kernel, smoothed_gzs)
+    end associate
+
+  end subroutine topo_smooth
 
 end module topo_mod

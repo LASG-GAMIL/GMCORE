@@ -69,6 +69,9 @@ contains
       case ('ecmwf_l50')
         call hybrid_coord_ecmwf_l50(p0, hyai, hybi)
       case default
+        if (baroclinic .and. template == 'N/A' .and. is_root_proc()) then
+          call log_error('Hybrid vertical coordinate template "' // trim(template) // '" is invalid!')
+        end if
       end select
     end if
 

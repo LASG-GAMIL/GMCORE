@@ -72,8 +72,8 @@ contains
 
         select case (bkg_type)
         case ('era5')
-          call latlon_interp_bilinear(era5_lon, era5_lat, era5_mslp, mesh, p0)
-          call latlon_interp_bilinear(era5_lon, era5_lat, era5_t(:,:,num_era5_lev), mesh, t0)
+          call latlon_interp_bilinear_cell(era5_lon, era5_lat, era5_mslp, mesh, p0)
+          call latlon_interp_bilinear_cell(era5_lon, era5_lat, era5_t(:,:,num_era5_lev), mesh, t0)
           t0_p = era5_lev(num_era5_lev)
           z0 = 0.0_r8
         end select
@@ -131,7 +131,7 @@ contains
         case ('era5')
           allocate(tmp(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,num_era5_lev))
           do k = 1, num_era5_lev
-            call latlon_interp_bilinear(era5_lon, era5_lat, era5_t(:,:,k), mesh, tmp(:,:,k))
+            call latlon_interp_bilinear_cell(era5_lon, era5_lat, era5_t(:,:,k), mesh, tmp(:,:,k))
           end do
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -148,7 +148,7 @@ contains
 
   subroutine bkg_regrid_u()
 
-    real(r8), allocatable :: tmp(:,:,:), ua(:,:,:)
+    real(r8), allocatable :: tmp(:,:,:)
     integer iblk, i, j, k
 
     call log_notice('Regrid u wind component.')
@@ -160,19 +160,16 @@ contains
                  u     => proc%blocks(iblk)%state(1)%u)
         select case (bkg_type)
         case ('era5')
-          allocate(tmp(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,num_era5_lev))
+          allocate(tmp(mesh%half_lon_lb:mesh%half_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,num_era5_lev))
           do k = 1, num_era5_lev
-            call latlon_interp_bilinear(era5_lon, era5_lat, era5_u(:,:,k), mesh, tmp(:,:,k), zero_pole=.true.)
+            call latlon_interp_bilinear_lon_edge(era5_lon, era5_lat, era5_u(:,:,k), mesh, tmp(:,:,k), zero_pole=.true.)
           end do
-          allocate(ua(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_ibeg:mesh%full_lev_iend))
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              call vert_interp_linear(era5_lev, tmp(i,j,:), ph(i,j,:), ua(i,j,:), allow_extrap=.true.)
+            do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+              call vert_interp_linear(era5_lev, tmp(i,j,:), ph(i,j,:), u(i,j,:), allow_extrap=.true.)
             end do
           end do
-          call fill_halo(block, ua, full_lon=.true., full_lat=.true., full_lev=.true.)
-          call interp_cell_to_lon_edge(mesh, ua, u)
-          deallocate(tmp, ua)
+          deallocate(tmp)
         end select
       end associate
     end do
@@ -181,7 +178,7 @@ contains
 
   subroutine bkg_regrid_v()
 
-    real(r8), allocatable :: tmp(:,:,:), va(:,:,:)
+    real(r8), allocatable :: tmp(:,:,:)
     integer iblk, i, j, k
 
     call log_notice('Regrid v wind component.')
@@ -193,19 +190,16 @@ contains
                  v     => proc%blocks(iblk)%state(1)%v)
         select case (bkg_type)
         case ('era5')
-          allocate(tmp(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,num_era5_lev))
+          allocate(tmp(mesh%full_lon_lb:mesh%full_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,num_era5_lev))
           do k = 1, num_era5_lev
-            call latlon_interp_bilinear(era5_lon, era5_lat, era5_v(:,:,k), mesh, tmp(:,:,k), zero_pole=.true.)
+            call latlon_interp_bilinear_lat_edge(era5_lon, era5_lat, era5_v(:,:,k), mesh, tmp(:,:,k), zero_pole=.true.)
           end do
-          allocate(va(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_ibeg:mesh%full_lev_iend))
-          do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+          do j = mesh%half_lat_ibeg, mesh%half_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              call vert_interp_linear(era5_lev, tmp(i,j,:), ph(i,j,:), va(i,j,:), allow_extrap=.true.)
+              call vert_interp_linear(era5_lev, tmp(i,j,:), ph(i,j,:), v(i,j,:), allow_extrap=.true.)
             end do
           end do
-          call fill_halo(block, va, full_lon=.true., full_lat=.true., full_lev=.true.)
-          call interp_cell_to_lat_edge(mesh, va, v)
-          deallocate(tmp, va)
+          deallocate(tmp)
         end select
       end associate
     end do

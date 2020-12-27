@@ -66,7 +66,7 @@ contains
       call calc_mf_lon_t_mf_lat_t   (blocks(iblk), blocks(iblk)%state(itime))
       call calc_pv_vtx              (blocks(iblk), blocks(iblk)%state(itime))
       call calc_pv_edge             (blocks(iblk), blocks(iblk)%state(itime), dt)
-      call calc_ke_cell             (blocks(iblk), blocks(iblk)%state(itime))
+      call calc_ke                  (blocks(iblk), blocks(iblk)%state(itime))
       call calc_gz_lev_gz           (blocks(iblk), blocks(iblk)%state(itime))
       call calc_pt_lon_pt_lat_pt_lev(blocks(iblk), blocks(iblk)%state(itime))
       call calc_div                 (blocks(iblk), blocks(iblk)%state(itime))
@@ -95,7 +95,7 @@ contains
       call calc_m_lon_m_lat         (block, state)
       call calc_mf_lon_n_mf_lat_n   (block, state)
       call calc_mf_lon_t_mf_lat_t   (block, state)
-      call calc_ke_cell             (block, state)
+      call calc_ke                  (block, state)
       call calc_gz_lev_gz           (block, state)
       call calc_pt_lon_pt_lat_pt_lev(block, state)
       if (pass == all_pass .or. pass == slow_pass) then
