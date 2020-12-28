@@ -58,6 +58,10 @@ module mesh_mod
     real(r8) end_lat
     real(r8) dlon
     real(r8), allocatable, dimension(:  ) :: dlat
+    real(r8), allocatable, dimension(:  ) :: full_dlev
+    real(r8), allocatable, dimension(:  ) :: half_dlev
+    real(r8), allocatable, dimension(:  ) :: half_dlev_upper
+    real(r8), allocatable, dimension(:  ) :: half_dlev_lower
     real(r8) total_area
     real(r8), allocatable, dimension(:  ) :: full_lon
     real(r8), allocatable, dimension(:  ) :: half_lon
@@ -705,6 +709,11 @@ contains
 
     call this%common_init()
 
+    this%full_dlev = parent%full_dlev
+    this%half_dlev = parent%half_dlev
+    this%half_dlev_upper = parent%half_dlev_upper
+    this%half_dlev_lower = parent%half_dlev_lower
+
     this%dlon = parent%dlon
     do i = this%full_lon_lb, this%full_lon_ub
       this%full_lon(i) = parent%full_lon(i)
@@ -793,6 +802,10 @@ contains
 #else
     allocate(this%dlat               (this%half_lat_lb:this%half_lat_ub)); this%dlat                = 0.0_r8
 #endif
+    allocate(this%full_dlev          (this%full_lev_lb:this%full_lev_ub)); this%full_dlev           = 0.0_r8
+    allocate(this%half_dlev          (this%half_lev_lb:this%half_lev_ub)); this%half_dlev           = 0.0_r8
+    allocate(this%half_dlev_upper    (this%half_lev_lb:this%half_lev_ub)); this%half_dlev_upper     = 0.0_r8
+    allocate(this%half_dlev_lower    (this%half_lev_lb:this%half_lev_ub)); this%half_dlev_lower     = 0.0_r8
     allocate(this%full_lon           (this%full_lon_lb:this%full_lon_ub)); this%full_lon            = inf
     allocate(this%half_lon           (this%half_lon_lb:this%half_lon_ub)); this%half_lon            = inf
     allocate(this%full_lat           (this%full_lat_lb:this%full_lat_ub)); this%full_lat            = inf
@@ -930,6 +943,11 @@ contains
 
     type(mesh_type), intent(inout) :: this
 
+		if (allocated(this%dlat            )) deallocate(this%dlat            )
+    if (allocated(this%full_dlev       )) deallocate(this%full_dlev       )
+    if (allocated(this%half_dlev       )) deallocate(this%half_dlev       )
+    if (allocated(this%half_dlev_upper )) deallocate(this%half_dlev_upper )
+    if (allocated(this%half_dlev_lower )) deallocate(this%half_dlev_lower )
     if (allocated(this%full_lon        )) deallocate(this%full_lon        )
     if (allocated(this%full_lat        )) deallocate(this%full_lat        )
     if (allocated(this%full_lev        )) deallocate(this%full_lev        )

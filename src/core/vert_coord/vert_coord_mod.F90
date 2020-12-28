@@ -5,6 +5,7 @@ module vert_coord_mod
   use namelist_mod
   use sigma_coord_mod
   use hybrid_coord_mod
+  use mesh_mod
   use process_mod
 
   implicit none
@@ -50,6 +51,8 @@ contains
     character(*), intent(in), optional :: scheme
     character(*), intent(in), optional :: template
 
+    integer k
+
     if (present(scheme)) then
       if (vert_coord_scheme /= scheme .and. is_root_proc()) then
         call log_notice('Change vert_coord_scheme to ' // trim(scheme) // '.')
@@ -77,6 +80,20 @@ contains
       vert_coord_calc_ph_lev => hybrid_coord_calc_ph_lev
       vert_coord_calc_dphdt_lev => hybrid_coord_calc_dphdt_lev
     end select
+
+    ! Set vertical level intervals.
+    do k = global_mesh%full_lev_ibeg, global_mesh%full_lev_iend
+      global_mesh%full_dlev(k) = global_mesh%half_lev(k+1) - global_mesh%half_lev(k)
+    end do
+    do k = global_mesh%half_lev_ibeg + 1, global_mesh%half_lev_iend - 1
+      global_mesh%half_dlev(k) = global_mesh%full_lev(k) - global_mesh%full_lev(k-1)
+      global_mesh%half_dlev_upper(k) = global_mesh%half_lev(k) - global_mesh%full_lev(k-1)
+      global_mesh%half_dlev_lower(k) = global_mesh%full_lev(k) - global_mesh%half_lev(k)
+    end do
+    global_mesh%half_dlev(1) = global_mesh%full_lev(1) - global_mesh%half_lev(1)
+    global_mesh%half_dlev_lower(1) = global_mesh%half_dlev(1)
+    global_mesh%half_dlev(global_mesh%half_lev_iend) = global_mesh%half_lev(global_mesh%half_lev_iend) - global_mesh%full_lev(global_mesh%full_lev_iend)
+    global_mesh%half_dlev_upper(global_mesh%half_lev_iend) = global_mesh%half_dlev(global_mesh%half_lev_iend)
 
   end subroutine vert_coord_init
 

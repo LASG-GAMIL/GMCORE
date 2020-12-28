@@ -351,8 +351,8 @@ contains
 
 
     do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
-      deta1 = mesh%half_lev(k) - mesh%half_lev(k-1)
-      deta2 = mesh%half_lev(k+1) - mesh%half_lev(k)
+      deta1 = mesh%full_dlev(k-1)
+      deta2 = mesh%full_dlev(k  )
       deta3 = deta1 + deta2
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend

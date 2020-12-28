@@ -124,60 +124,47 @@ contains
     if (baroclinic) then
       call fiona_add_dim('h1', 'lev'  , size=global_mesh%num_full_lev, add_var=.true., decomp=.false.)
       call fiona_add_dim('h1', 'ilev' , size=global_mesh%num_half_lev, add_var=.true., decomp=.false.)
-      call fiona_add_var('h1', 'dudt'     , long_name='u wind component tendency'                     , units='', dim_names=lon_dims)
-      call fiona_add_var('h1', 'dvdt'     , long_name='v wind component tendency'                     , units='', dim_names=lat_dims)
-      call fiona_add_var('h1', 'dphsdt'   , long_name='surface hydrostatic pressure tendency'         , units='', dim_names=cell_dims_2d)
-      call fiona_add_var('h1', 'dptdt'    , long_name='potential temperature tendency'                , units='', dim_names=cell_dims)
-      call fiona_add_var('h1', 'pt_lev'   , long_name='potential temperature on half levels'          , units='', dim_names=cell_lev_dims)
-      call fiona_add_var('h1', 'ph_lev'   , long_name='hydrostatic pressure on half levels'           , units='', dim_names=cell_lev_dims)
-      call fiona_add_var('h1', 'dptfdlon' , long_name='zonal potential temperature flux gradient'     , units='', dim_names=cell_dims)
-      call fiona_add_var('h1', 'dptfdlat' , long_name='meridional potential temperature flux gradient', units='', dim_names=cell_dims)
-      call fiona_add_var('h1', 'dptfdlev' , long_name='vertical potential temperature flux gradient'  , units='', dim_names=cell_dims)
-      call fiona_add_var('h1', 'wedphdlev', long_name='vertical coordinate velocity'                  , units='', dim_names=lev_dims)
-      call fiona_add_var('h1', 'pgf_lon'  , long_name='zonal pressure gradient force'                 , units='', dim_names=lon_dims)
-      call fiona_add_var('h1', 'wedudlev' , long_name='vertical advection of u'                       , units='', dim_names=lon_dims)
-      call fiona_add_var('h1', 'pgf_lat'  , long_name='meridional pressure gradient force'            , units='', dim_names=lat_dims)
-      call fiona_add_var('h1', 'wedvdlev' , long_name='vertical advection of v'                       , units='', dim_names=lat_dims)
-      call fiona_add_var('h1', 'qhv'      , long_name='nonliear zonal Coriolis force'                 , units='', dim_names=lon_dims)
-      call fiona_add_var('h1', 'qhu'      , long_name='nonliear meridional Coriolis force'            , units='', dim_names=lat_dims)
-      call fiona_add_var('h1', 'dkedlon'  , long_name='zonal kinetic energy gradient force'           , units='', dim_names=lon_dims)
-      call fiona_add_var('h1', 'dkedlat'  , long_name='meridional kinetic energy gradient force'      , units='', dim_names=lat_dims)
-      call fiona_add_var('h1', 'dmfdlon'  , long_name='zonal mass flux divergence'                    , units='', dim_names=cell_dims)
-      call fiona_add_var('h1', 'dmfdlat'  , long_name='meridional mass flux divergence'               , units='', dim_names=cell_dims)
-      call fiona_add_var('h1', 'mf_lon_n' , long_name='normal mass flux on U grid'                    , units='', dim_names=lon_dims)
-      call fiona_add_var('h1', 'mf_lon_t' , long_name='tangent mass flux on U grid'                   , units='', dim_names=lon_dims)
-      call fiona_add_var('h1', 'mf_lat_n' , long_name='normal mass flux on V grid'                    , units='', dim_names=lat_dims)
-      call fiona_add_var('h1', 'mf_lat_t' , long_name='tangent mass flux on V grid'                   , units='', dim_names=lat_dims)
-      call fiona_add_var('h1', 'm'        , long_name='dph on full levels'                            , units='', dim_names=cell_dims)
-      call fiona_add_var('h1', 'm_lon'    , long_name='dph on lon edges on full levels'               , units='', dim_names=lon_dims)
-      call fiona_add_var('h1', 'm_lat'    , long_name='dph on lat edges on full levels'               , units='', dim_names=lat_dims)
-      call fiona_add_var('h1', 'm_vtx'    , long_name='dph on vertices on full levels'                , units='', dim_names=vtx_dims)
-      call fiona_add_var('h1', 'pv_lon'   , long_name='pv on U grid'                                  , units='', dim_names=lon_dims)
-      call fiona_add_var('h1', 'pv_lat'   , long_name='pv on V grid'                                  , units='', dim_names=lat_dims)
-      call fiona_add_var('h1', 'ke'       , long_name='kinetic energy on cell grid'                   , units='', dim_names=cell_dims)
-      call fiona_add_var('h1', 'wp'       , long_name='omega'                                         , units='', dim_names=cell_dims)
+      call fiona_add_var('h1', 'dudt'         , long_name='u wind component tendency'                     , units='', dim_names=lon_dims)
+      call fiona_add_var('h1', 'dvdt'         , long_name='v wind component tendency'                     , units='', dim_names=lat_dims)
+      call fiona_add_var('h1', 'dphsdt'       , long_name='surface hydrostatic pressure tendency'         , units='', dim_names=cell_dims_2d)
+      call fiona_add_var('h1', 'dptdt'        , long_name='potential temperature tendency'                , units='', dim_names=cell_dims)
+      call fiona_add_var('h1', 'dptfdlon'     , long_name='zonal potential temperature flux gradient'     , units='', dim_names=cell_dims)
+      call fiona_add_var('h1', 'dptfdlat'     , long_name='meridional potential temperature flux gradient', units='', dim_names=cell_dims)
+      call fiona_add_var('h1', 'dptfdlev'     , long_name='vertical potential temperature flux gradient'  , units='', dim_names=cell_dims)
+      call fiona_add_var('h1', 'wedphdlev_lev', long_name='vertical coordinate velocity'                  , units='', dim_names=lev_dims)
+      call fiona_add_var('h1', 'pgf_lon'      , long_name='zonal pressure gradient force'                 , units='', dim_names=lon_dims)
+      call fiona_add_var('h1', 'wedudlev'     , long_name='vertical advection of u'                       , units='', dim_names=lon_dims)
+      call fiona_add_var('h1', 'pgf_lat'      , long_name='meridional pressure gradient force'            , units='', dim_names=lat_dims)
+      call fiona_add_var('h1', 'wedvdlev'     , long_name='vertical advection of v'                       , units='', dim_names=lat_dims)
+      call fiona_add_var('h1', 'qhv'          , long_name='nonliear zonal Coriolis force'                 , units='', dim_names=lon_dims)
+      call fiona_add_var('h1', 'qhu'          , long_name='nonliear meridional Coriolis force'            , units='', dim_names=lat_dims)
+      call fiona_add_var('h1', 'dkedlon'      , long_name='zonal kinetic energy gradient force'           , units='', dim_names=lon_dims)
+      call fiona_add_var('h1', 'dkedlat'      , long_name='meridional kinetic energy gradient force'      , units='', dim_names=lat_dims)
+      call fiona_add_var('h1', 'dmfdlon'      , long_name='zonal mass flux divergence'                    , units='', dim_names=cell_dims)
+      call fiona_add_var('h1', 'dmfdlat'      , long_name='meridional mass flux divergence'               , units='', dim_names=cell_dims)
+      call fiona_add_var('h1', 'mf_lon_n'     , long_name='normal mass flux on U grid'                    , units='', dim_names=lon_dims)
+      call fiona_add_var('h1', 'mf_lon_t'     , long_name='tangent mass flux on U grid'                   , units='', dim_names=lon_dims)
+      call fiona_add_var('h1', 'mf_lat_n'     , long_name='normal mass flux on V grid'                    , units='', dim_names=lat_dims)
+      call fiona_add_var('h1', 'mf_lat_t'     , long_name='tangent mass flux on V grid'                   , units='', dim_names=lat_dims)
+      call fiona_add_var('h1', 'm'            , long_name='dph on full levels'                            , units='', dim_names=cell_dims)
+      call fiona_add_var('h1', 'ke'           , long_name='kinetic energy on cell grid'                   , units='', dim_names=cell_dims)
     else
-      call fiona_add_var('h1', 'dudt'     , long_name='u wind component tendency'                     , units='', dim_names=lon_dims_2d)
-      call fiona_add_var('h1', 'dvdt'     , long_name='v wind component tendency'                     , units='', dim_names=lat_dims_2d)
-      call fiona_add_var('h1', 'dgzdt'    , long_name='geopotential tendency'                         , units='', dim_names=cell_dims_2d)
-      call fiona_add_var('h1', 'qhv'      , long_name='nonliear zonal Coriolis force'                 , units='', dim_names=lon_dims_2d)
-      call fiona_add_var('h1', 'qhu'      , long_name='nonliear meridional Coriolis force'            , units='', dim_names=lat_dims_2d)
-      call fiona_add_var('h1', 'pgf_lon'  , long_name='zonal geopotential energy gradient force'      , units='', dim_names=lon_dims_2d)
-      call fiona_add_var('h1', 'dkedlon'  , long_name='zonal kinetic energy gradient force'           , units='', dim_names=lon_dims_2d)
-      call fiona_add_var('h1', 'pgf_lat'  , long_name='meridional geopotential energy gradient force' , units='', dim_names=lat_dims_2d)
-      call fiona_add_var('h1', 'dkedlat'  , long_name='meridional kinetic energy gradient force'      , units='', dim_names=lat_dims_2d)
-      call fiona_add_var('h1', 'dmfdlon'  , long_name='zonal mass flux divergence'                    , units='', dim_names=cell_dims_2d)
-      call fiona_add_var('h1', 'dmfdlat'  , long_name='meridional mass flux divergence'               , units='', dim_names=cell_dims_2d)
-      call fiona_add_var('h1', 'mf_lon_n' , long_name='normal mass flux on U grid'                    , units='', dim_names=lon_dims_2d)
-      call fiona_add_var('h1', 'mf_lon_t' , long_name='tangent mass flux on U grid'                   , units='', dim_names=lon_dims_2d)
-      call fiona_add_var('h1', 'mf_lat_n' , long_name='normal mass flux on V grid'                    , units='', dim_names=lat_dims_2d)
-      call fiona_add_var('h1', 'mf_lat_t' , long_name='tangent mass flux on V grid'                   , units='', dim_names=lat_dims_2d)
-      call fiona_add_var('h1', 'm_lon'    , long_name='mass on lon edges'                             , units='', dim_names=lon_dims_2d)
-      call fiona_add_var('h1', 'm_lat'    , long_name='mass on lat edges'                             , units='', dim_names=lat_dims_2d)
-      call fiona_add_var('h1', 'm_vtx'    , long_name='mass on vertices'                              , units='', dim_names=vtx_dims_2d)
-      call fiona_add_var('h1', 'pv_lon'   , long_name='pv on U grid'                                  , units='', dim_names=lon_dims_2d)
-      call fiona_add_var('h1', 'pv_lat'   , long_name='pv on V grid'                                  , units='', dim_names=lat_dims_2d)
-      call fiona_add_var('h1', 'ke'       , long_name='kinetic energy on cell grid'                   , units='', dim_names=cell_dims_2d)
+      call fiona_add_var('h1', 'dudt'         , long_name='u wind component tendency'                     , units='', dim_names=lon_dims_2d)
+      call fiona_add_var('h1', 'dvdt'         , long_name='v wind component tendency'                     , units='', dim_names=lat_dims_2d)
+      call fiona_add_var('h1', 'dgzdt'        , long_name='geopotential tendency'                         , units='', dim_names=cell_dims_2d)
+      call fiona_add_var('h1', 'qhv'          , long_name='nonliear zonal Coriolis force'                 , units='', dim_names=lon_dims_2d)
+      call fiona_add_var('h1', 'qhu'          , long_name='nonliear meridional Coriolis force'            , units='', dim_names=lat_dims_2d)
+      call fiona_add_var('h1', 'pgf_lon'      , long_name='zonal geopotential energy gradient force'      , units='', dim_names=lon_dims_2d)
+      call fiona_add_var('h1', 'dkedlon'      , long_name='zonal kinetic energy gradient force'           , units='', dim_names=lon_dims_2d)
+      call fiona_add_var('h1', 'pgf_lat'      , long_name='meridional geopotential energy gradient force' , units='', dim_names=lat_dims_2d)
+      call fiona_add_var('h1', 'dkedlat'      , long_name='meridional kinetic energy gradient force'      , units='', dim_names=lat_dims_2d)
+      call fiona_add_var('h1', 'dmfdlon'      , long_name='zonal mass flux divergence'                    , units='', dim_names=cell_dims_2d)
+      call fiona_add_var('h1', 'dmfdlat'      , long_name='meridional mass flux divergence'               , units='', dim_names=cell_dims_2d)
+      call fiona_add_var('h1', 'mf_lon_n'     , long_name='normal mass flux on U grid'                    , units='', dim_names=lon_dims_2d)
+      call fiona_add_var('h1', 'mf_lon_t'     , long_name='tangent mass flux on U grid'                   , units='', dim_names=lon_dims_2d)
+      call fiona_add_var('h1', 'mf_lat_n'     , long_name='normal mass flux on V grid'                    , units='', dim_names=lat_dims_2d)
+      call fiona_add_var('h1', 'mf_lat_t'     , long_name='tangent mass flux on V grid'                   , units='', dim_names=lat_dims_2d)
+      call fiona_add_var('h1', 'ke'           , long_name='kinetic energy on cell grid'                   , units='', dim_names=cell_dims_2d)
     end if
 
     call time_add_alert('history_write', seconds=seconds)
@@ -317,7 +304,6 @@ contains
       call fiona_output('h1', 'dptfdlon', tend%dptfdlon(is:ie,js:je,ks:ke), start=start, count=count)
       call fiona_output('h1', 'dptfdlat', tend%dptfdlat(is:ie,js:je,ks:ke), start=start, count=count)
       call fiona_output('h1', 'dptfdlev', tend%dptfdlev(is:ie,js:je,ks:ke), start=start, count=count)
-      call fiona_output('h1', 'wp'      , state%wp     (is:ie,js:je,ks:ke), start=start, count=count)
     else
       call fiona_output('h1', 'dgzdt'   , tend%dgz     (is:ie,js:je,ks:ke), start=start, count=count)
     end if
@@ -332,10 +318,8 @@ contains
     call fiona_output('h1', 'pgf_lon' , tend%pgf_lon  (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dkedlon' , tend%dkedlon  (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dudt   ' , tend%du       (is:ie,js:je,ks:ke), start=start, count=count)
-    call fiona_output('h1', 'm_lon'   , state%m_lon   (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'mf_lon_n', state%mf_lon_n(is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'mf_lon_t', state%mf_lon_t(is:ie,js:je,ks:ke), start=start, count=count)
-    call fiona_output('h1', 'pv_lon'  , state%pv_lon  (is:ie,js:je,ks:ke), start=start, count=count)
 
     if (baroclinic) then
       call fiona_output('h1', 'wedudlev', tend%wedudlev(is:ie,js:je,ks:ke), start=start, count=count)
@@ -351,22 +335,12 @@ contains
     call fiona_output('h1', 'pgf_lat' , tend%pgf_lat  (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dkedlat' , tend%dkedlat  (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dvdt'    , tend%dv       (is:ie,js:je,ks:ke), start=start, count=count)
-    call fiona_output('h1', 'm_lat'   , state%m_lat   (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'mf_lat_n', state%mf_lat_n(is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'mf_lat_t', state%mf_lat_t(is:ie,js:je,ks:ke), start=start, count=count)
-    call fiona_output('h1', 'pv_lat'  , state%pv_lat  (is:ie,js:je,ks:ke), start=start, count=count)
 
     if (baroclinic) then
       call fiona_output('h1', 'wedvdlev', tend%wedvdlev(is:ie,js:je,ks:ke), start=start, count=count)
     end if
-
-    is = mesh%half_lon_ibeg; ie = mesh%half_lon_iend
-    js = mesh%half_lat_ibeg; je = mesh%half_lat_iend
-    ks = mesh%full_lev_ibeg; ke = mesh%full_lev_iend
-    start = [is,js,ks]
-    count = [mesh%num_half_lon,mesh%num_half_lat,mesh%num_full_lev]
-
-    call fiona_output('h1', 'm_vtx', state%m_vtx(is:ie,js:je,ks:ke), start=start, count=count)
 
     is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
     js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
@@ -375,9 +349,7 @@ contains
     count = [mesh%num_full_lon,mesh%num_full_lat,mesh%num_half_lev]
 
     if (baroclinic) then
-      call fiona_output('h1', 'wedphdlev', state%wedphdlev(is:ie,js:je,ks:ke), start=start, count=count)
-      call fiona_output('h1', 'pt_lev'   , state%pt_lev   (is:ie,js:je,ks:ke), start=start, count=count)
-      call fiona_output('h1', 'ph_lev'   , state%ph_lev   (is:ie,js:je,ks:ke), start=start, count=count)
+      call fiona_output('h1', 'wedphdlev_lev', state%wedphdlev_lev(is:ie,js:je,ks:ke), start=start, count=count)
     end if
 
     call fiona_end_output('h1')

@@ -145,7 +145,7 @@ contains
             ip_ke_h = ip_ke_h + tend%dkedlon (i,j,k) * state%mf_lon_n(i,j,k) * mesh%area_lon(j) * 2
             ip_ke_v = ip_ke_v + ( &
               tend%wedudlev(i,j,k) * state%mf_lon_n(i,j,k) + &
-              0.5_r8 * state%u(i,j,k)**2 * (state%wedphdlev_lon(i,j,k+1) - state%wedphdlev_lon(i,j,k)) &
+              0.5_r8 * state%u(i,j,k)**2 * (state%wedphdlev_lev_lon(i,j,k+1) - state%wedphdlev_lev_lon(i,j,k)) &
             ) * mesh%area_lon(j)
           end do
         end do
@@ -158,7 +158,7 @@ contains
             ip_ke_h = ip_ke_h + tend%dkedlat (i,j,k) * state%mf_lat_n(i,j,k) * mesh%area_lat(j) * 2
             ip_ke_v = ip_ke_v + ( &
               tend%wedvdlev(i,j,k) * state%mf_lat_n(i,j,k) + &
-              0.5_r8 * state%v(i,j,k)**2 * (state%wedphdlev_lat(i,j,k+1) - state%wedphdlev_lat(i,j,k)) &
+              0.5_r8 * state%v(i,j,k)**2 * (state%wedphdlev_lev_lat(i,j,k+1) - state%wedphdlev_lev_lat(i,j,k)) &
             ) * mesh%area_lat(j)
           end do
         end do
