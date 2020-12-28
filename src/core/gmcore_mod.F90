@@ -469,6 +469,9 @@ contains
       if (use_polar_damp) then
         call polar_damp_run(blocks(iblk), dt, blocks(iblk)%state(new))
       end if
+      if (use_smag_damp) then
+        call smag_damp_run(blocks(iblk), dt, blocks(iblk)%state(new))
+      end if
       call test_forcing_run(blocks(iblk), dt, blocks(iblk)%state(new))
       if (use_div_damp .or. use_vor_damp .or. use_polar_damp) then
         call operators_prepare(blocks(iblk), blocks(iblk)%state(new), dt, all_pass)

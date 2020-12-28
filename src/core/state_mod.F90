@@ -74,6 +74,13 @@ module state_mod
     real(r8), allocatable, dimension(:,:,:) :: div           ! Divergence (s-1)
     real(r8), allocatable, dimension(:,:,:) :: div2          ! Laplacian of divergence (s-1)
     real(r8), allocatable, dimension(:,:,:) :: vor           ! Vorticity (s-1)
+    ! Smagorinsky damping variables
+    real(r8), allocatable, dimension(:,:,:) :: tension_h     ! tension strain
+    real(r8), allocatable, dimension(:,:,:) :: shear_h       ! shear strain on vertex
+    real(r8), allocatable, dimension(:,:,:) :: kmh           ! nonlinear diffusion coef
+    real(r8), allocatable, dimension(:,:,:) :: kmh_vtx       ! nonlinear diffusion coef on vertex
+    real(r8), allocatable, dimension(:,:,:) :: kmh_lon       ! nonlinear diffusion coef on zonal edge
+    real(r8), allocatable, dimension(:,:,:) :: kmh_lat       ! nonlinear diffusion coef on meridional edge
     real(r8) tm
     real(r8) te
     real(r8) tpe
@@ -157,6 +164,15 @@ contains
       call allocate_array(mesh, this%div2         , full_lon=.true., full_lat=.true., full_lev=.true.)
     end if
 
+    if (use_smag_damp) then
+      call allocate_array(mesh, this%tension_h    , full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%shear_h      , half_lon=.true., half_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%kmh          , full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%kmh_vtx      , half_lon=.true., half_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%kmh_lon      , half_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%kmh_lat      , full_lon=.true., half_lat=.true., full_lev=.true.)
+    end if
+
     allocate(this%async(11))
 
   end subroutine state_init
@@ -219,6 +235,13 @@ contains
     if (allocated(this%div          )) deallocate(this%div          )
     if (allocated(this%div2         )) deallocate(this%div2         )
     if (allocated(this%vor          )) deallocate(this%vor          )
+
+    if (allocated(this%tension_h    )) deallocate(this%tension_h    )
+    if (allocated(this%shear_h      )) deallocate(this%shear_h      )
+    if (allocated(this%kmh          )) deallocate(this%kmh          )
+    if (allocated(this%kmh_vtx      )) deallocate(this%kmh_vtx      )
+    if (allocated(this%kmh_lon      )) deallocate(this%kmh_lon      )
+    if (allocated(this%kmh_lat      )) deallocate(this%kmh_lat      )
 
     if (allocated(this%async        )) deallocate(this%async        )
 

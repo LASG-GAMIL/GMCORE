@@ -73,6 +73,8 @@ module namelist_mod
   real(r8) :: vor_damp_coef2 = 0.001_r8
   real(r8) :: vor_damp_coef4 = 0.01_r8
   logical :: use_rayleigh_damp = .false.
+  logical :: use_smag_damp = .false.
+  real(r8) :: smag_damp_coef = 0.2
 
   ! Nest settings
   character(30) :: nest_time_scheme   = 'pc2'
@@ -140,6 +142,8 @@ module namelist_mod
     vor_damp_decay            , &
     vor_damp_coef2            , &
     use_rayleigh_damp         , &
+    use_smag_damp             , &
+    smag_damp_coef            , &
     nest_time_scheme          , &
     nest_max_dom              , &
     nest_parent_id            , &
@@ -179,10 +183,12 @@ contains
     write(*, *) 'div_damp_coef2      = ', to_string(div_damp_coef2, 3)
     write(*, *) 'use_vor_damp        = ', to_string(use_vor_damp)
     write(*, *) 'vor_damp_lat0       = ', to_string(vor_damp_lat0, 1)
-    write(*, *) 'vor_damp_decay      = ', to_string(vor_damp_decay, 3)
+    write(*, *) 'vor_damp_decay      = ', to_string(vor_damp_decay, 1)
     write(*, *) 'vor_damp_coef2      = ', to_string(vor_damp_coef2, 3)
     write(*, *) 'use_polar_damp      = ', to_string(use_polar_damp)
     write(*, *) 'use_rayleigh_damp   = ', to_string(use_rayleigh_damp)
+    write(*, *) 'use_smag_damp       = ', to_string(use_smag_damp)
+    write(*, *) 'smag_damp_coef      = ', to_string(smag_damp_coef, 1)
     write(*, *) '========================================================='
 
   end subroutine print_namelist
