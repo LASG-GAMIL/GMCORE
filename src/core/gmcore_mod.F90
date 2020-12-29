@@ -206,6 +206,7 @@ contains
             te = te + static%gzs(i,j) * state%phs(i,j) * mesh%area_cell(j)
           end do
         end do
+      else if (baroclinic .and. nonhydrostatic) then
       else if (.not. baroclinic) then
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -273,7 +274,7 @@ contains
       if (baroclinic .and. hydrostatic) then
         call calc_dmfdlon_dmfdlat  (block, state, tend, dt)
         call calc_dphs             (block, state, tend, dt)
-        call calc_wedphdlev        (block, state, tend, dt)
+        call calc_wedphdlev_lev    (block, state, tend, dt)
         call calc_wedudlev_wedvdlev(block, state, tend, dt)
         call calc_dptfdlon_dptfdlat(block, state, tend, dt)
         call calc_dptfdlev         (block, state, tend, dt)
@@ -307,6 +308,7 @@ contains
         tend%updated_dv   = .true.
         tend%updated_dphs = .true.
         tend%updated_dpt  = .true.
+      else if (baroclinic .and. nonhydrostatic) then
       else
         call calc_dmfdlon_dmfdlat(block, state, tend, dt)
         call calc_qhu_qhv        (block, state, tend, dt)
@@ -384,7 +386,7 @@ contains
       if (baroclinic .and. hydrostatic) then
         call calc_dmfdlon_dmfdlat  (block, state, tend, dt)
         call calc_dphs             (block, state, tend, dt)
-        call calc_wedphdlev        (block, state, tend, dt)
+        call calc_wedphdlev_lev    (block, state, tend, dt)
         call calc_wedudlev_wedvdlev(block, state, tend, dt)
         call calc_dptfdlev         (block, state, tend, dt)
         call calc_dptfdlon_dptfdlat(block, state, tend, dt)

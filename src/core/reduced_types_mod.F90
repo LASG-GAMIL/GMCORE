@@ -97,7 +97,7 @@ module reduced_types_mod
     real(r8), allocatable, dimension(:,:,:,:) :: dpv_lon_n
     real(r8), allocatable, dimension(:,:,:,:) :: dpv_lat_n
     real(r8), allocatable, dimension(:,:,:,:) :: ke
-    ! Baroclinic:
+    ! Baroclinic variables
     real(r8), allocatable, dimension(:,:,:,:) :: gz_lev
     real(r8), allocatable, dimension(:,:,:,:) :: pt
     real(r8), allocatable, dimension(:,:,:,:) :: pt_lon
@@ -108,6 +108,12 @@ module reduced_types_mod
     real(r8), allocatable, dimension(:,:,:,:) :: t
     real(r8), allocatable, dimension(:,:,:,:) :: t_lnpop_lon
     real(r8), allocatable, dimension(:,:,:,:) :: ak_t_lon
+    ! Nonhydrostatic variables
+    real(r8), allocatable, dimension(:,:,:,:) :: m_lev
+    real(r8), allocatable, dimension(:,:,:,:) :: mf_lev_lon_n
+    real(r8), allocatable, dimension(:,:,:,:) :: gz_lev_lon
+    real(r8), allocatable, dimension(:,:,:,:) :: w_lev
+    real(r8), allocatable, dimension(:,:,:,:) :: w_lev_lon
     type(async_type), allocatable :: async(:,:,:)
   contains
     final :: reduced_state_final
@@ -122,6 +128,9 @@ module reduced_types_mod
     real(r8), allocatable, dimension(:,:) :: pgf_lon
     real(r8), allocatable, dimension(:,:) :: dkedlon
     real(r8), allocatable, dimension(:,:) :: dptfdlon
+    ! Nonhydrostatic variables
+    real(r8), allocatable, dimension(:,:) :: adv_gz_lon
+    real(r8), allocatable, dimension(:,:) :: adv_w_lon
   contains
     final :: reduced_tend_final
   end type reduced_tend_type
@@ -176,6 +185,13 @@ contains
     if (allocated(this%t          )) deallocate(this%t          )
     if (allocated(this%t_lnpop_lon)) deallocate(this%t_lnpop_lon)
     if (allocated(this%ak_t_lon   )) deallocate(this%ak_t_lon   )
+
+    if (allocated(this%m_lev       )) deallocate(this%m_lev       )
+    if (allocated(this%mf_lev_lon_n)) deallocate(this%mf_lev_lon_n)
+    if (allocated(this%gz_lev_lon  )) deallocate(this%gz_lev_lon  )
+    if (allocated(this%w_lev       )) deallocate(this%w_lev       )
+    if (allocated(this%w_lev_lon   )) deallocate(this%w_lev_lon   )
+
     if (allocated(this%async      )) deallocate(this%async      )
 
   end subroutine reduced_state_final
@@ -192,6 +208,9 @@ contains
     if (allocated(this%pgf_lon )) deallocate(this%pgf_lon )
     if (allocated(this%dkedlon )) deallocate(this%dkedlon )
     if (allocated(this%dptfdlon)) deallocate(this%dptfdlon)
+
+    if (allocated(this%adv_gz_lon)) deallocate(this%adv_gz_lon)
+    if (allocated(this%adv_w_lon )) deallocate(this%adv_w_lon )
 
   end subroutine reduced_tend_final
 

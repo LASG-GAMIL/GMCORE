@@ -40,6 +40,9 @@ module interp_mod
   public interp_cell_to_vtx
   public interp_lon_edge_to_cell
   public interp_lat_edge_to_cell
+  public interp_lon_edge_to_lev_lon_edge
+  public interp_lat_edge_to_lev_lat_edge
+  public interp_lev_edge_to_cell
   public interp_lev_edge_to_lev_lon_edge
   public interp_lev_edge_to_lev_lat_edge
   public interp_cell_to_isobaric_level
@@ -205,6 +208,41 @@ contains
 
   end subroutine interp_cell_to_lat_edge
 
+  subroutine interp_lev_edge_to_cell(mesh, x_lev, x)
+
+    type(mesh_type), intent(in) :: mesh
+    real(r8), intent(in) :: x_lev(mesh%full_lon_lb:mesh%full_lon_ub, &
+                                  mesh%full_lat_lb:mesh%full_lat_ub, &
+                                  mesh%half_lev_lb:mesh%half_lev_ub)
+    real(r8), intent(inout) :: x(mesh%full_lon_lb:mesh%full_lon_ub, &
+                                 mesh%full_lat_lb:mesh%full_lat_ub, &
+                                 mesh%full_lev_lb:mesh%full_lev_ub)
+
+    integer i, j, k
+    real(r8) a, b
+
+    ! =======
+    !
+    ! ---o--- k
+    !
+    ! ===?=== k
+    !
+    ! ---o--- k+1
+    !
+    ! =======
+    ! NOTE: a and b should be 1/2.
+    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      a = mesh%half_dlev_upper(k+1) / mesh%full_dlev(k)
+      b = mesh%half_dlev_lower(k  ) / mesh%full_dlev(k)
+      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          x(i,j,k) = a * x_lev(i,j,k) + b * x_lev(i,j,k+1)
+        end do
+      end do
+    end do
+
+  end subroutine interp_lev_edge_to_cell
+
   subroutine interp_lev_edge_to_lev_lon_edge(mesh, x_lev, x_lev_lon)
 
     type(mesh_type), intent(in) :: mesh
@@ -326,7 +364,7 @@ contains
 
   end subroutine interp_cell_to_vtx
 
-  subroutine interp_cell_to_lev_edge(mesh, x, x_lev)
+  subroutine interp_cell_to_lev_edge(mesh, x, x_lev, handle_top_bottom)
 
     type(mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: x(mesh%full_lon_lb:mesh%full_lon_ub, &
@@ -335,31 +373,66 @@ contains
     real(r8), intent(inout) :: x_lev(mesh%full_lon_lb:mesh%full_lon_ub, &
                                      mesh%full_lat_lb:mesh%full_lat_ub, &
                                      mesh%half_lev_lb:mesh%half_lev_ub)
+    logical, intent(in), optional :: handle_top_bottom
 
     integer i, j, k
-    real(r8) deta1, deta2, deta3
+    real(r8) x1, x2, a, b
 
-    ! ------ k-1   |                 |
-    !              |                 |
-    ! ====== k-1   |- deta1, x(k-1)  |
-    !              |                 |
-    ! ------ k     |  |              |- deta3
-    !                 |              |
-    ! ====== k        |- deta2, x(k) |
-    !                 |              |
-    ! ------ k+1      |              |
-
-
+    ! -------
+    !
+    ! ===o=== k-1
+    !
+    ! ---?--- k
+    !
+    ! ===o=== k
+    !
+    ! -------
     do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
-      deta1 = mesh%full_dlev(k-1)
-      deta2 = mesh%full_dlev(k  )
-      deta3 = deta1 + deta2
+      a = mesh%full_dlev(k  ) / (mesh%full_dlev(k-1) + mesh%full_dlev(k))
+      b = mesh%full_dlev(k-1) / (mesh%full_dlev(k-1) + mesh%full_dlev(k))
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          x_lev(i,j,k) = (x(i,j,k) * deta1 + x(i,j,k-1) * deta2) / deta3
+          x_lev(i,j,k) = a * x(i,j,k-1) + b * x(i,j,k)
         end do
       end do
     end do
+
+    if (merge(handle_top_bottom, .false., present(handle_top_bottom))) then
+      k = mesh%half_lev_ibeg
+      ! ---?--- 1
+      !
+      ! ===o=== 1   x1
+      !
+      ! -------
+      !
+      ! ===o=== 2   x2
+      x1 = mesh%full_lev(k  ) - mesh%half_lev(k)
+      x2 = mesh%full_lev(k+1) - mesh%half_lev(k)
+      a =  x2 / (x2 - x1)
+      b = -x1 / (x2 - x1)
+      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          x_lev(i,j,k) = a * x(i,j,k) + b * x(i,j,k+1)
+        end do
+      end do
+      k = mesh%half_lev_iend
+      ! ===o=== NLEV - 1  x2
+      !
+      ! -------
+      !
+      ! ===o=== NLEV      x1
+      !
+      ! ---?--- NLEV + 1
+      x1 = mesh%half_lev(k) - mesh%full_lev(k-1)
+      x2 = mesh%half_lev(k) - mesh%full_lev(k-2)
+      a =  x2 / (x2 - x1)
+      b = -x1 / (x2 - x1)
+      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          x_lev(i,j,k) = a * x(i,j,k-1) + b * x(i,j,k-2)
+        end do
+      end do
+    end if
 
   end subroutine interp_cell_to_lev_edge
 
@@ -551,5 +624,149 @@ contains
     end do
 
   end subroutine interp_lat_edge_to_cell
+
+  subroutine interp_lon_edge_to_lev_lon_edge(mesh, x_lon, x_lev_lon, handle_top_bottom)
+
+    type(mesh_type), intent(in) :: mesh
+    real(r8), intent(in) :: x_lon(mesh%half_lon_lb:mesh%half_lon_ub, &
+                                  mesh%full_lat_lb:mesh%full_lat_ub, &
+                                  mesh%full_lev_lb:mesh%full_lev_ub)
+    real(r8), intent(out) :: x_lev_lon(mesh%half_lon_lb:mesh%half_lon_ub, &
+                                       mesh%full_lat_lb:mesh%full_lat_ub, &
+                                       mesh%half_lev_lb:mesh%half_lev_ub)
+    logical, intent(in), optional :: handle_top_bottom
+
+    integer i, j, k
+    real(r8) x1, x2, a, b
+
+    ! -------
+    !
+    ! ===o=== k-1
+    !
+    ! ---?--- k
+    !
+    ! ===o=== k
+    !
+    ! ----o--
+    do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
+      a = mesh%full_dlev(k-1) / (mesh%full_dlev(k-1) + mesh%full_dlev(k))
+      b = mesh%full_dlev(k  ) / (mesh%full_dlev(k-1) + mesh%full_dlev(k))
+      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+          x_lev_lon(i,j,k) = a * x_lon(i,j,k) + b * x_lon(i,j,k-1)
+        end do
+      end do
+    end do
+
+    if (merge(handle_top_bottom, .false., present(handle_top_bottom))) then
+      k = mesh%half_lev_ibeg
+      ! ---?--- 1
+      !
+      ! ===o=== 1   x1
+      !
+      ! -------
+      !
+      ! ===o=== 2   x2
+      x1 = mesh%full_lev(k  ) - mesh%half_lev(k)
+      x2 = mesh%full_lev(k+1) - mesh%half_lev(k)
+      a =  x2 / (x2 - x1)
+      b = -x1 / (x2 - x1)
+      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          x_lev_lon(i,j,k) = a * x_lon(i,j,k) + b * x_lon(i,j,k+1)
+        end do
+      end do
+      k = mesh%half_lev_iend
+      ! ===o=== NLEV - 1  x2
+      !
+      ! -------
+      !
+      ! ===o=== NLEV      x1
+      !
+      ! ---?--- NLEV + 1
+      x1 = mesh%half_lev(k) - mesh%full_lev(k-1)
+      x2 = mesh%half_lev(k) - mesh%full_lev(k-2)
+      a =  x2 / (x2 - x1)
+      b = -x1 / (x2 - x1)
+      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          x_lev_lon(i,j,k) = a * x_lon(i,j,k-1) + b * x_lon(i,j,k-2)
+        end do
+      end do
+    end if
+
+  end subroutine interp_lon_edge_to_lev_lon_edge
+
+  subroutine interp_lat_edge_to_lev_lat_edge(mesh, x_lat, x_lev_lat, handle_top_bottom)
+
+    type(mesh_type), intent(in) :: mesh
+    real(r8), intent(in) :: x_lat(mesh%full_lon_lb:mesh%full_lon_ub, &
+                                  mesh%half_lat_lb:mesh%half_lat_ub, &
+                                  mesh%full_lev_lb:mesh%full_lev_ub)
+    real(r8), intent(out) :: x_lev_lat(mesh%full_lon_lb:mesh%full_lon_ub, &
+                                       mesh%half_lat_lb:mesh%half_lat_ub, &
+                                       mesh%half_lev_lb:mesh%half_lev_ub)
+    logical, intent(in), optional :: handle_top_bottom
+
+    integer i, j, k
+    real(r8) x1, x2, a, b
+
+    ! -------
+    !
+    ! ===o=== k-1
+    !
+    ! ---?--- k
+    !
+    ! ===o=== k
+    !
+    ! -------
+    do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
+      a = mesh%full_dlev(k-1) / (mesh%full_dlev(k-1) + mesh%full_dlev(k))
+      b = mesh%full_dlev(k  ) / (mesh%full_dlev(k-1) + mesh%full_dlev(k))
+      do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          x_lev_lat(i,j,k) = a * x_lat(i,j,k) + b * x_lat(i,j,k-1)
+        end do
+      end do
+    end do
+
+    if (merge(handle_top_bottom, .false., present(handle_top_bottom))) then
+      k = mesh%half_lev_ibeg
+      ! ---?--- 1
+      !
+      ! ===o=== 1   x1
+      !
+      ! -------
+      !
+      ! ===o=== 2   x2
+      x1 = mesh%full_lev(k  ) - mesh%half_lev(k)
+      x2 = mesh%full_lev(k+1) - mesh%half_lev(k)
+      a =  x2 / (x2 - x1)
+      b = -x1 / (x2 - x1)
+      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          x_lev_lat(i,j,k) = a * x_lat(i,j,k) + b * x_lat(i,j,k+1)
+        end do
+      end do
+      k = mesh%half_lev_iend
+      ! ===o=== NLEV - 1  x2
+      !
+      ! -------
+      !
+      ! ===o=== NLEV      x1
+      !
+      ! ---?--- NLEV + 1
+      x1 = mesh%half_lev(k) - mesh%full_lev(k-1)
+      x2 = mesh%half_lev(k) - mesh%full_lev(k-2)
+      a =  x2 / (x2 - x1)
+      b = -x1 / (x2 - x1)
+      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          x_lev_lat(i,j,k) = a * x_lat(i,j,k-1) + b * x_lat(i,j,k-2)
+        end do
+      end do
+    end if
+
+  end subroutine interp_lat_edge_to_lev_lat_edge
 
 end module interp_mod

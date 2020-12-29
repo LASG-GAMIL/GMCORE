@@ -44,6 +44,13 @@ module tend_mod
     real(r8), allocatable, dimension(:,:,:) :: pgf_lat
     real(r8), allocatable, dimension(:,:,:) :: wedudlev
     real(r8), allocatable, dimension(:,:,:) :: wedvdlev
+    ! Nonhydrostatic tendencies
+    real(r8), allocatable, dimension(:,:,:) :: adv_gz_lon
+    real(r8), allocatable, dimension(:,:,:) :: adv_gz_lat
+    real(r8), allocatable, dimension(:,:,:) :: adv_gz_lev
+    real(r8), allocatable, dimension(:,:,:) :: adv_w_lon
+    real(r8), allocatable, dimension(:,:,:) :: adv_w_lat
+    real(r8), allocatable, dimension(:,:,:) :: adv_w_lev
   contains
     procedure :: init => tend_init
     procedure :: reset_flags => tend_reset_flags
@@ -97,6 +104,13 @@ contains
     call allocate_array(mesh, this%wedudlev, half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%wedvdlev, full_lon=.true., half_lat=.true., full_lev=.true.)
 
+    call allocate_array(mesh, this%adv_gz_lon, full_lon=.true., full_lat=.true., half_lev=.true.)
+    call allocate_array(mesh, this%adv_gz_lat, full_lon=.true., full_lat=.true., half_lev=.true.)
+    call allocate_array(mesh, this%adv_gz_lev, full_lon=.true., full_lat=.true., half_lev=.true.)
+    call allocate_array(mesh, this%adv_w_lon , full_lon=.true., full_lat=.true., half_lev=.true.)
+    call allocate_array(mesh, this%adv_w_lat , full_lon=.true., full_lat=.true., half_lev=.true.)
+    call allocate_array(mesh, this%adv_w_lev , full_lon=.true., full_lat=.true., half_lev=.true.)
+
   end subroutine tend_init
 
   subroutine tend_reset_flags(this)
@@ -137,6 +151,10 @@ contains
     if (allocated(this%pgf_lat )) deallocate(this%pgf_lat )
     if (allocated(this%wedudlev)) deallocate(this%wedudlev)
     if (allocated(this%wedvdlev)) deallocate(this%wedvdlev)
+
+    if (allocated(this%adv_gz_lon)) deallocate(this%adv_gz_lon)
+    if (allocated(this%adv_gz_lat)) deallocate(this%adv_gz_lat)
+    if (allocated(this%adv_gz_lev)) deallocate(this%adv_gz_lev)
 
   end subroutine tend_clear
 

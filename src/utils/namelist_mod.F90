@@ -23,6 +23,7 @@ module namelist_mod
 
   logical :: baroclinic = .false.
   logical :: hydrostatic = .true.
+  logical :: nonhydrostatic = .false.
 
   integer :: num_proc_lon(20) = 0
   integer :: num_proc_lat(20) = 0
@@ -161,6 +162,8 @@ contains
     open(10, file=file_path, status='old')
     read(10, nml=gmcore_control)
     close(10)
+
+    nonhydrostatic = .not. hydrostatic
 
   end subroutine parse_namelist
 

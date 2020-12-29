@@ -10,6 +10,7 @@ module operators_mod
   use pgf_mod
   use pv_mod
   use ke_mod
+  use nh_mod
   use pgf_mod
   use interp_mod
   use reduce_mod
@@ -24,7 +25,7 @@ module operators_mod
   public calc_gz_lev_gz
   public calc_t
   public calc_wp
-  public calc_wedphdlev
+  public calc_wedphdlev_lev
   public calc_div
   public calc_vor_vtx
   public calc_m
@@ -71,6 +72,13 @@ contains
       call calc_pt_lon_pt_lat_pt_lev(blocks(iblk), blocks(iblk)%state(itime))
       call calc_div                 (blocks(iblk), blocks(iblk)%state(itime))
 
+      if (baroclinic .and. nonhydrostatic) then
+        call calc_m_lev                    (blocks(iblk), blocks(iblk)%state(itime))
+        call calc_mf_lev_lon_n_mf_lev_lat_n(blocks(iblk), blocks(iblk)%state(itime))
+        call calc_gz_lev_lon_gz_lev_lat    (blocks(iblk), blocks(iblk)%state(itime))
+        call calc_w_w_lev_lon_w_lev_lat    (blocks(iblk), blocks(iblk)%state(itime))
+      end if
+
       call reduce_run(blocks(iblk), blocks(iblk)%state(itime), dt, all_pass)
     end do
 
@@ -103,6 +111,13 @@ contains
         call calc_pv_vtx            (block, state)
         call calc_pv_edge           (block, state, dt)
         call calc_div               (block, state)
+      end if
+
+      if (baroclinic .and. nonhydrostatic) then
+        call calc_m_lev                    (block, state)
+        call calc_mf_lev_lon_n_mf_lev_lat_n(block, state)
+        call calc_gz_lev_lon_gz_lev_lat    (block, state)
+        call calc_w_w_lev_lon_w_lev_lat    (block, state)
       end if
 
       call reduce_run(block, state, dt, pass)
@@ -208,7 +223,7 @@ contains
 
   end subroutine calc_wp
 
-  subroutine calc_wedphdlev(block, state, tend, dt)
+  subroutine calc_wedphdlev_lev(block, state, tend, dt)
 
     type(block_type), intent(in) :: block
     type(state_type), intent(inout) :: state
@@ -246,7 +261,7 @@ contains
       call interp_lev_edge_to_lev_lat_edge(mesh, state%wedphdlev_lev, state%wedphdlev_lev_lat)
     end if
 
-  end subroutine calc_wedphdlev
+  end subroutine calc_wedphdlev_lev
 
   subroutine calc_div(block, state)
 
