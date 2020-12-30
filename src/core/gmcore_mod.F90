@@ -94,6 +94,12 @@ contains
 
   subroutine gmcore_run()
 
+    integer iblk
+
+    do iblk = 1, size(proc%blocks)
+      call proc%blocks(iblk)%static%prepare()
+    end do
+
     call operators_prepare(proc%blocks, old, dt_in_seconds)
     call diagnose(proc%blocks, old)
     call output(old)

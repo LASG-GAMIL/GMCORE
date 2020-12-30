@@ -7,6 +7,7 @@ module math_mod
   
   public cross_product
   public math_inv_matrix
+  public tridiag_thomas
 
 contains
 
@@ -104,5 +105,41 @@ contains
     end do
 
   end subroutine gaussian_elimination
+
+  subroutine tridiag_thomas(a, b, c, d, x)
+
+    real(r8), intent(inout) :: a(:)
+    real(r8), intent(inout) :: b(:)
+    real(r8), intent(inout) :: c(:)
+    real(r8), intent(inout) :: d(:)
+    real(r8), intent(out) :: x(:)
+
+    real(r8) denominator
+    integer n, i
+    !  _                                                _   _      _     _      _
+    ! |  b(1)  c(1)                                      | | x(1  ) |   | d(1  ) |
+    ! |  a(2)  b(2)  c(2)                                | | x(2  ) |   | d(2  ) |
+    ! |        a(3)  b(3)  c(3)                          | | x(3  ) |   | d(3  ) |
+    ! |           ...  ...  ...                          | | ...    | = | ...    |
+    ! |                ...  ...  ...                     | | ...    |   | ...    |
+    ! |                          a(n-1)  b(n-1)  c(n-1)  | | x(n-1) |   | d(n-1) |
+    ! |_                                 a(n  )  b(n  ) _| |_x(n  )_|   |_d(n  )_|
+
+    n = size(x)
+
+    c(1) = c(1) / b(1)
+    d(1) = d(1) / b(1)
+    do i = 2, n
+      denominator = b(i) - a(i) * c(i-1)
+      c(i) = c(i) / denominator
+      d(i) = (d(i) - a(i) * d(i - 1)) / denominator
+    end do
+
+    x(n) = d(n)
+    do i = n - 1, 1, -1
+      x(i) = d(i) - c(i) * x(i+1)
+    end do
+
+  end subroutine tridiag_thomas
 
 end module math_mod

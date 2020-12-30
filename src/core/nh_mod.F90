@@ -6,7 +6,7 @@ module nh_mod
   use process_mod
   use interp_mod
   use reduce_mod
-  use tridiag_mod
+  use math_mod
 
   implicit none
 
@@ -367,6 +367,25 @@ contains
 
   end subroutine calc_p
 
+  subroutine apply_bc_w(block, state)
+
+    type(block_type), intent(in) :: block
+    type(state_type), intent(inout) :: state
+
+    integer i, j, k
+
+    associate (mesh => block%mesh, dzsdlon => block%static%dzsdlon, dzsdlat => block%static%dzsdlat)
+      k = mesh%half_lev_iend
+      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          state%w_lev(i,j,k) = state%mf_lev_lon_n(i,j,k) / state%m_lev(i,j,k) * dzsdlon(i,j) + &
+                               state%mf_lev_lat_n(i,j,k) / state%m_lev(i,j,k) * dzsdlat(i,j)
+        end do
+      end do
+    end associate
+
+  end subroutine apply_bc_w
+
   subroutine implicit_w_solver(block, tend, old_state, new_state, dt)
 
     type(block_type), intent(in) :: block
@@ -378,10 +397,15 @@ contains
     real(r8), parameter :: implicit_w_beta = 0.75_r8
     real(r8) w1 (block%mesh%half_lev_lb:block%mesh%half_lev_ub)
     real(r8) gz1(block%mesh%half_lev_lb:block%mesh%half_lev_ub)
-    real(r8) dp1(block%mesh%half_lev_lb:block%mesh%half_lev_ub)
-    real(r8) p1, p2
-
+    real(r8) dgz(block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+    real(r8) dp1, gdtbeta, gdt1mbeta, gdtbeta2gam
+    real(r8) a(block%mesh%half_lev_lb:block%mesh%half_lev_ub)
+    real(r8) b(block%mesh%half_lev_lb:block%mesh%half_lev_ub)
+    real(r8) c(block%mesh%half_lev_lb:block%mesh%half_lev_ub)
+    real(r8) d(block%mesh%half_lev_lb:block%mesh%half_lev_ub)
     integer i, j, k
+
+    call apply_bc_w(block, new_state)
 
     !
     ! ϕ¹ = ϕⁿ - Δt adv_ϕⁿ + g Δt (1 - β) wⁿ⁺¹
@@ -395,33 +419,67 @@ contains
     !         -----------------------------------------------------
     !                                dp1
     !
-    associate (mesh => block%mesh, beta => implicit_w_beta)
+    associate (mesh       => block%mesh,       &
+               beta       => implicit_w_beta,  &
+               old_p      => old_state%p,      &
+               old_p_lev  => old_state%p_lev,  &
+               old_w_lev  => old_state%w_lev,  &
+               new_w_lev  => new_state%w_lev,  &
+               old_m_lev  => old_state%m_lev,  &
+               new_m_lev  => new_state%m_lev,  &
+               old_gz_lev => old_state%gz_lev, &
+               new_gz_lev => new_state%gz_lev, &
+               old_m      => old_state%m,      &
+               new_m      => new_state%m,      &
+               old_pt     => old_state%pt,     &
+               new_pt     => new_state%pt)
+      gdtbeta     = g * dt * beta
+      gdt1mbeta   = g * dt * (1 - beta)
+      gdtbeta2gam = (g * dt * beta)**2 * cp_o_cv
       ! FIXME: Two Poles may skip the duplicate calculation?
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          gz1 = old_state%gz_lev(i,j,:) - dt * tend%adv_gz(i,j,:) + g * dt * (1 - beta) * old_state%w_lev(i,j,:)
-          w1  = old_state%w_lev (i,j,:) - dt * tend%adv_w (i,j,:) - g * dt
+          do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+            dgz(k) = old_gz_lev(i,j,k+1) - old_gz_lev(i,j,k)
+          end do
+          gz1 = old_gz_lev(i,j,:) - dt * tend%adv_gz(i,j,:) + gdt1mbeta * old_w_lev(i,j,:)
+          w1  = old_w_lev (i,j,:) - dt * tend%adv_w (i,j,:) - g * dt
           do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
-            w1(k) = w1(k) + g * dt * (1 - beta) * (old_state%p(i,j,k) - old_state%p(i,j,k-1)) / old_state%m_lev(i,j,k)
+            w1(k) = w1(k) + gdt1mbeta * (old_p(i,j,k) - old_p(i,j,k-1)) / old_m_lev(i,j,k)
           end do
           ! Top boundary
           k = mesh%half_lev_ibeg
-          w1(k) = w1(k) + g * dt * (1 - beta) * (old_state%p(i,j,k) - old_state%p_lev(i,j,k)) / old_state%m_lev(i,j,k)
+          w1(k) = w1(k) + gdt1mbeta * (old_p(i,j,k) - old_p_lev(i,j,k)) / old_m_lev(i,j,k)
           ! Bottom boundary
           k = mesh%half_lev_iend
-          w1(k) = w1(k) + g * dt * (1 - beta) * (old_state%p_lev(i,j,k) - old_state%p(i,j,k-1)) / old_state%m_lev(i,j,k)
+          w1(k) = w1(k) + gdt1mbeta * (old_p_lev(i,j,k) - old_p(i,j,k-1)) / old_m_lev(i,j,k)
           ! Use linearized state of ideal gas to calculate the first part of ∂pⁿ⁺¹ (i.e. dp1).
           do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
-            p1 = old_state%p_lev(i,j,k-1)
-            p2 = old_state%p_lev(i,j,k  )
-            dp1(k) = (old_state%p(i,j,k) - old_state%p(i,j,k-1)) + cp_o_cv * ((                                  &
-              p2 * new_state%m(i,j,k  ) * new_state%pt(i,j,k  ) / old_state%m(i,j,k  ) / old_state%pt(i,j,k  ) - &
-              p1 * new_state%m(i,j,k-1) * new_state%pt(i,j,k-1) / old_state%m(i,j,k-1) / old_state%pt(i,j,k-1)   &
-            ) - (                                                                                                &
-              p2 * (gz1(k+1) - gz1(k  )) / (old_state%gz_lev(i,j,k+1) - old_state%gz_lev(i,j,k  )) -             &
-              p1 * (gz1(k  ) - gz1(k-1)) / (old_state%gz_lev(i,j,k  ) - old_state%gz_lev(i,j,k-1))               &
+            dp1 = (old_p(i,j,k) - old_p(i,j,k-1)) + cp_o_cv * ((                                     &
+              old_p(i,j,k  ) * new_m(i,j,k  ) * new_pt(i,j,k  ) / old_m(i,j,k  ) / old_pt(i,j,k  ) - &
+              old_p(i,j,k-1) * new_m(i,j,k-1) * new_pt(i,j,k-1) / old_m(i,j,k-1) / old_pt(i,j,k-1)   &
+            ) - (                                                                                    &
+              old_p(i,j,k  ) * (gz1(k+1) - gz1(k  )) / dgz(k  ) -                                    &
+              old_p(i,j,k-1) * (gz1(k  ) - gz1(k-1)) / dgz(k-1)                                      &
             ))
+            w1(k) = w1(k) + gdtbeta / new_m_lev(i,j,k) * dp1
           end do
+          ! Set coefficients for implicit solver.
+          a(1) = 0.0_r8
+          b(1) = 1.0_r8
+          c(1) = 0.0_r8
+          d(1) = 0.0_r8 ! Top w is set to zero.
+          do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
+            a(k) = gdtbeta2gam * old_p(i,j,k-1) / dgz(k-1)
+            b(k) = new_m_lev(i,j,k) - gdtbeta2gam * (old_p(i,j,k) / dgz(k) + old_p(i,j,k-1) / dgz(k-1))
+            c(k) = gdtbeta2gam * old_p(i,j,k  ) / dgz(k  )
+            d(k) = new_m_lev(i,j,k) * w1(k)
+          end do
+          a(mesh%num_half_lev) = 0.0_r8
+          b(mesh%num_half_lev) = 1.0_r8
+          c(mesh%num_half_lev) = 0.0_r8
+          d(mesh%num_half_lev) = new_w_lev(i,j,mesh%num_half_lev)
+          call tridiag_thomas(a, b, c, d, new_w_lev(i,j,:))
         end do
       end do
     end associate
