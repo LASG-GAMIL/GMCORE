@@ -480,8 +480,15 @@ contains
           c(mesh%num_half_lev) = 0.0_r8
           d(mesh%num_half_lev) = new_w_lev(i,j,mesh%num_half_lev)
           call tridiag_thomas(a, b, c, d, new_w_lev(i,j,:))
+
+          ! Update gz after w is solved.
+          do k = mesh%half_lev_ibeg, mesh%half_lev_iend - 1
+            new_gz_lev(i,j,k) = gz1(k) + gdtbeta * new_w_lev(i,j,k)
+          end do
         end do
       end do
+      call fill_halo(block, new_w_lev , full_lon=.true., full_lat=.true., full_lev=.false.)
+      call fill_halo(block, new_gz_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
     end associate
 
   end subroutine implicit_w_solver
