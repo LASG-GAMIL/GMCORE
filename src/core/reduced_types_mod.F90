@@ -109,11 +109,14 @@ module reduced_types_mod
     real(r8), allocatable, dimension(:,:,:,:) :: t_lnpop_lon
     real(r8), allocatable, dimension(:,:,:,:) :: ak_t_lon
     ! Nonhydrostatic variables
-    real(r8), allocatable, dimension(:,:,:,:) :: m_lev
-    real(r8), allocatable, dimension(:,:,:,:) :: mf_lev_lon_n
-    real(r8), allocatable, dimension(:,:,:,:) :: gz_lev_lon
-    real(r8), allocatable, dimension(:,:,:,:) :: w_lev
-    real(r8), allocatable, dimension(:,:,:,:) :: w_lev_lon
+    real(r8), allocatable, dimension(:,:,:,:) :: m_lev         ! Zonal advection of gz and w
+    real(r8), allocatable, dimension(:,:,:,:) :: mf_lev_lon_n  ! Zonal advection of gz
+    real(r8), allocatable, dimension(:,:,:,:) :: gz_lev_lon    ! Zonal advection of gz
+    real(r8), allocatable, dimension(:,:,:,:) :: w_lev         ! Zonal advection of w
+    real(r8), allocatable, dimension(:,:,:,:) :: w_lev_lon     ! Zonal advection of w
+    real(r8), allocatable, dimension(:,:,:,:) :: p_lev         ! PGF
+    real(r8), allocatable, dimension(:,:,:,:) :: p_lev_lon     ! PGF
+    real(r8), allocatable, dimension(:,:,:,:) :: rhod_lon      ! PGF
     type(async_type), allocatable :: async(:,:,:)
   contains
     final :: reduced_state_final
@@ -191,6 +194,9 @@ contains
     if (allocated(this%gz_lev_lon  )) deallocate(this%gz_lev_lon  )
     if (allocated(this%w_lev       )) deallocate(this%w_lev       )
     if (allocated(this%w_lev_lon   )) deallocate(this%w_lev_lon   )
+    if (allocated(this%p_lev       )) deallocate(this%p_lev       )
+    if (allocated(this%p_lev_lon   )) deallocate(this%p_lev_lon   )
+    if (allocated(this%rhod_lon    )) deallocate(this%rhod_lon    )
 
     if (allocated(this%async      )) deallocate(this%async      )
 

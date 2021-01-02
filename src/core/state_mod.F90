@@ -78,8 +78,13 @@ module state_mod
     real(r8), allocatable, dimension(:,:,:) :: w_lev_lat         ! Vertical wind speed
     real(r8), allocatable, dimension(:,:,:) :: gz_lev_lon        ! Geopotential
     real(r8), allocatable, dimension(:,:,:) :: gz_lev_lat        ! Geopotential
+    real(r8), allocatable, dimension(:,:,:) :: rhod              ! Dry air density
+    real(r8), allocatable, dimension(:,:,:) :: rhod_lon          ! Dry air density
+    real(r8), allocatable, dimension(:,:,:) :: rhod_lat          ! Dry air density
     real(r8), allocatable, dimension(:,:,:) :: p                 ! Pressure on full levels
     real(r8), allocatable, dimension(:,:,:) :: p_lev             ! Pressure on half levels
+    real(r8), allocatable, dimension(:,:,:) :: p_lev_lon         ! Pressure on half levels
+    real(r8), allocatable, dimension(:,:,:) :: p_lev_lat         ! Pressure on half levels
     real(r8), allocatable, dimension(:,:,:) :: mf_lev_lon_n      ! Mass flux on zonal edge and half level
     real(r8), allocatable, dimension(:,:,:) :: mf_lev_lat_n      ! Mass flux on merdional edge and half level
     ! Smagorinsky damping variables
@@ -146,8 +151,6 @@ contains
     call allocate_array(mesh, this%t                , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%t850             , full_lon=.true., full_lat=.true.                 )
     call allocate_array(mesh, this%t700             , full_lon=.true., full_lat=.true.                 )
-    call allocate_array(mesh, this%p                , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%p_lev            , full_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%ph               , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%ph_lev           , full_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%phs              , full_lon=.true., full_lat=.true.                 )
@@ -164,8 +167,13 @@ contains
       call allocate_array(mesh, this%w_lev_lat      , full_lon=.true., half_lat=.true., half_lev=.true.)
       call allocate_array(mesh, this%gz_lev_lon     , half_lon=.true., full_lat=.true., half_lev=.true.)
       call allocate_array(mesh, this%gz_lev_lat     , full_lon=.true., half_lat=.true., half_lev=.true.)
+      call allocate_array(mesh, this%rhod           , full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%rhod_lon       , half_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%rhod_lat       , full_lon=.true., half_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%p              , full_lon=.true., full_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%p_lev          , full_lon=.true., full_lat=.true., half_lev=.true.)
+      call allocate_array(mesh, this%p_lev_lon      , half_lon=.true., full_lat=.true., half_lev=.true.)
+      call allocate_array(mesh, this%p_lev_lat      , full_lon=.true., half_lat=.true., half_lev=.true.)
       call allocate_array(mesh, this%mf_lev_lon_n   , half_lon=.true., full_lat=.true., half_lev=.true.)
       call allocate_array(mesh, this%mf_lev_lat_n   , full_lon=.true., half_lat=.true., half_lev=.true.)
     end if
@@ -258,8 +266,13 @@ contains
     if (allocated(this%w_lev_lat        )) deallocate(this%w_lev_lat        )
     if (allocated(this%gz_lev_lon       )) deallocate(this%gz_lev_lon       )
     if (allocated(this%gz_lev_lat       )) deallocate(this%gz_lev_lat       )
+    if (allocated(this%rhod             )) deallocate(this%rhod             )
+    if (allocated(this%rhod_lon         )) deallocate(this%rhod_lon         )
+    if (allocated(this%rhod_lat         )) deallocate(this%rhod_lat         )
     if (allocated(this%p                )) deallocate(this%p                )
     if (allocated(this%p_lev            )) deallocate(this%p_lev            )
+    if (allocated(this%p_lev_lon        )) deallocate(this%p_lev_lon        )
+    if (allocated(this%p_lev_lat        )) deallocate(this%p_lev_lat        )
     if (allocated(this%mf_lev_lon_n     )) deallocate(this%mf_lev_lon_n     )
     if (allocated(this%mf_lev_lat_n     )) deallocate(this%mf_lev_lat_n     )
 

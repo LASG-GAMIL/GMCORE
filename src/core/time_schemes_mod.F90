@@ -19,24 +19,26 @@ module time_schemes_mod
   public runge_kutta_4th
   public euler
   public ssp_runge_kutta_3rd
+  public update_state
 
   interface
-    subroutine space_operators_interface(block, state, tend, dt, pass)
+    subroutine space_operators_interface(block, old_state, new_state, tend, dt, pass)
       import block_type, state_type, tend_type
       type(block_type), intent(inout) :: block
-      type(state_type), intent(inout) :: state
+      type(state_type), intent(inout) :: old_state
+      type(state_type), intent(inout) :: new_state
       type(tend_type), intent(inout) :: tend
       real(8), intent(in) :: dt
       integer, intent(in) :: pass
     end subroutine space_operators_interface
 
-    subroutine time_integrator_interface(space_operators, dt, block, old, new, pass)
+    subroutine time_integrator_interface(space_operators, block, old, new, dt, pass)
       import block_type, tend_type, state_type, space_operators_interface
       procedure(space_operators_interface), intent(in), pointer :: space_operators
-      real(8), intent(in) :: dt
       type(block_type), intent(inout) :: block
       integer, intent(in) :: old
       integer, intent(in) :: new
+      real(8), intent(in) :: dt
       integer, intent(in) :: pass
     end subroutine time_integrator_interface
   end interface
@@ -62,13 +64,13 @@ contains
 
   end subroutine time_scheme_init
 
-  subroutine update_state(dt, block, tend, old_state, new_state, pass)
+  subroutine update_state(block, tend, old_state, new_state, dt, pass)
 
-    real(r8), intent(in) :: dt
     type(block_type), intent(inout) :: block
     type(tend_type), intent(in) :: tend
     type(state_type), intent(in) :: old_state
     type(state_type), intent(inout) :: new_state
+    real(8), intent(in) :: dt
     integer, intent(in) :: pass
 
     type(mesh_type), pointer :: mesh
@@ -77,7 +79,7 @@ contains
     mesh => old_state%mesh
 
     if (baroclinic) then
-      if (tend%updated_dphs) then
+      if (tend%update_phs) then
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             new_state%phs(i,j) = old_state%phs(i,j) + dt * tend%dphs(i,j)
@@ -94,8 +96,8 @@ contains
         new_state%m      = old_state%m
       end if
 
-      if (tend%updated_dpt) then
-        if (.not. tend%updated_dphs .and. .not. tend%copy_phs .and. is_root_proc()) call log_error('Mass is not updated or copied!')
+      if (tend%update_pt) then
+        if (.not. tend%update_phs .and. .not. tend%copy_phs .and. is_root_proc()) call log_error('Mass is not updated or copied!')
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -108,7 +110,7 @@ contains
         new_state%pt = old_state%pt
       end if
     else
-      if (tend%updated_dgz) then
+      if (tend%update_gz) then
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -122,7 +124,7 @@ contains
       end if
     end if
 
-    if (tend%updated_du) then
+    if (tend%update_u) then
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
@@ -133,7 +135,7 @@ contains
       call fill_halo(block, new_state%u, full_lon=.false., full_lat=.true., full_lev=.true.)
     end if
 
-    if (tend%updated_dv) then
+    if (tend%update_v) then
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -148,33 +150,33 @@ contains
 
   end subroutine update_state
 
-  subroutine predict_correct(space_operators, dt, block, old, new, pass)
+  subroutine predict_correct(space_operators, block, old, new, dt, pass)
 
     procedure(space_operators_interface), intent(in), pointer :: space_operators
-    real(r8), intent(in) :: dt
     type(block_type), intent(inout) :: block
     integer, intent(in) :: old
     integer, intent(in) :: new
+    real(8), intent(in) :: dt
     integer, intent(in) :: pass
 
-    call space_operators(block, block%state(old), block%tend(old), 0.5_r8 * dt, pass)
-    call update_state(0.5_r8 * dt, block, block%tend(old), block%state(old), block%state(new), pass)
+    call space_operators(block, block%state(old), block%state(new), block%tend(old), 0.5_r8 * dt, pass)
+    call update_state(block, block%tend(old), block%state(old), block%state(new), 0.5_r8 * dt, pass)
 
-    call space_operators(block, block%state(new), block%tend(old), 0.5_r8 * dt, pass)
-    call update_state(0.5_r8 * dt, block, block%tend(old), block%state(old), block%state(new), pass)
+    call space_operators(block, block%state(new), block%state(3), block%tend(old), 0.5_r8 * dt, pass)
+    call update_state(block, block%tend(old), block%state(old), block%state(3), 0.5_r8 * dt, pass)
 
-    call space_operators(block, block%state(new), block%tend(new),          dt, pass)
-    call update_state(         dt, block, block%tend(new), block%state(old), block%state(new), pass)
+    call space_operators(block, block%state(3), block%state(new), block%tend(new), dt, pass)
+    call update_state(block, block%tend(new), block%state(old), block%state(new), dt, pass)
 
   end subroutine predict_correct
 
-  subroutine runge_kutta_3rd(space_operators, dt, block, old, new, pass)
+  subroutine runge_kutta_3rd(space_operators, block, old, new, dt, pass)
 
     procedure(space_operators_interface), intent(in), pointer :: space_operators
-    real(r8), intent(in) :: dt
     type(block_type), intent(inout) :: block
     integer, intent(in) :: old
     integer, intent(in) :: new
+    real(8), intent(in) :: dt
     integer, intent(in) :: pass
 
     integer s1, s2, s3
@@ -183,26 +185,26 @@ contains
     s2 = 4
     s3 = new
 
-    call space_operators(block, block%state(old), block%tend(s1), 0.5_r8 * dt, pass)
-    call update_state(0.5_r8 * dt, block, block%tend(s1), block%state(old), block%state(s1), pass)
+    call space_operators(block, block%state(old), block%state(s1), block%tend(s1), 0.5_r8 * dt, pass)
+    call update_state(block, block%tend(s1), block%state(old), block%state(s1), 0.5_r8 * dt, pass)
 
-    call space_operators(block, block%state(s1) , block%tend(s2), 2.0_r8 * dt, pass)
-    call update_state(        -dt, block, block%tend(s1), block%state(old), block%state(s2), pass)
-    call update_state(2.0_r8 * dt, block, block%tend(s2), block%state(s2) , block%state(s2), pass)
+    call space_operators(block, block%state(s1), block%state(s2), block%tend(s2), 2.0_r8 * dt, pass)
+    call update_state(block, block%tend(s1), block%state(old), block%state(s2), -dt, pass)
+    call update_state(block, block%tend(s2), block%state(s2) , block%state(s2), 2.0_r8 * dt, pass)
 
-    call space_operators(block, block%state(s2) , block%tend(s3),          dt, pass)
+    call space_operators(block, block%state(s2), block%state(new), block%tend(s3), dt, pass)
     block%tend(old) = (block%tend(s1) + 4.0_r8 * block%tend(s2) + block%tend(s3)) / 6.0_r8
-    call update_state(         dt, block, block%tend(old), block%state(old), block%state(new), pass)
+    call update_state(block, block%tend(old), block%state(old), block%state(new), dt, pass)
 
   end subroutine runge_kutta_3rd
 
-  subroutine runge_kutta_4th(space_operators, dt, block, old, new, pass)
+  subroutine runge_kutta_4th(space_operators, block, old, new, dt, pass)
 
     procedure(space_operators_interface), intent(in), pointer :: space_operators
-    real(r8), intent(in) :: dt
     type(block_type), intent(inout) :: block
     integer, intent(in) :: old
     integer, intent(in) :: new
+    real(8), intent(in) :: dt
     integer, intent(in) :: pass
 
     integer s1, s2, s3, s4
@@ -212,42 +214,42 @@ contains
     s3 = 5
     s4 = new
 
-    call space_operators(block, block%state(old), block%tend(s1), 0.5_r8 * dt, pass)
-    call update_state(0.5_r8 * dt, block, block%tend(s1), block%state(old), block%state(s1), pass)
+    call space_operators(block, block%state(old), block%state(s1), block%tend(s1), 0.5_r8 * dt, pass)
+    call update_state(block, block%tend(s1), block%state(old), block%state(s1), 0.5_r8 * dt, pass)
 
-    call space_operators(block, block%state(s1) , block%tend(s2), 0.5_r8 * dt, pass)
-    call update_state(0.5_r8 * dt, block, block%tend(s2), block%state(old), block%state(s2), pass)
+    call space_operators(block, block%state(s1), block%state(s2), block%tend(s2), 0.5_r8 * dt, pass)
+    call update_state(block, block%tend(s2), block%state(old), block%state(s2), 0.5_r8 * dt, pass)
 
-    call space_operators(block, block%state(s2) , block%tend(s3),          dt, pass)
-    call update_state(         dt, block, block%tend(s3), block%state(old), block%state(s3), pass)
+    call space_operators(block, block%state(s2), block%state(s3), block%tend(s3), dt, pass)
+    call update_state(block, block%tend(s3), block%state(old), block%state(s3), dt, pass)
 
-    call space_operators(block, block%state(s3) , block%tend(s4),          dt, pass)
+    call space_operators(block, block%state(s3), block%state(new), block%tend(s4), dt, pass)
     block%tend(old) = (block%tend(s1) + 2.0_r8 * block%tend(s2) + 2.0_r8 * block%tend(s3) + block%tend(s4)) / 6.0_r8
-    call update_state(         dt, block, block%tend(old), block%state(old), block%state(new), pass)
+    call update_state(block, block%tend(old), block%state(old), block%state(new), dt, pass)
 
   end subroutine runge_kutta_4th
 
-  subroutine euler(space_operators, dt, block, old, new, pass)
+  subroutine euler(space_operators, block, old, new, dt, pass)
 
     procedure(space_operators_interface), intent(in), pointer :: space_operators
-    real(r8), intent(in) :: dt
     type(block_type), intent(inout) :: block
     integer, intent(in) :: old
     integer, intent(in) :: new
+    real(8), intent(in) :: dt
     integer, intent(in) :: pass
 
-    call space_operators(block, block%state(old), block%tend(new), dt, pass)
-    call update_state(dt, block, block%tend(new), block%state(old), block%state(new), pass)
+    call space_operators(block, block%state(old), block%state(new), block%tend(new), dt, pass)
+    call update_state(block, block%tend(new), block%state(old), block%state(new), dt, pass)
 
   end subroutine euler
 
-  subroutine ssp_runge_kutta_3rd(space_operators, dt, block, old, new, pass)
+  subroutine ssp_runge_kutta_3rd(space_operators, block, old, new, dt, pass)
 
     procedure(space_operators_interface), intent(in), pointer :: space_operators
-    real(r8), intent(in) :: dt
     type(block_type), intent(inout) :: block
     integer, intent(in) :: old
     integer, intent(in) :: new
+    real(8), intent(in) :: dt
     integer, intent(in) :: pass
 
     integer s1, s2, s3
@@ -256,17 +258,16 @@ contains
     s2 = 4
     s3 = new
 
-    call space_operators(block, block%state(old), block%tend(s1), dt, pass)
-    call update_state(dt, block, block%tend(s1), block%state(old), block%state(s1), pass)
+    call space_operators(block, block%state(old), block%state(s1), block%tend(s1), dt, pass)
+    call update_state(block, block%tend(s1), block%state(old), block%state(s1), dt, pass)
 
-    call space_operators(block, block%state(s1), block%tend(s2), dt, pass)
+    call space_operators(block, block%state(s1), block%state(s2), block%tend(s2), dt, pass)
     block%tend(s3) = block%tend(s1) + block%tend(s2)
-    call update_state(0.25_r8 * dt, block, block%tend(s3), block%state(old), block%state(s2), pass)
+    call update_state(block, block%tend(s3), block%state(old), block%state(s2), 0.25_r8 * dt, pass)
 
-    call space_operators(block, block%state(s2), block%tend(s3), 0.5_r8 * dt, pass)
-
+    call space_operators(block, block%state(s2), block%state(new), block%tend(s3), 0.5_r8 * dt, pass)
     block%tend(old) = (block%tend(s1) + block%tend(s2) + 4.0_r8 * block%tend(s3)) / 6.0_r8
-    call update_state(dt, block, block%tend(old), block%state(old), block%state(new), pass)
+    call update_state(block, block%tend(old), block%state(old), block%state(new), dt, pass)
 
   end subroutine ssp_runge_kutta_3rd
 

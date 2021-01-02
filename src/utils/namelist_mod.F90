@@ -93,7 +93,7 @@ module namelist_mod
     num_lon                   , &
     num_lat                   , &
     num_lev                   , &
-    hydrostatic               , &
+    nonhydrostatic            , &
     num_proc_lon              , &
     num_proc_lat              , &
     start_time                , &
@@ -163,7 +163,7 @@ contains
     read(10, nml=gmcore_control)
     close(10)
 
-    nonhydrostatic = .not. hydrostatic
+    hydrostatic = .not. nonhydrostatic
 
   end subroutine parse_namelist
 
@@ -173,6 +173,8 @@ contains
     write(*, *) 'num_lon             = ', to_string(num_lon)
     write(*, *) 'num_lat             = ', to_string(num_lat)
     write(*, *) 'num_lev             = ', to_string(num_lev)
+    write(*, *) 'hydrostatic         = ', to_string(hydrostatic)
+    write(*, *) 'nonhydrostatic      = ', to_string(nonhydrostatic)
     write(*, *) 'vert_coord_scheme   = ', trim(vert_coord_scheme)
     write(*, *) 'vert_coord_template = ', trim(vert_coord_template)
     write(*, *) 'dt_in_seconds       = ', to_string(int(dt_in_seconds))
@@ -182,6 +184,7 @@ contains
     write(*, *) 'pv_pole_stokes      = ', to_string(pv_pole_stokes)
     write(*, *) 'time_scheme         = ', trim(time_scheme)
     write(*, *) 'upwind_order        = ', to_string(upwind_order)
+    write(*, *) 'reduce_pv_directly  = ', to_string(reduce_pv_directly)
     write(*, *) 'use_div_damp        = ', to_string(use_div_damp)
     write(*, *) 'div_damp_coef2      = ', to_string(div_damp_coef2, 3)
     write(*, *) 'use_vor_damp        = ', to_string(use_vor_damp)

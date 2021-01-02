@@ -100,6 +100,10 @@ contains
       call fiona_add_var('h0', 'te'   , long_name='total energy'                , units='m4 s-4' , dim_names=['time'], data_type='real(8)')
       call fiona_add_var('h0', 'tpe'  , long_name='total potential enstrophy'   , units='m2 s-5' , dim_names=['time'], data_type='real(8)')
       call fiona_add_var('h0', 'tpv'  , long_name='total potential vorticity'   , units='m2 s-5' , dim_names=['time'], data_type='real(8)')
+      if (nonhydrostatic) then
+        call fiona_add_var('h0', 'w', long_name='vertical speed', units='m s-1', dim_names=lev_dims)
+        call fiona_add_var('h0', 'p', long_name='full pressure' , units='Pa'   , dim_names=lev_dims)
+      end if
     else
       call fiona_add_var('h0', 'u'    , long_name='u wind component'            , units='m s-1'  , dim_names=lon_dims_2d)
       call fiona_add_var('h0', 'v'    , long_name='v wind component'            , units='m s-1'  , dim_names=lat_dims_2d)
@@ -148,6 +152,12 @@ contains
       call fiona_add_var('h1', 'mf_lat_t'     , long_name='tangent mass flux on V grid'                   , units='', dim_names=lat_dims)
       call fiona_add_var('h1', 'm'            , long_name='dph on full levels'                            , units='', dim_names=cell_dims)
       call fiona_add_var('h1', 'ke'           , long_name='kinetic energy on cell grid'                   , units='', dim_names=cell_dims)
+      if (nonhydrostatic) then
+        call fiona_add_var('h1', 'adv_gz', long_name='advection of gz', units='', dim_names=lev_dims)
+        call fiona_add_var('h1', 'adv_w' , long_name='advection of w' , units='', dim_names=lev_dims)
+        call fiona_add_var('h1', 'dzsdlon', long_name='zonal zs gradient', units='', dim_names=cell_dims_2d)
+        call fiona_add_var('h1', 'dzsdlat', long_name='meridional zs gradient', units='', dim_names=cell_dims_2d)
+      end if
     else
       call fiona_add_var('h1', 'dudt'         , long_name='u wind component tendency'                     , units='', dim_names=lon_dims_2d)
       call fiona_add_var('h1', 'dvdt'         , long_name='v wind component tendency'                     , units='', dim_names=lat_dims_2d)
@@ -253,6 +263,17 @@ contains
       call fiona_output('h0', 'pv' , state %pv (is:ie,js:je,ks:ke), start=start, count=count)
       call fiona_output('h0', 'vor', state %vor(is:ie,js:je,ks:ke), start=start, count=count)
 
+      is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
+      js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
+      ks = mesh%half_lev_ibeg; ke = mesh%half_lev_iend
+      start = [is,js,ks]
+      count = [mesh%num_full_lon,mesh%num_full_lat,mesh%num_half_lev]
+
+      if (nonhydrostatic) then
+        call fiona_output('h0', 'w', state%w_lev(is:ie,js:je,ks:ke), start=start, count=count)
+        call fiona_output('h0', 'p', state%p_lev(is:ie,js:je,ks:ke), start=start, count=count)
+      end if
+
       call fiona_output('h0', 'tm' , state %tm)
       call fiona_output('h0', 'te' , state %te)
       call fiona_output('h0', 'tpe', state %tpe)
@@ -350,6 +371,12 @@ contains
 
     if (baroclinic) then
       call fiona_output('h1', 'wedphdlev_lev', state%wedphdlev_lev(is:ie,js:je,ks:ke), start=start, count=count)
+    end if
+    if (nonhydrostatic) then
+      call fiona_output('h1', 'adv_gz', tend%adv_gz(is:ie,js:je,ks:ke), start=start, count=count)
+      call fiona_output('h1', 'adv_w' , tend%adv_w (is:ie,js:je,ks:ke), start=start, count=count)
+      call fiona_output('h1', 'dzsdlon', blocks(1)%static%dzsdlon(is:ie,js:je), start=start, count=count)
+      call fiona_output('h1', 'dzsdlat', blocks(1)%static%dzsdlat(is:ie,js:je), start=start, count=count)
     end if
 
     call fiona_end_output('h1')

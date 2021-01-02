@@ -171,6 +171,10 @@ contains
 
     ! Here we set baroclinic according to levels.
     baroclinic = this%num_full_lev > 1
+    if (.not. baroclinic) then
+      hydrostatic = .false.
+      nonhydrostatic = .false.
+    end if
 
     this%id             = merge(id            , -1, present(id))
     this%lon_halo_width = merge(lon_halo_width,  1, present(lon_halo_width))

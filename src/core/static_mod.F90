@@ -56,9 +56,9 @@ contains
 
     integer i, j
 
-    if (baroclinic .and. nonhydrostatic) then
+    if (nonhydrostatic) then
       do j = this%mesh%full_lat_ibeg_no_pole, this%mesh%full_lat_iend_no_pole
-        do i = this%mesh%full_lon_ibeg, this%mesh%full_lat_iend
+        do i = this%mesh%full_lon_ibeg, this%mesh%full_lon_iend
           this%dzsdlon(i,j) = (this%gzs(i+1,j) - this%gzs(i-1,j)) / g / this%mesh%de_lon(j) * 0.5_r8
 #ifdef V_POLE
           this%dzsdlat(i,j) = (this%gzs(i,j+1) - this%gzs(i,j-1)) / g / (this%mesh%de_lat(j+1) + this%mesh%de_lat(j))

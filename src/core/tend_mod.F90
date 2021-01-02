@@ -22,14 +22,14 @@ module tend_mod
     real(r8), allocatable, dimension(:,:,:) :: dgz
     real(r8), allocatable, dimension(:,:,:) :: dpt
     real(r8), allocatable, dimension(:,:  ) :: dphs
-    logical :: updated_du   = .false.
-    logical :: updated_dv   = .false.
-    logical :: updated_dgz  = .false.
-    logical :: updated_dpt  = .false.
-    logical :: updated_dphs = .false.
-    logical :: copy_gz  = .false.
-    logical :: copy_pt  = .false.
-    logical :: copy_phs = .false.
+    logical :: update_u   = .false.
+    logical :: update_v   = .false.
+    logical :: update_gz  = .false.
+    logical :: update_pt  = .false.
+    logical :: update_phs = .false.
+    logical :: copy_gz    = .false.
+    logical :: copy_pt    = .false.
+    logical :: copy_phs   = .false.
     ! Individual tendencies
     real(r8), allocatable, dimension(:,:,:) :: qhv
     real(r8), allocatable, dimension(:,:,:) :: qhu
@@ -109,15 +109,14 @@ contains
 
     class(tend_type), intent(inout) :: this
 
-    this%updated_du   = .false.
-    this%updated_dv   = .false.
-    this%updated_dgz  = .false.
-    this%updated_dpt  = .false.
-    this%updated_dphs = .false.
-
-    this%copy_gz  = .false.
-    this%copy_pt  = .false.
-    this%copy_phs = .false.
+    this%update_u   = .false.
+    this%update_v   = .false.
+    this%update_gz  = .false.
+    this%update_pt  = .false.
+    this%update_phs = .false.
+    this%copy_gz    = .false.
+    this%copy_pt    = .false.
+    this%copy_phs   = .false.
 
   end subroutine tend_reset_flags
 
@@ -164,36 +163,36 @@ contains
 
     type(tend_type) res
 
-    if (x%updated_du .and. y%updated_du) then
+    if (x%update_u .and. y%update_u) then
       res%du = x%du + y%du
-      res%updated_du = .true.
+      res%update_u = .true.
     else
-      res%updated_du = .false.
+      res%update_u = .false.
     end if
-    if (x%updated_dv .and. y%updated_dv) then
+    if (x%update_v .and. y%update_v) then
       res%dv = x%dv + y%dv
-      res%updated_dv = .true.
+      res%update_v = .true.
     else
-      res%updated_dv = .false.
+      res%update_v = .false.
     end if
     if (baroclinic) then
-      if (x%updated_dphs .and. y%updated_dphs) then
+      if (x%update_phs .and. y%update_phs) then
         res%dphs = x%dphs + y%dphs
-        res%updated_dphs = .true.
+        res%update_phs = .true.
       else
-        res%updated_dphs = .false.
+        res%update_phs = .false.
       end if
-      if (x%updated_dpt .and. y%updated_dpt) then
+      if (x%update_pt .and. y%update_pt) then
         res%dpt = x%dpt + y%dpt
-        res%updated_dpt = .true.
+        res%update_pt = .true.
       else
-        res%updated_dpt = .false.
+        res%update_pt = .false.
       end if
-    else if (x%updated_dgz .and. y%updated_dgz) then
+    else if (x%update_gz .and. y%update_gz) then
       res%dgz = x%dgz + y%dgz
-      res%updated_dgz = .true.
+      res%update_gz = .true.
     else
-      res%updated_dgz = .false.
+      res%update_gz = .false.
     end if
 
   end function add_tends
@@ -205,36 +204,36 @@ contains
 
     type(tend_type) res
 
-    if (x%updated_du) then
+    if (x%update_u) then
       res%du = s * x%du
-      res%updated_du = .true.
+      res%update_u = .true.
     else
-      res%updated_du = .false.
+      res%update_u = .false.
     end if
-    if (x%updated_dv) then
+    if (x%update_v) then
       res%dv = s * x%dv
-      res%updated_dv = .true.
+      res%update_v = .true.
     else
-      res%updated_dv = .false.
+      res%update_v = .false.
     end if
     if (baroclinic) then
-      if (x%updated_dphs) then
+      if (x%update_phs) then
         res%dphs = s * x%dphs
-        res%updated_dphs = .true.
+        res%update_phs = .true.
       else
-        res%updated_dphs = .false.
+        res%update_phs = .false.
       end if
-      if (x%updated_dpt) then
+      if (x%update_pt) then
         res%dpt = s * x%dpt
-        res%updated_dpt = .true.
+        res%update_pt = .true.
       else
-        res%updated_dpt = .false.
+        res%update_pt = .false.
       end if
-    else if (x%updated_dgz) then
+    else if (x%update_gz) then
       res%dgz = s * x%dgz
-      res%updated_dgz = .true.
+      res%update_gz = .true.
     else
-      res%updated_dgz = .false.
+      res%update_gz = .false.
     end if
 
   end function mult_scalar
@@ -246,36 +245,36 @@ contains
 
     type(tend_type) res
 
-    if (x%updated_du) then
+    if (x%update_u) then
       res%du = x%du / s
-      res%updated_du = .true.
+      res%update_u = .true.
     else
-      res%updated_du = .false.
+      res%update_u = .false.
     end if
-    if (x%updated_dv) then
+    if (x%update_v) then
       res%dv = x%dv / s
-      res%updated_dv = .true.
+      res%update_v = .true.
     else
-      res%updated_dv = .false.
+      res%update_v = .false.
     end if
     if (baroclinic) then
-      if (x%updated_dphs) then
+      if (x%update_phs) then
         res%dphs = x%dphs / s
-        res%updated_dphs = .true.
+        res%update_phs = .true.
       else
-        res%updated_dphs = .false.
+        res%update_phs = .false.
       end if
-      if (x%updated_dpt) then
+      if (x%update_pt) then
         res%dpt = x%dpt / s
-        res%updated_dpt = .true.
+        res%update_pt = .true.
       else
-        res%updated_dpt = .false.
+        res%update_pt = .false.
       end if
-    else if (x%updated_dgz) then
+    else if (x%update_gz) then
       res%dgz = x%dgz / s
-      res%updated_dgz = .true.
+      res%update_gz = .true.
     else
-      res%updated_dgz = .false.
+      res%update_gz = .false.
     end if
 
   end function div_scalar
@@ -285,36 +284,36 @@ contains
     type(tend_type), intent(inout) :: x
     type(tend_type), intent(in) :: y
 
-    if (y%updated_du) then
+    if (y%update_u) then
       x%du = y%du
-      x%updated_du = .true.
+      x%update_u = .true.
     else
-      x%updated_du = .false.
+      x%update_u = .false.
     end if
-    if (y%updated_dv) then
+    if (y%update_v) then
       x%dv = y%dv
-      x%updated_dv = .true.
+      x%update_v = .true.
     else
-      x%updated_dv = .false.
+      x%update_v = .false.
     end if
     if (baroclinic) then
-      if (y%updated_dphs) then
+      if (y%update_phs) then
         x%dphs = y%dphs
-        x%updated_dphs = .true.
+        x%update_phs = .true.
       else
-        x%updated_dphs = .false.
+        x%update_phs = .false.
       end if
-      if (y%updated_dpt) then
+      if (y%update_pt) then
         x%dpt = y%dpt
-        x%updated_dpt = .true.
+        x%update_pt = .true.
       else
-        x%updated_dpt = .false.
+        x%update_pt = .false.
       end if
-    else if (y%updated_dgz) then
+    else if (y%update_gz) then
       x%dgz = y%dgz
-      x%updated_dgz = .true.
+      x%update_gz = .true.
     else
-      x%updated_dgz = .false.
+      x%update_gz = .false.
     end if
 
   end subroutine assign_tend
