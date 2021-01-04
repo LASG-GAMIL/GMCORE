@@ -87,8 +87,8 @@ contains
         end do
         call fill_halo(block, new_state%phs, full_lon=.true., full_lat=.true.)
 
-        call calc_ph_lev_ph(block, new_state)
-        call calc_m        (block, new_state)
+        call diag_ph(block, new_state)
+        call diag_m (block, new_state)
       else if (tend%copy_phs) then
         new_state%phs    = old_state%phs
         new_state%ph_lev = old_state%ph_lev

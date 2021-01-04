@@ -19,37 +19,38 @@ contains
   subroutine nh_solve(block, tend, old_state, new_state, dt)
 
     type(block_type), intent(inout) :: block
-    type(tend_type), intent(inout) :: tend
+    type(tend_type ), intent(inout) :: tend
     type(state_type), intent(inout) :: old_state
     type(state_type), intent(inout) :: new_state
     real(8), intent(in) :: dt
 
     logical, save :: first_call = .true.
-    integer k
 
+    call interp_mf            (block, old_state)
+    call interp_gz            (block, old_state)
+    call apply_bc_w_lev       (block, old_state)
+    call interp_w             (block, old_state)
+    call interp_wedphdlev     (block, old_state)
     if (first_call) then
-      call calc_m_lev                  (block, old_state)
-      call calc_rhod                   (block, old_state)
-      call calc_p                      (block, old_state)
+      call diag_m_lev         (block, old_state)
+      call diag_rhod          (block, old_state)
+      call diag_p             (block, old_state)
       first_call = .false.
     end if
-    call calc_m_lev                    (block, new_state)
+    call diag_m_lev           (block, new_state)
+    ! If use backward to update wind, we need to reduce new_state.
+    call reduce_run           (block, old_state, dt, nh_pass)
 
-    call calc_mf_lev_lon_n_mf_lev_lat_n(block, old_state)
-    call calc_gz_lev_lon_gz_lev_lat    (block, old_state)
-    call apply_bc_w_lev                (block, old_state)
-    call calc_w_w_lev_lon_w_lev_lat    (block, old_state)
+    call calc_adv_gz          (block, old_state, tend)
+    call calc_adv_w           (block, old_state, tend)
+    call implicit_w_solver    (block, tend, old_state, new_state, dt)
 
-    call calc_adv_gz                   (block, old_state, tend)
-    call calc_adv_w                    (block, old_state, tend)
-    call implicit_w_solver             (block, tend, old_state, new_state, dt)
-
-    call calc_rhod                     (block, new_state)
-    call calc_p                        (block, new_state)
+    call diag_rhod            (block, new_state)
+    call diag_p               (block, new_state)
 
   end subroutine nh_solve
 
-  subroutine calc_m_lev(block, state)
+  subroutine diag_m_lev(block, state)
 
     type(block_type), intent(in) :: block
     type(state_type), intent(inout) :: state
@@ -80,18 +81,18 @@ contains
       end do
     end associate
 
-  end subroutine calc_m_lev
+  end subroutine diag_m_lev
 
-  subroutine calc_wedphdlev(block, state)
+  subroutine interp_wedphdlev(block, state)
 
     type(block_type), intent(in) :: block
     type(state_type), intent(inout) :: state
 
     call interp_lev_edge_to_cell(block%mesh, state%wedphdlev_lev, state%wedphdlev)
 
-  end subroutine calc_wedphdlev
+  end subroutine interp_wedphdlev
 
-  subroutine calc_mf_lev_lon_n_mf_lev_lat_n(block, state)
+  subroutine interp_mf(block, state)
 
     type(block_type), intent(in) :: block
     type(state_type), intent(inout) :: state
@@ -101,9 +102,9 @@ contains
     call fill_halo(block, state%mf_lev_lon_n, full_lon=.false., full_lat=.true. , full_lev=.false.)
     call fill_halo(block, state%mf_lev_lat_n, full_lon=.true. , full_lat=.false., full_lev=.false.)
 
-  end subroutine calc_mf_lev_lon_n_mf_lev_lat_n
+  end subroutine interp_mf
 
-  subroutine calc_gz_lev_lon_gz_lev_lat(block, state)
+  subroutine interp_gz(block, state)
 
     type(block_type), intent(in) :: block
     type(state_type), intent(inout) :: state
@@ -114,9 +115,9 @@ contains
     call fill_halo(block, state%gz_lev_lon, full_lon=.false., full_lat=.true. , full_lev=.false.)
     call fill_halo(block, state%gz_lev_lat, full_lon=.true. , full_lat=.false., full_lev=.false.)
 
-  end subroutine calc_gz_lev_lon_gz_lev_lat
+  end subroutine interp_gz
 
-  subroutine calc_w_w_lev_lon_w_lev_lat(block, state)
+  subroutine interp_w(block, state)
 
     type(block_type), intent(in) :: block
     type(state_type), intent(inout) :: state
@@ -127,7 +128,7 @@ contains
     call fill_halo(block, state%w_lev_lon, full_lon=.false., full_lat=.true. , full_lev=.false.)
     call fill_halo(block, state%w_lev_lat, full_lon=.true. , full_lat=.false., full_lev=.false.)
 
-  end subroutine calc_w_w_lev_lon_w_lev_lat
+  end subroutine interp_w
 
   subroutine calc_adv_gz(block, state, tend)
 
@@ -153,9 +154,9 @@ contains
                wedphdlev     => state%wedphdlev    , &
                wedphdlev_lev => state%wedphdlev_lev, &
                adv_gz        => tend%adv_gz)
-      do k = mesh%half_lev_ibeg, mesh%half_lev_iend
+      do k = mesh%half_lev_ibeg, mesh%half_lev_iend - 1
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-          if (reduced_mesh(j)%reduce_factor > 1) then
+          if (.false. .and. reduced_mesh(j)%reduce_factor > 1) then
             adv_gz(:,j,k) = 0.0_r8
             do move = 1, reduced_mesh(j)%reduce_factor
               do i = reduced_mesh(j)%full_lon_ibeg, reduced_mesh(j)%full_lon_iend
@@ -184,7 +185,7 @@ contains
         end do
       end do
 
-      do k = mesh%half_lev_ibeg, mesh%half_lev_iend
+      do k = mesh%half_lev_ibeg, mesh%half_lev_iend - 1
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
 #ifdef V_POLE
@@ -284,9 +285,9 @@ contains
                wedphdlev     => state%wedphdlev    , &
                wedphdlev_lev => state%wedphdlev_lev, &
                adv_w         => tend%adv_w)
-      do k = mesh%half_lev_ibeg, mesh%half_lev_iend
+      do k = mesh%half_lev_ibeg, mesh%half_lev_iend - 1
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-          if (reduced_mesh(j)%reduce_factor > 1) then
+          if (.false. .and. reduced_mesh(j)%reduce_factor > 1) then
             adv_w(:,j,k) = 0.0_r8
             do move = 1, reduced_mesh(j)%reduce_factor
               do i = reduced_mesh(j)%full_lon_ibeg, reduced_mesh(j)%full_lon_iend
@@ -315,7 +316,7 @@ contains
         end do
       end do
 
-      do k = mesh%half_lev_ibeg, mesh%half_lev_iend
+      do k = mesh%half_lev_ibeg, mesh%half_lev_iend - 1
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
 #ifdef V_POLE
@@ -391,7 +392,7 @@ contains
 
   end subroutine calc_adv_w
 
-  subroutine calc_rhod(block, state)
+  subroutine diag_rhod(block, state)
 
     type(block_type), intent(in) :: block
     type(state_type), intent(inout) :: state
@@ -407,18 +408,14 @@ contains
           end do
         end do
       end do
-#ifdef V_POLE
-      call fill_halo(block, rhod, full_lon=.true. , full_lat=.true., full_lev=.true., west_halo=.false., north_halo=.false.)
-#else
-      call fill_halo(block, rhod, full_lon=.true. , full_lat=.true., full_lev=.true., west_halo=.false., south_halo=.false.)
-#endif
+      call fill_halo(block, rhod, full_lon=.true. , full_lat=.true., full_lev=.true.)
       call interp_cell_to_lon_edge(mesh, rhod, state%rhod_lon)
       call interp_cell_to_lat_edge(mesh, rhod, state%rhod_lat)
     end associate
 
-  end subroutine calc_rhod
+  end subroutine diag_rhod
 
-  subroutine calc_p(block, state)
+  subroutine diag_p(block, state)
 
     type(block_type), intent(in) :: block
     type(state_type), intent(inout) :: state
@@ -435,19 +432,15 @@ contains
         end do
       end do
 
-      call interp_cell_to_lev_edge(mesh, p, state%p_lev)
-#ifdef V_POLE
-      call fill_halo(block, state%p_lev, full_lon=.true. , full_lat=.true., full_lev=.false., west_halo=.false., south_halo=.false.)
-#else
-      call fill_halo(block, state%p_lev, full_lon=.true. , full_lat=.true., full_lev=.false., west_halo=.false., north_halo=.false.)
-#endif
+      call interp_cell_to_lev_edge(mesh, p, state%p_lev, handle_top_bottom=.true.)
+      call fill_halo(block, state%p_lev, full_lon=.true. , full_lat=.true., full_lev=.false.)
       call interp_lev_edge_to_lev_lon_edge(mesh, state%p_lev, state%p_lev_lon)
       call interp_lev_edge_to_lev_lat_edge(mesh, state%p_lev, state%p_lev_lat)
     end associate
 
-  end subroutine calc_p
+  end subroutine diag_p
 
-  subroutine calc_linearized_p(block, old_state, new_state)
+  subroutine diag_linearized_p(block, old_state, new_state)
 
     type(block_type), intent(in) :: block
     type(state_type), intent(in) :: old_state
@@ -476,17 +469,13 @@ contains
         end do
       end do
 
-      call interp_cell_to_lev_edge(mesh, new_p, new_state%p_lev)
-#ifdef V_POLE
-      call fill_halo(block, new_state%p_lev, full_lon=.true. , full_lat=.true., full_lev=.false., west_halo=.false., south_halo=.false.)
-#else
-      call fill_halo(block, new_state%p_lev, full_lon=.true. , full_lat=.true., full_lev=.false., west_halo=.false., north_halo=.false.)
-#endif
+      call interp_cell_to_lev_edge(mesh, new_p, new_state%p_lev, handle_top_bottom=.true.)
+      call fill_halo(block, new_state%p_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
       call interp_lev_edge_to_lev_lon_edge(mesh, new_state%p_lev, new_state%p_lev_lon)
       call interp_lev_edge_to_lev_lat_edge(mesh, new_state%p_lev, new_state%p_lev_lat)
     end associate
 
-  end subroutine calc_linearized_p
+  end subroutine diag_linearized_p
 
   subroutine apply_bc_w_lev(block, state)
 
@@ -621,9 +610,6 @@ contains
             new_gz_lev(i,j,k) = gz1(k) + gdtbeta * new_w_lev(i,j,k)
           end do
         end do
-      end do
-      do k = mesh%half_lev_ibeg, mesh%half_lev_iend
-        print *, k, minval(new_w_lev(1:180,1:10,k)), maxval(new_w_lev(1:180,1:10,k))
       end do
       call fill_halo(block, new_w_lev , full_lon=.true., full_lat=.true., full_lev=.false.)
       call fill_halo(block, new_gz_lev, full_lon=.true., full_lat=.true., full_lev=.false.)

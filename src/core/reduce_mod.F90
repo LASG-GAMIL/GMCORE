@@ -117,12 +117,20 @@ contains
 
     integer j
 
-    ! Extend loop range by 1 is for Coriolis forces.
-    do j = block%mesh%full_lat_ibeg - 1, block%mesh%full_lat_iend + 1
-      if (block%reduced_mesh(j)%reduce_factor > 0) then
-        call reduce_state(j, block, block%mesh, state, block%reduced_mesh(j), block%reduced_static(j), block%reduced_state(j), dt, pass)
-      end if
-    end do
+    if (pass == nh_pass) then
+      do j = block%mesh%full_lat_ibeg, block%mesh%full_lat_iend
+        if (block%reduced_mesh(j)%reduce_factor > 0) then
+          call reduce_nh_state(j, block, block%mesh, state, block%reduced_mesh(j), block%reduced_static(j), block%reduced_state(j), dt)
+        end if
+      end do
+    else
+      ! Extend loop range by 1 is for Coriolis forces. FIXME: Revise it.
+      do j = block%mesh%full_lat_ibeg - 1, block%mesh%full_lat_iend + 1
+        if (block%reduced_mesh(j)%reduce_factor > 0) then
+          call reduce_state(j, block, block%mesh, state, block%reduced_mesh(j), block%reduced_static(j), block%reduced_state(j), dt, pass)
+        end if
+      end do
+    end if
 
   end subroutine reduce_run
 
@@ -495,24 +503,38 @@ contains
         call apply_reduce(reduce_args(t_lnpop_lon  , reduce_t_lnpop_lon ))
         call apply_reduce(reduce_args(ak_t_lon     , reduce_ak_t_lon    ))
       end if
-      if (pgf_scheme == 'lin97' .or. nonhydrostatic) then
+      if (pgf_scheme == 'lin97' .and. .not. nonhydrostatic) then
         call apply_reduce(reduce_args(gz_lev       , reduce_gz_lev      ))
-      end if
-      if (nonhydrostatic .and. pass == no_wind_pass) then
-        call apply_reduce(reduce_args(m_lev        , reduce_m_lev       ))
-        call apply_reduce(reduce_args(mf_lev_lon_n , reduce_mf_lev_lon_n))
-        call apply_reduce(reduce_args(gz_lev_lon   , reduce_gz_lev_lon  ))
-        call apply_reduce(reduce_args(w_lev        , reduce_w_lev       ))
-        call apply_reduce(reduce_args(w_lev_lon    , reduce_w_lev_lon   ))
-        call apply_reduce(reduce_args(p_lev        , reduce_p_lev       ))
-        call apply_reduce(reduce_args(p_lev_lon    , reduce_p_lev_lon   ))
-        call apply_reduce(reduce_args(rhod_lon     , reduce_rhod_lon    ))
       end if
     else
       call apply_reduce(reduce_args(gz             , reduce_gz          ))
     end if
 
   end subroutine reduce_state
+
+  subroutine reduce_nh_state(j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+
+    integer, intent(in) :: j
+    type(block_type), intent(in) :: block
+    type(mesh_type), intent(in) :: raw_mesh
+    type(state_type), intent(inout) :: raw_state
+    type(reduced_mesh_type), intent(in) :: reduced_mesh
+    type(reduced_static_type), intent(in) :: reduced_static
+    type(reduced_state_type), intent(inout) :: reduced_state
+    real(8), intent(in) :: dt
+
+    call apply_reduce(reduce_args(m_lon        , reduce_m_lon       ))
+    call apply_reduce(reduce_args(m_lev        , reduce_m_lev       ))
+    call apply_reduce(reduce_args(mf_lev_lon_n , reduce_mf_lev_lon_n))
+    call apply_reduce(reduce_args(gz_lev       , reduce_gz_lev      ))
+    call apply_reduce(reduce_args(gz_lev_lon   , reduce_gz_lev_lon  ))
+    call apply_reduce(reduce_args(w_lev        , reduce_w_lev       ))
+    call apply_reduce(reduce_args(w_lev_lon    , reduce_w_lev_lon   ))
+    call apply_reduce(reduce_args(p_lev        , reduce_p_lev       ))
+    call apply_reduce(reduce_args(p_lev_lon    , reduce_p_lev_lon   ))
+    call apply_reduce(reduce_args(rhod_lon     , reduce_rhod_lon    ))
+
+  end subroutine reduce_nh_state
 
   subroutine reduce_gzs(j, buf_j, move, block, raw_mesh, raw_static, reduced_mesh, reduced_static)
 
@@ -747,7 +769,7 @@ contains
         end do
         raw_i = raw_i + reduced_mesh%reduce_factor
       end do
-      call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%w_lev_lon(:,:,buf_j,move), west_halo=.false.)
+      call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%w_lev_lon(:,:,buf_j,move), east_halo=.false.)
     end if
 
   end subroutine reduce_w_lev_lon
@@ -775,6 +797,7 @@ contains
         end do
         raw_i = raw_i + reduced_mesh%reduce_factor
       end do
+      call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%p_lev(:,:,buf_j,move), west_halo=.false.)
     end if
 
   end subroutine reduce_p_lev
@@ -856,7 +879,7 @@ contains
         end do
         raw_i = raw_i + reduced_mesh%reduce_factor
       end do
-      call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%m(:,:,buf_j,move))
+      call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%m(:,:,buf_j,move), west_halo=.false.)
     end if
 
   end subroutine reduce_m
@@ -973,7 +996,7 @@ contains
       end if
 #endif
     end if
-    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%pv(:,:,buf_j,move))
+    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%pv(:,:,buf_j,move), east_halo=.false.)
 
   end subroutine reduce_pv
 
@@ -990,16 +1013,15 @@ contains
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
-    integer i, k
+    integer raw_i, i, k
 
     if (reduced_mesh%area_lon(buf_j) == 0) return
+    raw_i = raw_mesh%half_lon_ibeg + move - 1
     do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
       do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
-        reduced_state%m_lon(k,i,buf_j,move) = (                                   &
-          reduced_mesh%area_lon_west(buf_j) * reduced_state%m(k,i  ,buf_j,move) + &
-          reduced_mesh%area_lon_east(buf_j) * reduced_state%m(k,i+1,buf_j,move)   &
-        ) / reduced_mesh%area_lon(buf_j)
+        reduced_state%m_lon(k,i,buf_j,move) = sum(raw_state%m_lon(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j,k) * reduced_mesh%weights)
       end do
+      raw_i = raw_i + reduced_mesh%reduce_factor
     end do
     call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%m_lon(:,:,buf_j,move), east_halo=.false.)
 
@@ -1018,23 +1040,15 @@ contains
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
-    integer i, k
+    integer raw_i, i, k
 
     if (reduced_mesh%area_lat(buf_j) == 0) return
+    raw_i = raw_mesh%full_lon_ibeg + move - 1
     do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
       do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
-#ifdef V_POLE
-        reduced_state%m_lat(k,i,buf_j,move) = (                                    &
-          reduced_mesh%area_lat_north(buf_j) * reduced_state%m(k,i,buf_j  ,move) + &
-          reduced_mesh%area_lat_south(buf_j) * reduced_state%m(k,i,buf_j-1,move)   &
-        ) / reduced_mesh%area_lat(buf_j)
-#else
-        reduced_state%m_lat(k,i,buf_j,move) = (                                    &
-          reduced_mesh%area_lat_north(buf_j) * reduced_state%m(k,i,buf_j+1,move) + &
-          reduced_mesh%area_lat_south(buf_j) * reduced_state%m(k,i,buf_j  ,move)   &
-        ) / reduced_mesh%area_lat(buf_j)
-#endif
+        reduced_state%m_lat(k,i,buf_j,move) = sum(raw_state%m_lat(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j,k) * reduced_mesh%weights)
       end do
+      raw_i = raw_i + reduced_mesh%reduce_factor
     end do
     call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%m_lat(:,:,buf_j,move), west_halo=.false.)
 
@@ -1211,7 +1225,7 @@ contains
 #endif
       end do
     end do
-    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%dpv_lon_t(:,:,buf_j,move))
+    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%dpv_lon_t(:,:,buf_j,move), east_halo=.false.)
 
   end subroutine reduce_dpv_lon_t
 
@@ -1235,7 +1249,7 @@ contains
         reduced_state%dpv_lat_t(k,i,buf_j,move) = reduced_state%pv(k,i,buf_j,move) - reduced_state%pv(k,i-1,buf_j,move)
       end do
     end do
-    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%dpv_lat_t(:,:,buf_j,move))
+    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%dpv_lat_t(:,:,buf_j,move), west_halo=.false.)
 
   end subroutine reduce_dpv_lat_t
 
@@ -1506,7 +1520,7 @@ contains
       end do
       raw_i = raw_i + reduced_mesh%reduce_factor
     end do
-    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%pt(:,:,buf_j,move))
+    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%pt(:,:,buf_j,move), west_halo=.false.)
 
   end subroutine reduce_pt
 
@@ -1567,7 +1581,7 @@ contains
         reduced_state%t(k,i,buf_j,move) = temperature(reduced_state%pt(k,i,buf_j,move), reduced_state%ph(k,i,buf_j,move))
       end do
     end do
-    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%t(:,:,buf_j,move))
+    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%t(:,:,buf_j,move), west_halo=.false.)
 
   end subroutine reduce_t
 
@@ -1627,7 +1641,7 @@ contains
         end if
       end do
     end do
-    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%ak(:,:,buf_j,move))
+    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%ak(:,:,buf_j,move), west_halo=.false.)
 
     do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
       do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend

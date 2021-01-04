@@ -69,7 +69,7 @@ module namelist_mod
   real(r8) :: div_damp_coef4 = 0.01_r8
   logical :: use_vor_damp = .false.
   integer :: vor_damp_order = 2
-  real(r8) :: vor_damp_lat0 = 50.0_r8
+  real(r8) :: vor_damp_lat0 = 70.0_r8
   real(r8) :: vor_damp_decay = 0.2_r8
   real(r8) :: vor_damp_coef2 = 0.001_r8
   real(r8) :: vor_damp_coef4 = 0.01_r8

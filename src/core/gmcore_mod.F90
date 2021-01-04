@@ -94,10 +94,14 @@ contains
 
   subroutine gmcore_run()
 
-    integer iblk
+    integer iblk, itime
 
     do iblk = 1, size(proc%blocks)
       call proc%blocks(iblk)%static%prepare()
+      ! Ensure bottom gz_lev is the same as gzs.
+      do itime = lbound(proc%blocks(iblk)%state, 1), ubound(proc%blocks(iblk)%state, 1)
+        proc%blocks(iblk)%state(itime)%gz_lev(:,:,global_mesh%half_lev_iend) = proc%blocks(iblk)%static%gzs
+      end do
     end do
 
     call operators_prepare(proc%blocks, old, dt_in_seconds)
@@ -322,6 +326,14 @@ contains
         call calc_dptfdlon_dptfdlat(block, old_state, tend, dt)
         call calc_dptfdlev         (block, old_state, tend, dt)
 
+        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+          do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              tend%dpt(i,j,k) = - tend%dptfdlon(i,j,k) - tend%dptfdlat(i,j,k) - tend%dptfdlev(i,j,k)
+            end do
+          end do
+        end do
+
         tend%update_phs = .true.
         tend%update_pt  = .true.
         call update_state(block, tend, old_state, new_state, dt, no_wind_pass)
@@ -333,6 +345,20 @@ contains
         call calc_dkedlon_dkedlat  (block, old_state, tend, dt)
         call calc_wedudlev_wedvdlev(block, old_state, tend, dt)
         call pgf_run               (block, old_state, tend)
+
+        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+            do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+              tend%du(i,j,k) =   tend%qhv(i,j,k) - tend%pgf_lon(i,j,k) - tend%dkedlon(i,j,k) - tend%wedudlev(i,j,k)
+            end do
+          end do
+
+          do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              tend%dv(i,j,k) = - tend%qhu(i,j,k) - tend%pgf_lat(i,j,k) - tend%dkedlat(i,j,k) - tend%wedvdlev(i,j,k)
+            end do
+          end do
+        end do
 
         tend%update_u   = .true.
         tend%update_v   = .true.

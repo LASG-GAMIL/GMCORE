@@ -1,0 +1,18 @@
+&gmcore_control
+  num_lon             = 180
+  num_lat             = 90
+  num_lev             = 26
+  num_proc_lon        = 1
+  num_proc_lat        = 45
+  nonhydrostatic      = .false.
+  vert_coord_scheme   = 'hybrid'
+  vert_coord_template = 'test_l26'
+  test_case           = 'steady_state'
+  run_days            = 12
+  time_scheme         = 'pc2'
+  dt_in_seconds       = 180
+  case_name           = 'ss.180x90.l26'
+  history_interval    = '1 days'
+  reduce_factors      = 10, 9, 6, 5, 4, 3, 2, 2, 2
+  use_div_damp        = .true.
+/

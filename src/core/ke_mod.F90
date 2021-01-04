@@ -75,7 +75,11 @@ contains
         end do
       end if
 #endif
-      call fill_halo(block, state%ke, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false.)
+#ifdef V_POLE
+      call fill_halo(block, state%ke, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false., north_halo=.false.)
+#else
+      call fill_halo(block, state%ke, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false., south_halo=.false.)
+#endif
     end associate
 
   end subroutine calc_ke
