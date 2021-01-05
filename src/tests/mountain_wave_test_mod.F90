@@ -1,11 +1,13 @@
 module mountain_wave_test_mod
 
   use flogger
+  use namelist_mod
   use const_mod
   use parallel_mod
   use block_mod
   use vert_coord_mod
   use formula_mod
+  use operators_mod
 
   implicit none
 
@@ -99,6 +101,10 @@ contains
     end do
     call fill_halo(block, state%t, full_lon=.true., full_lat=.true., full_lev=.true.)
     call fill_halo(block, state%pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+
+    if (nonhydrostatic) then
+      call diag_gz(block, state)
+    end if
   
   end subroutine mountain_wave_test_set_initial_condition
   

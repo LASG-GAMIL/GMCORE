@@ -340,11 +340,12 @@ contains
 
         call nh_solve(block, tend, old_state, new_state, dt)
 
-        ! Use old pressure and air density for PGF.
         call calc_qhu_qhv          (block, old_state, tend, dt)
         call calc_dkedlon_dkedlat  (block, old_state, tend, dt)
         call calc_wedudlev_wedvdlev(block, old_state, tend, dt)
-        call pgf_run               (block, old_state, tend)
+
+        call debug_print_min_max_lev_edge(block, new_state%p_lev, 'p_lev')
+        call pgf_run               (block, new_state, tend)
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole

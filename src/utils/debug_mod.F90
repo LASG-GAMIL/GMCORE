@@ -1,5 +1,6 @@
 module debug_mod
 
+  use, intrinsic :: ieee_arithmetic
   use flogger
   use const_mod
   use namelist_mod
@@ -15,6 +16,17 @@ module debug_mod
   public debug_check_areas
   public debug_check_space_operators
   public debug_print_min_max
+  public debug_print_min_max_cell
+  public debug_print_min_max_lev_edge
+  public debug_print_min_max_lon_edge
+  public debug_print_min_max_lat_edge
+  public debug_is_inf
+
+  interface debug_print_min_max
+    module procedure debug_print_min_max_1d
+    module procedure debug_print_min_max_2d
+    module procedure debug_print_min_max_3d
+  end interface debug_print_min_max
 
 contains
 
@@ -230,12 +242,107 @@ contains
 
   end subroutine debug_check_space_operators
 
-  subroutine debug_print_min_max(array)
+  subroutine debug_print_min_max_1d(array, label)
+
+    real(r8), intent(in) :: array(:)
+    character(*), intent(in) :: label
+
+    write(6, *) trim(label), minval(array), maxval(array)
+
+  end subroutine debug_print_min_max_1d
+
+  subroutine debug_print_min_max_2d(array, label)
 
     real(r8), intent(in) :: array(:,:)
+    character(*), intent(in) :: label
 
-    print *, minval(array), maxval(array)
+    write(6, *) trim(label), minval(array), maxval(array)
 
-  end subroutine debug_print_min_max
+  end subroutine debug_print_min_max_2d
+
+  subroutine debug_print_min_max_3d(array, label)
+
+    real(r8), intent(in) :: array(:,:,:)
+    character(*), intent(in) :: label
+
+    write(6, *) trim(label), minval(array), maxval(array)
+
+  end subroutine debug_print_min_max_3d
+
+  subroutine debug_print_min_max_cell(block, array, label)
+
+    type(block_type), intent(in) :: block
+    real(r8), intent(in) :: array(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
+                                  block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
+                                  block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+    character(*), intent(in) :: label
+
+    write(6, *) trim(label), minval(array(block%mesh%full_lon_ibeg:block%mesh%full_lon_iend,   &
+                                          block%mesh%full_lat_ibeg:block%mesh%full_lat_iend,   &
+                                          block%mesh%full_lev_ibeg:block%mesh%full_lev_iend)), &
+                             maxval(array(block%mesh%full_lon_ibeg:block%mesh%full_lon_iend,   &
+                                          block%mesh%full_lat_ibeg:block%mesh%full_lat_iend,   &
+                                          block%mesh%full_lev_ibeg:block%mesh%full_lev_iend))
+
+  end subroutine debug_print_min_max_cell
+
+  subroutine debug_print_min_max_lev_edge(block, array, label)
+
+    type(block_type), intent(in) :: block
+    real(r8), intent(in) :: array(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
+                                  block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
+                                  block%mesh%half_lev_lb:block%mesh%half_lev_ub)
+    character(*), intent(in) :: label
+
+    write(6, *) trim(label), minval(array(block%mesh%full_lon_ibeg:block%mesh%full_lon_iend,   &
+                                          block%mesh%full_lat_ibeg:block%mesh%full_lat_iend,   &
+                                          block%mesh%half_lev_ibeg:block%mesh%half_lev_iend)), &
+                             maxval(array(block%mesh%full_lon_ibeg:block%mesh%full_lon_iend,   &
+                                          block%mesh%full_lat_ibeg:block%mesh%full_lat_iend,   &
+                                          block%mesh%half_lev_ibeg:block%mesh%half_lev_iend))
+
+  end subroutine debug_print_min_max_lev_edge
+
+  subroutine debug_print_min_max_lon_edge(block, array, label)
+
+    type(block_type), intent(in) :: block
+    real(r8), intent(in) :: array(block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
+                                  block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
+                                  block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+    character(*), intent(in) :: label
+
+    write(6, *) trim(label), minval(array(block%mesh%half_lon_ibeg:block%mesh%half_lon_iend,   &
+                                          block%mesh%full_lat_ibeg:block%mesh%full_lat_iend,   &
+                                          block%mesh%full_lev_ibeg:block%mesh%full_lev_iend)), &
+                             maxval(array(block%mesh%half_lon_ibeg:block%mesh%half_lon_iend,   &
+                                          block%mesh%full_lat_ibeg:block%mesh%full_lat_iend,   &
+                                          block%mesh%full_lev_ibeg:block%mesh%full_lev_iend))
+
+  end subroutine debug_print_min_max_lon_edge
+
+  subroutine debug_print_min_max_lat_edge(block, array, label)
+
+    type(block_type), intent(in) :: block
+    real(r8), intent(in) :: array(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
+                                  block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
+                                  block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+    character(*), intent(in) :: label
+
+    write(6, *) trim(label), minval(array(block%mesh%full_lon_ibeg:block%mesh%full_lon_iend,   &
+                                          block%mesh%half_lat_ibeg:block%mesh%half_lat_iend,   &
+                                          block%mesh%full_lev_ibeg:block%mesh%full_lev_iend)), &
+                             maxval(array(block%mesh%full_lon_ibeg:block%mesh%full_lon_iend,   &
+                                          block%mesh%half_lat_ibeg:block%mesh%half_lat_iend,   &
+                                          block%mesh%full_lev_ibeg:block%mesh%full_lev_iend))
+
+  end subroutine debug_print_min_max_lat_edge
+
+  logical function debug_is_inf(x) result(res)
+
+    real(r8), intent(in) :: x
+
+    res = .not. ieee_is_finite(x)
+
+  end function debug_is_inf
 
 end module debug_mod

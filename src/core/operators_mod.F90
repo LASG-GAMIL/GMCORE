@@ -22,6 +22,7 @@ module operators_mod
   public operators_prepare
   public diag_ph
   public diag_m
+  public diag_gz
   public calc_wedphdlev_lev
   public calc_div
   public calc_vor

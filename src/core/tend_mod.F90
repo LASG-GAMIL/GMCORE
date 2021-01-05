@@ -45,8 +45,12 @@ module tend_mod
     real(r8), allocatable, dimension(:,:,:) :: wedudlev
     real(r8), allocatable, dimension(:,:,:) :: wedvdlev
     ! Nonhydrostatic tendencies
-    real(r8), allocatable, dimension(:,:,:) :: adv_gz ! Advection terms of geopotential
-    real(r8), allocatable, dimension(:,:,:) :: adv_w  ! Advection terms of vertical speed
+    real(r8), allocatable, dimension(:,:,:) :: adv_gz_lon ! Advection terms of geopotential
+    real(r8), allocatable, dimension(:,:,:) :: adv_gz_lat ! Advection terms of geopotential
+    real(r8), allocatable, dimension(:,:,:) :: adv_gz_lev ! Advection terms of geopotential
+    real(r8), allocatable, dimension(:,:,:) :: adv_w_lon  ! Advection terms of vertical speed
+    real(r8), allocatable, dimension(:,:,:) :: adv_w_lat  ! Advection terms of vertical speed
+    real(r8), allocatable, dimension(:,:,:) :: adv_w_lev  ! Advection terms of vertical speed
   contains
     procedure :: init => tend_init
     procedure :: reset_flags => tend_reset_flags
@@ -100,8 +104,12 @@ contains
     call allocate_array(mesh, this%wedudlev, half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%wedvdlev, full_lon=.true., half_lat=.true., full_lev=.true.)
 
-    call allocate_array(mesh, this%adv_gz  , full_lon=.true., full_lat=.true., half_lev=.true.)
-    call allocate_array(mesh, this%adv_w   , full_lon=.true., full_lat=.true., half_lev=.true.)
+    call allocate_array(mesh, this%adv_gz_lon, full_lon=.true., full_lat=.true., half_lev=.true.)
+    call allocate_array(mesh, this%adv_gz_lat, full_lon=.true., full_lat=.true., half_lev=.true.)
+    call allocate_array(mesh, this%adv_gz_lev, full_lon=.true., full_lat=.true., half_lev=.true.)
+    call allocate_array(mesh, this%adv_w_lon , full_lon=.true., full_lat=.true., half_lev=.true.)
+    call allocate_array(mesh, this%adv_w_lat , full_lon=.true., full_lat=.true., half_lev=.true.)
+    call allocate_array(mesh, this%adv_w_lev , full_lon=.true., full_lat=.true., half_lev=.true.)
 
   end subroutine tend_init
 
@@ -143,8 +151,12 @@ contains
     if (allocated(this%wedudlev)) deallocate(this%wedudlev)
     if (allocated(this%wedvdlev)) deallocate(this%wedvdlev)
 
-    if (allocated(this%adv_gz  )) deallocate(this%adv_gz  )
-    if (allocated(this%adv_w   )) deallocate(this%adv_w   )
+    if (allocated(this%adv_gz_lon)) deallocate(this%adv_gz_lon)
+    if (allocated(this%adv_gz_lat)) deallocate(this%adv_gz_lat)
+    if (allocated(this%adv_gz_lev)) deallocate(this%adv_gz_lev)
+    if (allocated(this%adv_w_lon )) deallocate(this%adv_w_lon )
+    if (allocated(this%adv_w_lat )) deallocate(this%adv_w_lat )
+    if (allocated(this%adv_w_lev )) deallocate(this%adv_w_lev )
 
   end subroutine tend_clear
 

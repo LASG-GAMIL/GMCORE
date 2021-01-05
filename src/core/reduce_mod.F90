@@ -390,7 +390,8 @@ contains
         allocate(full_lev_full_lon_dims(ak         ,  0:0))
         allocate(full_lev_half_lon_dims(t_lnpop_lon,  0:0))
         allocate(full_lev_half_lon_dims(ak_t_lon   ,  0:0))
-      else if (pgf_scheme == 'lin97') then
+      end if
+      if (pgf_scheme == 'lin97' .or. nonhydrostatic) then
         allocate(half_lev_full_lon_dims(gz_lev     ,  0:0))
       end if
       if (nonhydrostatic) then
@@ -741,7 +742,6 @@ contains
         end do
         raw_i = raw_i + reduced_mesh%reduce_factor
       end do
-      call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%w_lev(:,:,buf_j,move), west_halo=.false.)
     end if
 
   end subroutine reduce_w_lev
