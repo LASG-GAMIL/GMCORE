@@ -238,7 +238,7 @@ contains
 #else
           proc%lat_ibeg <= jr .or. proc%lat_iend > global_mesh%num_full_lat - jr) then
 #endif
-        !call log_notice('Create zonal communicator on process ' // to_string(proc%id) // '.')
+        !call log_notice('Create zonal communicator on process ' // to_str(proc%id) // '.')
         allocate(zonal_proc_id(proc%cart_dims(1)))
         do i = 1, proc%cart_dims(1)
           call MPI_CART_RANK(proc%cart_comm, [i-1,proc%cart_coords(2)], zonal_proc_id(i), ierr)

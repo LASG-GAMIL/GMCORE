@@ -37,7 +37,7 @@ contains
     call fiona_get_dim('topo', 'x', size=num_topo_lon)
     call fiona_get_dim('topo', 'y', size=num_topo_lat)
 
-    call log_notice('num_topo_lon = ' // to_string(num_topo_lon) // ', num_topo_lat = ' // to_string(num_topo_lat))
+    call log_notice('num_topo_lon = ' // to_str(num_topo_lon) // ', num_topo_lat = ' // to_str(num_topo_lat))
 
     allocate(topo_lon(num_topo_lon))
     allocate(topo_lat(num_topo_lat))
@@ -257,8 +257,8 @@ contains
           jbeg > mesh%full_lat_iend .or. jend > mesh%full_lat_iend) then
         call log_error('Invalid region parameters for topo_zero!', __FILE__, __LINE__)
       end if
-      call log_notice('Zero topography in (' // to_string(ibeg) // '-' // to_string(iend) // ',' // &
-                                                to_string(jbeg) // '-' // to_string(jend) // ').')
+      call log_notice('Zero topography in (' // to_str(ibeg) // '-' // to_str(iend) // ',' // &
+                                                to_str(jbeg) // '-' // to_str(jend) // ').')
       gzs(ibeg:iend,jbeg:jend) = 0.0_r8
     end associate
 
@@ -294,8 +294,8 @@ contains
           jbeg > mesh%full_lat_iend .or. jend > mesh%full_lat_iend) then
         call log_error('Invalid region parameters for topo_smooth!', __FILE__, __LINE__)
       end if
-      call log_notice('Smooth topography in (' // to_string(ibeg) // '-' // to_string(iend) // ',' // &
-                                                  to_string(jbeg) // '-' // to_string(jend) // ').')
+      call log_notice('Smooth topography in (' // to_str(ibeg) // '-' // to_str(iend) // ',' // &
+                                                  to_str(jbeg) // '-' // to_str(jend) // ').')
       allocate(smooth_kernel(-5:5,-5:5))
       do j = -5, 5
         do i = -5, 5
