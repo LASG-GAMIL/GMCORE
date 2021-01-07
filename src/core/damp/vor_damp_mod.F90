@@ -42,7 +42,7 @@ contains
       end if
     end do
     if (is_root_proc()) then
-      call log_notice('Vorticity damping control latitude index is ' // to_string(j0) // '.')
+      call log_notice('Vorticity damping control latitude index is ' // to_str(j0) // '.')
     end if
 
     allocate(cv_full_lat(global_mesh%num_full_lat,global_mesh%num_full_lev))
@@ -74,7 +74,7 @@ contains
         end do
       end do
     case default
-      call log_error('Unsupported vor_damp_order ' // trim(to_string(vor_damp_order)) // '!')
+      call log_error('Unsupported vor_damp_order ' // trim(to_str(vor_damp_order)) // '!')
     end select
 
     ! Initialize cyclic tridiagonal solvers on each zonal circles if need implicit integration.

@@ -128,7 +128,7 @@ contains
       if (time_step == 0) call cpu_time(time1)
       call cpu_time(time2)
       if (time_step /= 0) then
-        if (is_root_proc()) call log_notice('Time cost ' // to_string(time2 - time1, 5) // ' seconds.')
+        if (is_root_proc()) call log_notice('Time cost ' // to_str(time2 - time1, 5) // ' seconds.')
         time1 = time2
       end if
       if (baroclinic) then
