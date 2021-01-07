@@ -74,8 +74,8 @@ contains
       do j = 1, size(reduce_factors)
         if (reduce_factors(j) == 0) cycle
         if (mod(global_mesh%num_full_lon, reduce_factors(j)) /= 0) then
-          call log_error('Zonal reduce factor ' // to_string(reduce_factors(j)) // &
-            ' cannot divide zonal grid number ' // to_string(global_mesh%num_full_lon) // '!')
+          call log_error('Zonal reduce factor ' // to_str(reduce_factors(j)) // &
+            ' cannot divide zonal grid number ' // to_str(global_mesh%num_full_lon) // '!')
         end if
         ! South Pole
 #ifdef V_POLE

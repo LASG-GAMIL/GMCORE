@@ -52,7 +52,7 @@ contains
       else
         call qags(gh_integrand, -0.5*pi, mesh%full_lat(j), 1.0e-12, 1.0e-3, block%state(1)%gz(i,j,1), abserr, neval, ierr)
         if (ierr /= 0) then
-          call log_error('Failed to calculate integration at (' // to_string(i) // ',' // to_string(j) // ')!')
+          call log_error('Failed to calculate integration at (' // to_str(i) // ',' // to_str(j) // ')!')
         end if
         block%state(1)%gz(i,j,1) = gh0 - block%state(1)%gz(i,j,1)
       end if

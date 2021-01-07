@@ -42,9 +42,9 @@ program gmcore_prepare
   close(10)
 
   write(*, *) '=================== GMCORE Parameters ==================='
-  write(*, *) 'num_lon              = ', to_string(num_lon)
-  write(*, *) 'num_lat              = ', to_string(num_lat)
-  write(*, *) 'num_lev              = ', to_string(num_lev)
+  write(*, *) 'num_lon              = ', to_str(num_lon)
+  write(*, *) 'num_lat              = ', to_str(num_lat)
+  write(*, *) 'num_lev              = ', to_str(num_lev)
   write(*, *) 'vert_coord_scheme    = ', trim(vert_coord_scheme)
   write(*, *) 'vert_coord_template  = ', trim(vert_coord_template)
   write(*, *) 'initial_time         = ', trim(initial_time)

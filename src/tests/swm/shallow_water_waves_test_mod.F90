@@ -110,7 +110,7 @@ contains
                    mesh%half_lat(mesh%half_lat_lb:mesh%half_lat_ub), &
                    mesh%half_lon(mesh%half_lon_lb:mesh%half_lon_ub), [0.0_dp], u, v, h, 0)
     call getPhaseSpeed(C, 0)
-    if (is_root_proc()) call log_notice('Phase speed is ' // trim(to_string(C, 20)))
+    if (is_root_proc()) call log_notice('Phase speed is ' // trim(to_str(C, 20)))
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
