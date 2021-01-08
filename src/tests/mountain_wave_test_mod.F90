@@ -103,7 +103,7 @@ contains
     call fill_halo(block, state%pt, full_lon=.true., full_lat=.true., full_lev=.true.)
 
     if (nonhydrostatic) then
-      call diag_gz(block, state)
+      call diag_gz_lev(block, state)
     end if
   
   end subroutine mountain_wave_test_set_initial_condition

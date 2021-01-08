@@ -22,7 +22,7 @@ module operators_mod
   public operators_prepare
   public diag_ph
   public diag_m
-  public diag_gz
+  public diag_gz_lev
   public calc_wedphdlev_lev
   public calc_div
   public calc_vor
@@ -57,7 +57,6 @@ contains
         call diag_t                   (blocks(iblk), blocks(iblk)%state(itime))
       end if
       call diag_m                     (blocks(iblk), blocks(iblk)%state(itime))
-      call pgf_prepare                (blocks(iblk), blocks(iblk)%state(itime))
       call interp_m_vtx               (blocks(iblk), blocks(iblk)%state(itime))
       call calc_mf                    (blocks(iblk), blocks(iblk)%state(itime))
       call calc_ke                    (blocks(iblk), blocks(iblk)%state(itime))
@@ -65,8 +64,9 @@ contains
       call interp_pv                  (blocks(iblk), blocks(iblk)%state(itime), dt)
       call calc_div                   (blocks(iblk), blocks(iblk)%state(itime))
       if (hydrostatic) then
-        call diag_gz                  (blocks(iblk), blocks(iblk)%state(itime))
+        call diag_gz_lev              (blocks(iblk), blocks(iblk)%state(itime))
       end if
+      call pgf_prepare                (blocks(iblk), blocks(iblk)%state(itime))
 
       call reduce_run(blocks(iblk), blocks(iblk)%state(itime), dt, all_pass)
     end do
@@ -91,7 +91,6 @@ contains
         call diag_t                   (block, state)
       end if
       call diag_m                     (block, state)
-      call pgf_prepare                (block, state)
       if (pass /= no_wind_pass) then
         call calc_mf                  (block, state)
         call calc_ke                  (block, state)
@@ -103,8 +102,9 @@ contains
         end if
       end if
       if (hydrostatic) then
-        call diag_gz                  (block, state)
+        call diag_gz_lev              (block, state)
       end if
+      call pgf_prepare                (block, state)
 
       call reduce_run(block, state, dt, pass)
     end if
@@ -335,7 +335,7 @@ contains
 
   end subroutine calc_div
 
-  subroutine diag_gz(block, state)
+  subroutine diag_gz_lev(block, state)
 
     type(block_type), intent(in) :: block
     type(state_type), intent(inout) :: state
@@ -344,11 +344,10 @@ contains
     real(r8) dgz
 
     associate (mesh   => block%mesh      , &
-               t      => state%t         , &
-               ph_lev => state%ph_lev    , &
-               gzs    => block%static%gzs, &
-               gz     => state%gz        , &
-               gz_lev => state%gz_lev)
+               t      => state%t         , & ! in
+               ph_lev => state%ph_lev    , & ! in
+               gzs    => block%static%gzs, & ! in
+               gz_lev => state%gz_lev)       ! out
       do k = mesh%half_lev_ibeg, mesh%half_lev_iend
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -361,21 +360,9 @@ contains
         end do
       end do
       call fill_halo(block, gz_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
-
-      if (pgf_scheme == 'sb81') then
-        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-          do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              ! gz(i,j,k) = 0.5_r8 * (state%gz_lev(i,j,k) + state%gz_lev(i,j,k+1)) ! Simplified version
-              gz(i,j,k) = gz_lev(i,j,k+1) + state%ak(i,j,k) * Rd * t(i,j,k) ! Simmons and Burridge (1981)
-            end do
-          end do
-        end do
-        call fill_halo(block, state%gz, full_lon=.true., full_lat=.true., full_lev=.true.)
-      end if
     end associate
 
-  end subroutine diag_gz
+  end subroutine diag_gz_lev
 
   subroutine diag_m(block, state)
 
@@ -412,7 +399,9 @@ contains
     call fill_halo(block, state%m, full_lon=.true., full_lat=.true., full_lev=.true.)
 
     call interp_cell_to_lon_edge(mesh, state%m, state%m_lon)
+    call fill_halo(block, state%m_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
     call interp_cell_to_lat_edge(mesh, state%m, state%m_lat)
+    call fill_halo(block, state%m_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
 
   end subroutine diag_m
 

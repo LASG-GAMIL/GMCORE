@@ -269,71 +269,71 @@ contains
 
   end subroutine debug_print_min_max_3d
 
-  subroutine debug_print_min_max_cell(block, array, label)
+  subroutine debug_print_min_max_cell(mesh, array, label)
 
-    type(block_type), intent(in) :: block
-    real(r8), intent(in) :: array(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
-                                  block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
-                                  block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+    type(mesh_type), intent(in) :: mesh
+    real(r8), intent(in) :: array(mesh%full_lon_lb:mesh%full_lon_ub, &
+                                  mesh%full_lat_lb:mesh%full_lat_ub, &
+                                  mesh%full_lev_lb:mesh%full_lev_ub)
     character(*), intent(in) :: label
 
-    write(6, *) trim(label), minval(array(block%mesh%full_lon_ibeg:block%mesh%full_lon_iend,   &
-                                          block%mesh%full_lat_ibeg:block%mesh%full_lat_iend,   &
-                                          block%mesh%full_lev_ibeg:block%mesh%full_lev_iend)), &
-                             maxval(array(block%mesh%full_lon_ibeg:block%mesh%full_lon_iend,   &
-                                          block%mesh%full_lat_ibeg:block%mesh%full_lat_iend,   &
-                                          block%mesh%full_lev_ibeg:block%mesh%full_lev_iend))
+    write(6, *) trim(label), minval(array(mesh%full_lon_ibeg:mesh%full_lon_iend,   &
+                                          mesh%full_lat_ibeg:mesh%full_lat_iend,   &
+                                          mesh%full_lev_ibeg:mesh%full_lev_iend)), &
+                             maxval(array(mesh%full_lon_ibeg:mesh%full_lon_iend,   &
+                                          mesh%full_lat_ibeg:mesh%full_lat_iend,   &
+                                          mesh%full_lev_ibeg:mesh%full_lev_iend))
 
   end subroutine debug_print_min_max_cell
 
-  subroutine debug_print_min_max_lev_edge(block, array, label)
+  subroutine debug_print_min_max_lev_edge(mesh, array, label)
 
-    type(block_type), intent(in) :: block
-    real(r8), intent(in) :: array(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
-                                  block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
-                                  block%mesh%half_lev_lb:block%mesh%half_lev_ub)
+    type(mesh_type), intent(in) :: mesh
+    real(r8), intent(in) :: array(mesh%full_lon_lb:mesh%full_lon_ub, &
+                                  mesh%full_lat_lb:mesh%full_lat_ub, &
+                                  mesh%half_lev_lb:mesh%half_lev_ub)
     character(*), intent(in) :: label
 
-    write(6, *) trim(label), minval(array(block%mesh%full_lon_ibeg:block%mesh%full_lon_iend,   &
-                                          block%mesh%full_lat_ibeg:block%mesh%full_lat_iend,   &
-                                          block%mesh%half_lev_ibeg:block%mesh%half_lev_iend)), &
-                             maxval(array(block%mesh%full_lon_ibeg:block%mesh%full_lon_iend,   &
-                                          block%mesh%full_lat_ibeg:block%mesh%full_lat_iend,   &
-                                          block%mesh%half_lev_ibeg:block%mesh%half_lev_iend))
+    write(6, *) trim(label), minval(array(mesh%full_lon_ibeg:mesh%full_lon_iend,   &
+                                          mesh%full_lat_ibeg:mesh%full_lat_iend,   &
+                                          mesh%half_lev_ibeg:mesh%half_lev_iend)), &
+                             maxval(array(mesh%full_lon_ibeg:mesh%full_lon_iend,   &
+                                          mesh%full_lat_ibeg:mesh%full_lat_iend,   &
+                                          mesh%half_lev_ibeg:mesh%half_lev_iend))
 
   end subroutine debug_print_min_max_lev_edge
 
-  subroutine debug_print_min_max_lon_edge(block, array, label)
+  subroutine debug_print_min_max_lon_edge(mesh, array, label)
 
-    type(block_type), intent(in) :: block
-    real(r8), intent(in) :: array(block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
-                                  block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
-                                  block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+    type(mesh_type), intent(in) :: mesh
+    real(r8), intent(in) :: array(mesh%half_lon_lb:mesh%half_lon_ub, &
+                                  mesh%full_lat_lb:mesh%full_lat_ub, &
+                                  mesh%full_lev_lb:mesh%full_lev_ub)
     character(*), intent(in) :: label
 
-    write(6, *) trim(label), minval(array(block%mesh%half_lon_ibeg:block%mesh%half_lon_iend,   &
-                                          block%mesh%full_lat_ibeg:block%mesh%full_lat_iend,   &
-                                          block%mesh%full_lev_ibeg:block%mesh%full_lev_iend)), &
-                             maxval(array(block%mesh%half_lon_ibeg:block%mesh%half_lon_iend,   &
-                                          block%mesh%full_lat_ibeg:block%mesh%full_lat_iend,   &
-                                          block%mesh%full_lev_ibeg:block%mesh%full_lev_iend))
+    write(6, *) trim(label), minval(array(mesh%half_lon_ibeg:mesh%half_lon_iend,   &
+                                          mesh%full_lat_ibeg:mesh%full_lat_iend,   &
+                                          mesh%full_lev_ibeg:mesh%full_lev_iend)), &
+                             maxval(array(mesh%half_lon_ibeg:mesh%half_lon_iend,   &
+                                          mesh%full_lat_ibeg:mesh%full_lat_iend,   &
+                                          mesh%full_lev_ibeg:mesh%full_lev_iend))
 
   end subroutine debug_print_min_max_lon_edge
 
-  subroutine debug_print_min_max_lat_edge(block, array, label)
+  subroutine debug_print_min_max_lat_edge(mesh, array, label)
 
-    type(block_type), intent(in) :: block
-    real(r8), intent(in) :: array(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
-                                  block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
-                                  block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+    type(mesh_type), intent(in) :: mesh
+    real(r8), intent(in) :: array(mesh%full_lon_lb:mesh%full_lon_ub, &
+                                  mesh%half_lat_lb:mesh%half_lat_ub, &
+                                  mesh%full_lev_lb:mesh%full_lev_ub)
     character(*), intent(in) :: label
 
-    write(6, *) trim(label), minval(array(block%mesh%full_lon_ibeg:block%mesh%full_lon_iend,   &
-                                          block%mesh%half_lat_ibeg:block%mesh%half_lat_iend,   &
-                                          block%mesh%full_lev_ibeg:block%mesh%full_lev_iend)), &
-                             maxval(array(block%mesh%full_lon_ibeg:block%mesh%full_lon_iend,   &
-                                          block%mesh%half_lat_ibeg:block%mesh%half_lat_iend,   &
-                                          block%mesh%full_lev_ibeg:block%mesh%full_lev_iend))
+    write(6, *) trim(label), minval(array(mesh%full_lon_ibeg:mesh%full_lon_iend,   &
+                                          mesh%half_lat_ibeg:mesh%half_lat_iend,   &
+                                          mesh%full_lev_ibeg:mesh%full_lev_iend)), &
+                             maxval(array(mesh%full_lon_ibeg:mesh%full_lon_iend,   &
+                                          mesh%half_lat_ibeg:mesh%half_lat_iend,   &
+                                          mesh%full_lev_ibeg:mesh%full_lev_iend))
 
   end subroutine debug_print_min_max_lat_edge
 

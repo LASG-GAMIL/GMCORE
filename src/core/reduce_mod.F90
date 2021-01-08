@@ -394,13 +394,15 @@ contains
       if (pgf_scheme == 'lin97' .or. nonhydrostatic) then
         allocate(half_lev_full_lon_dims(gz_lev     ,  0:0))
       end if
+      if (pgf_scheme == 'dflx' .or. nonhydrostatic) then
+        allocate(half_lev_full_lon_dims(gz_lev_lon ,  0:0))
+        allocate(half_lev_full_lon_dims(p_lev      ,  0:0))
+      end if
       if (nonhydrostatic) then
         allocate(half_lev_full_lon_dims(m_lev       ,  0:0))
         allocate(half_lev_half_lon_dims(mf_lev_lon_n,  0:0))
-        allocate(half_lev_full_lon_dims(gz_lev_lon  ,  0:0))
         allocate(half_lev_full_lon_dims(w_lev       ,  0:0))
         allocate(half_lev_half_lon_dims(w_lev_lon   ,  0:0))
-        allocate(half_lev_full_lon_dims(p_lev       ,  0:0))
         allocate(half_lev_half_lon_dims(p_lev_lon   ,  0:0))
         allocate(full_lev_half_lon_dims(rhod_lon    ,  0:0))
       end if
@@ -509,6 +511,16 @@ contains
       end if
     else
       call apply_reduce(reduce_args(gz             , reduce_gz          ))
+    end if
+
+    if (pgf_scheme == 'dflx') then
+      call apply_reduce(reduce_args(gz_lev_lon     , reduce_gz_lev_lon  ))
+      if (hydrostatic) then
+        call apply_reduce(reduce_args(p_lev        , reduce_p_lev       ))
+        if (reduce_pv_directly) then
+          call apply_reduce(reduce_args(m_lon      , reduce_m_lon       ))
+        end if
+      end if
     end if
 
   end subroutine reduce_state
@@ -714,7 +726,7 @@ contains
         end do
         raw_i = raw_i + reduced_mesh%reduce_factor
       end do
-      call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%gz_lev_lon(:,:,buf_j,move), east_halo=.false.)
+      call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%gz_lev_lon(:,:,buf_j,move))
     end if
 
   end subroutine reduce_gz_lev_lon

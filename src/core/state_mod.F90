@@ -69,6 +69,8 @@ module state_mod
     real(r8), allocatable, dimension(:,:,:) :: div               ! Divergence (s-1)
     real(r8), allocatable, dimension(:,:,:) :: div2              ! Laplacian of divergence (s-1)
     real(r8), allocatable, dimension(:,:,:) :: vor               ! Vorticity (s-1)
+    ! PGF dflx variables
+    ! gz_lev_lon
     ! Nonhydrostatic variables
     real(r8), allocatable, dimension(:,:,:) :: m_lev
     real(r8), allocatable, dimension(:,:,:) :: wedphdlev
@@ -82,7 +84,7 @@ module state_mod
     real(r8), allocatable, dimension(:,:,:) :: rhod_lon          ! Dry air density
     real(r8), allocatable, dimension(:,:,:) :: rhod_lat          ! Dry air density
     real(r8), allocatable, dimension(:,:,:) :: p                 ! Pressure on full levels
-    real(r8), allocatable, dimension(:,:,:) :: p_lev             ! Pressure on half levels
+    real(r8), pointer    , dimension(:,:,:) :: p_lev             ! Pressure on half levels
     real(r8), allocatable, dimension(:,:,:) :: p_lev_lon         ! Pressure on half levels
     real(r8), allocatable, dimension(:,:,:) :: p_lev_lat         ! Pressure on half levels
     real(r8), allocatable, dimension(:,:,:) :: mf_lev_lon_n      ! Mass flux on zonal edge and half level
@@ -109,7 +111,7 @@ contains
 
   subroutine state_init(this, mesh)
 
-    class(state_type), intent(inout)         :: this
+    class(state_type), intent(inout), target :: this
     type(mesh_type  ), intent(in   ), target :: mesh
 
     call this%clear()
@@ -158,7 +160,7 @@ contains
     call allocate_array(mesh, this%vor              , half_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%ak               , full_lon=.true., full_lat=.true., full_lev=.true.)
 
-    if (baroclinic .and. nonhydrostatic) then
+    if (nonhydrostatic) then
       call allocate_array(mesh, this%m_lev          , full_lon=.true., full_lat=.true., half_lev=.true.)
       call allocate_array(mesh, this%wedphdlev      , full_lon=.true., full_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%w              , full_lon=.true., full_lat=.true., full_lev=.true.)
@@ -176,6 +178,12 @@ contains
       call allocate_array(mesh, this%p_lev_lat      , full_lon=.true., half_lat=.true., half_lev=.true.)
       call allocate_array(mesh, this%mf_lev_lon_n   , half_lon=.true., full_lat=.true., half_lev=.true.)
       call allocate_array(mesh, this%mf_lev_lat_n   , full_lon=.true., half_lat=.true., half_lev=.true.)
+    else
+      this%p_lev => this%ph_lev
+      if (pgf_scheme == 'dflx') then
+        call allocate_array(mesh, this%gz_lev_lon   , half_lon=.true., full_lat=.true., half_lev=.true.)
+        call allocate_array(mesh, this%gz_lev_lat   , full_lon=.true., half_lat=.true., half_lev=.true.)
+      end if
     end if
 
     if (pgf_scheme == 'sb81') then
@@ -270,11 +278,14 @@ contains
     if (allocated(this%rhod_lon         )) deallocate(this%rhod_lon         )
     if (allocated(this%rhod_lat         )) deallocate(this%rhod_lat         )
     if (allocated(this%p                )) deallocate(this%p                )
-    if (allocated(this%p_lev            )) deallocate(this%p_lev            )
     if (allocated(this%p_lev_lon        )) deallocate(this%p_lev_lon        )
     if (allocated(this%p_lev_lat        )) deallocate(this%p_lev_lat        )
     if (allocated(this%mf_lev_lon_n     )) deallocate(this%mf_lev_lon_n     )
     if (allocated(this%mf_lev_lat_n     )) deallocate(this%mf_lev_lat_n     )
+
+    if (nonhydrostatic) then
+      if (associated(this%p_lev         )) deallocate(this%p_lev            )
+    end if
 
     if (allocated(this%tension_h        )) deallocate(this%tension_h        )
     if (allocated(this%shear_h          )) deallocate(this%shear_h          )

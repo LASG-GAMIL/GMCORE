@@ -19,16 +19,26 @@ contains
     integer i, j, k
     real(r8), parameter :: ln2 = log(2.0_r8)
 
-    if (baroclinic) then
-      mesh => state%mesh
-
+    associate (mesh        => block%mesh       , &
+               ph_lev      => state%ph_lev     , & ! in
+               m           => state%m          , & ! in
+               t           => state%t          , & ! in
+               gz_lev      => state%gz_lev     , & ! in
+               ak          => state%ak         , & ! out
+               ak_t        => state%ak_t       , & ! out
+               ak_t_lon    => state%ak_t_lon   , & ! out
+               ak_t_lat    => state%ak_t_lat   , & ! out
+               gz          => state%gz         , & ! out
+               t_lnpop     => state%t_lnpop    , & ! out
+               t_lnpop_lon => state%t_lnpop_lon, & ! out
+               t_lnpop_lat => state%t_lnpop_lat)   ! out
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             if (k == 1) then
-              state%ak(i,j,k) = ln2
+              ak(i,j,k) = ln2
             else
-              state%ak(i,j,k) = 1.0_r8 - state%ph_lev(i,j,k) / state%m(i,j,k) * log(state%ph_lev(i,j,k+1) / state%ph_lev(i,j,k))
+              ak(i,j,k) = 1.0_r8 - ph_lev(i,j,k) / m(i,j,k) * log(ph_lev(i,j,k+1) / ph_lev(i,j,k))
             end if
           end do
         end do
@@ -37,19 +47,28 @@ contains
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            state%t_lnpop(i,j,k) = state%t(i,j,k) * log(state%ph_lev(i,j,k+1) / state%ph_lev(i,j,k))
-            state%ak_t(i,j,k) = state%ak(i,j,k) * state%t(i,j,k)
+            gz(i,j,k) = gz_lev(i,j,k+1) + ak(i,j,k) * Rd * t(i,j,k) ! Simmons and Burridge (1981)
           end do
         end do
       end do
-      call fill_halo(block, state%t_lnpop, full_lon=.true., full_lat=.true., full_lev=.true.)
-      call fill_halo(block, state%ak_t   , full_lon=.true., full_lat=.true., full_lev=.true.)
+      call fill_halo(block, gz, full_lon=.true., full_lat=.true., full_lev=.true.)
 
-      call interp_cell_to_lon_edge(mesh, state%t_lnpop, state%t_lnpop_lon)
-      call interp_cell_to_lat_edge(mesh, state%t_lnpop, state%t_lnpop_lat)
-      call interp_cell_to_lon_edge(mesh, state%ak_t, state%ak_t_lon)
-      call interp_cell_to_lat_edge(mesh, state%ak_t, state%ak_t_lat)
-    end if
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            t_lnpop(i,j,k) = t(i,j,k) * log(ph_lev(i,j,k+1) / ph_lev(i,j,k))
+            ak_t(i,j,k) = ak(i,j,k) * t(i,j,k)
+          end do
+        end do
+      end do
+      call fill_halo(block, t_lnpop, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call fill_halo(block, ak_t   , full_lon=.true., full_lat=.true., full_lev=.true.)
+
+      call interp_cell_to_lon_edge(mesh, t_lnpop, t_lnpop_lon)
+      call interp_cell_to_lat_edge(mesh, t_lnpop, t_lnpop_lat)
+      call interp_cell_to_lon_edge(mesh, ak_t, ak_t_lon)
+      call interp_cell_to_lat_edge(mesh, ak_t, ak_t_lat)
+    end associate
 
   end subroutine pgf_sb81_prepare
 
