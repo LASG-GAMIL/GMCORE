@@ -180,10 +180,6 @@ contains
       call allocate_array(mesh, this%mf_lev_lat_n   , full_lon=.true., half_lat=.true., half_lev=.true.)
     else
       this%p_lev => this%ph_lev
-      if (pgf_scheme == 'dflx') then
-        call allocate_array(mesh, this%gz_lev_lon   , half_lon=.true., full_lat=.true., half_lev=.true.)
-        call allocate_array(mesh, this%gz_lev_lat   , full_lon=.true., half_lat=.true., half_lev=.true.)
-      end if
     end if
 
     if (pgf_scheme == 'sb81') then

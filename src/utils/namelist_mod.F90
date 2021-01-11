@@ -58,7 +58,7 @@ module namelist_mod
   ! Damping settings
   logical :: use_polar_damp = .false.
   integer :: polar_damp_order = 4
-  integer :: polar_damp_cycles = 1
+  real(r8) :: polar_damp_lat0 = 80.0_r8
   logical :: use_div_damp = .false.
   integer :: div_damp_order = 2
   integer :: div_damp_j0 = 0
@@ -128,7 +128,7 @@ module namelist_mod
     do_reduce_ke              , &
     use_polar_damp            , &
     polar_damp_order          , &
-    polar_damp_cycles         , &
+    polar_damp_lat0           , &
     use_div_damp              , &
     div_damp_order            , &
     div_damp_polar            , &

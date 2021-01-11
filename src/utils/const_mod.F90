@@ -13,7 +13,7 @@ module const_mod
   real(r8), parameter :: pi05   = pi * 0.5_r8
   real(r8), parameter :: deg    = 180.0_r8 / pi
   real(r8), parameter :: rad    = pi / 180.0_r8
-  real(r8), parameter :: omega  = 2.0_r8 * pi / 86400.0_r8  ! s-1
+  real(r8)            :: omega  = 2.0_r8 * pi / 86400.0_r8  ! s-1
   real(r8), parameter :: radius = 6.37122d6                 ! m
   real(r8), parameter :: g      = 9.80616_r8                ! m2 s-2
   real(r8), parameter :: eps    = epsilon(1.0_r8)

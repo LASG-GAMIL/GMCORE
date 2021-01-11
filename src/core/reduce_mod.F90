@@ -331,7 +331,7 @@ contains
         allocate(full_lev_full_lon_dims(ak         ,  0:0))
         allocate(full_lev_half_lon_dims(t_lnpop_lon,  0:0))
         allocate(full_lev_half_lon_dims(ak_t_lon   ,  0:0))
-      else if (pgf_scheme == 'lin97') then
+      else if (pgf_scheme == 'lin97' .or. pgf_scheme == 'dflx') then
         allocate(half_lev_full_lon_dims(gz_lev     ,  0:0))
       end if
     else
@@ -395,7 +395,7 @@ contains
         allocate(half_lev_full_lon_dims(gz_lev     ,  0:0))
       end if
       if (pgf_scheme == 'dflx' .or. nonhydrostatic) then
-        allocate(half_lev_full_lon_dims(gz_lev_lon ,  0:0))
+        if (.not. allocated(reduced_state%gz_lev)) allocate(half_lev_full_lon_dims(gz_lev, 0:0))
         allocate(half_lev_full_lon_dims(p_lev      ,  0:0))
       end if
       if (nonhydrostatic) then
@@ -404,6 +404,7 @@ contains
         allocate(half_lev_full_lon_dims(w_lev       ,  0:0))
         allocate(half_lev_half_lon_dims(w_lev_lon   ,  0:0))
         allocate(half_lev_half_lon_dims(p_lev_lon   ,  0:0))
+        allocate(half_lev_half_lon_dims(gz_lev_lon  ,  0:0))
         allocate(full_lev_half_lon_dims(rhod_lon    ,  0:0))
       end if
     else
@@ -514,7 +515,6 @@ contains
     end if
 
     if (pgf_scheme == 'dflx') then
-      call apply_reduce(reduce_args(gz_lev_lon     , reduce_gz_lev_lon  ))
       if (hydrostatic) then
         call apply_reduce(reduce_args(p_lev        , reduce_p_lev       ))
         if (reduce_pv_directly) then

@@ -344,7 +344,6 @@ contains
         call calc_dkedlon_dkedlat  (block, old_state, tend, dt)
         call calc_wedudlev_wedvdlev(block, old_state, tend, dt)
 
-        call debug_print_min_max_lev_edge(mesh, new_state%p_lev, 'p_lev')
         call pgf_run               (block, new_state, tend)
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend

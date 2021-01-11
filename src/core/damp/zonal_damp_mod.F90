@@ -13,6 +13,7 @@ module zonal_damp_mod
   public zonal_damp_final
   public zonal_damp_on_lon_edge
   public zonal_damp_on_lat_edge
+  public zonal_damp_on_lev_edge
   public zonal_damp_on_cell
   public zonal_damp_on_vtx
   public zonal_damp_1d
@@ -36,22 +37,15 @@ contains
 
   subroutine zonal_damp_init()
 
-    integer j, jr
+    integer j
 
     call zonal_damp_final()
 
     allocate(zonal_damp_on_full_lat(global_mesh%num_full_lat)); zonal_damp_on_full_lat = .false.
     allocate(zonal_damp_on_half_lat(global_mesh%num_half_lat)); zonal_damp_on_half_lat = .false.
 
-    ! Only do zonal damp in reduce regions.
     do j = global_mesh%full_lat_ibeg_no_pole, global_mesh%full_lat_iend_no_pole
-      if (global_mesh%full_lat(j) <= 0) then
-        jr = j - global_mesh%full_lat_ibeg_no_pole + 1
-      else
-        jr = global_mesh%full_lat_iend_no_pole - j + 1
-      end if
-      if (jr > size(reduce_factors)) exit
-      if (reduce_factors(jr) > 1) then
+      if (abs(global_mesh%full_lat_deg(j)) >= polar_damp_lat0) then
         zonal_damp_on_full_lat(j) = .true.
       end if
     end do
@@ -117,6 +111,29 @@ contains
     end do
 
   end subroutine zonal_damp_on_lat_edge
+
+  subroutine zonal_damp_on_lev_edge(block, order, dt, f)
+
+    type(block_type), intent(in), target :: block
+    integer, intent(in) :: order
+    real(8), intent(in) :: dt
+    real(r8), intent(inout) :: f(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
+                                 block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
+                                 block%mesh%half_lev_lb:block%mesh%half_lev_ub)
+
+    type(mesh_type), pointer :: mesh
+    integer j, k
+
+    mesh => block%mesh
+    do k = mesh%half_lev_ibeg, mesh%half_lev_iend
+      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+        if (zonal_damp_on_full_lat(j)) then
+          call zonal_damp_1d(block, order, dt, mesh%full_lon_lb, mesh%full_lon_ub, mesh%lon_halo_width, f(:,j,k))
+        end if
+      end do
+    end do
+
+  end subroutine zonal_damp_on_lev_edge
 
   subroutine zonal_damp_on_cell(block, order, dt, f)
 

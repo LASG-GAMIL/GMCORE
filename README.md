@@ -24,7 +24,6 @@ Check barotropic test results [here](https://github.com/gmcore-project/gmcore/wi
 - [ ] Advection module (~2021.02).
 - [ ] Incorporation with physics parameterisation (2021.03-2021.09).
 - [ ] Data assimilation (~?).
-- [ ] Code review for user friendly (~2021.06)
 
 # Usage
 
