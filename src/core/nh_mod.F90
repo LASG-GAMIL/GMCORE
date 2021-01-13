@@ -671,6 +671,8 @@ contains
           d(mesh%num_half_lev) = new_w_lev(i,j,mesh%num_half_lev)
           call tridiag_thomas(a, b, c, d, new_w_lev(i,j,:))
 
+          call rayleigh_damp_w(dt, old_gz_lev(i,j,:), new_w_lev(i,j,:))
+
           ! Update gz after w is solved.
           do k = mesh%half_lev_ibeg, mesh%half_lev_iend - 1
             new_gz_lev(i,j,k) = gz1(k) + gdtbeta * new_w_lev(i,j,k)
@@ -679,10 +681,28 @@ contains
       end do
       call fill_halo(block, new_w_lev , full_lon=.true., full_lat=.true., full_lev=.false.)
       call fill_halo(block, new_gz_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
-
-      call rayleigh_damp_w(block, dt, new_state)
     end associate
 
   end subroutine implicit_w_solver
+
+  subroutine rayleigh_damp_w(dt, gz, w)
+
+    real(8) , intent(in   ) :: dt
+    real(r8), intent(in   ) :: gz(:)
+    real(r8), intent(inout) :: w (:)
+
+    real(r8), parameter :: rayleigh_damp_w_coef = 0.2_r8
+    real(r8), parameter :: gzd = 10.0e3_r8
+    real(r8) c
+    integer k
+
+    do k = 2, size(w) - 1
+      if (gz(k) >= gz(1) - gzd) then
+        c = rayleigh_damp_w_coef * sin(pi05 * (1 - (gz(1) - gz(k)) / gzd))**2
+        w(k) = w(k) / (1 + c * dt)
+      end if
+    end do
+
+  end subroutine rayleigh_damp_w
 
 end module nh_mod
