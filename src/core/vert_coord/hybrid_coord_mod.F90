@@ -109,7 +109,7 @@ contains
     integer, intent(in) :: k
     real(r8), intent(in) :: phs
 
-    res = hyai(k) * p0 + hybm(k) * phs
+    res = hyam(k) * p0 + hybm(k) * phs
 
   end function hybrid_coord_calc_ph
 
