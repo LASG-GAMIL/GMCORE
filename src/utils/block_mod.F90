@@ -82,12 +82,16 @@ contains
       case ('rk4')
         allocate(this%state(5))
         allocate(this%tend (5))
+      case ('N/A')
+        allocate(this%state(1))
       case default
         if (id == 0) call log_error('Unknown time scheme ' // trim(time_scheme))
       end select
       do i = 1, size(this%state)
         call this%state(i)%init(this%mesh)
-        call this%tend (i)%init(this%mesh)
+      end do
+      do i = 1, size(this%tend)
+        call this%tend(i)%init(this%mesh)
       end do
       call this%static%init(this%mesh)
     end if
