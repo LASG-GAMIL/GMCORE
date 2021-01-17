@@ -13,6 +13,7 @@ program gmcore_driver
   use baroclinic_wave_test_mod
   use held_suarez_test_mod
   use steady_state_pgf_test_mod
+  use ksp15_test_mod
 
   implicit none
 
@@ -53,6 +54,8 @@ program gmcore_driver
       set_initial_condition => held_suarez_test_set_initial_condition
     case ('pgf_test')
       set_initial_condition => steady_state_pgf_test_set_initial_condition
+    case ('ksp15_01')
+      set_initial_condition => ksp15_01_test_set_ic
     case default
       call log_error('Unknown test case ' // trim(test_case) // '!')
     end select

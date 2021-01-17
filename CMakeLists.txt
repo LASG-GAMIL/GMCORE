@@ -154,6 +154,7 @@ set(gmcore_files
   src/tests/baroclinic_wave_test_mod.F90
   src/tests/held_suarez_test_mod.F90
   src/tests/steady_state_pgf_test_mod.F90
+  src/tests/ksp15_test_mod.F90
   lib/quadpack.f90
 )
 
