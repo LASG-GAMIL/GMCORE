@@ -14,7 +14,7 @@ module topo_mod
   public topo_read
   public topo_regrid
   public topo_zero
-  public topo_smooth
+  public topo_smth
   public topo_final
 
   integer num_topo_lon
@@ -264,7 +264,7 @@ contains
 
   end subroutine topo_zero
 
-  subroutine topo_smooth(block, min_lon, max_lon, min_lat, max_lat, steps)
+  subroutine topo_smth(block, min_lon, max_lon, min_lat, max_lat, steps)
 
     type(block_type), intent(inout) :: block
     real(r8), intent(in) :: min_lon
@@ -319,6 +319,6 @@ contains
       deallocate(smooth_kernel, smoothed_gzs)
     end associate
 
-  end subroutine topo_smooth
+  end subroutine topo_smth
 
 end module topo_mod

@@ -19,6 +19,16 @@ program gmcore_prepare
   character(30) :: bkg_type = 'era5'
   character(30) :: initial_time = '1970-01-01'
 
+  real(r8) :: zero_min_lon(100) = -1.0e33
+  real(r8) :: zero_max_lon(100) = -1.0e33
+  real(r8) :: zero_min_lat(100) = -1.0e33
+  real(r8) :: zero_max_lat(100) = -1.0e33
+  real(r8) :: smth_min_lon(100) = -1.0e33
+  real(r8) :: smth_max_lon(100) = -1.0e33
+  real(r8) :: smth_min_lat(100) = -1.0e33
+  real(r8) :: smth_max_lat(100) = -1.0e33
+  integer :: smth_steps(100) = 1
+
   integer iblk, i
 
   namelist /gmcore_prepare_params/ &
@@ -33,7 +43,16 @@ program gmcore_prepare
     coarse_pole_mul              , &
     coarse_pole_decay            , &
     vert_coord_scheme            , &
-    vert_coord_template
+    vert_coord_template          , &
+    zero_min_lon                 , &
+    zero_max_lon                 , &
+    zero_min_lat                 , &
+    zero_max_lat                 , &
+    smth_min_lon                 , &
+    smth_max_lon                 , &
+    smth_min_lat                 , &
+    smth_max_lat                 , &
+    smth_steps
 
   call get_command_argument(1, namelist_file)
 
@@ -72,6 +91,16 @@ program gmcore_prepare
 
   do iblk = 1, size(proc%blocks)
     call topo_regrid(proc%blocks(iblk))
+    do i = 1, size(zero_min_lon)
+      if (zero_min_lon(i) /= -1.0e33 .and. zero_max_lon(i) /= -1.0e33 .and. &
+          zero_min_lat(i) /= -1.0e33 .and. zero_max_lat(i) /= -1.0e33) then
+        call topo_zero(proc%blocks(iblk), zero_min_lon(i), zero_max_lon(i), zero_min_lat(i), zero_max_lat(i))
+      end if
+      if (smth_min_lon(i) /= -1.0e33 .and. smth_max_lon(i) /= -1.0e33 .and. &
+          smth_min_lat(i) /= -1.0e33 .and. smth_max_lat(i) /= -1.0e33) then
+        call topo_smth(proc%blocks(iblk), smth_min_lon(i), smth_max_lon(i), smth_min_lat(i), smth_max_lat(i), smth_steps(i))
+      end if
+    end do
   end do
 
   call bkg_read(bkg_type, bkg_file)
