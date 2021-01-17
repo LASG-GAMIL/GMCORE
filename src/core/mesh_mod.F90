@@ -240,6 +240,7 @@ contains
 
     if (coarse_pole_mul /= 0) then
       ! Calculate real dlat which is large at polar region.
+      dlat0 = this%dlon
       do j = 1, this%num_half_lat
         this%dlat(j) = dlat0 * (1 + (coarse_pole_mul - 1) * exp(-coarse_pole_decay * (abs(this%half_lat(j)) - pi05)**2))
       end do

@@ -122,11 +122,12 @@ contains
     call log_notice('Regrid temperature and calculate potential temperature.')
 
     do iblk = 1, size(proc%blocks)
-      associate (mesh => proc%blocks(iblk)%mesh        , &
-                 phs  => proc%blocks(iblk)%state(1)%phs, &
-                 ph   => proc%blocks(iblk)%state(1)%ph , &
-                 t    => proc%blocks(iblk)%state(1)%t  , &
-                 pt   => proc%blocks(iblk)%state(1)%pt)
+      associate (block => proc%blocks(iblk)             , &
+                 mesh  => proc%blocks(iblk)%mesh        , &
+                 phs   => proc%blocks(iblk)%state(1)%phs, &
+                 ph    => proc%blocks(iblk)%state(1)%ph , &
+                 t     => proc%blocks(iblk)%state(1)%t  , &
+                 pt    => proc%blocks(iblk)%state(1)%pt)
         select case (bkg_type)
         case ('era5')
           allocate(tmp(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,num_era5_lev))
@@ -141,6 +142,7 @@ contains
           end do
         end select
         deallocate(tmp)
+        call fill_halo(block, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
       end associate
     end do
 
@@ -170,6 +172,7 @@ contains
             end do
           end do
           deallocate(tmp)
+          call fill_halo(block, u, full_lon=.false., full_lat=.true., full_lev=.true.)
         end select
       end associate
     end do
@@ -192,7 +195,7 @@ contains
         case ('era5')
           allocate(tmp(mesh%full_lon_lb:mesh%full_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,num_era5_lev))
           do k = 1, num_era5_lev
-            call latlon_interp_bilinear_lat_edge(era5_lon, era5_lat, era5_v(:,:,k), mesh, tmp(:,:,k), zero_pole=.true.)
+            call latlon_interp_bilinear_lat_edge(era5_lon, era5_lat, era5_v(:,:,k), mesh, tmp(:,:,k))
           end do
           do j = mesh%half_lat_ibeg, mesh%half_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -200,6 +203,7 @@ contains
             end do
           end do
           deallocate(tmp)
+          call fill_halo(block, v, full_lon=.true., full_lat=.false., full_lev=.true.)
         end select
       end associate
     end do

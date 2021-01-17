@@ -1,24 +1,32 @@
 #!/usr/bin/env python3
 
+import argparse
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 from netCDF4 import Dataset
 import numpy as np
-import sys
 
-if len(sys.argv) > 1:
-	f = Dataset(sys.argv[1], 'r')
+parser = argparse.ArgumentParser(description='Set meridional intervals (dlat) and plot them.')
+parser.add_argument('--nc')
+parser.add_argument('--nlat', type=int)
+parser.add_argument('--dlat', type=float)
+parser.add_argument('--pole-mul', type=float)
+parser.add_argument('--pole-decay', type=float)
+args = parser.parse_args()
+
+if args.nc:
+	f = Dataset(args.nc, 'r')
 	num_full_lat = f.variables['lat'].size
 	num_half_lat = f.variables['ilat'].size
 	full_lat = np.radians(f.variables['lat'])
 	half_lat = np.radians(f.variables['ilat'])
 	dlat = np.diff(full_lat)
 else:
-	num_full_lat = 340
+	num_full_lat = args.nlat
 	num_half_lat = num_full_lat - 1
-	dlat0        = np.radians(0.5)
-	pole_mul     = 2
-	pole_decay   = 100
+	dlat0        = np.radians(args.dlat)
+	pole_mul     = args.pole_mul
+	pole_decay   = args.pole_decay
 
 	full_lat = np.ndarray([num_full_lat])
 	half_lat = np.ndarray([num_half_lat])

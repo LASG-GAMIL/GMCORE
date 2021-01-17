@@ -231,9 +231,19 @@ contains
 
       do j = lb_y2, ub_y2
         do i = lb_x2, ub_x2
-          tmp1 = src_data(i1(i),j1(j)) * xwgt1(i) + src_data(i2(i),j1(j)) * xwgt2(i)
-          tmp2 = src_data(i1(i),j2(j)) * xwgt1(i) + src_data(i2(i),j2(j)) * xwgt2(i)
-          dst_data(i,j) = tmp1 * ywgt1(j) + tmp2 * ywgt2(j)
+          if (j1(j) == 1) then
+            tmp1 = src_data(i1(i),2) * xwgt1(i) + src_data(i2(i),2) * xwgt2(i)
+            tmp2 = src_data(i1(i),3) * xwgt1(i) + src_data(i2(i),3) * xwgt2(i)
+            dst_data(i,j) = (tmp1 * (y1(3) - y2(j)) - tmp2 * (y1(2) - y2(j))) / (y1(3) - y1(2))
+          else if (j1(j) == ny1 - 1) then
+            tmp1 = src_data(i1(i),ny1-1) * xwgt1(i) + src_data(i2(i),ny1-1) * xwgt2(i)
+            tmp2 = src_data(i1(i),ny1-2) * xwgt1(i) + src_data(i2(i),ny1-2) * xwgt2(i)
+            dst_data(i,j) = (tmp1 * (y1(ny1-2) - y2(j)) - tmp2 * (y1(ny1-1) - y2(j))) / (y1(ny1-2) - y1(ny1-1))
+          else
+            tmp1 = src_data(i1(i),j1(j)) * xwgt1(i) + src_data(i2(i),j1(j)) * xwgt2(i)
+            tmp2 = src_data(i1(i),j2(j)) * xwgt1(i) + src_data(i2(i),j2(j)) * xwgt2(i)
+            dst_data(i,j) = tmp1 * ywgt1(j) + tmp2 * ywgt2(j)
+          end if
         end do
       end do
     end associate
@@ -353,9 +363,19 @@ contains
 
       do j = lb_y2, ub_y2
         do i = lb_x2, ub_x2
-          tmp1 = src_data(i1(i),j1(j)) * xwgt1(i) + src_data(i2(i),j1(j)) * xwgt2(i)
-          tmp2 = src_data(i1(i),j2(j)) * xwgt1(i) + src_data(i2(i),j2(j)) * xwgt2(i)
-          dst_data(i,j) = tmp1 * ywgt1(j) + tmp2 * ywgt2(j)
+          if (j1(j) == 1) then
+            tmp1 = src_data(i1(i),2) * xwgt1(i) + src_data(i2(i),2) * xwgt2(i)
+            tmp2 = src_data(i1(i),3) * xwgt1(i) + src_data(i2(i),3) * xwgt2(i)
+            dst_data(i,j) = (tmp1 * (y1(3) - y2(j)) - tmp2 * (y1(2) - y2(j))) / (y1(3) - y1(2))
+          else if (j1(j) == ny1 - 1) then
+            tmp1 = src_data(i1(i),ny1-1) * xwgt1(i) + src_data(i2(i),ny1-1) * xwgt2(i)
+            tmp2 = src_data(i1(i),ny1-2) * xwgt1(i) + src_data(i2(i),ny1-2) * xwgt2(i)
+            dst_data(i,j) = (tmp1 * (y1(ny1-2) - y2(j)) - tmp2 * (y1(ny1-1) - y2(j))) / (y1(ny1-2) - y1(ny1-1))
+          else
+            tmp1 = src_data(i1(i),j1(j)) * xwgt1(i) + src_data(i2(i),j1(j)) * xwgt2(i)
+            tmp2 = src_data(i1(i),j2(j)) * xwgt1(i) + src_data(i2(i),j2(j)) * xwgt2(i)
+            dst_data(i,j) = tmp1 * ywgt1(j) + tmp2 * ywgt2(j)
+          end if
         end do
       end do
     end associate
@@ -365,16 +385,12 @@ contains
     ! Handle pole grids.
     if (dst_mesh%has_south_pole()) then
       if (merge(zero_pole, .false., present(zero_pole))) then
-        dst_data(:,dst_mesh%full_lat_ibeg) = 0.0_r8
-      else
-        dst_data(:,dst_mesh%full_lat_ibeg) = sum(dst_data(:,dst_mesh%full_lat_ibeg)) / dst_mesh%num_full_lon
+        dst_data(:,dst_mesh%half_lat_ibeg) = 0.0_r8
       end if
     end if
     if (dst_mesh%has_north_pole()) then
       if (merge(zero_pole, .false., present(zero_pole))) then
-        dst_data(:,dst_mesh%full_lat_iend) = 0.0_r8
-      else
-        dst_data(:,dst_mesh%full_lat_iend) = sum(dst_data(:,dst_mesh%full_lat_iend)) / dst_mesh%num_full_lon
+        dst_data(:,dst_mesh%half_lat_iend) = 0.0_r8
       end if
     end if
 
