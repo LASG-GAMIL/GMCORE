@@ -18,10 +18,11 @@ module pv_mod
 
 contains
 
-  subroutine calc_vor(block, state)
+  subroutine calc_vor(block, state, dt)
 
     type(block_type), intent(in) :: block
     type(state_type), intent(inout) :: state
+    real(r8), intent(in) :: dt
 
     type(mesh_type), pointer :: mesh
     real(r8) pole(state%mesh%num_full_lev)
@@ -120,16 +121,17 @@ contains
 
   end subroutine calc_vor
 
-  subroutine diag_pv(block, state)
+  subroutine diag_pv(block, state, dt)
 
     type(block_type), intent(in) :: block
     type(state_type), intent(inout) :: state
+    real(r8), intent(in) :: dt
 
     type(mesh_type), pointer :: mesh
     real(r8) pole(state%mesh%num_full_lev)
     integer i, j, k
 
-    call calc_vor(block, state)
+    call calc_vor(block, state, dt)
 
     mesh => state%mesh
 

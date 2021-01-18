@@ -155,7 +155,7 @@ contains
         end do
       end if
       call history_write_state(proc%blocks, itime)
-      call history_write_debug(proc%blocks, itime)
+      if (output_debug) call history_write_debug(proc%blocks, itime)
     end if
     if (time_is_alerted('restart_write')) then
       call restart_write(itime)

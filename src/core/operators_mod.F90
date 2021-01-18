@@ -60,7 +60,7 @@ contains
       call interp_m_vtx               (blocks(iblk), blocks(iblk)%state(itime))
       call calc_mf                    (blocks(iblk), blocks(iblk)%state(itime))
       call calc_ke                    (blocks(iblk), blocks(iblk)%state(itime))
-      call diag_pv                    (blocks(iblk), blocks(iblk)%state(itime))
+      call diag_pv                    (blocks(iblk), blocks(iblk)%state(itime), dt)
       call interp_pv                  (blocks(iblk), blocks(iblk)%state(itime), dt)
       call calc_div                   (blocks(iblk), blocks(iblk)%state(itime))
       if (hydrostatic) then
@@ -81,7 +81,7 @@ contains
     integer, intent(in) :: pass
 
     if (pass == vor_damp_pass) then
-      call calc_vor                   (block, state)
+      call calc_vor                   (block, state, dt)
     else if (pass == div_damp_pass) then
       call calc_div                   (block, state)
     else
@@ -96,7 +96,7 @@ contains
         call calc_ke                  (block, state)
         if (pass == all_pass .or. pass == slow_pass) then
           call interp_m_vtx           (block, state)
-          call diag_pv                (block, state)
+          call diag_pv                (block, state, dt)
           call interp_pv              (block, state, dt)
           call calc_div               (block, state)
         end if

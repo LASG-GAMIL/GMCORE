@@ -77,6 +77,9 @@ module namelist_mod
   logical :: use_smag_damp = .false.
   real(r8) :: smag_damp_coef = 0.2
 
+  ! Output settings
+  logical :: output_debug = .false.
+
   ! Nest settings
   character(30) :: nest_time_scheme   = 'pc2'
   integer       :: nest_max_dom       = 1
@@ -145,6 +148,7 @@ module namelist_mod
     use_rayleigh_damp         , &
     use_smag_damp             , &
     smag_damp_coef            , &
+    output_debug              , &
     nest_time_scheme          , &
     nest_max_dom              , &
     nest_parent_id            , &
