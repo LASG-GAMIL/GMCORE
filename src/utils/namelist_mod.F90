@@ -184,6 +184,9 @@ contains
       write(*, *) 'dt_in_seconds       = ', to_str(int(dt_in_seconds))
       write(*, *) 'pgf_scheme          = ', trim(pgf_scheme)
       write(*, *) 'ke_scheme           = ', to_str(ke_scheme)
+      if (ke_scheme == 2) then
+      write(*, *) 'ke_cell_wgt         = ', to_str(ke_cell_wgt, 2)
+      end if
       write(*, *) 'pv_scheme           = ', to_str(pv_scheme)
       write(*, *) 'pv_pole_stokes      = ', to_str(pv_pole_stokes)
       write(*, *) 'time_scheme         = ', trim(time_scheme)
