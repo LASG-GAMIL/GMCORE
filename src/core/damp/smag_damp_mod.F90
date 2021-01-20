@@ -36,7 +36,7 @@ contains
           ) / mesh%de_lon(j) - (                        &
             state%v(i,j+1,k) * mesh%half_cos_lat(j+1) - &
             state%v(i,j  ,k) * mesh%half_cos_lat(j  )   &
-          ) / mesh%de_lat(j) / mesh%full_cos_lat(j)
+          ) / mesh%le_lon(j) / mesh%full_cos_lat(j)
 #else
           state%tension_h(i,j,k) = (                    &
             state%u(i,j,k) - state%u(i-1,j,k)           &

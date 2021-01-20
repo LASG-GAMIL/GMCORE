@@ -529,8 +529,6 @@ contains
 
     mesh => state%mesh
 
-    call interp_pv(block, state, dt)
-
 #ifdef V_POLE
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
