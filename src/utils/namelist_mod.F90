@@ -73,6 +73,7 @@ module namelist_mod
   real(r8) :: vor_damp_decay = 0.2_r8
   real(r8) :: vor_damp_coef2 = 0.001_r8
   real(r8) :: vor_damp_coef4 = 0.01_r8
+  real(r8) :: vor_damp_bkg_coef = 0.0001_r8
   logical :: use_rayleigh_damp = .false.
   logical :: use_smag_damp = .false.
   real(r8) :: smag_damp_coef = 0.2
@@ -145,6 +146,8 @@ module namelist_mod
     vor_damp_lat0             , &
     vor_damp_decay            , &
     vor_damp_coef2            , &
+    vor_damp_coef4            , &
+    vor_damp_bkg_coef         , &
     use_rayleigh_damp         , &
     use_smag_damp             , &
     smag_damp_coef            , &
