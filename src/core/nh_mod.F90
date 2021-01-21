@@ -263,10 +263,16 @@ contains
       k = mesh%half_lev_ibeg
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          adv_gz_lev(i,j,k) = state%wedphdlev(i,j,k) * (state%gz(i,j,k) - gz_lev(i,j,k)) / m_lev(i,j,k)
+          adv_gz_lev(i,j,k) = wedphdlev(i,j,k) * (gz(i,j,k) - gz_lev(i,j,k)) / m_lev(i,j,k)
         end do
       end do
       ! Bottom gz is static topography, so no tendency for it (i.e., gzs).
+      k = mesh%half_lev_iend
+      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          adv_gz_lev(i,j,k) = wedphdlev(i,j,k-1) * (gz_lev(i,j,k) - gz(i,j,k-1)) / m_lev(i,j,k)
+        end do
+      end do
 #ifndef V_POLE
       if (mesh%has_south_pole()) then
         j = mesh%full_lat_ibeg
