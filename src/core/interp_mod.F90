@@ -68,6 +68,9 @@ contains
     real(r8), parameter :: beta = 1.0_r8
     real(r8), parameter :: c11 =  0.5_r8
     real(r8), parameter :: c12 = -0.5_r8
+    real(r8), parameter :: c31 = 7.0_r8 / 12.0_r8
+    real(r8), parameter :: c32 = -1.0_r8 / 12.0_r8
+    real(r8), parameter :: c33 = 1.0_r8 / 12.0_r8
     integer i, j, k
 
     if (present(u)) then
@@ -83,8 +86,20 @@ contains
             end do
           end do
         end do
-        return
+      case (3)
+        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+            do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+              x_lon(i,j,k) = c31 * (x(i+1,j,k) + x(i  ,j,k))  + &
+                             c32 * (x(i+2,j,k) + x(i-1,j,k))  + &
+                             c33 * (x(i+2,j,k) - x(i-1,j,k)   - &
+                          3.0_r8 * (x(i+1,j,k) - x(i  ,j,k))) * &
+                             beta * sign(1.0_r8, u(i,j,k))
+            end do
+          end do
+        end do
       end select
+      return
     end if
 
     if (merge(reversed_area, .false., present(reversed_area))) then
@@ -129,6 +144,9 @@ contains
     real(r8), parameter :: beta = 1.0_r8
     real(r8), parameter :: c11 =  0.5_r8
     real(r8), parameter :: c12 = -0.5_r8
+    real(r8), parameter :: c31 = 7.0_r8 / 12.0_r8
+    real(r8), parameter :: c32 = -1.0_r8 / 12.0_r8
+    real(r8), parameter :: c33 = 1.0_r8 / 12.0_r8
     integer i, j, k
 
     if (present(v)) then
@@ -152,8 +170,46 @@ contains
 #endif
           end do
         end do
-        return
+      case(3)
+        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+          do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+            if (j == mesh%half_lat_ibeg_no_pole .or. j == mesh%half_lat_iend_no_pole) then
+#ifdef V_POLE
+              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+                x_lat(i,j,k) = c11 * (x(i,j,k) + x(i,j-1,k)) + &
+                               c12 * (x(i,j,k) - x(i,j-1,k)) * &
+                              beta * sign(1.0_r8, v(i,j,k))
+              end do
+#else
+              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+                x_lat(i,j,k) = c11 * (x(i,j+1,k) + x(i,j,k)) + &
+                               c12 * (x(i,j+1,k) - x(i,j,k)) * &
+                               beta * sign(1.0_r8, v(i,j,k))
+              end do
+#endif
+            else
+#ifdef V_POLE
+              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+                x_lat(i,j,k) = c31 * (x(i,j  ,k) + x(i,j-1,k))  + &
+                               c32 * (x(i,j+1,k) + x(i,j-2,k))  + &
+                               c33 * (x(i,j+1,k) - x(i,j-2,k)   - &
+                            3.0_r8 * (x(i,j  ,k) - x(i,j-1,k))) * &
+                              beta * sign(1.0_r8, v(i,j,k))
+              end do
+#else
+              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+                x_lat(i,j,k) = c31 * (x(i,j+1,k) + x(i,j  ,k))  + &
+                               c32 * (x(i,j+2,k) + x(i,j-1,k))  + &
+                               c33 * (x(i,j+2,k) - x(i,j-1,k)   - &
+                            3.0_r8 * (x(i,j+1,k) - x(i,j  ,k))) * &
+                              beta * sign(1.0_r8, v(i,j,k))
+              end do
+#endif
+            end if
+          end do
+        end do
       end select
+      return
     end if
 
     if (merge(reversed_area, .false., present(reversed_area))) then
@@ -259,6 +315,9 @@ contains
     real(r8), parameter :: beta = 1.0_r8
     real(r8), parameter :: c11 =  0.5_r8
     real(r8), parameter :: c12 = -0.5_r8
+    real(r8), parameter :: c31 = 7.0_r8 / 12.0_r8
+    real(r8), parameter :: c32 = - 1.0_r8 / 12.0_r8
+    real(r8), parameter :: c33 = 1.0_r8 / 12.0_r8
     integer i, j, k
 
     if (present(u)) then
@@ -274,8 +333,20 @@ contains
             end do
           end do
         end do
-        return
+      case (3)
+        do k = mesh%half_lev_ibeg, mesh%half_lev_iend
+          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+            do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+              x_lev_lon(i,j,k) = c31 * (x_lev(i+1,j,k) + x_lev(i  ,j,k))  + &
+                                 c32 * (x_lev(i+2,j,k) + x_lev(i-1,j,k))  + &
+                                 c33 * (x_lev(i+2,j,k) - x_lev(i-1,j,k)   - &
+                              3.0_r8 * (x_lev(i+1,j,k) - x_lev(i  ,j,k))) * &
+                                beta * sign(1.0_r8, u(i,j,k))
+            end do
+          end do
+        end do
       end select
+      return
     end if
     do k = mesh%half_lev_ibeg, mesh%half_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -305,6 +376,9 @@ contains
     real(r8), parameter :: beta = 1.0_r8
     real(r8), parameter :: c11 =  0.5_r8
     real(r8), parameter :: c12 = -0.5_r8
+    real(r8), parameter :: c31 = 7.0_r8 / 12.0_r8
+    real(r8), parameter :: c32 = -1.0_r8 / 12.0_r8
+    real(r8), parameter :: c33 = 1.0_r8 / 12.0_r8
     integer i, j, k
 
     if (present(v)) then
@@ -328,8 +402,46 @@ contains
 #endif
           end do
         end do
-        return
+      case (3)
+        do k = mesh%half_lev_ibeg, mesh%half_lev_iend
+          do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+            if (j == mesh%half_lat_ibeg_no_pole .or. j == mesh%half_lat_iend_no_pole) then
+#ifdef V_POLE
+              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+                x_lev_lat(i,j,k) = c11 * (x_lev(i,j,k) + x_lev(i,j-1,k)) + &
+                                   c12 * (x_lev(i,j,k) - x_lev(i,j-1,k)) * &
+                                   beta * sign(1.0_r8, v(i,j,k))
+              end do
+#else
+              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+                x_lev_lat(i,j,k) = c11 * (x_lev(i,j+1,k) + x_lev(i,j,k)) + &
+                                   c12 * (x_lev(i,j+1,k) - x_lev(i,j,k)) * &
+                                   beta * sign(1.0_r8, v(i,j,k))
+              end do
+#endif
+            else
+#ifdef V_POLE
+              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+                x_lev_lat(i,j,k) = c31 * (x_lev(i,j  ,k) + x_lev(i,j-1,k))  + &
+                                   c32 * (x_lev(i,j+1,k) + x_lev(i,j-2,k))  + &
+                                   c33 * (x_lev(i,j+1,k) - x_lev(i,j-2,k)   - &
+                                3.0_r8 * (x_lev(i,j  ,k) - x_lev(i,j-1,k))) * &
+                                  beta * sign(1.0_r8, v(i,j,k))
+              end do
+#else
+              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+                x_lev_lat(i,j,k) = c31 * (x_lev(i,j+1,k) + x_lev(i,j  ,k))  + &
+                                   c32 * (x_lev(i,j+2,k) + x_lev(i,j-1,k))  + &
+                                   c33 * (x_lev(i,j+2,k) - x_lev(i,j-1,k)   - &
+                                3.0_r8 * (x_lev(i,j+1,k) - x_lev(i,j  ,k))) * &
+                                  beta * sign(1.0_r8, v(i,j,k))
+              end do
+#endif
+            end if
+          end do
+        end do
       end select
+      return
     end if
     do k = mesh%half_lev_ibeg, mesh%half_lev_iend
       do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
