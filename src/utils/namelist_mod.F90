@@ -73,6 +73,7 @@ module namelist_mod
   real(r8) :: vor_damp_decay = 0.2_r8
   real(r8) :: vor_damp_coef2 = 0.001_r8
   real(r8) :: vor_damp_coef4 = 0.01_r8
+  real(r8) :: vor_damp_bkg_coef = 0.0001_r8
   logical :: use_rayleigh_damp = .false.
   logical :: use_smag_damp = .false.
   real(r8) :: smag_damp_coef = 0.2
@@ -145,6 +146,8 @@ module namelist_mod
     vor_damp_lat0             , &
     vor_damp_decay            , &
     vor_damp_coef2            , &
+    vor_damp_coef4            , &
+    vor_damp_bkg_coef         , &
     use_rayleigh_damp         , &
     use_smag_damp             , &
     smag_damp_coef            , &
@@ -177,10 +180,10 @@ contains
       write(*, *) 'num_lon             = ', to_str(num_lon)
       write(*, *) 'num_lat             = ', to_str(num_lat)
       write(*, *) 'num_lev             = ', to_str(num_lev)
-      if (coarse_pole_mul /= 0) then
+    if (coarse_pole_mul /= 0) then
       write(*, *) 'coarse_pole_mul     = ', to_str(coarse_pole_mul, 3)
       write(*, *) 'coarse_pole_decay   = ', to_str(coarse_pole_decay, 3)
-      end if
+    end if
       write(*, *) 'hydrostatic         = ', to_str(hydrostatic)
       write(*, *) 'nonhydrostatic      = ', to_str(nonhydrostatic)
       write(*, *) 'vert_coord_scheme   = ', trim(vert_coord_scheme)
@@ -188,9 +191,9 @@ contains
       write(*, *) 'dt_in_seconds       = ', to_str(int(dt_in_seconds))
       write(*, *) 'pgf_scheme          = ', trim(pgf_scheme)
       write(*, *) 'ke_scheme           = ', to_str(ke_scheme)
-      if (ke_scheme == 2) then
+    if (ke_scheme == 2) then
       write(*, *) 'ke_cell_wgt         = ', to_str(ke_cell_wgt, 2)
-      end if
+    end if
       write(*, *) 'pv_scheme           = ', to_str(pv_scheme)
       write(*, *) 'pv_pole_stokes      = ', to_str(pv_pole_stokes)
       write(*, *) 'time_scheme         = ', trim(time_scheme)
@@ -213,7 +216,7 @@ contains
     if (use_smag_damp) then
       write(*, *) 'smag_damp_coef      = ', to_str(smag_damp_coef, 1)
     end if
-    write(*, *) '========================================================='
+      write(*, *) '========================================================='
 
   end subroutine print_namelist
 
