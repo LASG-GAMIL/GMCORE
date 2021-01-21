@@ -22,9 +22,10 @@ module time_schemes_mod
   public update_state
 
   interface
-    subroutine space_operators_interface(block, old_state, new_state, tend, dt, pass)
+    subroutine space_operators_interface(block, last_state, old_state, new_state, tend, dt, pass)
       import block_type, state_type, tend_type
       type(block_type), intent(inout) :: block
+      type(state_type), intent(in) :: last_state
       type(state_type), intent(inout) :: old_state
       type(state_type), intent(inout) :: new_state
       type(tend_type), intent(inout) :: tend
@@ -159,13 +160,13 @@ contains
     real(8), intent(in) :: dt
     integer, intent(in) :: pass
 
-    call space_operators(block, block%state(old), block%state(new), block%tend(old), 0.5_r8 * dt, pass)
+    call space_operators(block, block%state(old), block%state(old), block%state(new), block%tend(old), 0.5_r8 * dt, pass)
     call update_state(block, block%tend(old), block%state(old), block%state(new), 0.5_r8 * dt, pass)
 
-    call space_operators(block, block%state(new), block%state(3), block%tend(old), 0.5_r8 * dt, pass)
+    call space_operators(block, block%state(old), block%state(new), block%state(3), block%tend(old), 0.5_r8 * dt, pass)
     call update_state(block, block%tend(old), block%state(old), block%state(3), 0.5_r8 * dt, pass)
 
-    call space_operators(block, block%state(3), block%state(new), block%tend(new), dt, pass)
+    call space_operators(block, block%state(old), block%state(3), block%state(new), block%tend(new), dt, pass)
     call update_state(block, block%tend(new), block%state(old), block%state(new), dt, pass)
 
   end subroutine predict_correct
@@ -185,14 +186,14 @@ contains
     s2 = 4
     s3 = new
 
-    call space_operators(block, block%state(old), block%state(s1), block%tend(s1), 0.5_r8 * dt, pass)
+    call space_operators(block, block%state(old), block%state(old), block%state(s1), block%tend(s1), 0.5_r8 * dt, pass)
     call update_state(block, block%tend(s1), block%state(old), block%state(s1), 0.5_r8 * dt, pass)
 
-    call space_operators(block, block%state(s1), block%state(s2), block%tend(s2), 2.0_r8 * dt, pass)
+    call space_operators(block, block%state(old), block%state(s1), block%state(s2), block%tend(s2), 2.0_r8 * dt, pass)
     call update_state(block, block%tend(s1), block%state(old), block%state(s2), -dt, pass)
     call update_state(block, block%tend(s2), block%state(s2) , block%state(s2), 2.0_r8 * dt, pass)
 
-    call space_operators(block, block%state(s2), block%state(new), block%tend(s3), dt, pass)
+    call space_operators(block, block%state(old), block%state(s2), block%state(new), block%tend(s3), dt, pass)
     block%tend(old) = (block%tend(s1) + 4.0_r8 * block%tend(s2) + block%tend(s3)) / 6.0_r8
     call update_state(block, block%tend(old), block%state(old), block%state(new), dt, pass)
 
@@ -214,16 +215,16 @@ contains
     s3 = 5
     s4 = new
 
-    call space_operators(block, block%state(old), block%state(s1), block%tend(s1), 0.5_r8 * dt, pass)
+    call space_operators(block, block%state(old), block%state(old), block%state(s1), block%tend(s1), 0.5_r8 * dt, pass)
     call update_state(block, block%tend(s1), block%state(old), block%state(s1), 0.5_r8 * dt, pass)
 
-    call space_operators(block, block%state(s1), block%state(s2), block%tend(s2), 0.5_r8 * dt, pass)
+    call space_operators(block, block%state(old), block%state(s1), block%state(s2), block%tend(s2), 0.5_r8 * dt, pass)
     call update_state(block, block%tend(s2), block%state(old), block%state(s2), 0.5_r8 * dt, pass)
 
-    call space_operators(block, block%state(s2), block%state(s3), block%tend(s3), dt, pass)
+    call space_operators(block, block%state(old), block%state(s2), block%state(s3), block%tend(s3), dt, pass)
     call update_state(block, block%tend(s3), block%state(old), block%state(s3), dt, pass)
 
-    call space_operators(block, block%state(s3), block%state(new), block%tend(s4), dt, pass)
+    call space_operators(block, block%state(old), block%state(s3), block%state(new), block%tend(s4), dt, pass)
     block%tend(old) = (block%tend(s1) + 2.0_r8 * block%tend(s2) + 2.0_r8 * block%tend(s3) + block%tend(s4)) / 6.0_r8
     call update_state(block, block%tend(old), block%state(old), block%state(new), dt, pass)
 
@@ -238,7 +239,7 @@ contains
     real(8), intent(in) :: dt
     integer, intent(in) :: pass
 
-    call space_operators(block, block%state(old), block%state(new), block%tend(new), dt, pass)
+    call space_operators(block, block%state(old), block%state(old), block%state(new), block%tend(new), dt, pass)
     call update_state(block, block%tend(new), block%state(old), block%state(new), dt, pass)
 
   end subroutine euler
@@ -258,14 +259,14 @@ contains
     s2 = 4
     s3 = new
 
-    call space_operators(block, block%state(old), block%state(s1), block%tend(s1), dt, pass)
+    call space_operators(block, block%state(old), block%state(old), block%state(s1), block%tend(s1), dt, pass)
     call update_state(block, block%tend(s1), block%state(old), block%state(s1), dt, pass)
 
-    call space_operators(block, block%state(s1), block%state(s2), block%tend(s2), dt, pass)
+    call space_operators(block, block%state(old), block%state(s1), block%state(s2), block%tend(s2), dt, pass)
     block%tend(s3) = block%tend(s1) + block%tend(s2)
     call update_state(block, block%tend(s3), block%state(old), block%state(s2), 0.25_r8 * dt, pass)
 
-    call space_operators(block, block%state(s2), block%state(new), block%tend(s3), 0.5_r8 * dt, pass)
+    call space_operators(block, block%state(old), block%state(s2), block%state(new), block%tend(s3), 0.5_r8 * dt, pass)
     block%tend(old) = (block%tend(s1) + block%tend(s2) + 4.0_r8 * block%tend(s3)) / 6.0_r8
     call update_state(block, block%tend(old), block%state(old), block%state(new), dt, pass)
 

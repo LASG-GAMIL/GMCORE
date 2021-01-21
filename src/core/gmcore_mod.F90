@@ -264,9 +264,10 @@ contains
 
   end subroutine diagnose
 
-  subroutine space_operators(block, old_state, new_state, tend, dt, pass)
+  subroutine space_operators(block, last_state, old_state, new_state, tend, dt, pass)
 
     type(block_type), intent(inout) :: block
+    type(state_type), intent(in) :: last_state
     type(state_type), intent(inout) :: old_state
     type(state_type), intent(inout) :: new_state
     type(tend_type), intent(inout) :: tend
@@ -338,7 +339,7 @@ contains
         tend%update_pt  = .true.
         call update_state(block, tend, old_state, new_state, dt, no_wind_pass)
 
-        call nh_solve(block, tend, old_state, new_state, dt)
+        call nh_solve(block, tend, last_state, old_state, new_state, dt)
 
         call calc_qhu_qhv          (block, old_state, tend, dt)
         call calc_dkedlon_dkedlat  (block, old_state, tend, dt)
