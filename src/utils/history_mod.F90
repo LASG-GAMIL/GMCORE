@@ -91,7 +91,7 @@ contains
       call fiona_add_var('h0', 'v'    , long_name='v wind component'            , units='m s-1'  , dim_names=lat_dims)
       call fiona_add_var('h0', 'v850' , long_name='v wind component on 850hPa'  , units='m s-1'  , dim_names=lat_dims_2d)
       call fiona_add_var('h0', 'v700' , long_name='v wind component on 700hPa'  , units='m s-1'  , dim_names=lat_dims_2d)
-      call fiona_add_var('h0', 'z'    , long_name='height'                      , units='m'      , dim_names=cell_dims)
+      call fiona_add_var('h0', 'z'    , long_name='height'                      , units='m'      , dim_names=cell_lev_dims)
       call fiona_add_var('h0', 'zs'   , long_name='surface height'              , units='m'      , dim_names=cell_dims_2d)
       call fiona_add_var('h0', 'pv'   , long_name='potential vorticity'         , units='m-1 s-1', dim_names=vtx_dims)
       call fiona_add_var('h0', 'vor'  , long_name='relative vorticity'          , units='s-1'    , dim_names=vtx_dims)
@@ -223,7 +223,6 @@ contains
       count = [mesh%num_full_lon,mesh%num_full_lat,mesh%num_full_lev]
 
       call fiona_output('h0', 'zs' , static%gzs(is:ie,js:je      ) / g, start=start, count=count)
-      call fiona_output('h0', 'z'  , state %gz (is:ie,js:je,ks:ke) / g, start=start, count=count)
       call fiona_output('h0', 'div', state%div (is:ie,js:je,ks:ke)    , start=start, count=count)
 
       if (baroclinic) then
@@ -274,6 +273,7 @@ contains
       start = [is,js,ks]
       count = [mesh%num_full_lon,mesh%num_full_lat,mesh%num_half_lev]
 
+      call fiona_output('h0', 'z'  , state%gz_lev(is:ie,js:je,ks:ke) / g, start=start, count=count)
       if (nonhydrostatic) then
         call fiona_output('h0', 'w', state%w_lev(is:ie,js:je,ks:ke), start=start, count=count)
         call fiona_output('h0', 'p', state%p_lev(is:ie,js:je,ks:ke), start=start, count=count)
