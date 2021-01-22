@@ -42,6 +42,7 @@ module namelist_mod
   character(8) :: pgf_scheme = 'lin97'
   integer :: coriolis_scheme = 1
   integer :: upwind_order = -1 ! -1, 1, 3
+  real(r8) :: upwind_wgt = 0.5_r8
 
   integer :: fast_cycles = 1
   character(30) :: split_scheme = ''
@@ -122,6 +123,7 @@ module namelist_mod
     pgf_scheme                , &
     coriolis_scheme           , &
     upwind_order              , &
+    upwind_wgt                , &
     split_scheme              , &
     time_scheme               , &
     fast_cycles               , &
@@ -198,6 +200,9 @@ contains
       write(*, *) 'pv_pole_stokes      = ', to_str(pv_pole_stokes)
       write(*, *) 'time_scheme         = ', trim(time_scheme)
       write(*, *) 'upwind_order        = ', to_str(upwind_order)
+    if (upwind_order > 0) then
+      write(*, *) 'upwind_wgt          = ', to_str(upwind_wgt, 2)
+    end if
       write(*, *) 'reduce_pv_directly  = ', to_str(reduce_pv_directly)
       write(*, *) 'do_reduce_ke        = ', to_str(do_reduce_ke)
       write(*, *) 'use_div_damp        = ', to_str(use_div_damp)

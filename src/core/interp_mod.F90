@@ -65,12 +65,11 @@ contains
                                         mesh%full_lat_lb:mesh%full_lat_ub, &
                                         mesh%full_lev_lb:mesh%full_lev_ub)
 
-    real(r8), parameter :: beta = 1.0_r8
     real(r8), parameter :: c11 =  0.5_r8
     real(r8), parameter :: c12 = -0.5_r8
-    real(r8), parameter :: c31 = 7.0_r8 / 12.0_r8
+    real(r8), parameter :: c31 =  7.0_r8 / 12.0_r8
     real(r8), parameter :: c32 = -1.0_r8 / 12.0_r8
-    real(r8), parameter :: c33 = 1.0_r8 / 12.0_r8
+    real(r8), parameter :: c33 =  1.0_r8 / 12.0_r8
     integer i, j, k
 
     if (present(u)) then
@@ -82,7 +81,7 @@ contains
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
               x_lon(i,j,k) = c11 * (x(i+1,j,k) + x(i,j,k)) + &
                              c12 * (x(i+1,j,k) - x(i,j,k)) * &
-                             beta * sign(1.0_r8, u(i,j,k))
+                             upwind_wgt * sign(1.0_r8, u(i,j,k))
             end do
           end do
         end do
@@ -94,7 +93,7 @@ contains
                              c32 * (x(i+2,j,k) + x(i-1,j,k))  + &
                              c33 * (x(i+2,j,k) - x(i-1,j,k)   - &
                           3.0_r8 * (x(i+1,j,k) - x(i  ,j,k))) * &
-                             beta * sign(1.0_r8, u(i,j,k))
+                             upwind_wgt * sign(1.0_r8, u(i,j,k))
             end do
           end do
         end do
@@ -141,13 +140,12 @@ contains
                                         mesh%half_lat_lb:mesh%half_lat_ub, &
                                         mesh%full_lev_lb:mesh%full_lev_ub)
 
-    real(r8), parameter :: beta = 1.0_r8
     real(r8), parameter :: c11 =  0.5_r8
     real(r8), parameter :: c12 = -0.5_r8
-    real(r8), parameter :: c31 = 7.0_r8 / 12.0_r8
+    real(r8), parameter :: c31 =  7.0_r8 / 12.0_r8
     real(r8), parameter :: c32 = -1.0_r8 / 12.0_r8
-    real(r8), parameter :: c33 = 1.0_r8 / 12.0_r8
-    integer i, j, k
+    real(r8), parameter :: c33 =  1.0_r8 / 12.0_r8
+    integer i, j, k, jm1, jp2, io
 
     if (present(v)) then
       ! Upwind-biased interpolation
@@ -159,13 +157,13 @@ contains
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
               x_lat(i,j,k) = c11 * (x(i,j,k) + x(i,j-1,k)) + &
                              c12 * (x(i,j,k) - x(i,j-1,k)) * &
-                             beta * sign(1.0_r8, v(i,j,k))
+                             upwind_wgt * sign(1.0_r8, v(i,j,k))
             end do
 #else
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
               x_lat(i,j,k) = c11 * (x(i,j+1,k) + x(i,j,k)) + &
                              c12 * (x(i,j+1,k) - x(i,j,k)) * &
-                             beta * sign(1.0_r8, v(i,j,k))
+                             upwind_wgt * sign(1.0_r8, v(i,j,k))
             end do
 #endif
           end do
@@ -173,36 +171,32 @@ contains
       case(3)
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
-            if (j == mesh%half_lat_ibeg_no_pole .or. j == mesh%half_lat_iend_no_pole) then
-#ifdef V_POLE
+            if (mesh%is_half_lat_next_to_pole(j)) then
               do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+#ifdef V_POLE
                 x_lat(i,j,k) = c11 * (x(i,j,k) + x(i,j-1,k)) + &
                                c12 * (x(i,j,k) - x(i,j-1,k)) * &
-                              beta * sign(1.0_r8, v(i,j,k))
-              end do
+                               upwind_wgt * sign(1.0_r8, v(i,j,k))
 #else
-              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
                 x_lat(i,j,k) = c11 * (x(i,j+1,k) + x(i,j,k)) + &
                                c12 * (x(i,j+1,k) - x(i,j,k)) * &
-                               beta * sign(1.0_r8, v(i,j,k))
-              end do
+                               upwind_wgt * sign(1.0_r8, v(i,j,k))
 #endif
+              end do
             else
-#ifdef V_POLE
               do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+#ifdef V_POLE
                 x_lat(i,j,k) = c31 * (x(i,j  ,k) + x(i,j-1,k))  + &
                                c32 * (x(i,j+1,k) + x(i,j-2,k))  + &
                                c33 * (x(i,j+1,k) - x(i,j-2,k)   - &
                             3.0_r8 * (x(i,j  ,k) - x(i,j-1,k))) * &
-                              beta * sign(1.0_r8, v(i,j,k))
-              end do
+                               upwind_wgt * sign(1.0_r8, v(i,j,k))
 #else
-              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
                 x_lat(i,j,k) = c31 * (x(i,j+1,k) + x(i,j  ,k))  + &
                                c32 * (x(i,j+2,k) + x(i,j-1,k))  + &
                                c33 * (x(i,j+2,k) - x(i,j-1,k)   - &
                             3.0_r8 * (x(i,j+1,k) - x(i,j  ,k))) * &
-                              beta * sign(1.0_r8, v(i,j,k))
+                               upwind_wgt * sign(1.0_r8, v(i,j,k))
               end do
 #endif
             end if
@@ -312,12 +306,11 @@ contains
                                         mesh%full_lat_lb:mesh%full_lat_ub, &
                                         mesh%half_lev_lb:mesh%half_lev_ub)
 
-    real(r8), parameter :: beta = 1.0_r8
     real(r8), parameter :: c11 =  0.5_r8
     real(r8), parameter :: c12 = -0.5_r8
-    real(r8), parameter :: c31 = 7.0_r8 / 12.0_r8
-    real(r8), parameter :: c32 = - 1.0_r8 / 12.0_r8
-    real(r8), parameter :: c33 = 1.0_r8 / 12.0_r8
+    real(r8), parameter :: c31 =  7.0_r8 / 12.0_r8
+    real(r8), parameter :: c32 = -1.0_r8 / 12.0_r8
+    real(r8), parameter :: c33 =  1.0_r8 / 12.0_r8
     integer i, j, k
 
     if (present(u)) then
@@ -329,7 +322,7 @@ contains
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
               x_lev_lon(i,j,k) = c11 * (x_lev(i+1,j,k) + x_lev(i,j,k)) + &
                                  c12 * (x_lev(i+1,j,k) - x_lev(i,j,k)) * &
-                                 beta * sign(1.0_r8, u(i,j,k))
+                                 upwind_wgt * sign(1.0_r8, u(i,j,k))
             end do
           end do
         end do
@@ -341,7 +334,7 @@ contains
                                  c32 * (x_lev(i+2,j,k) + x_lev(i-1,j,k))  + &
                                  c33 * (x_lev(i+2,j,k) - x_lev(i-1,j,k)   - &
                               3.0_r8 * (x_lev(i+1,j,k) - x_lev(i  ,j,k))) * &
-                                beta * sign(1.0_r8, u(i,j,k))
+                                 upwind_wgt * sign(1.0_r8, u(i,j,k))
             end do
           end do
         end do
@@ -373,12 +366,11 @@ contains
                                         mesh%half_lat_lb:mesh%half_lat_ub, &
                                         mesh%half_lev_lb:mesh%half_lev_ub)
 
-    real(r8), parameter :: beta = 1.0_r8
     real(r8), parameter :: c11 =  0.5_r8
     real(r8), parameter :: c12 = -0.5_r8
-    real(r8), parameter :: c31 = 7.0_r8 / 12.0_r8
+    real(r8), parameter :: c31 =  7.0_r8 / 12.0_r8
     real(r8), parameter :: c32 = -1.0_r8 / 12.0_r8
-    real(r8), parameter :: c33 = 1.0_r8 / 12.0_r8
+    real(r8), parameter :: c33 =  1.0_r8 / 12.0_r8
     integer i, j, k
 
     if (present(v)) then
@@ -387,56 +379,50 @@ contains
       case (1)
         do k = mesh%half_lev_ibeg, mesh%half_lev_iend
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
-#ifdef V_POLE
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+#ifdef V_POLE
               x_lev_lat(i,j,k) = c11 * (x_lev(i,j,k) + x_lev(i,j-1,k)) + &
                                  c12 * (x_lev(i,j,k) - x_lev(i,j-1,k)) * &
-                                 beta * sign(1.0_r8, v(i,j,k))
-            end do
+                                 upwind_wgt * sign(1.0_r8, v(i,j,k))
 #else
-            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
               x_lev_lat(i,j,k) = c11 * (x_lev(i,j+1,k) + x_lev(i,j,k)) + &
                                  c12 * (x_lev(i,j+1,k) - x_lev(i,j,k)) * &
-                                 beta * sign(1.0_r8, v(i,j,k))
-            end do
+                                 upwind_wgt * sign(1.0_r8, v(i,j,k))
 #endif
+            end do
           end do
         end do
       case (3)
         do k = mesh%half_lev_ibeg, mesh%half_lev_iend
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
-            if (j == mesh%half_lat_ibeg_no_pole .or. j == mesh%half_lat_iend_no_pole) then
-#ifdef V_POLE
+            if (mesh%is_half_lat_next_to_pole(j)) then
               do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+#ifdef V_POLE
                 x_lev_lat(i,j,k) = c11 * (x_lev(i,j,k) + x_lev(i,j-1,k)) + &
                                    c12 * (x_lev(i,j,k) - x_lev(i,j-1,k)) * &
-                                   beta * sign(1.0_r8, v(i,j,k))
-              end do
+                                   upwind_wgt * sign(1.0_r8, v(i,j,k))
 #else
-              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
                 x_lev_lat(i,j,k) = c11 * (x_lev(i,j+1,k) + x_lev(i,j,k)) + &
                                    c12 * (x_lev(i,j+1,k) - x_lev(i,j,k)) * &
-                                   beta * sign(1.0_r8, v(i,j,k))
-              end do
+                                   upwind_wgt * sign(1.0_r8, v(i,j,k))
 #endif
+              end do
             else
-#ifdef V_POLE
               do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+#ifdef V_POLE
                 x_lev_lat(i,j,k) = c31 * (x_lev(i,j  ,k) + x_lev(i,j-1,k))  + &
                                    c32 * (x_lev(i,j+1,k) + x_lev(i,j-2,k))  + &
                                    c33 * (x_lev(i,j+1,k) - x_lev(i,j-2,k)   - &
                                 3.0_r8 * (x_lev(i,j  ,k) - x_lev(i,j-1,k))) * &
-                                  beta * sign(1.0_r8, v(i,j,k))
-              end do
+                                   upwind_wgt * sign(1.0_r8, v(i,j,k))
 #else
-              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
                 x_lev_lat(i,j,k) = c31 * (x_lev(i,j+1,k) + x_lev(i,j  ,k))  + &
                                    c32 * (x_lev(i,j+2,k) + x_lev(i,j-1,k))  + &
                                    c33 * (x_lev(i,j+2,k) - x_lev(i,j-1,k)   - &
                                 3.0_r8 * (x_lev(i,j+1,k) - x_lev(i,j  ,k))) * &
-                                  beta * sign(1.0_r8, v(i,j,k))
-              end do
+                                   upwind_wgt * sign(1.0_r8, v(i,j,k))
 #endif
+              end do
             end if
           end do
         end do
