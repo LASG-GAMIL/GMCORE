@@ -512,7 +512,7 @@ contains
     case (3)
       call interp_pv_apvm(block, state, dt)
     case default
-      call log_error('Unknown PV scheme!')
+      if (is_root_proc()) call log_error('Unknown PV scheme!')
     end select
 
   end subroutine interp_pv

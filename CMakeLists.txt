@@ -166,6 +166,7 @@ set(gmcore_prepare_files
   src/prepare/latlon_interp_mod.F90
   src/prepare/vert_interp_mod.F90
   src/prepare/era5_reader_mod.F90
+  src/prepare/mpas_reader_mod.F90
   src/prepare/bkg_mod.F90
   src/prepare/gmcore_prepare.F90
 )

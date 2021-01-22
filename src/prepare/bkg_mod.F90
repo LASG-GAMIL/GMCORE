@@ -9,6 +9,7 @@ module bkg_mod
   use process_mod
   use parallel_mod
   use era5_reader_mod
+  use mpas_reader_mod
   use latlon_interp_mod
   use vert_interp_mod
   use interp_mod
@@ -39,6 +40,8 @@ contains
     select case (bkg_type)
     case ('era5')
       call era5_reader_run(bkg_file)
+    case ('mpas')
+      call mpas_reader_run(bkg_file)
     case default
       if (is_root_proc()) call log_error('Unknown bkg_type ' // trim(bkg_type) // '!')
     end select
@@ -48,13 +51,13 @@ contains
   subroutine bkg_final()
 
     call era5_reader_final()
+    call mpas_reader_final()
 
   end subroutine bkg_final
 
   subroutine bkg_regrid_phs()
 
-    real(r8), allocatable, dimension(:,:) :: p0, t0, z0
-    real(r8) t0_p
+    real(r8), allocatable, dimension(:,:) :: p0, t0, z0, t0_p
     real(r8), parameter :: lapse = 0.006_r8 ! K m-1
     real(r8), parameter :: kappa = Rd / g
     real(r8), parameter :: lapse_kappa = lapse * kappa
@@ -66,9 +69,10 @@ contains
       associate (mesh => proc%blocks(iblk)%mesh, &
                  gzs => proc%blocks(iblk)%static%gzs, &
                  phs => proc%blocks(iblk)%state(1)%phs)
-        allocate(p0(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub))
-        allocate(t0(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub))
-        allocate(z0(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub))
+        allocate(p0  (mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub))
+        allocate(t0  (mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub))
+        allocate(z0  (mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub))
+        allocate(t0_p(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub))
 
         select case (bkg_type)
         case ('era5')
@@ -76,16 +80,21 @@ contains
           call latlon_interp_bilinear_cell(era5_lon, era5_lat, era5_t(:,:,num_era5_lev), mesh, t0)
           t0_p = era5_lev(num_era5_lev)
           z0 = 0.0_r8
+        case ('mpas')
+          call latlon_interp_bilinear_cell(mpas_lon, mpas_lat, mpas_ps, mesh, p0)
+          call latlon_interp_bilinear_cell(mpas_lon, mpas_lat, mpas_zs, mesh, z0)
+          call latlon_interp_bilinear_cell(mpas_lon, mpas_lat, mpas_p(:,:,num_mpas_lev), mesh, t0_p)
+          call latlon_interp_bilinear_cell(mpas_lon, mpas_lat, mpas_t(:,:,num_mpas_lev), mesh, t0  )
         end select
         ! According to pressure-height formula based on hydrostatic assumption.
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            t0(i,j) = t0(i,j) * (p0(i,j) / t0_p)**lapse_kappa
+            t0(i,j) = t0(i,j) * (p0(i,j) / t0_p(i,j))**lapse_kappa
             phs(i,j) = p0(i,j) * (1.0_r8 - lapse * (gzs(i,j) / g - z0(i,j)) / t0(i,j))**(1.0_r8 / lapse_kappa)
           end do
         end do
 
-        deallocate(p0, t0, z0)
+        deallocate(p0, t0, z0, t0_p)
       end associate
     end do
 
@@ -140,6 +149,16 @@ contains
               pt(i,j,:) = potential_temperature(t(i,j,:), ph(i,j,:))
             end do
           end do
+        case ('mpas')
+          allocate(tmp(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,num_mpas_lev))
+          do k = 1, num_mpas_lev
+            call latlon_interp_bilinear_cell(mpas_lon, mpas_lat, mpas_pt(:,:,k), mesh, tmp(:,:,k))
+          end do
+          do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              call vert_interp_log_linear(mpas_p(i,j,:), tmp(i,j,:), ph(i,j,:), pt(i,j,:), allow_extrap=.true.)
+            end do
+          end do
         end select
         deallocate(tmp)
         call fill_halo(block, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
@@ -171,9 +190,19 @@ contains
               call vert_interp_linear(era5_lev, tmp(i,j,:), ph(i,j,:), u(i,j,:), allow_extrap=.true.)
             end do
           end do
-          deallocate(tmp)
-          call fill_halo(block, u, full_lon=.false., full_lat=.true., full_lev=.true.)
+        case ('mpas')
+          allocate(tmp(mesh%half_lon_lb:mesh%half_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,num_mpas_lev))
+          do k = 1, num_mpas_lev
+            call latlon_interp_bilinear_lon_edge(mpas_lon, mpas_lat, mpas_u(:,:,k), mesh, tmp(:,:,k), zero_pole=.true.)
+          end do
+          do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+            do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+              call vert_interp_linear(mpas_p(i,j,:), tmp(i,j,:), ph(i,j,:), u(i,j,:), allow_extrap=.true.)
+            end do
+          end do
         end select
+        deallocate(tmp)
+        call fill_halo(block, u, full_lon=.false., full_lat=.true., full_lev=.true.)
       end associate
     end do
 
@@ -202,9 +231,19 @@ contains
               call vert_interp_linear(era5_lev, tmp(i,j,:), ph(i,j,:), v(i,j,:), allow_extrap=.true.)
             end do
           end do
-          deallocate(tmp)
-          call fill_halo(block, v, full_lon=.true., full_lat=.false., full_lev=.true.)
+        case ('mpas')
+          allocate(tmp(mesh%full_lon_lb:mesh%full_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,num_mpas_lev))
+          do k = 1, num_mpas_lev
+            call latlon_interp_bilinear_lat_edge(mpas_lon, mpas_lat, mpas_v(:,:,k), mesh, tmp(:,:,k))
+          end do
+          do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              call vert_interp_linear(mpas_p(i,j,:), tmp(i,j,:), ph(i,j,:), v(i,j,:), allow_extrap=.true.)
+            end do
+          end do
         end select
+        deallocate(tmp)
+        call fill_halo(block, v, full_lon=.true., full_lat=.false., full_lev=.true.)
       end associate
     end do
 
