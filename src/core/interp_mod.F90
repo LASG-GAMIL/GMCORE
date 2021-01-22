@@ -51,7 +51,7 @@ module interp_mod
 
 contains
 
-  subroutine interp_cell_to_lon_edge(mesh, x, x_lon, reversed_area, u)
+  subroutine interp_cell_to_lon_edge(mesh, x, x_lon, reversed_area, u, upwind_wgt_)
 
     type(mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: x(mesh%full_lon_lb:mesh%full_lon_ub, &
@@ -64,15 +64,22 @@ contains
     real(r8), intent(in), optional :: u(mesh%half_lon_lb:mesh%half_lon_ub, &
                                         mesh%full_lat_lb:mesh%full_lat_ub, &
                                         mesh%full_lev_lb:mesh%full_lev_ub)
+    real(r8), intent(in), optional :: upwind_wgt_
 
     real(r8), parameter :: c11 =  0.5_r8
     real(r8), parameter :: c12 = -0.5_r8
     real(r8), parameter :: c31 =  7.0_r8 / 12.0_r8
     real(r8), parameter :: c32 = -1.0_r8 / 12.0_r8
     real(r8), parameter :: c33 =  1.0_r8 / 12.0_r8
+    real(r8) beta
     integer i, j, k
 
     if (present(u)) then
+      if (present(upwind_wgt_)) then
+        beta = upwind_wgt_
+      else
+        beta = upwind_wgt
+      end if
       ! Upwind-biased interpolation
       select case (upwind_order)
       case (1)
@@ -81,7 +88,7 @@ contains
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
               x_lon(i,j,k) = c11 * (x(i+1,j,k) + x(i,j,k)) + &
                              c12 * (x(i+1,j,k) - x(i,j,k)) * &
-                             upwind_wgt * sign(1.0_r8, u(i,j,k))
+                            beta * sign(1.0_r8, u(i,j,k))
             end do
           end do
         end do
@@ -93,7 +100,7 @@ contains
                              c32 * (x(i+2,j,k) + x(i-1,j,k))  + &
                              c33 * (x(i+2,j,k) - x(i-1,j,k)   - &
                           3.0_r8 * (x(i+1,j,k) - x(i  ,j,k))) * &
-                             upwind_wgt * sign(1.0_r8, u(i,j,k))
+                            beta * sign(1.0_r8, u(i,j,k))
             end do
           end do
         end do
@@ -125,7 +132,7 @@ contains
 
   end subroutine interp_cell_to_lon_edge
 
-  subroutine interp_cell_to_lat_edge(mesh, x, x_lat, reversed_area, handle_pole, v)
+  subroutine interp_cell_to_lat_edge(mesh, x, x_lat, reversed_area, handle_pole, v, upwind_wgt_)
 
     type(mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: x(mesh%full_lon_lb:mesh%full_lon_ub, &
@@ -139,15 +146,22 @@ contains
     real(r8), intent(in), optional :: v(mesh%full_lon_lb:mesh%full_lon_ub, &
                                         mesh%half_lat_lb:mesh%half_lat_ub, &
                                         mesh%full_lev_lb:mesh%full_lev_ub)
+    real(r8), intent(in), optional :: upwind_wgt_
 
     real(r8), parameter :: c11 =  0.5_r8
     real(r8), parameter :: c12 = -0.5_r8
     real(r8), parameter :: c31 =  7.0_r8 / 12.0_r8
     real(r8), parameter :: c32 = -1.0_r8 / 12.0_r8
     real(r8), parameter :: c33 =  1.0_r8 / 12.0_r8
+    real(r8) beta
     integer i, j, k, jm1, jp2, io
 
     if (present(v)) then
+      if (present(upwind_wgt_)) then
+        beta = upwind_wgt_
+      else
+        beta = upwind_wgt
+      end if
       ! Upwind-biased interpolation
       select case (upwind_order)
       case (1)
@@ -157,13 +171,13 @@ contains
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
               x_lat(i,j,k) = c11 * (x(i,j,k) + x(i,j-1,k)) + &
                              c12 * (x(i,j,k) - x(i,j-1,k)) * &
-                             upwind_wgt * sign(1.0_r8, v(i,j,k))
+                            beta * sign(1.0_r8, v(i,j,k))
             end do
 #else
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
               x_lat(i,j,k) = c11 * (x(i,j+1,k) + x(i,j,k)) + &
                              c12 * (x(i,j+1,k) - x(i,j,k)) * &
-                             upwind_wgt * sign(1.0_r8, v(i,j,k))
+                            beta * sign(1.0_r8, v(i,j,k))
             end do
 #endif
           end do
@@ -176,11 +190,11 @@ contains
 #ifdef V_POLE
                 x_lat(i,j,k) = c11 * (x(i,j,k) + x(i,j-1,k)) + &
                                c12 * (x(i,j,k) - x(i,j-1,k)) * &
-                               upwind_wgt * sign(1.0_r8, v(i,j,k))
+                              beta * sign(1.0_r8, v(i,j,k))
 #else
                 x_lat(i,j,k) = c11 * (x(i,j+1,k) + x(i,j,k)) + &
                                c12 * (x(i,j+1,k) - x(i,j,k)) * &
-                               upwind_wgt * sign(1.0_r8, v(i,j,k))
+                              beta * sign(1.0_r8, v(i,j,k))
 #endif
               end do
             else
@@ -190,13 +204,13 @@ contains
                                c32 * (x(i,j+1,k) + x(i,j-2,k))  + &
                                c33 * (x(i,j+1,k) - x(i,j-2,k)   - &
                             3.0_r8 * (x(i,j  ,k) - x(i,j-1,k))) * &
-                               upwind_wgt * sign(1.0_r8, v(i,j,k))
+                              beta * sign(1.0_r8, v(i,j,k))
 #else
                 x_lat(i,j,k) = c31 * (x(i,j+1,k) + x(i,j  ,k))  + &
                                c32 * (x(i,j+2,k) + x(i,j-1,k))  + &
                                c33 * (x(i,j+2,k) - x(i,j-1,k)   - &
                             3.0_r8 * (x(i,j+1,k) - x(i,j  ,k))) * &
-                               upwind_wgt * sign(1.0_r8, v(i,j,k))
+                              beta * sign(1.0_r8, v(i,j,k))
               end do
 #endif
             end if
@@ -293,7 +307,7 @@ contains
 
   end subroutine interp_lev_edge_to_cell
 
-  subroutine interp_lev_edge_to_lev_lon_edge(mesh, x_lev, x_lev_lon, u)
+  subroutine interp_lev_edge_to_lev_lon_edge(mesh, x_lev, x_lev_lon, u, upwind_wgt_)
 
     type(mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: x_lev(mesh%full_lon_lb:mesh%full_lon_ub, &
@@ -305,15 +319,22 @@ contains
     real(r8), intent(in), optional :: u(mesh%half_lon_lb:mesh%half_lon_ub, &
                                         mesh%full_lat_lb:mesh%full_lat_ub, &
                                         mesh%half_lev_lb:mesh%half_lev_ub)
+    real(r8), intent(in), optional :: upwind_wgt_
 
     real(r8), parameter :: c11 =  0.5_r8
     real(r8), parameter :: c12 = -0.5_r8
     real(r8), parameter :: c31 =  7.0_r8 / 12.0_r8
     real(r8), parameter :: c32 = -1.0_r8 / 12.0_r8
     real(r8), parameter :: c33 =  1.0_r8 / 12.0_r8
+    real(r8) beta
     integer i, j, k
 
     if (present(u)) then
+      if (present(upwind_wgt_)) then
+        beta = upwind_wgt_
+      else
+        beta = upwind_wgt
+      end if
       ! Upwind-biased interpolation
       select case (upwind_order)
       case (1)
@@ -322,7 +343,7 @@ contains
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
               x_lev_lon(i,j,k) = c11 * (x_lev(i+1,j,k) + x_lev(i,j,k)) + &
                                  c12 * (x_lev(i+1,j,k) - x_lev(i,j,k)) * &
-                                 upwind_wgt * sign(1.0_r8, u(i,j,k))
+                                beta * sign(1.0_r8, u(i,j,k))
             end do
           end do
         end do
@@ -334,7 +355,7 @@ contains
                                  c32 * (x_lev(i+2,j,k) + x_lev(i-1,j,k))  + &
                                  c33 * (x_lev(i+2,j,k) - x_lev(i-1,j,k)   - &
                               3.0_r8 * (x_lev(i+1,j,k) - x_lev(i  ,j,k))) * &
-                                 upwind_wgt * sign(1.0_r8, u(i,j,k))
+                                beta * sign(1.0_r8, u(i,j,k))
             end do
           end do
         end do
@@ -353,7 +374,7 @@ contains
 
   end subroutine interp_lev_edge_to_lev_lon_edge
 
-  subroutine interp_lev_edge_to_lev_lat_edge(mesh, x_lev, x_lev_lat, v)
+  subroutine interp_lev_edge_to_lev_lat_edge(mesh, x_lev, x_lev_lat, v, upwind_wgt_)
 
     type(mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: x_lev(mesh%full_lon_lb:mesh%full_lon_ub, &
@@ -365,15 +386,22 @@ contains
     real(r8), intent(in), optional :: v(mesh%full_lon_lb:mesh%full_lon_ub, &
                                         mesh%half_lat_lb:mesh%half_lat_ub, &
                                         mesh%half_lev_lb:mesh%half_lev_ub)
+    real(r8), intent(in), optional :: upwind_wgt_
 
     real(r8), parameter :: c11 =  0.5_r8
     real(r8), parameter :: c12 = -0.5_r8
     real(r8), parameter :: c31 =  7.0_r8 / 12.0_r8
     real(r8), parameter :: c32 = -1.0_r8 / 12.0_r8
     real(r8), parameter :: c33 =  1.0_r8 / 12.0_r8
+    real(r8) beta
     integer i, j, k
 
     if (present(v)) then
+      if (present(upwind_wgt_)) then
+        beta = upwind_wgt_
+      else
+        beta = upwind_wgt
+      end if
       ! Upwind-biased interpolation
       select case (upwind_order)
       case (1)
@@ -383,11 +411,11 @@ contains
 #ifdef V_POLE
               x_lev_lat(i,j,k) = c11 * (x_lev(i,j,k) + x_lev(i,j-1,k)) + &
                                  c12 * (x_lev(i,j,k) - x_lev(i,j-1,k)) * &
-                                 upwind_wgt * sign(1.0_r8, v(i,j,k))
+                                beta * sign(1.0_r8, v(i,j,k))
 #else
               x_lev_lat(i,j,k) = c11 * (x_lev(i,j+1,k) + x_lev(i,j,k)) + &
                                  c12 * (x_lev(i,j+1,k) - x_lev(i,j,k)) * &
-                                 upwind_wgt * sign(1.0_r8, v(i,j,k))
+                                beta * sign(1.0_r8, v(i,j,k))
 #endif
             end do
           end do
@@ -400,11 +428,11 @@ contains
 #ifdef V_POLE
                 x_lev_lat(i,j,k) = c11 * (x_lev(i,j,k) + x_lev(i,j-1,k)) + &
                                    c12 * (x_lev(i,j,k) - x_lev(i,j-1,k)) * &
-                                   upwind_wgt * sign(1.0_r8, v(i,j,k))
+                                  beta * sign(1.0_r8, v(i,j,k))
 #else
                 x_lev_lat(i,j,k) = c11 * (x_lev(i,j+1,k) + x_lev(i,j,k)) + &
                                    c12 * (x_lev(i,j+1,k) - x_lev(i,j,k)) * &
-                                   upwind_wgt * sign(1.0_r8, v(i,j,k))
+                                  beta * sign(1.0_r8, v(i,j,k))
 #endif
               end do
             else
@@ -414,13 +442,13 @@ contains
                                    c32 * (x_lev(i,j+1,k) + x_lev(i,j-2,k))  + &
                                    c33 * (x_lev(i,j+1,k) - x_lev(i,j-2,k)   - &
                                 3.0_r8 * (x_lev(i,j  ,k) - x_lev(i,j-1,k))) * &
-                                   upwind_wgt * sign(1.0_r8, v(i,j,k))
+                                  beta * sign(1.0_r8, v(i,j,k))
 #else
                 x_lev_lat(i,j,k) = c31 * (x_lev(i,j+1,k) + x_lev(i,j  ,k))  + &
                                    c32 * (x_lev(i,j+2,k) + x_lev(i,j-1,k))  + &
                                    c33 * (x_lev(i,j+2,k) - x_lev(i,j-1,k)   - &
                                 3.0_r8 * (x_lev(i,j+1,k) - x_lev(i,j  ,k))) * &
-                                   upwind_wgt * sign(1.0_r8, v(i,j,k))
+                                  beta * sign(1.0_r8, v(i,j,k))
 #endif
               end do
             end if
