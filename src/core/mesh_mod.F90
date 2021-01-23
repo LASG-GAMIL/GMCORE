@@ -116,6 +116,7 @@ module mesh_mod
     procedure :: is_south_pole => mesh_is_south_pole
     procedure :: is_north_pole => mesh_is_north_pole
     procedure :: is_pole => mesh_is_pole
+    procedure :: is_full_lat_next_to_pole => mesh_is_full_lat_next_to_pole
     procedure :: is_half_lat_next_to_pole => mesh_is_half_lat_next_to_pole
     procedure :: is_inside_with_halo_full_lat => mesh_is_inside_with_halo_full_lat
     procedure :: is_inside_with_halo_half_lat => mesh_is_inside_with_halo_half_lat
@@ -885,6 +886,19 @@ contains
     res = this%is_south_pole(j) .or. this%is_north_pole(j)
 
   end function mesh_is_pole
+
+  logical function mesh_is_full_lat_next_to_pole(this, j) result(res)
+
+    class(mesh_type), intent(in) :: this
+    integer, intent(in) :: j
+
+#ifdef V_POLE
+    res = j == 1 .or. j == global_mesh%num_full_lat
+#else
+    res = j == 2 .or. j == global_mesh%num_full_lat - 1
+#endif
+
+  end function mesh_is_full_lat_next_to_pole
 
   logical function mesh_is_half_lat_next_to_pole(this, j) result(res)
 

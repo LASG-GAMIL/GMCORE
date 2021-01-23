@@ -92,6 +92,7 @@ contains
             end do
           end do
         end do
+        return
       case (3)
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -104,8 +105,8 @@ contains
             end do
           end do
         end do
+        return
       end select
-      return
     end if
 
     if (merge(reversed_area, .false., present(reversed_area))) then
@@ -182,6 +183,7 @@ contains
 #endif
           end do
         end do
+        return
       case(3)
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
@@ -216,8 +218,8 @@ contains
             end if
           end do
         end do
+        return
       end select
-      return
     end if
 
     if (merge(reversed_area, .false., present(reversed_area))) then
@@ -347,6 +349,7 @@ contains
             end do
           end do
         end do
+        return
       case (3)
         do k = mesh%half_lev_ibeg, mesh%half_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -359,8 +362,8 @@ contains
             end do
           end do
         end do
+        return
       end select
-      return
     end if
     do k = mesh%half_lev_ibeg, mesh%half_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -420,6 +423,7 @@ contains
             end do
           end do
         end do
+        return
       case (3)
         do k = mesh%half_lev_ibeg, mesh%half_lev_iend
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
@@ -454,8 +458,8 @@ contains
             end if
           end do
         end do
+        return
       end select
-      return
     end if
     do k = mesh%half_lev_ibeg, mesh%half_lev_iend
       do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole

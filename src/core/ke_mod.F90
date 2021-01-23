@@ -89,7 +89,7 @@ contains
           end do
         end do
         call zonal_sum(proc%zonal_comm, pole)
-        pole = pole / mesh%num_full_lon
+        pole = pole / global_mesh%num_full_lon
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             ke(i,j,k) = pole(k)
@@ -105,7 +105,7 @@ contains
           end do
         end do
         call zonal_sum(proc%zonal_comm, pole)
-        pole = pole / mesh%num_full_lon
+        pole = pole / global_mesh%num_full_lon
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             ke(i,j,k) = pole(k)
