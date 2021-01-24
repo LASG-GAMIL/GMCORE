@@ -24,6 +24,7 @@ module hybrid_coord_mod
   real(r8), allocatable, dimension(:) :: hybm
 
   real(r8) :: p0 = 1d5 ! Reference pressure (Pa)
+  real(r8) :: local_ptop = 0
 
   namelist /hybrid_coord/ &
     hyai, hybi, hyam, hybm, p0
@@ -61,18 +62,25 @@ contains
     if (present(template)) then
       select case (template)
       case ('test_l15')
-        call hybrid_coord_test_l15(p0, hyai, hybi)
+        call hybrid_coord_test_l15(p0, ptop, hyai, hybi)
       case ('test_l26')
-        call hybrid_coord_test_l26(p0, hyai, hybi)
+        call hybrid_coord_test_l26(p0, ptop, hyai, hybi)
       case ('test_l30')
-        call hybrid_coord_test_l30(p0, hyai, hybi)
+        call hybrid_coord_test_l30(p0, ptop, hyai, hybi)
       case ('ecmwf_l50')
-        call hybrid_coord_ecmwf_l50(p0, hyai, hybi)
+        call hybrid_coord_ecmwf_l50(p0, ptop, hyai, hybi)
+      case ('wrf_l64')
+        call hybrid_coord_wrf_l64(p0, ptop, hyai, hybi)
+        local_ptop = ptop
       case default
         if (baroclinic .and. template == 'N/A' .and. is_root_proc()) then
           call log_error('Hybrid vertical coordinate template "' // trim(template) // '" is invalid!')
         end if
       end select
+    end if
+
+    if (is_root_proc()) then
+      call log_notice('Model top pressure is ' // to_str(ptop, 2) // 'Pa.')
     end if
 
     if (baroclinic .and. all(hyai == 0) .and. is_root_proc()) then
@@ -109,7 +117,7 @@ contains
     integer, intent(in) :: k
     real(r8), intent(in) :: phs
 
-    res = hyam(k) * p0 + hybm(k) * phs
+    res = hyam(k) * (p0 - local_ptop) + hybm(k) * (phs - local_ptop) + local_ptop
 
   end function hybrid_coord_calc_ph
 
@@ -118,7 +126,7 @@ contains
     integer, intent(in) :: k
     real(r8), intent(in) :: phs
 
-    res = hyai(k) * p0 + hybi(k) * phs
+    res = hyai(k) * (p0 - local_ptop) + hybi(k) * (phs - local_ptop) + local_ptop
 
   end function hybrid_coord_calc_ph_lev
 

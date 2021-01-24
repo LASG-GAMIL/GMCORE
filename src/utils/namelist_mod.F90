@@ -33,6 +33,7 @@ module namelist_mod
   character(30)   :: vert_coord_scheme    = 'hybrid'
   character(30)   :: vert_coord_template  = 'N/A'
   character(30)   :: refer_state_scheme   = 'wrf'
+  real(r8)        :: ptop                 = 2.194e2_r8
 
   integer         :: ke_scheme            = 1
   real(r8)        :: ke_cell_wgt          = 3.0_r8 / 8.0_r8
@@ -118,6 +119,7 @@ module namelist_mod
     vert_coord_scheme         , &
     vert_coord_template       , &
     refer_state_scheme        , &
+    ptop                      , &
     ke_scheme                 , &
     ke_cell_wgt               , &
     pv_scheme                 , &
@@ -194,6 +196,7 @@ contains
       write(*, *) 'nonhydrostatic      = ', to_str(nonhydrostatic)
       write(*, *) 'vert_coord_scheme   = ', trim(vert_coord_scheme)
       write(*, *) 'vert_coord_template = ', trim(vert_coord_template)
+      write(*, *) 'ptop                = ', to_str(ptop, 2)
       write(*, *) 'dt_in_seconds       = ', to_str(int(dt_in_seconds))
       write(*, *) 'pgf_scheme          = ', trim(pgf_scheme)
       write(*, *) 'ke_scheme           = ', to_str(ke_scheme)

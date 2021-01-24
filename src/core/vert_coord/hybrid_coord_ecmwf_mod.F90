@@ -10,9 +10,10 @@ module hybrid_coord_ecmwf_mod
 
 contains
 
-  subroutine hybrid_coord_ecmwf_l50(p0, hyai, hybi)
+  subroutine hybrid_coord_ecmwf_l50(p0, ptop, hyai, hybi)
 
     real(r8), intent(out) :: p0
+    real(r8), intent(out) :: ptop
     real(r8), intent(out) :: hyai(50)
     real(r8), intent(out) :: hybi(50)
 
@@ -120,6 +121,7 @@ contains
 
     p0 = 1d5 ! Pa
     hyai = hyai / p0
+    ptop = p0 * hyai(1)
 
   end subroutine hybrid_coord_ecmwf_l50
 
