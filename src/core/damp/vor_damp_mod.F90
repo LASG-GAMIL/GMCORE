@@ -83,13 +83,7 @@ contains
     allocate(zonal_solver(global_mesh%num_half_lat,global_mesh%num_full_lev))
     do k = global_mesh%full_lev_ibeg, global_mesh%full_lev_iend
       do j = global_mesh%half_lat_ibeg_no_pole, global_mesh%half_lat_iend_no_pole
-        if (global_mesh%half_lat(j) <= 0) then
-          jr = j - global_mesh%half_lat_ibeg_no_pole + 1
-        else
-          jr = global_mesh%half_lat_iend_no_pole - j + 1
-        end if
-        if (jr > size(reduce_factors)) cycle
-        if (reduce_factors(jr) > 1) then
+        if (abs(global_mesh%half_lat_deg(j)) > vor_damp_imp_lat0) then
           use_implicit_solver(j) = .true.
           if (k > 1) then
             if (cv_half_lat(j,k) == cv_half_lat(j,k-1)) then

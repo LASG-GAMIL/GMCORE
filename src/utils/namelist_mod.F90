@@ -65,6 +65,7 @@ module namelist_mod
   logical         :: use_div_damp         = .false.
   integer         :: div_damp_order       = 2
   integer         :: div_damp_j0          = 0
+  real(r8)        :: div_damp_imp_lat0    = 80
   real(r8)        :: div_damp_upper       = 2.0_r8
   real(r8)        :: div_damp_polar       = 0.5_r8
   real(r8)        :: div_damp_exp         = 0.01_r8
@@ -72,6 +73,7 @@ module namelist_mod
   real(r8)        :: div_damp_coef4       = 0.01_r8
   logical         :: use_vor_damp         = .false.
   integer         :: vor_damp_order       = 2
+  real(r8)        :: vor_damp_imp_lat0    = 80
   real(r8)        :: vor_damp_lat0        = 70.0_r8
   real(r8)        :: vor_damp_decay       = 0.2_r8
   real(r8)        :: vor_damp_coef2       = 0.001_r8
@@ -142,6 +144,7 @@ module namelist_mod
     polar_damp_lat0           , &
     use_div_damp              , &
     div_damp_order            , &
+    div_damp_imp_lat0         , &
     div_damp_polar            , &
     div_damp_upper            , &
     div_damp_j0               , &
@@ -150,6 +153,7 @@ module namelist_mod
     div_damp_coef4            , &
     use_vor_damp              , &
     vor_damp_order            , &
+    vor_damp_imp_lat0         , &
     vor_damp_lat0             , &
     vor_damp_decay            , &
     vor_damp_coef2            , &
