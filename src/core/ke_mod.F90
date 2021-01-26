@@ -21,7 +21,9 @@ contains
     type(state_type), intent(inout) :: state
 
     integer i, j, k
-    real(r8) ke_vtx(4), pole(state%mesh%num_full_lev)
+    real(r8) ke_vtx(4)
+    real(r8) work(state%mesh%full_lon_ibeg:state%mesh%full_lon_iend,state%mesh%num_full_lev)
+    real(r8) pole(state%mesh%num_full_lev)
 
     associate (mesh => block%mesh, ke => state%ke, u => state%u, v => state%v)
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
@@ -82,13 +84,12 @@ contains
       ! Note: area_lat_south and area_lat_north at the Poles is the same as area_cell.
       if (mesh%has_south_pole()) then
         j = mesh%full_lat_ibeg
-        pole = 0.0d0
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            pole(k) = pole(k) + v(i,j,k)**2
+            work(i,k) = v(i,j,k)**2
           end do
         end do
-        call zonal_sum(proc%zonal_comm, pole)
+        call zonal_sum(proc%zonal_circle, work, pole)
         pole = pole / global_mesh%num_full_lon
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -98,13 +99,12 @@ contains
       end if
       if (mesh%has_north_pole()) then
         j = mesh%full_lat_iend
-        pole = 0.0d0
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            pole(k) = pole(k) + v(i,j-1,k)**2
+            work(i,k) = v(i,j-1,k)**2
           end do
         end do
-        call zonal_sum(proc%zonal_comm, pole)
+        call zonal_sum(proc%zonal_circle, work, pole)
         pole = pole / global_mesh%num_full_lon
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend

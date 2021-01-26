@@ -146,6 +146,7 @@ contains
 
     integer i, j, k, move
     real(r8) a, b, dwedphdlevgz, dwedphdlev
+    real(r8) work(state%mesh%full_lon_ibeg:state%mesh%full_lon_iend,state%mesh%num_full_lev)
     real(r8) pole(state%mesh%num_full_lev)
 
     associate (mesh          => block%mesh         , &
@@ -215,13 +216,12 @@ contains
 #ifndef V_POLE
       if (mesh%has_south_pole()) then
         j = mesh%full_lat_ibeg
-        pole = 0.0_r8
         do k = mesh%half_lev_ibeg, mesh%half_lev_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            pole(k) = pole(k) + mf_lev_lat_n(i,j,k) * (gz_lev_lat(i,j,k) - gz_lev(i,j,k))
+            work(i,k) = mf_lev_lat_n(i,j,k) * (gz_lev_lat(i,j,k) - gz_lev(i,j,k))
           end do
         end do
-        call zonal_sum(proc%zonal_comm, pole)
+        call zonal_sum(proc%zonal_circle, work, pole)
         pole = pole * mesh%le_lat(j) / global_mesh%num_full_lon / mesh%area_cell(j)
         do k = mesh%half_lev_ibeg, mesh%half_lev_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -231,13 +231,12 @@ contains
       end if
       if (mesh%has_north_pole()) then
         j = mesh%full_lat_iend
-        pole = 0.0_r8
         do k = mesh%half_lev_ibeg, mesh%half_lev_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            pole(k) = pole(k) - mf_lev_lat_n(i,j-1,k) * (gz_lev_lat(i,j-1,k) - gz_lev(i,j,k))
+            work(i,k) = - mf_lev_lat_n(i,j-1,k) * (gz_lev_lat(i,j-1,k) - gz_lev(i,j,k))
           end do
         end do
-        call zonal_sum(proc%zonal_comm, pole)
+        call zonal_sum(proc%zonal_circle, work, pole)
         pole = pole * mesh%le_lat(j-1) / global_mesh%num_full_lon / mesh%area_cell(j)
         do k = mesh%half_lev_ibeg, mesh%half_lev_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -303,6 +302,7 @@ contains
 
     integer i, j, k, move
     real(r8) a, b, dwedphdlevw, dwedphdlev
+    real(r8) work(state%mesh%full_lon_ibeg:state%mesh%full_lon_iend,state%mesh%num_full_lev)
     real(r8) pole(state%mesh%num_full_lev)
 
     associate (mesh          => block%mesh         , &
@@ -372,13 +372,12 @@ contains
 #ifndef V_POLE
       if (mesh%has_south_pole()) then
         j = mesh%full_lat_ibeg
-        pole = 0.0_r8
         do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            pole(k) = pole(k) + mf_lev_lat_n(i,j,k) * (w_lev_lat(i,j,k) - w_lev(i,j,k))
+            work(i,k) = mf_lev_lat_n(i,j,k) * (w_lev_lat(i,j,k) - w_lev(i,j,k))
           end do
         end do
-        call zonal_sum(proc%zonal_comm, pole)
+        call zonal_sum(proc%zonal_circle, work, pole)
         pole = pole * mesh%le_lat(j) / global_mesh%num_full_lon / mesh%area_cell(j)
         do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -388,13 +387,12 @@ contains
       end if
       if (mesh%has_north_pole()) then
         j = mesh%full_lat_iend
-        pole = 0.0_r8
         do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            pole(k) = pole(k) - mf_lev_lat_n(i,j-1,k) * (w_lev_lat(i,j-1,k) - w_lev(i,j,k))
+            work(i,k) = - mf_lev_lat_n(i,j-1,k) * (w_lev_lat(i,j-1,k) - w_lev(i,j,k))
           end do
         end do
-        call zonal_sum(proc%zonal_comm, pole)
+        call zonal_sum(proc%zonal_circle, work, pole)
         pole = pole * mesh%le_lat(j-1) / global_mesh%num_full_lon / mesh%area_cell(j)
         do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend

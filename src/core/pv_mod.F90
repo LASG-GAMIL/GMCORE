@@ -25,6 +25,7 @@ contains
     real(r8), intent(in) :: dt
 
     type(mesh_type), pointer :: mesh
+    real(r8) work(state%mesh%half_lon_ibeg:state%mesh%half_lon_iend,state%mesh%num_full_lev)
     real(r8) pole(state%mesh%num_full_lev)
     integer i, j, k
 
@@ -50,14 +51,13 @@ contains
 #ifdef V_POLE
     if (mesh%has_south_pole()) then
       j = mesh%half_lat_ibeg
-      pole = 0.0_r8
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          pole(k) = pole(k) - state%u(i,j,k) * mesh%de_lon(j)
+          work(i,k) = - state%u(i,j,k) * mesh%de_lon(j)
         end do
       end do
-      call zonal_sum(proc%zonal_comm, pole)
-      pole = pole / mesh%num_half_lon / mesh%area_vtx(j)
+      call zonal_sum(proc%zonal_circle, work, pole)
+      pole = pole / global_mesh%num_half_lon / mesh%area_vtx(j)
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           state%vor(i,j,k) = pole(k)
@@ -66,14 +66,13 @@ contains
     end if
     if (mesh%has_north_pole()) then
       j = mesh%half_lat_iend
-      pole = 0.0_r8
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          pole(k) = pole(k) + state%u(i,j-1,k) * mesh%de_lon(j-1)
+          work(i,k) = state%u(i,j-1,k) * mesh%de_lon(j-1)
         end do
       end do
-      call zonal_sum(proc%zonal_comm, pole)
-      pole = pole / mesh%num_half_lon / mesh%area_vtx(j)
+      call zonal_sum(proc%zonal_circle, work, pole)
+      pole = pole / global_mesh%num_half_lon / mesh%area_vtx(j)
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           state%vor(i,j,k) = pole(k)
@@ -85,13 +84,12 @@ contains
       ! Special treatment of vorticity around Poles
       if (mesh%has_south_pole()) then
         j = mesh%half_lat_ibeg
-        pole = 0.0_r8
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            pole(k) = pole(k) - state%u(i,j+1,k) * mesh%de_lon(j+1)
+            work(i,k) = - state%u(i,j+1,k) * mesh%de_lon(j+1)
           end do
         end do
-        call zonal_sum(proc%zonal_comm, pole)
+        call zonal_sum(proc%zonal_circle, work, pole)
         pole = pole / global_mesh%num_half_lon / mesh%area_vtx(j)
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
@@ -101,13 +99,12 @@ contains
       end if
       if (mesh%has_north_pole()) then
         j = mesh%half_lat_iend
-        pole = 0.0_r8
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            pole(k) = pole(k) + state%u(i,j,k) * mesh%de_lon(j)
+            work(i,k) = state%u(i,j,k) * mesh%de_lon(j)
           end do
         end do
-        call zonal_sum(proc%zonal_comm, pole)
+        call zonal_sum(proc%zonal_circle, work, pole)
         pole = pole / global_mesh%num_half_lon / mesh%area_vtx(j)
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
