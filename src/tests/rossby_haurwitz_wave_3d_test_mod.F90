@@ -11,7 +11,7 @@ module rossby_haurwitz_wave_3d_test_mod
 
   private
 
-  public rossby_haurwitz_wave_3d_test_set_initial_condition
+  public rossby_haurwitz_wave_3d_test_set_ic
 
   integer , parameter :: n     = 4
   real(r8), parameter :: gz0   = 8d3 * g
@@ -23,7 +23,7 @@ module rossby_haurwitz_wave_3d_test_mod
 
 contains
 
-  subroutine rossby_haurwitz_wave_3d_test_set_initial_condition(block)
+  subroutine rossby_haurwitz_wave_3d_test_set_ic(block)
 
     type(block_type), intent(inout), target :: block
 
@@ -124,6 +124,6 @@ contains
     end do
     call fill_halo(block, state%gz_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
 
-  end subroutine rossby_haurwitz_wave_3d_test_set_initial_condition
+  end subroutine rossby_haurwitz_wave_3d_test_set_ic
 
 end module rossby_haurwitz_wave_3d_test_mod

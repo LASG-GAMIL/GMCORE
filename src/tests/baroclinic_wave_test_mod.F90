@@ -10,7 +10,7 @@ module baroclinic_wave_test_mod
 
   private
 
-  public baroclinic_wave_test_set_initial_condition
+  public baroclinic_wave_test_set_ic
 
   real(r8), parameter :: alpha = 0.0_r8
   real(r8), parameter :: u0    = 35        ! m s-1
@@ -25,7 +25,7 @@ module baroclinic_wave_test_mod
 
 contains
 
-  subroutine baroclinic_wave_test_set_initial_condition(block)
+  subroutine baroclinic_wave_test_set_ic(block)
 
     type(block_type), intent(inout), target :: block
 
@@ -162,6 +162,6 @@ contains
     end do
     call fill_halo(block, static%gzs, full_lon=.true., full_lat=.true.)
 
-  end subroutine baroclinic_wave_test_set_initial_condition
+  end subroutine baroclinic_wave_test_set_ic
 
 end module baroclinic_wave_test_mod

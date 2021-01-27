@@ -9,14 +9,14 @@ module cross_pole_flow_test_mod
 
   private
 
-  public cross_pole_flow_test_set_initial_condition
+  public cross_pole_flow_test_set_ic
 
   real, parameter :: v0 = 20 ! m s-1
   real, parameter :: gz0 = 5.7684e4 ! m2 s-2
 
 contains
   
-  subroutine cross_pole_flow_test_set_initial_condition(block)
+  subroutine cross_pole_flow_test_set_ic(block)
 
     type(block_type), intent(inout), target :: block
 
@@ -57,6 +57,6 @@ contains
     end do 
     call fill_halo(block, block%state(1)%gz, full_lon=.true., full_lat=.true.)
 
-  end subroutine cross_pole_flow_test_set_initial_condition
+  end subroutine cross_pole_flow_test_set_ic
 
 end module cross_pole_flow_test_mod

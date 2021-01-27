@@ -59,7 +59,7 @@ module shallow_water_waves_test_mod
 
   private
 
-  public shallow_water_waves_test_set_initial_condition
+  public shallow_water_waves_test_set_ic
 
   integer, parameter :: dp = selected_real_kind(15,307)
 
@@ -91,7 +91,7 @@ module shallow_water_waves_test_mod
 
 contains
 
-  subroutine shallow_water_waves_test_set_initial_condition(block)
+  subroutine shallow_water_waves_test_set_ic(block)
 
     type(block_type), intent(inout), target :: block
 
@@ -140,7 +140,7 @@ contains
     deallocate(v)
     deallocate(h)
 
-  end subroutine shallow_water_waves_test_set_initial_condition
+  end subroutine shallow_water_waves_test_set_ic
 
 !========================================================================
 ! phase speed

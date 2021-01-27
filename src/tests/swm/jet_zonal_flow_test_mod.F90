@@ -10,7 +10,7 @@ module jet_zonal_flow_test_mod
 
   private
 
-  public jet_zonal_flow_test_set_initial_condition
+  public jet_zonal_flow_test_set_ic
 
   real(r8), parameter :: u_max = 80.0_r8
   real(r8), parameter :: lat0 = pi / 7.0_r8
@@ -24,7 +24,7 @@ module jet_zonal_flow_test_mod
 
 contains
 
-  subroutine jet_zonal_flow_test_set_initial_condition(block)
+  subroutine jet_zonal_flow_test_set_ic(block)
 
     type(block_type), intent(inout), target :: block
 
@@ -67,7 +67,7 @@ contains
     end do
     call fill_halo(block, block%state(1)%gz, full_lon=.true., full_lat=.true.)
 
-  end subroutine jet_zonal_flow_test_set_initial_condition
+  end subroutine jet_zonal_flow_test_set_ic
 
   real(r8) function gh_integrand(lat) result(res)
 

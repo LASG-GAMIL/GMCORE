@@ -11,7 +11,7 @@ module steady_state_pgf_test_mod
 
   private
 
-  public steady_state_pgf_test_set_initial_condition
+  public steady_state_pgf_test_set_ic
 
   real(r8), parameter :: T0    = 300.d0      ! K
   real(r8), parameter :: h0    = 2000.d0     ! m
@@ -24,7 +24,7 @@ module steady_state_pgf_test_mod
 
 contains
 
-  subroutine steady_state_pgf_test_set_initial_condition(block)
+  subroutine steady_state_pgf_test_set_ic(block)
 
     type(block_type), intent(inout), target :: block
     real(r8) cos_lat, sin_lat, full_lon, r, height
@@ -90,6 +90,6 @@ contains
     call fill_halo(block, state%t, full_lon=.true., full_lat=.true., full_lev=.true.)
     call fill_halo(block, state%pt, full_lon=.true., full_lat=.true., full_lev=.true.)
   
-  end subroutine steady_state_pgf_test_set_initial_condition
+  end subroutine steady_state_pgf_test_set_ic
 
 end module steady_state_pgf_test_mod

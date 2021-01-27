@@ -9,7 +9,7 @@ module mountain_zonal_flow_test_mod
 
   private
 
-  public mountain_zonal_flow_test_set_initial_condition
+  public mountain_zonal_flow_test_set_ic
 
   real(r8), parameter :: alpha = 0.0
   real(r8), parameter :: u0 = 20.0
@@ -21,7 +21,7 @@ module mountain_zonal_flow_test_mod
 
 contains
 
-  subroutine mountain_zonal_flow_test_set_initial_condition(block)
+  subroutine mountain_zonal_flow_test_set_ic(block)
 
     type(block_type), intent(inout), target :: block
 
@@ -72,6 +72,6 @@ contains
     end do
     call fill_halo(block, block%state(1)%gz, full_lon=.true., full_lat=.true.)
 
-  end subroutine mountain_zonal_flow_test_set_initial_condition
+  end subroutine mountain_zonal_flow_test_set_ic
 
 end module mountain_zonal_flow_test_mod

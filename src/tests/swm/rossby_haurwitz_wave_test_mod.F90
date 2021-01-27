@@ -9,7 +9,7 @@ module rossby_haurwitz_wave_test_mod
 
   private
 
-  public rossby_haurwitz_wave_test_set_initial_condition
+  public rossby_haurwitz_wave_test_set_ic
 
   real(r8), parameter :: R = 4.0d0
   real(r8), parameter :: omg = 7.848d-6
@@ -28,7 +28,7 @@ contains
   ! C(φ) = 1/4 ω² cos²ᴿφ ((R + 1) cos²φ - (R + 2))
 
 
-  subroutine rossby_haurwitz_wave_test_set_initial_condition(block)
+  subroutine rossby_haurwitz_wave_test_set_ic(block)
 
     type(block_type), intent(inout), target :: block
 
@@ -79,6 +79,6 @@ contains
     end do
     call fill_halo(block, block%state(1)%gz, full_lon=.true., full_lat=.true.)
 
-  end subroutine rossby_haurwitz_wave_test_set_initial_condition
+  end subroutine rossby_haurwitz_wave_test_set_ic
 
 end module rossby_haurwitz_wave_test_mod

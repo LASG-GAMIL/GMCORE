@@ -19,12 +19,12 @@ program gmcore_swm_driver
   integer iblk
 
   interface
-    subroutine set_initial_condition_interface(block)
+    subroutine set_ic_interface(block)
       import block_type
       type(block_type), intent(inout), target :: block
     end subroutine
   end interface
-  procedure(set_initial_condition_interface), pointer :: set_initial_condition
+  procedure(set_ic_interface), pointer :: set_ic
 
   call get_command_argument(1, namelist_path)
   if (namelist_path == '') then
@@ -39,23 +39,23 @@ program gmcore_swm_driver
   else
     select case (test_case)
     case ('mountain_zonal_flow')
-      set_initial_condition => mountain_zonal_flow_test_set_initial_condition
+      set_ic => mountain_zonal_flow_test_set_ic
     case ('rossby_haurwitz_wave')
-      set_initial_condition => rossby_haurwitz_wave_test_set_initial_condition
+      set_ic => rossby_haurwitz_wave_test_set_ic
     case ('jet_zonal_flow')
-      set_initial_condition => jet_zonal_flow_test_set_initial_condition
+      set_ic => jet_zonal_flow_test_set_ic
     case ('steady_geostrophic_flow')
-      set_initial_condition => steady_geostrophic_flow_test_set_initial_condition
+      set_ic => steady_geostrophic_flow_test_set_ic
     case ('cross_pole_flow')
-      set_initial_condition => cross_pole_flow_test_set_initial_condition
+      set_ic => cross_pole_flow_test_set_ic
     case ('shallow_water_waves')
-      set_initial_condition => shallow_water_waves_test_set_initial_condition
+      set_ic => shallow_water_waves_test_set_ic
     case default
       call log_error('Unknown test case ' // trim(test_case) // '!')
     end select
 
     do iblk = 1, size(proc%blocks)
-      call set_initial_condition(proc%blocks(iblk))
+      call set_ic(proc%blocks(iblk))
     end do
   end if
 

@@ -12,7 +12,7 @@ module held_suarez_test_mod
 
   private
 
-  public held_suarez_test_set_initial_condition
+  public held_suarez_test_set_ic
   public held_suarez_test_apply_forcing
 
   real(r8), parameter :: sig_b    = 0.7_r8
@@ -25,7 +25,7 @@ module held_suarez_test_mod
 
 contains
 
-  subroutine held_suarez_test_set_initial_condition(block)
+  subroutine held_suarez_test_set_ic(block)
 
     type(block_type), intent(inout), target :: block
 
@@ -34,7 +34,7 @@ contains
     integer i, j, k
     real(r8) random
 
-    call rossby_haurwitz_wave_3d_test_set_initial_condition(block)
+    call rossby_haurwitz_wave_3d_test_set_ic(block)
 
     mesh => block%mesh
     state => block%state(1)
@@ -59,7 +59,7 @@ contains
     end do
     call fill_halo(block, state%pt, full_lon=.true., full_lat=.true., full_lev=.true.)
 
-  end subroutine held_suarez_test_set_initial_condition
+  end subroutine held_suarez_test_set_ic
 
   subroutine held_suarez_test_apply_forcing(block, dt, state)
 

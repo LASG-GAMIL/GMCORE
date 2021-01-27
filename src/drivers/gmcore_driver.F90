@@ -21,12 +21,12 @@ program gmcore_driver
   integer iblk
 
   interface
-    subroutine set_initial_condition_interface(block)
+    subroutine set_ic_interface(block)
       import block_type
       type(block_type), intent(inout), target :: block
-    end subroutine set_initial_condition_interface
+    end subroutine set_ic_interface
   end interface
-  procedure(set_initial_condition_interface), pointer :: set_initial_condition
+  procedure(set_ic_interface), pointer :: set_ic
 
   call get_command_argument(1, namelist_path)
   if (namelist_path == '') then
@@ -43,25 +43,25 @@ program gmcore_driver
   else
     select case (test_case)
     case ('steady_state')
-      set_initial_condition => steady_state_test_set_initial_condition
+      set_ic => steady_state_test_set_ic
     case ('rossby_haurwitz_wave')
-      set_initial_condition => rossby_haurwitz_wave_3d_test_set_initial_condition
+      set_ic => rossby_haurwitz_wave_3d_test_set_ic
     case ('mountain_wave')
-      set_initial_condition => mountain_wave_test_set_initial_condition
+      set_ic => mountain_wave_test_set_ic
     case ('baroclinic_wave')
-      set_initial_condition => baroclinic_wave_test_set_initial_condition
+      set_ic => baroclinic_wave_test_set_ic
     case ('held_suarez')
-      set_initial_condition => held_suarez_test_set_initial_condition
+      set_ic => held_suarez_test_set_ic
     case ('pgf_test')
-      set_initial_condition => steady_state_pgf_test_set_initial_condition
+      set_ic => steady_state_pgf_test_set_ic
     case ('ksp15_01')
-      set_initial_condition => ksp15_01_test_set_ic
+      set_ic => ksp15_01_test_set_ic
     case default
       call log_error('Unknown test case ' // trim(test_case) // '!')
     end select
 
     do iblk = 1, size(proc%blocks)
-      call set_initial_condition(proc%blocks(iblk))
+      call set_ic(proc%blocks(iblk))
     end do
   end if
 
