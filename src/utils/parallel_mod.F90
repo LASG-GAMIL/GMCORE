@@ -36,6 +36,8 @@ module parallel_mod
   public global_sum
   public overlay_inner_halo
   public barrier
+  public gather_zonal_array
+  public scatter_zonal_array
 
   interface fill_zonal_halo
     module procedure fill_zonal_halo_1d_r8
@@ -68,6 +70,11 @@ module parallel_mod
     module procedure gather_zonal_array_1d_r8
     module procedure gather_zonal_array_2d_r8
   end interface gather_zonal_array
+
+  interface scatter_zonal_array
+    module procedure scatter_zonal_array_1d_r8
+    module procedure scatter_zonal_array_2d_r8
+  end interface scatter_zonal_array
 
 contains
 
@@ -614,7 +621,7 @@ contains
         call MPI_RECV(array, 1, zonal_circle%recv_type_r8(i,0), i - 1, 30, zonal_circle%comm, status, ierr)
       end do
     else
-      call MPI_SEND(local_array, shape(local_array), MPI_DOUBLE, 0, 30, zonal_circle%comm, ierr)
+      call MPI_SEND(local_array, size(local_array), MPI_DOUBLE, 0, 30, zonal_circle%comm, ierr)
     end if
 
   end subroutine gather_zonal_array_1d_r8
@@ -638,5 +645,44 @@ contains
     end if
 
   end subroutine gather_zonal_array_2d_r8
+
+  subroutine scatter_zonal_array_1d_r8(zonal_circle, array, local_array)
+
+    type(zonal_circle_type), intent(in) :: zonal_circle
+    real(8), intent(in) :: array(:)
+    real(8), intent(out) :: local_array(:)
+
+    integer ierr, i, status
+
+    if (zonal_circle%id == 0) then
+      local_array = array(1:size(local_array))
+      do i = 2, zonal_circle%np
+        call MPI_SEND(array, 1, zonal_circle%recv_type_r8(i,0), i - 1, 32, zonal_circle%comm, ierr)
+      end do
+    else
+      call MPI_RECV(local_array, size(local_array), MPI_DOUBLE, 0, 32, zonal_circle%comm, status, ierr)
+    end if
+
+  end subroutine scatter_zonal_array_1d_r8
+
+  subroutine scatter_zonal_array_2d_r8(zonal_circle, array, local_array)
+
+    type(zonal_circle_type), intent(in) :: zonal_circle
+    real(8), intent(in) :: array(:,:)
+    real(8), intent(out) :: local_array(:,:)
+
+    integer ierr, i, k, status
+
+    if (zonal_circle%id == 0) then
+      k = merge(1, 2, size(local_array, 2) == global_mesh%num_full_lev)
+      local_array = array(1:size(local_array, 1),:)
+      do i = 2, zonal_circle%np
+        call MPI_SEND(array, 1, zonal_circle%recv_type_r8(i,k), i - 1, 33, zonal_circle%comm, ierr)
+      end do
+    else
+      call MPI_RECV(local_array, size(local_array), MPI_DOUBLE, 0, 33, zonal_circle%comm, status, ierr)
+    end if
+
+  end subroutine scatter_zonal_array_2d_r8
 
 end module parallel_mod
