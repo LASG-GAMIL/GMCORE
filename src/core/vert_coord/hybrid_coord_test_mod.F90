@@ -1,6 +1,9 @@
 module hybrid_coord_test_mod
 
+  use flogger
   use const_mod
+  use process_mod
+  use mesh_mod
 
   implicit none
 
@@ -9,6 +12,7 @@ module hybrid_coord_test_mod
   public hybrid_coord_test_l15
   public hybrid_coord_test_l26
   public hybrid_coord_test_l30
+  public hybrid_coord_wrf_l32
   public hybrid_coord_wrf_l64
 
 contains
@@ -202,12 +206,102 @@ contains
 
   end subroutine hybrid_coord_test_l30
 
+  subroutine hybrid_coord_wrf_l32(p0, ptop, hyai, hybi)
+
+    real(r8), intent(out) :: p0
+    real(r8), intent(in ) :: ptop
+    real(r8), intent(out) :: hyai(33)
+    real(r8), intent(out) :: hybi(33)
+
+    if (global_mesh%num_full_lev /= 32 .and. is_root_proc()) then
+      call log_error('num_lev should be 32 in namelist!')
+    end if
+
+    hyai = [          &
+      0.00000000e+00, & !  1
+      3.12500000e-02, & !  2
+      6.25000000e-02, & !  3
+      9.37500000e-02, & !  4
+      1.25000000e-01, & !  5
+      1.56250000e-01, & !  6
+      1.87500000e-01, & !  7
+      2.17556953e-01, & !  8
+      2.41699219e-01, & !  9
+      2.59814262e-01, & ! 10
+      2.72331238e-01, & ! 11
+      2.79679298e-01, & ! 12
+      2.82287598e-01, & ! 13
+      2.80585289e-01, & ! 14
+      2.75001526e-01, & ! 15
+      2.65965462e-01, & ! 16
+      2.53906250e-01, & ! 17
+      2.39253044e-01, & ! 18
+      2.22434998e-01, & ! 19
+      2.03881264e-01, & ! 20
+      1.84020996e-01, & ! 21
+      1.63283348e-01, & ! 22
+      1.42097473e-01, & ! 23
+      1.20892525e-01, & ! 24
+      1.00097656e-01, & ! 25
+      8.01420212e-02, & ! 26
+      6.14547729e-02, & ! 27
+      4.44650650e-02, & ! 28
+      2.96020508e-02, & ! 29
+      1.72948837e-02, & ! 30
+      7.97271729e-03, & ! 31
+      2.06470490e-03, & ! 32
+      4.44089210e-16  & ! 33
+    ]
+    hybi = [          &
+      0.00000000e+00, & !  1
+      0.00000000e+00, & !  2
+      0.00000000e+00, & !  3
+      0.00000000e+00, & !  4
+      0.00000000e+00, & !  5
+      0.00000000e+00, & !  6
+      0.00000000e+00, & !  7
+      1.19304657e-03, & !  8
+      8.30078125e-03, & !  9
+      2.14357376e-02, & ! 10
+      4.01687622e-02, & ! 11
+      6.40707016e-02, & ! 12
+      9.27124023e-02, & ! 13
+      1.25664711e-01, & ! 14
+      1.62498474e-01, & ! 15
+      2.02784538e-01, & ! 16
+      2.46093750e-01, & ! 17
+      2.91996956e-01, & ! 18
+      3.40065002e-01, & ! 19
+      3.89868736e-01, & ! 20
+      4.40979004e-01, & ! 21
+      4.92966652e-01, & ! 22
+      5.45402527e-01, & ! 23
+      5.97857475e-01, & ! 24
+      6.49902344e-01, & ! 25
+      7.01107979e-01, & ! 26
+      7.51045227e-01, & ! 27
+      7.99284935e-01, & ! 28
+      8.45397949e-01, & ! 29
+      8.88955116e-01, & ! 30
+      9.29527283e-01, & ! 31
+      9.66685295e-01, & ! 32
+      1.00000000e+00  & ! 33
+    ]
+
+    p0 = 1d5       ! Pa
+
+  end subroutine hybrid_coord_wrf_l32
+
   subroutine hybrid_coord_wrf_l64(p0, ptop, hyai, hybi)
 
     real(r8), intent(out) :: p0
     real(r8), intent(in ) :: ptop
     real(r8), intent(out) :: hyai(65)
     real(r8), intent(out) :: hybi(65)
+
+    if (global_mesh%num_full_lev /= 64 .and. is_root_proc()) then
+      call log_error('num_lev should be 64 in namelist!')
+    end if
 
     hyai = [          &
       0.00000000e+00, & !  1

@@ -20,7 +20,7 @@ module ksp15_test_mod
   real(r8), parameter :: h0   = 250.0_r8     ! m
   real(r8), parameter :: d0   = 5000.0_r8    ! m
   real(r8), parameter :: xi0  = 4000.0_r8    ! m
-  real(r8), parameter :: lonc = 0.0_r8
+  real(r8), parameter :: lonc = pi
 
 contains
 
@@ -28,7 +28,7 @@ contains
 
     type(block_type), intent(inout), target :: block
 
-    real(r8) r0
+    real(r8) dlon, r0
     integer i, j, k
 
     omega = 0.0_r8
@@ -54,7 +54,9 @@ contains
 
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          r0 = radius / X * (mesh%full_lon(i) - lonc)
+          dlon = abs(mesh%full_lon(i) - lonc)
+          dlon = min(pi2 - dlon, dlon)
+          r0 = radius / X * dlon
           gzs(i,j) = g * h0 * exp(-r0**2 / d0**2) * cos(pi * r0 / xi0)**2 * mesh%full_cos_lat(j)
         end do
       end do
@@ -99,7 +101,7 @@ contains
       do k = mesh%half_lev_ibeg, mesh%half_lev_iend
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            gz_lev(i,j,k) = Rd * teq / g * log(peq / ph_lev(i,j,k)) - 0.5_r8 * ueq**2 * mesh%full_sin_lat(j)**2 / g
+            gz_lev(i,j,k) = Rd * teq * log(peq / ph_lev(i,j,k)) - 0.5_r8 * ueq**2 * mesh%full_sin_lat(j)**2
           end do
         end do
       end do

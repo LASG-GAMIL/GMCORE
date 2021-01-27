@@ -69,6 +69,9 @@ contains
         call hybrid_coord_test_l30(p0, ptop, hyai, hybi)
       case ('ecmwf_l50')
         call hybrid_coord_ecmwf_l50(p0, ptop, hyai, hybi)
+      case ('wrf_l32')
+        call hybrid_coord_wrf_l32(p0, ptop, hyai, hybi)
+        local_ptop = ptop
       case ('wrf_l64')
         call hybrid_coord_wrf_l64(p0, ptop, hyai, hybi)
         local_ptop = ptop
