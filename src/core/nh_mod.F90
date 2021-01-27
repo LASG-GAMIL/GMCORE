@@ -146,8 +146,8 @@ contains
 
     integer i, j, k, move
     real(r8) a, b, dwedphdlevgz, dwedphdlev
-    real(r8) work(state%mesh%full_lon_ibeg:state%mesh%full_lon_iend,state%mesh%num_full_lev)
-    real(r8) pole(state%mesh%num_full_lev)
+    real(r8) work(state%mesh%full_lon_ibeg:state%mesh%full_lon_iend,state%mesh%num_half_lev)
+    real(r8) pole(state%mesh%num_half_lev)
 
     associate (mesh          => block%mesh         , &
                reduced_mesh  => block%reduced_mesh , &
@@ -302,8 +302,8 @@ contains
 
     integer i, j, k, move
     real(r8) a, b, dwedphdlevw, dwedphdlev
-    real(r8) work(state%mesh%full_lon_ibeg:state%mesh%full_lon_iend,state%mesh%num_full_lev)
-    real(r8) pole(state%mesh%num_full_lev)
+    real(r8) work(state%mesh%full_lon_ibeg:state%mesh%full_lon_iend,state%mesh%num_half_lev)
+    real(r8) pole(state%mesh%num_half_lev)
 
     associate (mesh          => block%mesh         , &
                reduced_mesh  => block%reduced_mesh , &
