@@ -266,11 +266,11 @@ contains
 
   end subroutine diagnose
 
-  subroutine space_operators(block, last_state, old_state, new_state, tend, dt, pass)
+  subroutine space_operators(block, old_state, star_state, new_state, tend, dt, pass)
 
     type(block_type), intent(inout) :: block
-    type(state_type), intent(in) :: last_state
-    type(state_type), intent(inout) :: old_state
+    type(state_type), intent(in) :: old_state
+    type(state_type), intent(inout) :: star_state
     type(state_type), intent(inout) :: new_state
     type(tend_type), intent(inout) :: tend
     real(8), intent(in) :: dt
@@ -279,22 +279,22 @@ contains
     type(mesh_type), pointer :: mesh
     integer i, j, k
 
-    mesh => old_state%mesh
+    mesh => star_state%mesh
 
     call tend%reset_flags()
 
     select case (pass)
     case (all_pass)
       if (hydrostatic) then
-        call calc_dmfdlon_dmfdlat  (block, old_state, tend, dt)
-        call calc_dphs             (block, old_state, tend, dt)
-        call calc_wedphdlev_lev    (block, old_state, tend, dt)
-        call calc_wedudlev_wedvdlev(block, old_state, tend, dt)
-        call calc_dptfdlon_dptfdlat(block, old_state, tend, dt)
-        call calc_dptfdlev         (block, old_state, tend, dt)
-        call calc_qhu_qhv          (block, old_state, tend, dt)
-        call calc_dkedlon_dkedlat  (block, old_state, tend, dt)
-        call pgf_run               (block, old_state, tend)
+        call calc_dmfdlon_dmfdlat  (block, star_state, tend, dt)
+        call calc_dphs             (block, star_state, tend, dt)
+        call calc_wedphdlev_lev    (block, star_state, tend, dt)
+        call calc_wedudlev_wedvdlev(block, star_state, tend, dt)
+        call calc_dptfdlon_dptfdlat(block, star_state, tend, dt)
+        call calc_dptfdlev         (block, star_state, tend, dt)
+        call calc_qhu_qhv          (block, star_state, tend, dt)
+        call calc_dkedlon_dkedlat  (block, star_state, tend, dt)
+        call pgf_run               (block, star_state, tend)
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -316,18 +316,18 @@ contains
           end do
         end do
 
-        if (use_rayleigh_damp) call rayleigh_damp_append_tend(block, old_state, tend)
+        if (use_rayleigh_damp) call rayleigh_damp_append_tend(block, star_state, tend)
 
         tend%update_u   = .true.
         tend%update_v   = .true.
         tend%update_phs = .true.
         tend%update_pt  = .true.
       else if (nonhydrostatic) then
-        call calc_dmfdlon_dmfdlat  (block, old_state, tend, dt)
-        call calc_dphs             (block, old_state, tend, dt)
-        call calc_wedphdlev_lev    (block, old_state, tend, dt)
-        call calc_dptfdlon_dptfdlat(block, old_state, tend, dt)
-        call calc_dptfdlev         (block, old_state, tend, dt)
+        call calc_dmfdlon_dmfdlat  (block, star_state, tend, dt)
+        call calc_dphs             (block, star_state, tend, dt)
+        call calc_wedphdlev_lev    (block, star_state, tend, dt)
+        call calc_dptfdlon_dptfdlat(block, star_state, tend, dt)
+        call calc_dptfdlev         (block, star_state, tend, dt)
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -341,12 +341,11 @@ contains
         tend%update_pt  = .true.
         call update_state(block, tend, old_state, new_state, dt, no_wind_pass)
 
-        call nh_solve(block, tend, last_state, old_state, new_state, dt)
+        call nh_solve(block, tend, old_state, star_state, new_state, dt)
 
-        call calc_qhu_qhv          (block, old_state, tend, dt)
-        call calc_dkedlon_dkedlat  (block, old_state, tend, dt)
-        call calc_wedudlev_wedvdlev(block, old_state, tend, dt)
-
+        call calc_qhu_qhv          (block, star_state, tend, dt)
+        call calc_dkedlon_dkedlat  (block, star_state, tend, dt)
+        call calc_wedudlev_wedvdlev(block, star_state, tend, dt)
         call pgf_run               (block, new_state, tend)
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
@@ -368,10 +367,10 @@ contains
         tend%update_phs = .false.
         tend%update_pt  = .false.
       else
-        call calc_dmfdlon_dmfdlat(block, old_state, tend, dt)
-        call calc_qhu_qhv        (block, old_state, tend, dt)
-        call calc_dkedlon_dkedlat(block, old_state, tend, dt)
-        call pgf_run             (block, old_state, tend    )
+        call calc_dmfdlon_dmfdlat(block, star_state, tend, dt)
+        call calc_qhu_qhv        (block, star_state, tend, dt)
+        call calc_dkedlon_dkedlat(block, star_state, tend, dt)
+        call pgf_run             (block, star_state, tend    )
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -399,7 +398,7 @@ contains
       end if
     case (slow_pass)
       if (baroclinic .and. hydrostatic) then
-        call calc_qhu_qhv(block, old_state, tend, dt)
+        call calc_qhu_qhv(block, star_state, tend, dt)
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -420,7 +419,7 @@ contains
         tend%copy_pt  = .true.
         tend%copy_phs = .true.
       else
-        call calc_qhu_qhv(block, old_state, tend, dt)
+        call calc_qhu_qhv(block, star_state, tend, dt)
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -442,14 +441,14 @@ contains
       end if
     case (fast_pass)
       if (baroclinic .and. hydrostatic) then
-        call calc_dmfdlon_dmfdlat  (block, old_state, tend, dt)
-        call calc_dphs             (block, old_state, tend, dt)
-        call calc_wedphdlev_lev    (block, old_state, tend, dt)
-        call calc_wedudlev_wedvdlev(block, old_state, tend, dt)
-        call calc_dptfdlev         (block, old_state, tend, dt)
-        call calc_dptfdlon_dptfdlat(block, old_state, tend, dt)
-        call calc_dkedlon_dkedlat  (block, old_state, tend, dt)
-        call pgf_run               (block, old_state, tend    )
+        call calc_dmfdlon_dmfdlat  (block, star_state, tend, dt)
+        call calc_dphs             (block, star_state, tend, dt)
+        call calc_wedphdlev_lev    (block, star_state, tend, dt)
+        call calc_wedudlev_wedvdlev(block, star_state, tend, dt)
+        call calc_dptfdlev         (block, star_state, tend, dt)
+        call calc_dptfdlon_dptfdlat(block, star_state, tend, dt)
+        call calc_dkedlon_dkedlat  (block, star_state, tend, dt)
+        call pgf_run               (block, star_state, tend    )
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -476,9 +475,9 @@ contains
         tend%update_pt  = .true.
         tend%update_phs = .true.
       else
-        call calc_dkedlon_dkedlat(block, old_state, tend, dt)
-        call pgf_run             (block, old_state, tend    )
-        call calc_dmfdlon_dmfdlat(block, old_state, tend, dt)
+        call calc_dkedlon_dkedlat(block, star_state, tend, dt)
+        call pgf_run             (block, star_state, tend    )
+        call calc_dmfdlon_dmfdlat(block, star_state, tend, dt)
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole

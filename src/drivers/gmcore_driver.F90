@@ -34,6 +34,16 @@ program gmcore_driver
   end if
 
   call parse_namelist(namelist_path)
+
+  if (initial_file == 'N/A' .and. .not. restart) then
+    select case (test_case)
+    case ('pgf_test')
+      call steady_state_pgf_test_set_params()
+    case ('ksp15_01')
+      call ksp15_01_test_set_params()
+    end select
+  end if
+
   call gmcore_init(namelist_path)
 
   if (initial_file /= 'N/A') then

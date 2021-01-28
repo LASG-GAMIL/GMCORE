@@ -11,6 +11,7 @@ module steady_state_pgf_test_mod
 
   private
 
+  public steady_state_pgf_test_set_params
   public steady_state_pgf_test_set_ic
 
   real(r8), parameter :: T0    = 300.d0      ! K
@@ -24,6 +25,12 @@ module steady_state_pgf_test_mod
 
 contains
 
+  subroutine steady_state_pgf_test_set_params()
+
+    omega = 0.0
+
+  end subroutine steady_state_pgf_test_set_params
+
   subroutine steady_state_pgf_test_set_ic(block)
 
     type(block_type), intent(inout), target :: block
@@ -32,9 +39,6 @@ contains
     type(mesh_type), pointer :: mesh
     type(state_type), pointer :: state
     type(static_type), pointer :: static
-
-    call log_notice('Set rotation speed omega to 0.')
-    omega = 0.0
 
     mesh => block%mesh
     state => block%state(1)

@@ -119,14 +119,14 @@ contains
 
     if (pass == nh_pass) then
       do j = block%mesh%full_lat_ibeg, block%mesh%full_lat_iend
-        if (block%reduced_mesh(j)%reduce_factor > 0) then
+        if (block%reduced_mesh(j)%reduce_factor > 1) then
           call reduce_nh_state(j, block, block%mesh, state, block%reduced_mesh(j), block%reduced_static(j), block%reduced_state(j), dt)
         end if
       end do
     else
       ! Extend loop range by 1 is for Coriolis forces. FIXME: Revise it.
       do j = block%mesh%full_lat_ibeg - 1, block%mesh%full_lat_iend + 1
-        if (block%reduced_mesh(j)%reduce_factor > 0) then
+        if (block%reduced_mesh(j)%reduce_factor > 1) then
           call reduce_state(j, block, block%mesh, state, block%reduced_mesh(j), block%reduced_static(j), block%reduced_state(j), dt, pass)
         end if
       end do

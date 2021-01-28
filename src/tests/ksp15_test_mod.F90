@@ -11,6 +11,7 @@ module ksp15_test_mod
 
   private
 
+  public ksp15_01_test_set_params
   public ksp15_01_test_set_ic
 
   real(r8), parameter :: teq  = 300.0_r8     ! K
@@ -24,14 +25,19 @@ module ksp15_test_mod
 
 contains
 
+  subroutine ksp15_01_test_set_params()
+
+    omega = 0.0_r8
+    radius = radius / X
+
+  end subroutine ksp15_01_test_set_params
+
   subroutine ksp15_01_test_set_ic(block)
 
     type(block_type), intent(inout), target :: block
 
     real(r8) dlon, r0
     integer i, j, k
-
-    omega = 0.0_r8
 
     associate (mesh   => block%mesh           , &
                u      => block%state(1)%u     , &
@@ -56,7 +62,7 @@ contains
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           dlon = abs(mesh%full_lon(i) - lonc)
           dlon = min(pi2 - dlon, dlon)
-          r0 = radius / X * dlon
+          r0 = radius * dlon
           gzs(i,j) = g * h0 * exp(-r0**2 / d0**2) * cos(pi * r0 / xi0)**2 * mesh%full_cos_lat(j)
         end do
       end do

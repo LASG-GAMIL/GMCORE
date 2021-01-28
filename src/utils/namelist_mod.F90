@@ -200,8 +200,8 @@ contains
       write(*, *) 'nonhydrostatic      = ', to_str(nonhydrostatic)
       write(*, *) 'vert_coord_scheme   = ', trim(vert_coord_scheme)
       write(*, *) 'vert_coord_template = ', trim(vert_coord_template)
-      write(*, *) 'ptop                = ', to_str(ptop, 2)
-      write(*, *) 'dt_in_seconds       = ', to_str(int(dt_in_seconds))
+      write(*, *) 'ptop                = ', to_str(ptop, 4)
+      write(*, *) 'dt_in_seconds       = ', to_str(dt_in_seconds, 2)
       write(*, *) 'pgf_scheme          = ', trim(pgf_scheme)
       write(*, *) 'ke_scheme           = ', to_str(ke_scheme)
     if (ke_scheme == 2) then

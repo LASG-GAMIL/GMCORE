@@ -19,34 +19,36 @@ module nh_mod
 
 contains
 
-  subroutine nh_solve(block, tend, last_state, old_state, new_state, dt)
+  subroutine nh_solve(block, tend, old_state, star_state, new_state, dt)
 
     type(block_type), intent(inout) :: block
     type(tend_type ), intent(inout) :: tend
-    type(state_type), intent(in) :: last_state
-    type(state_type), intent(inout) :: old_state
+    type(state_type), intent(in) :: old_state
+    type(state_type), intent(inout) :: star_state
     type(state_type), intent(inout) :: new_state
     real(8), intent(in) :: dt
 
     logical, save :: first_call = .true.
 
-    call interp_mf            (block, old_state)
-    call interp_gz            (block, old_state)
-    call apply_bc_w_lev       (block, old_state)
-    call interp_w             (block, old_state)
-    call interp_wedphdlev     (block, old_state)
+    call interp_mf            (block, star_state)
+    call interp_gz            (block, star_state)
     if (first_call) then
-      call diag_m_lev         (block, old_state)
-      call diag_rhod          (block, old_state)
-      call diag_p             (block, old_state)
-      call reduce_run         (block, old_state, dt, nh_pass)
+      call apply_bc_w_lev     (block, star_state)
+    end if
+    call interp_w             (block, star_state)
+    call interp_wedphdlev     (block, star_state)
+    if (first_call) then
+      call diag_m_lev         (block, star_state)
+      call diag_rhod          (block, star_state)
+      call diag_p             (block, star_state)
+      call reduce_run         (block, star_state, dt, nh_pass)
       first_call = .false.
     end if
     call diag_m_lev           (block, new_state)
 
-    call calc_adv_gz          (block, old_state, tend)
-    call calc_adv_w           (block, old_state, tend)
-    call implicit_w_solver    (block, tend, last_state, old_state, new_state, dt)
+    call calc_adv_gz          (block, star_state, tend)
+    call calc_adv_w           (block, star_state, tend)
+    call implicit_w_solver    (block, tend, old_state, star_state, new_state, dt)
 
     call diag_rhod            (block, new_state)
     call diag_p               (block, new_state)
@@ -275,7 +277,7 @@ contains
 #ifndef V_POLE
       if (mesh%has_south_pole()) then
         j = mesh%full_lat_ibeg
-        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do k = mesh%half_lev_ibeg, mesh%half_lev_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             adv_gz_lev(i,j,k) = adv_gz_lev(i,j,k) / global_mesh%num_full_lon
           end do
@@ -283,7 +285,7 @@ contains
       end if
       if (mesh%has_north_pole()) then
         j = mesh%full_lat_iend
-        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do k = mesh%half_lev_ibeg, mesh%half_lev_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             adv_gz_lev(i,j,k) = adv_gz_lev(i,j,k) / global_mesh%num_full_lon
           end do
@@ -471,7 +473,7 @@ contains
             rhod(i,j,k) = - m(i,j,k) / (gz_lev(i,j,k+1) - gz_lev(i,j,k))
             if (rhod(i,j,k) <= 0) then
               print *, i, j, k, rhod(i,j,k), m(i,j,k), gz_lev(i,j,k:k+1)
-              do kk = 27, 1, -1
+              do kk = mesh%half_lev_iend, mesh%half_lev_ibeg, -1
                 print *, kk, gz_lev(i,j,kk)
               end do
               stop 'negative rhod!'
@@ -591,12 +593,12 @@ contains
 
   end subroutine apply_bc_w_lev
 
-  subroutine implicit_w_solver(block, tend, last_state, old_state, new_state, dt)
+  subroutine implicit_w_solver(block, tend, old_state, star_state, new_state, dt)
 
     type(block_type), intent(in) :: block
     type(tend_type), intent(in) :: tend
-    type(state_type), intent(in) :: last_state
     type(state_type), intent(in) :: old_state
+    type(state_type), intent(in) :: star_state
     type(state_type), intent(inout) :: new_state
     real(8), intent(in) :: dt
 
@@ -605,10 +607,10 @@ contains
     real(r8) gz1(block%mesh%half_lev_lb:block%mesh%half_lev_ub)
     real(r8) dgz(block%mesh%full_lev_lb:block%mesh%full_lev_ub)
     real(r8) dp1, gdtbeta, gdt1mbeta, gdtbeta2gam
-    real(r8) a(block%mesh%half_lev_lb:block%mesh%half_lev_ub)
-    real(r8) b(block%mesh%half_lev_lb:block%mesh%half_lev_ub)
-    real(r8) c(block%mesh%half_lev_lb:block%mesh%half_lev_ub)
-    real(r8) d(block%mesh%half_lev_lb:block%mesh%half_lev_ub)
+    real(r8) a(global_mesh%num_half_lev)
+    real(r8) b(global_mesh%num_half_lev)
+    real(r8) c(global_mesh%num_half_lev)
+    real(r8) d(global_mesh%num_half_lev)
     integer i, j, k
 
     call apply_bc_w_lev(block, new_state)
@@ -633,20 +635,20 @@ contains
                adv_w_lon   => tend%adv_w_lon   , & !
                adv_w_lat   => tend%adv_w_lat   , & !
                adv_w_lev   => tend%adv_w_lev   , & !
-               last_p      => last_state%p     , &
                old_p       => old_state%p      , &
-               old_p_lev   => old_state%p_lev  , &
-               last_w_lev  => last_state%w_lev , &
+               star_p      => star_state%p     , &
+               star_p_lev  => star_state%p_lev , &
                old_w_lev   => old_state%w_lev  , &
+               star_w_lev  => star_state%w_lev , &
                new_w_lev   => new_state%w_lev  , &
-               old_m_lev   => old_state%m_lev  , &
+               star_m_lev  => star_state%m_lev , &
                new_m_lev   => new_state%m_lev  , &
-               last_gz_lev => last_state%gz_lev, &
                old_gz_lev  => old_state%gz_lev , &
+               star_gz_lev => star_state%gz_lev, &
                new_gz_lev  => new_state%gz_lev , &
-               last_m      => last_state%m     , &
+               old_m       => old_state%m      , &
                new_m       => new_state%m      , &
-               last_pt     => last_state%pt    , &
+               old_pt      => old_state%pt     , &
                new_pt      => new_state%pt)
       ! last: n, old: *, new: n + 1
       gdtbeta     = g * dt * beta
@@ -656,27 +658,27 @@ contains
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-            dgz(k) = last_gz_lev(i,j,k+1) - last_gz_lev(i,j,k)
+            dgz(k) = old_gz_lev(i,j,k+1) - old_gz_lev(i,j,k)
           end do
-          gz1 = last_gz_lev(i,j,:) - dt * (adv_gz_lon(i,j,:) + adv_gz_lat(i,j,:) + adv_gz_lev(i,j,:)) + gdt1mbeta * old_w_lev(i,j,:)
-          w1  = last_w_lev (i,j,:) - dt * (adv_w_lon (i,j,:) + adv_w_lat (i,j,:) + adv_w_lev (i,j,:)) - g * dt
+          gz1 = old_gz_lev(i,j,:) - dt * (adv_gz_lon(i,j,:) + adv_gz_lat(i,j,:) + adv_gz_lev(i,j,:)) + gdt1mbeta * star_w_lev(i,j,:)
+          w1  = old_w_lev (i,j,:) - dt * (adv_w_lon (i,j,:) + adv_w_lat (i,j,:) + adv_w_lev (i,j,:)) - g * dt
           do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
-            w1(k) = w1(k) + gdt1mbeta * (old_p(i,j,k) - old_p(i,j,k-1)) / old_m_lev(i,j,k)
+            w1(k) = w1(k) + gdt1mbeta * (star_p(i,j,k) - star_p(i,j,k-1)) / star_m_lev(i,j,k)
           end do
           ! Top boundary
           k = mesh%half_lev_ibeg
-          w1(k) = w1(k) + gdt1mbeta * (old_p(i,j,k) - old_p_lev(i,j,k)) / old_m_lev(i,j,k)
+          w1(k) = w1(k) + gdt1mbeta * (star_p(i,j,k) - star_p_lev(i,j,k)) / star_m_lev(i,j,k)
           ! Bottom boundary
           k = mesh%half_lev_iend
-          w1(k) = w1(k) + gdt1mbeta * (old_p_lev(i,j,k) - old_p(i,j,k-1)) / old_m_lev(i,j,k)
+          w1(k) = w1(k) + gdt1mbeta * (star_p_lev(i,j,k) - star_p(i,j,k-1)) / star_m_lev(i,j,k)
           ! Use linearized state of ideal gas to calculate the first part of ∂pⁿ⁺¹ (i.e. dp1).
           do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
-            dp1 = (last_p(i,j,k) - last_p(i,j,k-1)) + cp_o_cv * ((                                      &
-              last_p(i,j,k  ) * new_m(i,j,k  ) * new_pt(i,j,k  ) / last_m(i,j,k  ) / last_pt(i,j,k  ) - &
-              last_p(i,j,k-1) * new_m(i,j,k-1) * new_pt(i,j,k-1) / last_m(i,j,k-1) / last_pt(i,j,k-1)   &
-            ) - (                                                                                       &
-              last_p(i,j,k  ) * (gz1(k+1) - gz1(k  )) / dgz(k  ) -                                      &
-              last_p(i,j,k-1) * (gz1(k  ) - gz1(k-1)) / dgz(k-1)                                        &
+            dp1 = (old_p(i,j,k) - old_p(i,j,k-1)) + cp_o_cv * ((                                     &
+              old_p(i,j,k  ) * new_m(i,j,k  ) * new_pt(i,j,k  ) / old_m(i,j,k  ) / old_pt(i,j,k  ) - &
+              old_p(i,j,k-1) * new_m(i,j,k-1) * new_pt(i,j,k-1) / old_m(i,j,k-1) / old_pt(i,j,k-1)   &
+            ) - (                                                                                    &
+              old_p(i,j,k  ) * (gz1(k+1) - gz1(k  )) / dgz(k  ) -                                    &
+              old_p(i,j,k-1) * (gz1(k  ) - gz1(k-1)) / dgz(k-1)                                      &
             ))
             w1(k) = w1(k) + gdtbeta * dp1 / new_m_lev(i,j,k)
           end do
@@ -686,9 +688,9 @@ contains
           c(1) = 0.0_r8
           d(1) = 0.0_r8 ! Top w is set to zero.
           do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
-            a(k) = gdtbeta2gam * last_p(i,j,k-1) / dgz(k-1)
-            b(k) = new_m_lev(i,j,k) - gdtbeta2gam * (last_p(i,j,k) / dgz(k) + last_p(i,j,k-1) / dgz(k-1))
-            c(k) = gdtbeta2gam * last_p(i,j,k  ) / dgz(k  )
+            a(k) = gdtbeta2gam * old_p(i,j,k-1) / dgz(k-1)
+            b(k) = new_m_lev(i,j,k) - gdtbeta2gam * (old_p(i,j,k) / dgz(k) + old_p(i,j,k-1) / dgz(k-1))
+            c(k) = gdtbeta2gam * old_p(i,j,k  ) / dgz(k  )
             d(k) = new_m_lev(i,j,k) * w1(k)
           end do
           a(mesh%num_half_lev) = 0.0_r8
@@ -697,7 +699,7 @@ contains
           d(mesh%num_half_lev) = new_w_lev(i,j,mesh%num_half_lev)
           call tridiag_thomas(a, b, c, d, new_w_lev(i,j,:))
 
-          call rayleigh_damp_w(dt, old_gz_lev(i,j,:), new_w_lev(i,j,:))
+          call rayleigh_damp_w(dt, star_gz_lev(i,j,:), new_w_lev(i,j,:))
 
           ! Update gz after w is solved.
           do k = mesh%half_lev_ibeg, mesh%half_lev_iend - 1
@@ -718,13 +720,14 @@ contains
     real(r8), intent(inout) :: w (:)
 
     real(r8), parameter :: rayleigh_damp_w_coef = 0.2_r8
-    real(r8), parameter :: gzd = 10.0e3_r8
-    real(r8) c
+    real(r8), parameter :: gzd = 10.0e3_r8 * g
+    real(r8) gzh, c
     integer k
 
     do k = 2, size(w) - 1
-      if (gz(k) >= gz(1) - gzd) then
-        c = rayleigh_damp_w_coef * sin(pi05 * (1 - (gz(1) - gz(k)) / gzd))**2
+      gzh = gz(1) - gzd
+      if (gz(k) > gzh) then
+        c = rayleigh_damp_w_coef * sin(pi05 * (gz(k) - gzh) / gzd)**2
         w(k) = w(k) / (1 + c * dt)
       end if
     end do
