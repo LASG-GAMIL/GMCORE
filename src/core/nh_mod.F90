@@ -165,7 +165,7 @@ contains
                adv_gz_lon    => tend%adv_gz_lon    , &
                adv_gz_lat    => tend%adv_gz_lat    , &
                adv_gz_lev    => tend%adv_gz_lev)
-      do k = mesh%half_lev_ibeg, mesh%half_lev_iend - 1
+      do k = mesh%half_lev_ibeg, mesh%half_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           if (reduced_mesh(j)%reduce_factor > 1) then
             adv_gz_lon(:,j,k) = 0.0_r8
@@ -196,7 +196,7 @@ contains
         end do
       end do
 
-      do k = mesh%half_lev_ibeg, mesh%half_lev_iend - 1
+      do k = mesh%half_lev_ibeg, mesh%half_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
 #ifdef V_POLE
@@ -321,7 +321,7 @@ contains
                adv_w_lon     => tend%adv_w_lon     , &
                adv_w_lat     => tend%adv_w_lat     , &
                adv_w_lev     => tend%adv_w_lev)
-      do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
+      do k = mesh%half_lev_ibeg, mesh%half_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           if (reduced_mesh(j)%reduce_factor > 1) then
             adv_w_lon(:,j,k) = 0.0_r8
@@ -352,7 +352,7 @@ contains
         end do
       end do
 
-      do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
+      do k = mesh%half_lev_ibeg, mesh%half_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
 #ifdef V_POLE
@@ -372,14 +372,14 @@ contains
 #ifndef V_POLE
       if (mesh%has_south_pole()) then
         j = mesh%full_lat_ibeg
-        do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
+        do k = mesh%half_lev_ibeg, mesh%half_lev_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             work(i,k) = mf_lev_lat_n(i,j,k) * (w_lev_lat(i,j,k) - w_lev(i,j,k))
           end do
         end do
         call zonal_sum(proc%zonal_circle, work, pole)
         pole = pole * mesh%le_lat(j) / global_mesh%num_full_lon / mesh%area_cell(j)
-        do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
+        do k = mesh%half_lev_ibeg, mesh%half_lev_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             adv_w_lat(i,j,k) = pole(k) / m_lev(i,j,k) / global_mesh%num_full_lon
           end do
@@ -387,14 +387,14 @@ contains
       end if
       if (mesh%has_north_pole()) then
         j = mesh%full_lat_iend
-        do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
+        do k = mesh%half_lev_ibeg, mesh%half_lev_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             work(i,k) = - mf_lev_lat_n(i,j-1,k) * (w_lev_lat(i,j-1,k) - w_lev(i,j,k))
           end do
         end do
         call zonal_sum(proc%zonal_circle, work, pole)
         pole = pole * mesh%le_lat(j-1) / global_mesh%num_full_lon / mesh%area_cell(j)
-        do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
+        do k = mesh%half_lev_ibeg, mesh%half_lev_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             adv_w_lat(i,j,k) = pole(k) / m_lev(i,j,k) / global_mesh%num_full_lon
           end do
@@ -416,7 +416,19 @@ contains
         end do
       end do
       ! Top w is fixed to be zero.
+      k = mesh%half_lev_ibeg
+      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          adv_w_lev(i,j,k) = wedphdlev(i,j,k) * (w(i,j,k) - w_lev(i,j,k)) / m_lev(i,j,k)
+        end do
+      end do
       ! Bottom w is from boundary condition, so no tendency for it.
+      k = mesh%half_lev_iend
+      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          adv_w_lev(i,j,k) = wedphdlev(i,j,k-1) * (w_lev(i,j,k) - w(i,j,k-1)) / m_lev(i,j,k)
+        end do
+      end do
 #ifndef V_POLE
       if (mesh%has_south_pole()) then
         j = mesh%full_lat_ibeg
