@@ -12,6 +12,7 @@ module hybrid_coord_test_mod
   public hybrid_coord_test_l15
   public hybrid_coord_test_l26
   public hybrid_coord_test_l30
+  public hybrid_coord_wrf_l16
   public hybrid_coord_wrf_l32
   public hybrid_coord_wrf_l64
 
@@ -205,6 +206,60 @@ contains
     ptop = p0 * hyai(1)
 
   end subroutine hybrid_coord_test_l30
+
+  subroutine hybrid_coord_wrf_l16(p0, ptop, hyai, hybi)
+
+    real(r8), intent(out) :: p0
+    real(r8), intent(in ) :: ptop
+    real(r8), intent(out) :: hyai(17)
+    real(r8), intent(out) :: hybi(17)
+
+    if (global_mesh%num_full_lev /= 16 .and. is_root_proc()) then
+      call log_error('num_lev should be 16 in namelist!')
+    end if
+
+    hyai = [          &
+      0.00000000e+00, &
+      6.25000000e-02, &
+      1.25000000e-01, &
+      1.87500000e-01, &
+      2.41699219e-01, &
+      2.72331238e-01, &
+      2.82287598e-01, &
+      2.75001526e-01, &
+      2.53906250e-01, &
+      2.22434998e-01, &
+      1.84020996e-01, &
+      1.42097473e-01, &
+      1.00097656e-01, &
+      6.14547729e-02, &
+      2.96020508e-02, &
+      7.97271729e-03, &
+      4.44089210e-16  &
+    ]
+    hybi = [          &
+      0.00000000e+00, &
+      0.00000000e+00, &
+      0.00000000e+00, &
+      0.00000000e+00, &
+      8.30078125e-03, &
+      4.01687622e-02, &
+      9.27124023e-02, &
+      1.62498474e-01, &
+      2.46093750e-01, &
+      3.40065002e-01, &
+      4.40979004e-01, &
+      5.45402527e-01, &
+      6.49902344e-01, &
+      7.51045227e-01, &
+      8.45397949e-01, &
+      9.29527283e-01, &
+      1.00000000e+00  &
+    ]
+
+    p0 = 1d5       ! Pa
+
+  end subroutine hybrid_coord_wrf_l16
 
   subroutine hybrid_coord_wrf_l32(p0, ptop, hyai, hybi)
 
