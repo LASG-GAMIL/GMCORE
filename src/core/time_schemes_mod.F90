@@ -22,11 +22,11 @@ module time_schemes_mod
   public update_state
 
   interface
-    subroutine space_operators_interface(block, last_state, old_state, new_state, tend, dt, pass)
+    subroutine space_operators_interface(block, old_state, star_state, new_state, tend, dt, pass)
       import block_type, state_type, tend_type
       type(block_type), intent(inout) :: block
-      type(state_type), intent(in) :: last_state
-      type(state_type), intent(inout) :: old_state
+      type(state_type), intent(in) :: old_state
+      type(state_type), intent(inout) :: star_state
       type(state_type), intent(inout) :: new_state
       type(tend_type), intent(inout) :: tend
       real(8), intent(in) :: dt

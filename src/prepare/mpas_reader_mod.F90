@@ -23,7 +23,6 @@ module mpas_reader_mod
   real(r8), allocatable, dimension(:,:,:) :: mpas_p
   real(r8), allocatable, dimension(:,:  ) :: mpas_ps
   real(r8), allocatable, dimension(:,:  ) :: mpas_zs
-  real(r8), allocatable, dimension(:,:  ) :: mpas_zbot
 
 contains
 
@@ -53,7 +52,6 @@ contains
     allocate(mpas_p   (num_mpas_lon,num_mpas_lat,num_mpas_lev))
     allocate(mpas_ps  (num_mpas_lon,num_mpas_lat))
     allocate(mpas_zs  (num_mpas_lon,num_mpas_lat))
-    allocate(mpas_zbot(num_mpas_lon,num_mpas_lat))
 
     call fiona_start_input('mpas')
     call fiona_input('mpas', 'lon', mpas_lon )
@@ -64,7 +62,6 @@ contains
     call fiona_input('mpas', 'ph' , mpas_p   ); tmp = mpas_p (:,:,num_mpas_lev:1:-1); mpas_p  = tmp
     call fiona_input('mpas', 'phs', mpas_ps  )
     call fiona_input('mpas', 'ter', mpas_zs  )
-    call fiona_input('mpas', 'zs' , mpas_zbot)
     call fiona_end_input('mpas')
 
     mpas_t = temperature(mpas_pt, mpas_p)
@@ -83,7 +80,6 @@ contains
     if (allocated(mpas_p   )) deallocate(mpas_p   )
     if (allocated(mpas_ps  )) deallocate(mpas_ps  )
     if (allocated(mpas_zs  )) deallocate(mpas_zs  )
-    if (allocated(mpas_zbot)) deallocate(mpas_zbot)
 
   end subroutine mpas_reader_final
 
