@@ -18,7 +18,7 @@ module ksp15_test_mod
   real(r8), parameter :: peq  = 1.0e5_r8     ! Pa
   real(r8), parameter :: ueq  = 20.0_r8      ! m s-1
   real(r8), parameter :: X    = 166.7_r8
-  real(r8), parameter :: h0   = 250.0_r8     ! m
+  real(r8), parameter :: h0   = 25.0_r8      ! m
   real(r8), parameter :: d0   = 5000.0_r8    ! m
   real(r8), parameter :: xi0  = 4000.0_r8    ! m
   real(r8), parameter :: lonc = pi

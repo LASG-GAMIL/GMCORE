@@ -227,7 +227,7 @@ contains
         pole = pole * mesh%le_lat(j) / global_mesh%num_full_lon / mesh%area_cell(j)
         do k = mesh%half_lev_ibeg, mesh%half_lev_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            adv_gz_lat(i,j,k) = pole(k) / m_lev(i,j,k) / global_mesh%num_full_lon
+            adv_gz_lat(i,j,k) = pole(k) / m_lev(i,j,k)
           end do
         end do
       end if
@@ -242,7 +242,7 @@ contains
         pole = pole * mesh%le_lat(j-1) / global_mesh%num_full_lon / mesh%area_cell(j)
         do k = mesh%half_lev_ibeg, mesh%half_lev_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            adv_gz_lat(i,j,k) = pole(k) / m_lev(i,j,k) / global_mesh%num_full_lon
+            adv_gz_lat(i,j,k) = pole(k) / m_lev(i,j,k)
           end do
         end do
       end if
@@ -274,24 +274,6 @@ contains
           adv_gz_lev(i,j,k) = wedphdlev(i,j,k-1) * (gz_lev(i,j,k) - gz(i,j,k-1)) / m_lev(i,j,k)
         end do
       end do
-#ifndef V_POLE
-      if (mesh%has_south_pole()) then
-        j = mesh%full_lat_ibeg
-        do k = mesh%half_lev_ibeg, mesh%half_lev_iend
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            adv_gz_lev(i,j,k) = adv_gz_lev(i,j,k) / global_mesh%num_full_lon
-          end do
-        end do
-      end if
-      if (mesh%has_north_pole()) then
-        j = mesh%full_lat_iend
-        do k = mesh%half_lev_ibeg, mesh%half_lev_iend
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            adv_gz_lev(i,j,k) = adv_gz_lev(i,j,k) / global_mesh%num_full_lon
-          end do
-        end do
-      end if
-#endif
     end associate
 
   end subroutine calc_adv_gz
@@ -383,7 +365,7 @@ contains
         pole = pole * mesh%le_lat(j) / global_mesh%num_full_lon / mesh%area_cell(j)
         do k = mesh%half_lev_ibeg, mesh%half_lev_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            adv_w_lat(i,j,k) = pole(k) / m_lev(i,j,k) / global_mesh%num_full_lon
+            adv_w_lat(i,j,k) = pole(k) / m_lev(i,j,k)
           end do
         end do
       end if
@@ -398,7 +380,7 @@ contains
         pole = pole * mesh%le_lat(j-1) / global_mesh%num_full_lon / mesh%area_cell(j)
         do k = mesh%half_lev_ibeg, mesh%half_lev_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            adv_w_lat(i,j,k) = pole(k) / m_lev(i,j,k) / global_mesh%num_full_lon
+            adv_w_lat(i,j,k) = pole(k) / m_lev(i,j,k)
           end do
         end do
       end if
@@ -431,24 +413,6 @@ contains
           adv_w_lev(i,j,k) = wedphdlev(i,j,k-1) * (w_lev(i,j,k) - w(i,j,k-1)) / m_lev(i,j,k)
         end do
       end do
-#ifndef V_POLE
-      if (mesh%has_south_pole()) then
-        j = mesh%full_lat_ibeg
-        do k = mesh%half_lev_ibeg, mesh%half_lev_iend
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            adv_w_lev(i,j,k) = adv_w_lev(i,j,k) / global_mesh%num_full_lon
-          end do
-        end do
-      end if
-      if (mesh%has_north_pole()) then
-        j = mesh%full_lat_iend
-        do k = mesh%half_lev_ibeg, mesh%half_lev_iend
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            adv_w_lev(i,j,k) = adv_w_lev(i,j,k) / global_mesh%num_full_lon
-          end do
-        end do
-      end if
-#endif
     end associate
 
   end subroutine calc_adv_w
@@ -699,7 +663,11 @@ contains
           d(mesh%num_half_lev) = new_w_lev(i,j,mesh%num_half_lev)
           call tridiag_thomas(a, b, c, d, new_w_lev(i,j,:))
 
-          call rayleigh_damp_w(dt, star_gz_lev(i,j,:), new_w_lev(i,j,:))
+          do k = mesh%half_lev_ibeg, mesh%half_lev_iend - 1
+            new_gz_lev(i,j,k) = gz1(k) + gdtbeta * new_w_lev(i,j,k)
+          end do
+
+          call rayleigh_damp_w(dt, new_gz_lev(i,j,:), new_w_lev(i,j,:))
 
           ! Update gz after w is solved.
           do k = mesh%half_lev_ibeg, mesh%half_lev_iend - 1
