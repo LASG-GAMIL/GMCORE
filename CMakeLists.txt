@@ -45,7 +45,6 @@ elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
 endif ()
 
 find_package(MPI)
-include_directories(SYSTEM ${MPI_Fortran_INCLUDE_DIRS})
 
 if (DEFINED ENV{NETCDF} AND (NOT DEFINED ENV{NETCDF_ROOT}))
   set(ENV{NETCDF_ROOT} $ENV{NETCDF})
@@ -165,7 +164,7 @@ set(gmcore_files
 )
 
 add_library(gmcore ${gmcore_files})
-target_link_libraries(gmcore netcdff fortran_container fortran_datetime fiona flogger ${MPI_Fortran_LIBRARIES} ${MKL_LIBRARIES})
+target_link_libraries(gmcore netcdff fortran_container fortran_datetime fiona flogger ${MKL_LIBRARIES})
 
 set(gmcore_prepare_files
   src/prepare/topo_mod.F90
