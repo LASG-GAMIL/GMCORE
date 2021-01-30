@@ -688,7 +688,7 @@ contains
     real(r8), intent(inout) :: w (:)
 
     real(r8), parameter :: rayleigh_damp_w_coef = 0.2_r8
-    real(r8), parameter :: gzd = 10.0e3_r8 * g
+    real(r8), parameter :: gzd = 20.0e3_r8 * g
     real(r8) gzh, c
     integer k
 
