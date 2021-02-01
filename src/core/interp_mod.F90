@@ -874,7 +874,7 @@ contains
       a =  x2 / (x2 - x1)
       b = -x1 / (x2 - x1)
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           x_lev_lon(i,j,k) = a * x_lon(i,j,k) + b * x_lon(i,j,k+1)
         end do
       end do
@@ -891,7 +891,7 @@ contains
       a =  x2 / (x2 - x1)
       b = -x1 / (x2 - x1)
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           x_lev_lon(i,j,k) = a * x_lon(i,j,k-1) + b * x_lon(i,j,k-2)
         end do
       end do
@@ -945,7 +945,7 @@ contains
       x2 = mesh%full_lev(k+1) - mesh%half_lev(k)
       a =  x2 / (x2 - x1)
       b = -x1 / (x2 - x1)
-      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+      do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           x_lev_lat(i,j,k) = a * x_lat(i,j,k) + b * x_lat(i,j,k+1)
         end do
@@ -962,7 +962,7 @@ contains
       x2 = mesh%half_lev(k) - mesh%full_lev(k-2)
       a =  x2 / (x2 - x1)
       b = -x1 / (x2 - x1)
-      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+      do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           x_lev_lat(i,j,k) = a * x_lat(i,j,k-1) + b * x_lat(i,j,k-2)
         end do

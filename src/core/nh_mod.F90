@@ -400,19 +400,7 @@ contains
         end do
       end do
       ! Top w is fixed to be zero.
-      k = mesh%half_lev_ibeg
-      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          adv_w_lev(i,j,k) = wedphdlev(i,j,k) * (w(i,j,k) - w_lev(i,j,k)) / m_lev(i,j,k)
-        end do
-      end do
       ! Bottom w is from boundary condition, so no tendency for it.
-      k = mesh%half_lev_iend
-      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          adv_w_lev(i,j,k) = wedphdlev(i,j,k-1) * (w_lev(i,j,k) - w(i,j,k-1)) / m_lev(i,j,k)
-        end do
-      end do
     end associate
 
   end subroutine calc_adv_w
@@ -498,6 +486,8 @@ contains
     integer i, j, k
 
     associate (mesh       => block%mesh      , &
+               old_m      => old_state%m     , &
+               new_m      => new_state%m     , &
                old_p      => old_state%p     , &
                new_p      => new_state%p     , &
                old_gz_lev => old_state%gz_lev, &
@@ -508,7 +498,8 @@ contains
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             new_p(i,j,k) = old_p(i,j,k) * (1.0_r8 + cp_o_cv * ( &
-              new_pt(i,j,k) / old_pt(i,j,k) -                   &
+              new_m(i,j,k) * new_pt(i,j,k) /                    &
+              old_m(i,j,k) * old_pt(i,j,k) -                    &
               (new_gz_lev(i,j,k+1) - new_gz_lev(i,j,k)) /       &
               (old_gz_lev(i,j,k+1) - old_gz_lev(i,j,k))         &
             ))
@@ -566,7 +557,7 @@ contains
     type(state_type), intent(inout) :: new_state
     real(8), intent(in) :: dt
 
-    real(r8), parameter :: implicit_w_beta = 0.75_r8
+    real(r8), parameter :: implicit_w_beta = 0.5_r8
     real(r8) w1 (block%mesh%half_lev_lb:block%mesh%half_lev_ub)
     real(r8) gz1(block%mesh%half_lev_lb:block%mesh%half_lev_ub)
     real(r8) dgz(block%mesh%full_lev_lb:block%mesh%full_lev_ub)
@@ -663,11 +654,7 @@ contains
           d(mesh%num_half_lev) = new_w_lev(i,j,mesh%num_half_lev)
           call tridiag_thomas(a, b, c, d, new_w_lev(i,j,:))
 
-          do k = mesh%half_lev_ibeg, mesh%half_lev_iend - 1
-            new_gz_lev(i,j,k) = gz1(k) + gdtbeta * new_w_lev(i,j,k)
-          end do
-
-          call rayleigh_damp_w(dt, new_gz_lev(i,j,:), new_w_lev(i,j,:))
+          call rayleigh_damp_w(dt, star_gz_lev(i,j,:), new_w_lev(i,j,:))
 
           ! Update gz after w is solved.
           do k = mesh%half_lev_ibeg, mesh%half_lev_iend - 1
@@ -688,14 +675,13 @@ contains
     real(r8), intent(inout) :: w (:)
 
     real(r8), parameter :: rayleigh_damp_w_coef = 0.2_r8
-    real(r8), parameter :: gzd = 10.0e3_r8 * g
-    real(r8) gzh, c
+    real(r8), parameter :: gzd = 15.0e3_r8 * g
+    real(r8) c
     integer k
 
     do k = 2, size(w) - 1
-      gzh = gz(1) - gzd
-      if (gz(k) > gzh) then
-        c = rayleigh_damp_w_coef * sin(pi05 * (gz(k) - gzh) / gzd)**2
+      if (gz(k) > gz(1) - gzd) then
+        c = rayleigh_damp_w_coef * sin(pi05 * (1 - (gz(1) - gz(k)) / gzd))**2
         w(k) = w(k) / (1 + c * dt)
       end if
     end do
