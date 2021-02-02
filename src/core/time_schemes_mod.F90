@@ -53,6 +53,8 @@ contains
     select case (time_scheme)
     case ('pc2')
       time_integrator => predict_correct
+    case ('wrfrk3')
+      time_integrator => wrf_runge_kutta_3rd
     case ('rk3')
       time_integrator => runge_kutta_3rd
     case ('rk4')
@@ -170,6 +172,26 @@ contains
     call update_state(block, block%tend(3), block%state(old), block%state(new), dt, pass)
 
   end subroutine predict_correct
+
+  subroutine wrf_runge_kutta_3rd(space_operators, block, old, new, dt, pass)
+
+    procedure(space_operators_interface), intent(in), pointer :: space_operators
+    type(block_type), intent(inout) :: block
+    integer, intent(in) :: old
+    integer, intent(in) :: new
+    real(8), intent(in) :: dt
+    integer, intent(in) :: pass
+
+    call space_operators(block, block%state(old), block%state(old), block%state(new), block%tend(old), dt / 3.0_r8, pass)
+    call update_state(block, block%tend(old), block%state(old), block%state(new), dt / 3.0_r8, pass)
+
+    call space_operators(block, block%state(old), block%state(new), block%state(3), block%tend(new), 0.5_r8 * dt, pass)
+    call update_state(block, block%tend(new), block%state(old), block%state(3), 0.5_r8 * dt, pass)
+
+    call space_operators(block, block%state(old), block%state(3), block%state(new), block%tend(3), dt, pass)
+    call update_state(block, block%tend(3), block%state(old), block%state(new), dt, pass)
+
+  end subroutine wrf_runge_kutta_3rd
 
   subroutine runge_kutta_3rd(space_operators, block, old, new, dt, pass)
 

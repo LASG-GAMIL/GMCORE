@@ -73,7 +73,7 @@ contains
 
     if (.not. allocated(this%state)) then
       select case (trim(time_scheme))
-      case ('pc2', 'rk2')
+      case ('pc2', 'wrfrk3')
         allocate(this%state(3))
         allocate(this%tend (3))
       case ('rk3', 'ssprk3')
