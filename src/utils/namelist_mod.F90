@@ -65,6 +65,7 @@ module namelist_mod
   logical         :: use_div_damp         = .false.
   integer         :: div_damp_order       = 2
   integer         :: div_damp_j0          = 0
+  integer         :: div_damp_k0          = 3
   real(r8)        :: div_damp_imp_lat0    = 80
   real(r8)        :: div_damp_upper       = 2.0_r8
   real(r8)        :: div_damp_polar       = 0.5_r8
@@ -148,6 +149,7 @@ module namelist_mod
     div_damp_polar            , &
     div_damp_upper            , &
     div_damp_j0               , &
+    div_damp_k0               , &
     div_damp_exp              , &
     div_damp_coef2            , &
     div_damp_coef4            , &
