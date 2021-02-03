@@ -33,6 +33,7 @@ module operators_mod
   public calc_dptfdlev
   public calc_dphs
   public calc_wedudlev_wedvdlev
+  public nh_prepare
   public nh_solve
 
   interface operators_prepare
