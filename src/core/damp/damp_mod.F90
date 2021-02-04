@@ -28,8 +28,6 @@ contains
 
   subroutine damp_init()
 
-    integer j, jr, k, r
-
     call zonal_damp_init()
     call div_damp_init()
     call vor_damp_init()
@@ -57,6 +55,11 @@ contains
       call zonal_damp_on_lon_edge(block, polar_damp_order, dt, state%u)
       call zonal_damp_on_lat_edge(block, polar_damp_order, dt, state%v)
     end do
+    if (nonhydrostatic) then
+      do cyc = 1, 5
+        call zonal_damp_on_lev_edge(block, polar_damp_order, dt, state%w_lev)
+      end do
+    end if
 
   end subroutine polar_damp_run
 

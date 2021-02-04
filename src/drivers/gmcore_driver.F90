@@ -39,8 +39,8 @@ program gmcore_driver
     select case (test_case)
     case ('pgf_test')
       call steady_state_pgf_test_set_params()
-    case ('ksp15_01')
-      call ksp15_01_test_set_params()
+    case ('ksp15_01', 'ksp15_02')
+      call ksp15_test_set_params()
     end select
   end if
 
@@ -66,6 +66,8 @@ program gmcore_driver
       set_ic => steady_state_pgf_test_set_ic
     case ('ksp15_01')
       set_ic => ksp15_01_test_set_ic
+    case ('ksp15_02')
+      set_ic => ksp15_02_test_set_ic
     case default
       call log_error('Unknown test case ' // trim(test_case) // '!')
     end select

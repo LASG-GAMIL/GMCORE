@@ -73,6 +73,9 @@ contains
 
     if (.not. allocated(this%state)) then
       select case (trim(time_scheme))
+      case ('euler')
+        allocate(this%state(2))
+        allocate(this%tend (2))
       case ('pc2', 'wrfrk3')
         allocate(this%state(3))
         allocate(this%tend (3))

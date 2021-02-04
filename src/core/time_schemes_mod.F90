@@ -51,6 +51,8 @@ contains
   subroutine time_scheme_init()
 
     select case (time_scheme)
+    case ('euler')
+      time_integrator => euler
     case ('pc2')
       time_integrator => predict_correct
     case ('wrfrk3')
@@ -261,8 +263,8 @@ contains
     real(8), intent(in) :: dt
     integer, intent(in) :: pass
 
-    call space_operators(block, block%state(old), block%state(old), block%state(new), block%tend(new), dt, pass)
-    call update_state(block, block%tend(new), block%state(old), block%state(new), dt, pass)
+    call space_operators(block, block%state(old), block%state(old), block%state(new), block%tend(old), dt, pass)
+    call update_state(block, block%tend(old), block%state(old), block%state(new), dt, pass)
 
   end subroutine euler
 

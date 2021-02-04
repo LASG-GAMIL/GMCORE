@@ -82,6 +82,8 @@ contains
         local_ptop = ptop
       case ('schar_l40')
         call hybrid_coord_schar_l40(p0, ptop, hyai, hybi)
+      case ('dcmip21_l60')
+        call hybrid_coord_dcmip21_l60(p0, ptop, hyai, hybi)
       case default
         if (baroclinic .and. template == 'N/A' .and. is_root_proc()) then
           call log_error('Hybrid vertical coordinate template "' // trim(template) // '" is invalid!')
