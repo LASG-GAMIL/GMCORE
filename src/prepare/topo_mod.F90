@@ -62,9 +62,9 @@ contains
     integer jy1(block%mesh%full_lat_ibeg:block%mesh%full_lat_iend)
     integer jy2(block%mesh%full_lat_ibeg:block%mesh%full_lat_iend)
 
-    real(8) lon1, lon2
-    real(8) lat1, lat2
-    real(8) gzs0, landfrac0, sgh0, grid_count, grid_count0
+    real(r8) lon1, lon2
+    real(r8) lat1, lat2
+    real(r8) gzs0, landfrac0, sgh0, grid_count, grid_count0
 
     integer i, j, k, l, i1, i2, j1, j2
 

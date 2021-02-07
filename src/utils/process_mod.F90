@@ -47,6 +47,7 @@ module process_mod
     integer :: comm  = MPI_COMM_NULL
     integer :: np    = 0
     integer :: id    = MPI_PROC_NULL
+    integer, allocatable :: recv_type_r4(:,:) ! 0: one level, 1: full_lev, 2: half_lev
     integer, allocatable :: recv_type_r8(:,:) ! 0: one level, 1: full_lev, 2: half_lev
   contains
     procedure :: init => zonal_circle_init
@@ -315,6 +316,28 @@ contains
     deallocate(zonal_proc_id)
 
     if (this%id == 0) then
+      ! Single precision
+      allocate(this%recv_type_r4(this%np,0:2))
+      do i = 1, this%np
+        num_lon = global_mesh%num_full_lon
+        call round_robin(this%np, i - 1, num_lon, ibeg, iend)
+        call MPI_TYPE_CREATE_SUBARRAY(1, [global_mesh%num_full_lon], &
+                                         [                 num_lon], &
+                                         [ibeg-1], MPI_ORDER_FORTRAN, MPI_REAL, &
+                                         this%recv_type_r4(i,0), ierr)
+        call MPI_TYPE_COMMIT(this%recv_type_r4(i,0), ierr)
+        call MPI_TYPE_CREATE_SUBARRAY(2, [global_mesh%num_full_lon,global_mesh%num_full_lev], &
+                                         [                 num_lon,global_mesh%num_full_lev], &
+                                         [ibeg-1,0], MPI_ORDER_FORTRAN, MPI_REAL, &
+                                         this%recv_type_r4(i,1), ierr)
+        call MPI_TYPE_COMMIT(this%recv_type_r4(i,1), ierr)
+        call MPI_TYPE_CREATE_SUBARRAY(2, [global_mesh%num_full_lon,global_mesh%num_half_lev], &
+                                         [                 num_lon,global_mesh%num_half_lev], &
+                                         [ibeg-1,0], MPI_ORDER_FORTRAN, MPI_REAL, &
+                                         this%recv_type_r4(i,2), ierr)
+        call MPI_TYPE_COMMIT(this%recv_type_r4(i,2), ierr)
+      end do
+      ! Double precision
       allocate(this%recv_type_r8(this%np,0:2))
       do i = 1, this%np
         num_lon = global_mesh%num_full_lon
@@ -344,6 +367,15 @@ contains
     type(zonal_circle_type), intent(inout) :: this
 
     integer i, k, ierr
+
+    if (allocated(this%recv_type_r4)) then
+      do k = 0, 2
+        do i = 1, this%np
+          call MPI_TYPE_FREE(this%recv_type_r4(i,k), ierr)
+        end do
+        deallocate(this%recv_type_r4)
+      end do
+    end if
 
     if (allocated(this%recv_type_r8)) then
       do k = 0, 2

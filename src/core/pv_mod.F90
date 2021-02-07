@@ -22,7 +22,7 @@ contains
 
     type(block_type), intent(in) :: block
     type(state_type), intent(inout) :: state
-    real(r8), intent(in) :: dt
+    real(8), intent(in) :: dt
 
     type(mesh_type), pointer :: mesh
     real(r8) work(state%mesh%half_lon_ibeg:state%mesh%half_lon_iend,state%mesh%num_full_lev)
@@ -122,7 +122,7 @@ contains
 
     type(block_type), intent(in) :: block
     type(state_type), intent(inout) :: state
-    real(r8), intent(in) :: dt
+    real(8), intent(in) :: dt
 
     type(mesh_type), pointer :: mesh
     real(r8) pole(state%mesh%num_full_lev)
@@ -261,7 +261,7 @@ contains
 
     type(block_type), intent(in) :: block
     type(state_type), intent(inout) :: state
-    real(r8), intent(in) :: dt
+    real(8), intent(in) :: dt
 
     type(mesh_type), pointer :: mesh
     real(r8) u, v

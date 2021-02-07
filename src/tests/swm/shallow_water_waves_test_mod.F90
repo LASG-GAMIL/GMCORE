@@ -51,7 +51,7 @@ module shallow_water_waves_test_mod
 
   use flogger
   use string
-  use const_mod, only: inf
+  use const_mod, only: r8, inf
   use parallel_mod
   use block_mod
 
@@ -61,7 +61,7 @@ module shallow_water_waves_test_mod
 
   public shallow_water_waves_test_set_ic
 
-  integer, parameter :: dp = selected_real_kind(15,307)
+  integer, parameter :: dp = r8
 
 !========================================================================
 ! parameters

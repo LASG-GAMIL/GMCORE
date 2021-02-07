@@ -15,16 +15,16 @@ contains
 
   subroutine vert_interp_linear(x1, data1, x2, data2, allow_extrap, ierr)
 
-    real(8), intent(in) :: x1(:), data1(:), x2(:)
-    real(8), intent(out) :: data2(:)
+    real(r8), intent(in) :: x1(:), data1(:), x2(:)
+    real(r8), intent(out) :: data2(:)
     logical, intent(in) :: allow_extrap
     integer, intent(out), optional :: ierr
 
     integer nx1, nx2
     integer i, ii
     integer, allocatable :: i1(:), i2(:)
-    real(8), allocatable :: wgt1(:), wgt2(:)
-    real(8) tmp1, tmp2
+    real(r8), allocatable :: wgt1(:), wgt2(:)
+    real(r8) tmp1, tmp2
 
     nx1 = size(x1)
     nx2 = size(x2)
@@ -79,16 +79,16 @@ contains
 
   subroutine vert_interp_log_linear(x1, data1, x2, data2, allow_extrap, ierr)
 
-    real(8), intent(in) :: x1(:), data1(:), x2(:)
-    real(8), intent(out) :: data2(:)
+    real(r8), intent(in) :: x1(:), data1(:), x2(:)
+    real(r8), intent(out) :: data2(:)
     logical, intent(in) :: allow_extrap
     integer, intent(out), optional :: ierr
 
     integer nx1, nx2
     integer i, ii
     integer, allocatable :: i1(:), i2(:)
-    real(8), allocatable :: wgt1(:), wgt2(:)
-    real(8) tmp1, tmp2
+    real(r8), allocatable :: wgt1(:), wgt2(:)
+    real(r8) tmp1, tmp2
 
     if (any(x1 == 0.0) .or. any(x2 == 0.0)) then
       if (present(ierr)) then

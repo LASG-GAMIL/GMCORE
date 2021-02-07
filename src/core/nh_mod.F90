@@ -71,7 +71,6 @@ contains
 
     call diag_rhod            (block, new_state)
     call diag_linearized_p    (block, old_state, new_state)
-    !call diag_p               (block, new_state)
     call interp_p             (block, new_state)
     call reduce_run           (block, new_state, dt, nh_pass)
 
@@ -722,7 +721,6 @@ contains
     real(r8), intent(in   ) :: gz(:)
     real(r8), intent(inout) :: w (:)
 
-    real(r8), parameter :: rayleigh_damp_w_coef = 0.2_r8
     real(r8), parameter :: gzd = 10.0e3_r8 * g
     real(r8) c
     integer k

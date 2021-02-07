@@ -542,7 +542,7 @@ contains
     real(8), intent(in) :: dt
     type(block_type), intent(inout) :: block
 
-    real(r8) fast_dt
+    real(8) fast_dt
     integer subcycle, t1, t2
 
     fast_dt = dt / fast_cycles
