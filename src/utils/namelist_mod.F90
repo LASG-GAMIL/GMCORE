@@ -72,6 +72,7 @@ module namelist_mod
   real(r8)        :: div_damp_exp         = 0.01_r8
   real(r8)        :: div_damp_coef2       = 1.0_r8 / 128.0_r8
   real(r8)        :: div_damp_coef4       = 0.01_r8
+  real(r8)        :: div_damp_3d_coef     = 0.1_r8
   logical         :: use_vor_damp         = .false.
   integer         :: vor_damp_order       = 2
   real(r8)        :: vor_damp_imp_lat0    = 80
@@ -81,6 +82,7 @@ module namelist_mod
   real(r8)        :: vor_damp_coef4       = 0.01_r8
   real(r8)        :: vor_damp_bkg_coef    = 0.0001_r8
   logical         :: use_rayleigh_damp    = .false.
+  real(r8)        :: rayleigh_damp_w_coef = 0.2
   logical         :: use_smag_damp        = .false.
   real(r8)        :: smag_damp_coef       = 0.2
 
@@ -153,6 +155,7 @@ module namelist_mod
     div_damp_exp              , &
     div_damp_coef2            , &
     div_damp_coef4            , &
+    div_damp_3d_coef          , &
     use_vor_damp              , &
     vor_damp_order            , &
     vor_damp_imp_lat0         , &
@@ -162,6 +165,7 @@ module namelist_mod
     vor_damp_coef4            , &
     vor_damp_bkg_coef         , &
     use_rayleigh_damp         , &
+    rayleigh_damp_w_coef      , &
     use_smag_damp             , &
     smag_damp_coef            , &
     output_h0_vars            , &
@@ -231,6 +235,10 @@ contains
     end if
       write(*, *) 'use_polar_damp      = ', to_str(use_polar_damp)
       write(*, *) 'use_rayleigh_damp   = ', to_str(use_rayleigh_damp)
+    if (nonhydrostatic) then
+      write(*, *) 'rayleigh_damp_w_coef= ', to_str(rayleigh_damp_w_coef, 2)
+      write(*, *) 'div_damp_3d_coef    = ', to_str(div_damp_3d_coef, 3)
+    end if
       write(*, *) 'use_smag_damp       = ', to_str(use_smag_damp)
     if (use_smag_damp) then
       write(*, *) 'smag_damp_coef      = ', to_str(smag_damp_coef, 1)

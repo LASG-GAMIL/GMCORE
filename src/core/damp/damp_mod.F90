@@ -20,6 +20,7 @@ module damp_mod
   public damp_final
   public polar_damp_run
   public div_damp_run
+  public div_damp_3d_append_tend
   public vor_damp_run
   public rayleigh_damp_append_tend
   public smag_damp_run

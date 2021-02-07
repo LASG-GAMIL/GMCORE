@@ -15,6 +15,7 @@ module div_damp_mod
   public div_damp_init
   public div_damp_final
   public div_damp_run
+  public div_damp_3d_append_tend
 
   real(r8), allocatable :: cd_full_lat(:,:)
   real(r8), allocatable :: cd_half_lat(:,:)
@@ -187,5 +188,55 @@ contains
     end select
 
   end subroutine div_damp_run
+
+  subroutine div_damp_3d_append_tend(block, dt, old_state, tend)
+
+    type(block_type), intent(in) :: block
+    real(8), intent(in) :: dt
+    type(state_type), intent(in) :: old_state
+    type(tend_type), intent(inout) :: tend
+
+    integer i, j, k
+
+    !                𝜸 ∂  θⁿ⁺¹ - θⁿ
+    ! uⁿ⁺¹ = uⁿ - Δt - -- ---------
+    !                θ ∂x     Δt
+    associate (mesh       => block%mesh      , &
+               old_pt_lon => old_state%pt_lon, &
+               old_pt_lat => old_state%pt_lat, &
+               dpt        => tend%dpt        , &
+               du         => tend%du         , &
+               dv         => tend%dv)
+#ifdef V_POLE
+      call fill_halo(block, dpt, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false., north_halo=.false.)
+#else
+      call fill_halo(block, dpt, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false., south_halo=.false.)
+#endif
+
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+            du(i,j,k) = du(i,j,k) - div_damp_3d_coef * &
+              (dpt(i+1,j,k) - dpt(i,j,k)) / old_pt_lon(i,j,k)
+          end do
+        end do
+      end do
+
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+#ifdef V_POLE
+            dv(i,j,k) = dv(i,j,k) - div_damp_3d_coef * &
+              (dpt(i,j,k) - dpt(i,j-1,k)) / old_pt_lat(i,j,k)
+#else
+            dv(i,j,k) = dv(i,j,k) - div_damp_3d_coef * &
+              (dpt(i,j+1,k) - dpt(i,j,k)) / old_pt_lat(i,j,k)
+#endif
+          end do
+        end do
+      end do
+    end associate
+
+  end subroutine div_damp_3d_append_tend
 
 end module div_damp_mod
