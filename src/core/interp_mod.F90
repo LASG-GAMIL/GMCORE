@@ -882,7 +882,7 @@ contains
     logical, intent(in), optional :: handle_top_bottom
 
     integer i, j, k
-    real(r8) x1, x2, a, b
+    real(r8) x1, x2, x3, a, b, c
 
     ! -------
     !
@@ -912,16 +912,26 @@ contains
       ! -------
       !
       ! ===o=== 2   x2
+      !
+      ! -------
+      !
+      ! ===o=== 3   x3
       x1 = mesh%full_lev(k  ) - mesh%half_lev(k)
       x2 = mesh%full_lev(k+1) - mesh%half_lev(k)
-      a =  x2 / (x2 - x1)
-      b = -x1 / (x2 - x1)
+      x3 = mesh%full_lev(k+2) - mesh%half_lev(k)
+      a =  x2 * x3 / (x1**2 - x1 * x2 - x1 * x3 + x2 * x3)
+      b =  x1 * x3 / (x2**2 - x2 * x1 - x2 * x3 + x1 * x3)
+      c =  x1 * x2 / (x3**2 - x3 * x1 - x3 * x2 + x1 * x2)
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          x_lev_lon(i,j,k) = a * x_lon(i,j,k) + b * x_lon(i,j,k+1)
+          x_lev_lon(i,j,k) = a * x_lon(i,j,k) + b * x_lon(i,j,k+1) + c * x_lon(i,j,k+2)
         end do
       end do
       k = mesh%half_lev_iend
+      ! ===o=== NLEV - 2  x3
+      !
+      ! -------
+      !
       ! ===o=== NLEV - 1  x2
       !
       ! -------
@@ -931,11 +941,13 @@ contains
       ! ---?--- NLEV + 1
       x1 = mesh%half_lev(k) - mesh%full_lev(k-1)
       x2 = mesh%half_lev(k) - mesh%full_lev(k-2)
-      a =  x2 / (x2 - x1)
-      b = -x1 / (x2 - x1)
+      x3 = mesh%half_lev(k) - mesh%full_lev(k-3)
+      a =  x2 * x3 / (x1**2 - x1 * x2 - x1 * x3 + x2 * x3)
+      b =  x1 * x3 / (x2**2 - x2 * x1 - x2 * x3 + x1 * x3)
+      c =  x1 * x2 / (x3**2 - x3 * x1 - x3 * x2 + x1 * x2)
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          x_lev_lon(i,j,k) = a * x_lon(i,j,k-1) + b * x_lon(i,j,k-2)
+          x_lev_lon(i,j,k) = a * x_lon(i,j,k-1) + b * x_lon(i,j,k-2) + c * x_lon(i,j,k-3)
         end do
       end do
     end if
@@ -954,7 +966,7 @@ contains
     logical, intent(in), optional :: handle_top_bottom
 
     integer i, j, k
-    real(r8) x1, x2, a, b
+    real(r8) x1, x2, x3, a, b, c
 
     ! -------
     !
@@ -984,16 +996,26 @@ contains
       ! -------
       !
       ! ===o=== 2   x2
+      !
+      ! -------
+      !
+      ! ===o=== 3   x3
       x1 = mesh%full_lev(k  ) - mesh%half_lev(k)
       x2 = mesh%full_lev(k+1) - mesh%half_lev(k)
-      a =  x2 / (x2 - x1)
-      b = -x1 / (x2 - x1)
+      x3 = mesh%full_lev(k+2) - mesh%half_lev(k)
+      a =  x2 * x3 / (x1**2 - x1 * x2 - x1 * x3 + x2 * x3)
+      b =  x1 * x3 / (x2**2 - x2 * x1 - x2 * x3 + x1 * x3)
+      c =  x1 * x2 / (x3**2 - x3 * x1 - x3 * x2 + x1 * x2)
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          x_lev_lat(i,j,k) = a * x_lat(i,j,k) + b * x_lat(i,j,k+1)
+          x_lev_lat(i,j,k) = a * x_lat(i,j,k) + b * x_lat(i,j,k+1) + c * x_lat(i,j,k+2)
         end do
       end do
       k = mesh%half_lev_iend
+      ! ===o=== NLEV - 2  x3
+      !
+      ! -------
+      !
       ! ===o=== NLEV - 1  x2
       !
       ! -------
@@ -1003,11 +1025,13 @@ contains
       ! ---?--- NLEV + 1
       x1 = mesh%half_lev(k) - mesh%full_lev(k-1)
       x2 = mesh%half_lev(k) - mesh%full_lev(k-2)
-      a =  x2 / (x2 - x1)
-      b = -x1 / (x2 - x1)
+      x3 = mesh%half_lev(k) - mesh%full_lev(k-3)
+      a =  x2 * x3 / (x1**2 - x1 * x2 - x1 * x3 + x2 * x3)
+      b =  x1 * x3 / (x2**2 - x2 * x1 - x2 * x3 + x1 * x3)
+      c =  x1 * x2 / (x3**2 - x3 * x1 - x3 * x2 + x1 * x2)
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          x_lev_lat(i,j,k) = a * x_lat(i,j,k-1) + b * x_lat(i,j,k-2)
+          x_lev_lat(i,j,k) = a * x_lat(i,j,k-1) + b * x_lat(i,j,k-2) + c * x_lat(i,j,k-3)
         end do
       end do
     end if
