@@ -690,12 +690,12 @@ contains
                               mesh%full_lat_lb:mesh%full_lat_ub, &
                               mesh%full_lev_lb:mesh%full_lev_ub)
     real(r8), intent(in) :: po
-    real(r8), intent(inout) :: y(mesh%half_lon_lb:mesh%half_lon_ub, &
-                                 mesh%full_lat_lb:mesh%full_lat_ub)
+    real(r8), intent(out) :: y(mesh%full_lon_lb:mesh%full_lon_ub, &
+                               mesh%full_lat_lb:mesh%full_lat_ub)
     logical, intent(in), optional :: logp
 
     logical logp_
-    real(r8) p0, p1_lon, p2_lon, dp1, dp2
+    real(r8) p0, p1_lon, p2_lon, dp1, dp2, y1, y2
     integer i, j, k
 
     logp_ = merge(logp, .false., present(logp))
@@ -703,7 +703,24 @@ contains
     p0 = merge(log(po), po, logp_)
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-      do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+        ! West side
+        do k = mesh%full_lev_iend, mesh%full_lev_ibeg + 1, -1
+          p1_lon = 0.5_r8 * (p(i-1,j,k-1) + p(i,j,k-1))
+          p2_lon = 0.5_r8 * (p(i-1,j,k  ) + p(i,j,k  ))
+          if (p2_lon >= po .and. p1_lon <= po) then
+            if (logp_) then
+              dp1 = p0 - log(p1_lon)
+              dp2 = log(p2_lon) - p0
+            else
+              dp1 = p0 - p1_lon
+              dp2 = p2_lon - p0
+            end if
+            y1 = (dp2 * x(i-1,j,k-1) + dp1 * x(i-1,j,k)) / (dp1 + dp2)
+            exit
+          end if
+        end do
+        ! East side
         do k = mesh%full_lev_iend, mesh%full_lev_ibeg + 1, -1
           p1_lon = 0.5_r8 * (p(i,j,k-1) + p(i+1,j,k-1))
           p2_lon = 0.5_r8 * (p(i,j,k  ) + p(i+1,j,k  ))
@@ -715,10 +732,11 @@ contains
               dp1 = p0 - p1_lon
               dp2 = p2_lon - p0
             end if
-            y(i,j) = (dp2 * x(i,j,k-1) + dp1 * x(i,j,k)) / (dp1 + dp2)
+            y2 = (dp2 * x(i,j,k-1) + dp1 * x(i,j,k)) / (dp1 + dp2)
             exit
           end if
         end do
+        y(i,j) = (mesh%area_lon_east(j) * y1 + mesh%area_lon_west(j) * y2) / mesh%area_cell(j)
       end do
     end do
 
@@ -734,28 +752,24 @@ contains
                               mesh%half_lat_lb:mesh%half_lat_ub, &
                               mesh%full_lev_lb:mesh%full_lev_ub)
     real(r8), intent(in) :: po
-    real(r8), intent(inout) :: y(mesh%full_lon_lb:mesh%full_lon_ub, &
-                                 mesh%half_lat_lb:mesh%half_lat_ub)
+    real(r8), intent(out) :: y(mesh%full_lon_lb:mesh%full_lon_ub, &
+                               mesh%full_lat_lb:mesh%full_lat_ub)
     logical, intent(in), optional :: logp
 
     logical logp_
-    real(r8) p0, p1_lat, p2_lat, dp1, dp2
+    real(r8) p0, p1_lat, p2_lat, dp1, dp2, y1, y2
     integer i, j, k
 
     logp_ = merge(logp, .false., present(logp))
 
     p0 = merge(log(po), po, logp_)
 
-    do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+        ! South side
         do k = mesh%full_lev_iend, mesh%full_lev_ibeg + 1, -1
-#ifdef V_POLE
           p1_lat = 0.5_r8 * (p(i,j-1,k-1) + p(i,j,k-1))
           p2_lat = 0.5_r8 * (p(i,j-1,k  ) + p(i,j,k  ))
-#else
-          p1_lat = 0.5_r8 * (p(i,j,k-1) + p(i,j+1,k-1))
-          p2_lat = 0.5_r8 * (p(i,j,k  ) + p(i,j+1,k  ))
-#endif
           if (p2_lat >= po .and. p1_lat <= po) then
             if (logp_) then
               dp1 = p0 - log(p1_lat)
@@ -764,10 +778,39 @@ contains
               dp1 = p0 - p1_lat
               dp2 = p2_lat - p0
             end if
-            y(i,j) = (dp2 * x(i,j,k-1) + dp1 * x(i,j,k)) / (dp1 + dp2)
+#ifdef V_POLE
+            y1 = (dp2 * x(i,j  ,k-1) + dp1 * x(i,j  ,k)) / (dp1 + dp2)
+#else
+            y1 = (dp2 * x(i,j-1,k-1) + dp1 * x(i,j-1,k)) / (dp1 + dp2)
+#endif
             exit
           end if
         end do
+        ! North side
+        do k = mesh%full_lev_iend, mesh%full_lev_ibeg + 1, -1
+          p1_lat = 0.5_r8 * (p(i,j,k-1) + p(i,j+1,k-1))
+          p2_lat = 0.5_r8 * (p(i,j,k  ) + p(i,j+1,k  ))
+          if (p2_lat >= po .and. p1_lat <= po) then
+            if (logp_) then
+              dp1 = p0 - log(p1_lat)
+              dp2 = log(p2_lat) - p0
+            else
+              dp1 = p0 - p1_lat
+              dp2 = p2_lat - p0
+            end if
+#ifdef V_POLE
+            y2 = (dp2 * x(i,j+1,k-1) + dp1 * x(i,j+1,k)) / (dp1 + dp2)
+#else
+            y2 = (dp2 * x(i,j  ,k-1) + dp1 * x(i,j  ,k)) / (dp1 + dp2)
+#endif
+            exit
+          end if
+        end do
+#ifdef V_POLE
+        y(i,j) = (mesh%area_lat_north(j) * y1 + mesh%area_lat_south(j+1) * y2) / mesh%area_cell(j)
+#else
+        y(i,j) = (mesh%area_lat_north(j-1) * y1 + mesh%area_lat_south(j) * y2) / mesh%area_cell(j)
+#endif
       end do
     end do
 
