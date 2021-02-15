@@ -39,6 +39,7 @@ contains
         call interp_lev_edge_to_lev_lat_edge(mesh, p_lev, p_lev_lat)
         call fill_halo(blocks(iblk), p_lev_lon, full_lon=.false., full_lat=.true., full_lev=.false., west_halo=.false., south_halo=.false., north_halo=.false.)
       end associate
+      call diag_m_lev(blocks(iblk), blocks(iblk)%state(1))
     end do
 
   end subroutine nh_prepare
@@ -52,17 +53,11 @@ contains
     type(state_type), intent(inout) :: new_state
     real(8), intent(in) :: dt
 
-    logical, save :: first_call = .true.
-
     call interp_mf            (block, star_state)
     call interp_gz            (block, star_state)
     call interp_w             (block, star_state)
     call interp_wedphdlev     (block, star_state)
-    if (first_call) then
-      call diag_m_lev         (block, star_state)
-      call reduce_run         (block, star_state, dt, nh_pass)
-      first_call = .false.
-    end if
+    call reduce_run           (block, star_state, dt, nh_pass_1)
     call diag_m_lev           (block, new_state)
 
     call calc_adv_gz          (block, star_state, tend)
@@ -72,7 +67,7 @@ contains
     call diag_rhod            (block, new_state)
     call diag_linearized_p    (block, old_state, new_state)
     call interp_p             (block, new_state)
-    call reduce_run           (block, new_state, dt, nh_pass)
+    call reduce_run           (block, new_state, dt, nh_pass_2)
 
   end subroutine nh_solve
 

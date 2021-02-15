@@ -104,11 +104,11 @@ contains
         proc%blocks(iblk)%state(itime)%gz_lev(:,:,global_mesh%half_lev_iend) = proc%blocks(iblk)%static%gzs
       end do
     end do
-    if (nonhydrostatic) call nh_prepare(proc%blocks)
 
     call operators_prepare(proc%blocks, old, dt_in_seconds)
     call diagnose(proc%blocks, old)
     call output(old)
+    if (nonhydrostatic) call nh_prepare(proc%blocks)
 
     do while (.not. time_is_finished())
       call time_integrate(dt_in_seconds, proc%blocks)

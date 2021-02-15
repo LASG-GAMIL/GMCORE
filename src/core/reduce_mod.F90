@@ -117,20 +117,27 @@ contains
 
     integer j
 
-    if (pass == nh_pass) then
+    select case (pass)
+    case (nh_pass_1)
       do j = block%mesh%full_lat_ibeg, block%mesh%full_lat_iend
         if (block%reduced_mesh(j)%reduce_factor > 1) then
-          call reduce_nh_state(j, block, block%mesh, state, block%reduced_mesh(j), block%reduced_static(j), block%reduced_state(j), dt)
+          call reduce_nh_state_1(j, block, block%mesh, state, block%reduced_mesh(j), block%reduced_static(j), block%reduced_state(j), dt)
         end if
       end do
-    else
+    case (nh_pass_2)
+      do j = block%mesh%full_lat_ibeg, block%mesh%full_lat_iend
+        if (block%reduced_mesh(j)%reduce_factor > 1) then
+          call reduce_nh_state_2(j, block, block%mesh, state, block%reduced_mesh(j), block%reduced_static(j), block%reduced_state(j), dt)
+        end if
+      end do
+    case default
       ! Extend loop range by 1 is for Coriolis forces. FIXME: Revise it.
       do j = block%mesh%full_lat_ibeg - 1, block%mesh%full_lat_iend + 1
         if (block%reduced_mesh(j)%reduce_factor > 1) then
           call reduce_state(j, block, block%mesh, state, block%reduced_mesh(j), block%reduced_static(j), block%reduced_state(j), dt, pass)
         end if
       end do
-    end if
+    end select
 
   end subroutine reduce_run
 
@@ -525,7 +532,27 @@ contains
 
   end subroutine reduce_state
 
-  subroutine reduce_nh_state(j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_nh_state_1(j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+
+    integer, intent(in) :: j
+    type(block_type), intent(in) :: block
+    type(mesh_type), intent(in) :: raw_mesh
+    type(state_type), intent(inout) :: raw_state
+    type(reduced_mesh_type), intent(in) :: reduced_mesh
+    type(reduced_static_type), intent(in) :: reduced_static
+    type(reduced_state_type), intent(inout) :: reduced_state
+    real(8), intent(in) :: dt
+
+    call apply_reduce(reduce_args(m_lev        , reduce_m_lev       ))
+    call apply_reduce(reduce_args(mf_lev_lon_n , reduce_mf_lev_lon_n))
+    call apply_reduce(reduce_args(gz_lev       , reduce_gz_lev      ))
+    call apply_reduce(reduce_args(gz_lev_lon   , reduce_gz_lev_lon  ))
+    call apply_reduce(reduce_args(w_lev        , reduce_w_lev       ))
+    call apply_reduce(reduce_args(w_lev_lon    , reduce_w_lev_lon   ))
+
+  end subroutine reduce_nh_state_1
+
+  subroutine reduce_nh_state_2(j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
 
     integer, intent(in) :: j
     type(block_type), intent(in) :: block
@@ -537,17 +564,11 @@ contains
     real(8), intent(in) :: dt
 
     call apply_reduce(reduce_args(m_lon        , reduce_m_lon       ))
-    call apply_reduce(reduce_args(m_lev        , reduce_m_lev       ))
-    call apply_reduce(reduce_args(mf_lev_lon_n , reduce_mf_lev_lon_n))
-    call apply_reduce(reduce_args(gz_lev       , reduce_gz_lev      ))
-    call apply_reduce(reduce_args(gz_lev_lon   , reduce_gz_lev_lon  ))
-    call apply_reduce(reduce_args(w_lev        , reduce_w_lev       ))
-    call apply_reduce(reduce_args(w_lev_lon    , reduce_w_lev_lon   ))
     call apply_reduce(reduce_args(p_lev        , reduce_p_lev       ))
     call apply_reduce(reduce_args(p_lev_lon    , reduce_p_lev_lon   ))
     call apply_reduce(reduce_args(rhod_lon     , reduce_rhod_lon    ))
 
-  end subroutine reduce_nh_state
+  end subroutine reduce_nh_state_2
 
   subroutine reduce_gzs(j, buf_j, move, block, raw_mesh, raw_static, reduced_mesh, reduced_static)
 
