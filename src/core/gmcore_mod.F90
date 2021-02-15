@@ -98,7 +98,7 @@ contains
     integer iblk, itime
 
     do iblk = 1, size(proc%blocks)
-      call proc%blocks(iblk)%static%prepare()
+      call prepare_static(proc%blocks(iblk))
       ! Ensure bottom gz_lev is the same as gzs.
       do itime = lbound(proc%blocks(iblk)%state, 1), ubound(proc%blocks(iblk)%state, 1)
         proc%blocks(iblk)%state(itime)%gz_lev(:,:,global_mesh%half_lev_iend) = proc%blocks(iblk)%static%gzs
@@ -129,6 +129,36 @@ contains
     call process_final()
 
   end subroutine gmcore_final
+
+  subroutine prepare_static(block)
+
+    class(block_type), intent(inout) :: block
+
+    integer i, j
+
+    associate (mesh    => block%mesh          , &
+               gzs     => block%static%gzs    , & ! in
+               dzsdlon => block%static%dzsdlon, & ! out
+               dzsdlat => block%static%dzsdlat)   ! out
+      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+          dzsdlon(i,j) = (gzs(i+1,j) - gzs(i,j)) / g / mesh%de_lon(j)
+        end do
+      end do
+      do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+#ifdef V_POLE
+          dzsdlat(i,j) = (gzs(i,j) - gzs(i,j-1)) / g / mesh%de_lat(j)
+#else
+          dzsdlat(i,j) = (gzs(i,j+1) - gzs(i,j)) / g / mesh%de_lat(j)
+#endif
+        end do
+      end do
+      call fill_halo(block, dzsdlon, full_lon=.false., full_lat=.true.)
+      call fill_halo(block, dzsdlat, full_lon=.true., full_lat=.false.)
+    end associate
+
+  end subroutine prepare_static
 
   subroutine output(itime)
 

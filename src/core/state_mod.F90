@@ -87,6 +87,8 @@ module state_mod
     real(r8), pointer    , dimension(:,:,:) :: p_lev             ! Pressure on half levels
     real(r8), allocatable, dimension(:,:,:) :: p_lev_lon         ! Pressure on half levels
     real(r8), allocatable, dimension(:,:,:) :: p_lev_lat         ! Pressure on half levels
+    real(r8), allocatable, dimension(:,:,:) :: u_lev_lon
+    real(r8), allocatable, dimension(:,:,:) :: v_lev_lat
     real(r8), allocatable, dimension(:,:,:) :: mf_lev_lon_n      ! Mass flux on zonal edge and half level
     real(r8), allocatable, dimension(:,:,:) :: mf_lev_lat_n      ! Mass flux on merdional edge and half level
     ! Smagorinsky damping variables
@@ -176,6 +178,8 @@ contains
       call allocate_array(mesh, this%p_lev          , full_lon=.true., full_lat=.true., half_lev=.true.)
       call allocate_array(mesh, this%p_lev_lon      , half_lon=.true., full_lat=.true., half_lev=.true.)
       call allocate_array(mesh, this%p_lev_lat      , full_lon=.true., half_lat=.true., half_lev=.true.)
+      call allocate_array(mesh, this%u_lev_lon      , half_lon=.true., full_lat=.true., half_lev=.true.)
+      call allocate_array(mesh, this%v_lev_lat      , full_lon=.true., half_lat=.true., half_lev=.true.)
       call allocate_array(mesh, this%mf_lev_lon_n   , half_lon=.true., full_lat=.true., half_lev=.true.)
       call allocate_array(mesh, this%mf_lev_lat_n   , full_lon=.true., half_lat=.true., half_lev=.true.)
     else
@@ -276,6 +280,8 @@ contains
     if (allocated(this%p                )) deallocate(this%p                )
     if (allocated(this%p_lev_lon        )) deallocate(this%p_lev_lon        )
     if (allocated(this%p_lev_lat        )) deallocate(this%p_lev_lat        )
+    if (allocated(this%u_lev_lon        )) deallocate(this%u_lev_lon        )
+    if (allocated(this%v_lev_lat        )) deallocate(this%v_lev_lat        )
     if (allocated(this%mf_lev_lon_n     )) deallocate(this%mf_lev_lon_n     )
     if (allocated(this%mf_lev_lat_n     )) deallocate(this%mf_lev_lat_n     )
 

@@ -124,12 +124,21 @@ contains
     type(state_type), intent(inout) :: state
 
     associate (mesh         => block%mesh        , &
-               mf_lon_n     => state%mf_lon_n    , & ! in
-               mf_lat_n     => state%mf_lat_n    , & ! in
+               u            => state%u           , & ! in
+               v            => state%v           , & ! in
+               m_lev        => state%m_lev       , & ! in
+               u_lev_lon    => state%u_lev_lon   , & ! out
+               v_lev_lat    => state%v_lev_lat   , & ! out
                mf_lev_lon_n => state%mf_lev_lon_n, & ! out
                mf_lev_lat_n => state%mf_lev_lat_n)   ! out
-      call interp_lon_edge_to_lev_lon_edge(mesh, mf_lon_n, mf_lev_lon_n, handle_top_bottom=.true.)
-      call interp_lat_edge_to_lev_lat_edge(mesh, mf_lat_n, mf_lev_lat_n, handle_top_bottom=.true.)
+      call interp_lon_edge_to_lev_lon_edge(mesh, u, u_lev_lon, handle_top_bottom=.true.)
+      call interp_lat_edge_to_lev_lat_edge(mesh, v, v_lev_lat, handle_top_bottom=.true.)
+      call interp_lev_edge_to_lev_lon_edge(mesh, m_lev, mf_lev_lon_n)
+      call interp_lev_edge_to_lev_lat_edge(mesh, m_lev, mf_lev_lat_n)
+      mf_lev_lon_n = mf_lev_lon_n * u_lev_lon
+      mf_lev_lat_n = mf_lev_lat_n * v_lev_lat
+      call fill_halo(block, u_lev_lon   , full_lon=.false., full_lat=.true. , full_lev=.false.)
+      call fill_halo(block, v_lev_lat   , full_lon=.true. , full_lat=.false., full_lev=.false.)
       call fill_halo(block, mf_lev_lon_n, full_lon=.false., full_lat=.true. , full_lev=.false.)
       call fill_halo(block, mf_lev_lat_n, full_lon=.true. , full_lat=.false., full_lev=.false.)
     end associate
@@ -562,33 +571,34 @@ contains
 
   end subroutine interp_p
 
-  subroutine apply_bc_w_lev(block, state)
+  subroutine apply_bc_w_lev(block, star_state, new_state)
 
     type(block_type), intent(in) :: block
-    type(state_type), intent(inout) :: state
+    type(state_type), intent(in) :: star_state
+    type(state_type), intent(inout) :: new_state
 
-    real(r8) x1, x2, a, b, us, vs
+    real(r8) us_dzsdlon, vs_dzsdlat
     integer i, j, k
 
-    associate (mesh    => block%mesh          , &
-               u       => state%u             , &
-               v       => state%v             , &
-               dzsdlon => block%static%dzsdlon, &
-               dzsdlat => block%static%dzsdlat)
+    associate (mesh      => block%mesh          , &
+               u_lev_lon => star_state%u_lev_lon, & ! in
+               v_lev_lat => star_state%v_lev_lat, & ! in
+               dzsdlon   => block%static%dzsdlon, & ! in
+               dzsdlat   => block%static%dzsdlat, & ! in
+               w_lev     => new_state%w_lev)        ! out
       k = mesh%half_lev_iend
-      x1 = mesh%half_lev(k) - mesh%full_lev(k-1)
-      x2 = mesh%half_lev(k) - mesh%full_lev(k-2)
-      a =  x2 / (x2 - x1)
-      b = -x1 / (x2 - x1)
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          us = a * (u(i-1,j,k-1) + u(i,j,k-1)) + b * (u(i-1,j,k-2) + u(i,j,k-2))
+          us_dzsdlon = (u_lev_lon(i-1,j,k) * dzsdlon(i-1,j) + &
+                        u_lev_lon(i  ,j,k) * dzsdlon(i  ,j)) * 0.5_r8
 #ifdef V_POLE
-          vs = a * (v(i,j+1,k-1) + v(i,j,k-1)) + b * (v(i,j+1,k-2) + v(i,j,k-2))
+          vs_dzsdlat = (v_lev_lat(i,j+1,k) * dzsdlat(i,j+1) + &
+                        v_lev_lat(i,j  ,k) * dzsdlat(i,j  )) * 0.5_r8
 #else
-          vs = a * (v(i,j-1,k-1) + v(i,j,k-1)) + b * (v(i,j-1,k-2) + v(i,j,k-2))
+          vs_dzsdlat = (v_lev_lat(i,j-1,k) * dzsdlat(i,j-1) + &
+                        v_lev_lat(i,j  ,k) * dzsdlat(i,j  )) * 0.5_r8
 #endif
-          state%w_lev(i,j,k) = us * dzsdlon(i,j) + vs * dzsdlat(i,j)
+          w_lev(i,j,k) = us_dzsdlon + vs_dzsdlat
         end do
       end do
     end associate
@@ -615,7 +625,7 @@ contains
     real(r8) d(global_mesh%num_half_lev)
     integer i, j, k
 
-    call apply_bc_w_lev(block, new_state)
+    call apply_bc_w_lev(block, star_state, new_state)
 
     !
     ! ϕ¹ = ϕⁿ - Δt adv_ϕ* + g Δt (1 - β) w*
