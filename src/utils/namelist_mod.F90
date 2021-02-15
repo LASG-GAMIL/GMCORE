@@ -67,11 +67,12 @@ module namelist_mod
   integer         :: div_damp_j0          = 0
   integer         :: div_damp_k0          = 3
   real(r8)        :: div_damp_imp_lat0    = 80
-  real(r8)        :: div_damp_upper       = 2.0_r8
-  real(r8)        :: div_damp_polar       = 0.5_r8
-  real(r8)        :: div_damp_exp         = 0.01_r8
+  real(r8)        :: div_damp_coef2_top   = 0.02_r8
+  real(r8)        :: div_damp_coef2_pole  = 0.005_r8
   real(r8)        :: div_damp_coef2       = 1.0_r8 / 128.0_r8
   real(r8)        :: div_damp_coef4       = 0.01_r8
+  real(r8)        :: div_damp_decay_top   = 0.01_r8
+  real(r8)        :: div_damp_decay_pole  = 0.01_r8
   real(r8)        :: div_damp_3d_coef     = 0.1_r8
   logical         :: use_vor_damp         = .false.
   integer         :: vor_damp_order       = 2
@@ -148,13 +149,14 @@ module namelist_mod
     use_div_damp              , &
     div_damp_order            , &
     div_damp_imp_lat0         , &
-    div_damp_polar            , &
-    div_damp_upper            , &
     div_damp_j0               , &
     div_damp_k0               , &
-    div_damp_exp              , &
+    div_damp_coef2_top        , &
+    div_damp_coef2_pole       , &
     div_damp_coef2            , &
     div_damp_coef4            , &
+    div_damp_decay_top        , &
+    div_damp_decay_pole       , &
     div_damp_3d_coef          , &
     use_vor_damp              , &
     vor_damp_order            , &
@@ -226,6 +228,10 @@ contains
       write(*, *) 'use_div_damp        = ', to_str(use_div_damp)
     if (use_div_damp) then
       write(*, *) 'div_damp_coef2      = ', to_str(div_damp_coef2, 3)
+      write(*, *) 'div_damp_coef2_top  = ', to_str(div_damp_coef2_top, 3)
+      write(*, *) 'div_damp_coef2_pole = ', to_str(div_damp_coef2_pole, 3)
+      write(*, *) 'div_damp_decay_top  = ', to_str(div_damp_decay_top, 3)
+      write(*, *) 'div_damp_decay_pole = ', to_str(div_damp_decay_pole, 3)
     end if
       write(*, *) 'use_vor_damp        = ', to_str(use_vor_damp)
     if (use_vor_damp) then
