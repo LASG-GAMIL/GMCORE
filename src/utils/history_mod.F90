@@ -13,6 +13,7 @@ module history_mod
   use static_mod
   use tend_mod
   use block_mod
+  use diag_state_mod
 
   implicit none
 
@@ -32,7 +33,8 @@ contains
     character(4) lon_dims(4), lon_dims_2d(3)
     character(4) lat_dims(4), lat_dims_2d(3)
     character(4) vtx_dims(4), vtx_dims_2d(3)
-    character(4) cell_lev_dims(4), lon_lev_dims(4), lat_lev_dims(4), lev_dims(4)
+    character(4) lon_lev_dims(4), lat_lev_dims(4), lev_dims(4)
+    character(4) diag_dims(4)
     real(8) seconds
 
     if (history_interval(1) == 'N/A') call log_error('Parameter history_interval is not set!')
@@ -55,7 +57,6 @@ contains
     end select
 
         cell_dims(1) =  'lon';     cell_dims(2) =  'lat';     cell_dims(3) =  'lev';     cell_dims(4) = 'time'
-    cell_lev_dims(1) =  'lon'; cell_lev_dims(2) =  'lat'; cell_lev_dims(3) = 'ilev'; cell_lev_dims(4) = 'time'
          lon_dims(1) = 'ilon';      lon_dims(2) =  'lat';      lon_dims(3) =  'lev';      lon_dims(4) = 'time'
      lon_lev_dims(1) = 'ilon';  lon_lev_dims(2) =  'lat';  lon_lev_dims(3) = 'ilev';  lon_lev_dims(4) = 'time'
          lat_dims(1) =  'lon';      lat_dims(2) = 'ilat';      lat_dims(3) =  'lev';      lat_dims(4) = 'time'
@@ -68,55 +69,68 @@ contains
       vtx_dims_2d(1) = 'ilon';   vtx_dims_2d(2) = 'ilat';   vtx_dims_2d(3) = 'time'
 
     call fiona_init(time_units, start_time_str)
-
     call fiona_create_dataset('h0', desc=case_desc, file_prefix=trim(case_name), mpi_comm=proc%comm)
     call fiona_add_att('h0', 'time_step_size', dt)
     call fiona_add_dim('h0', 'time' , add_var=.true.)
     call fiona_add_dim('h0', 'lon'  , size=global_mesh%num_full_lon, add_var=.true., decomp=.true.)
     call fiona_add_dim('h0', 'lat'  , size=global_mesh%num_full_lat, add_var=.true., decomp=.true.)
-    call fiona_add_dim('h0', 'ilon' , size=global_mesh%num_half_lon, add_var=.true., decomp=.true.)
-    call fiona_add_dim('h0', 'ilat' , size=global_mesh%num_half_lat, add_var=.true., decomp=.true.)
+
+    if (.not. baroclinic .or. .not. diag_state(1)%is_init()) then
+      call fiona_add_dim('h0', 'ilon' , size=global_mesh%num_half_lon, add_var=.true., decomp=.true.)
+      call fiona_add_dim('h0', 'ilat' , size=global_mesh%num_half_lat, add_var=.true., decomp=.true.)
+    end if
+
+    ! Common or barotropic variables
     if (baroclinic) then
-      call fiona_add_dim('h0', 'lev'  , size=global_mesh%num_full_lev, add_var=.true., decomp=.false.)
-      call fiona_add_dim('h0', 'ilev' , size=global_mesh%num_half_lev, add_var=.true., decomp=.false.)
-      call fiona_add_var('h0', 't'    , long_name='temperature'                 , units='K'      , dim_names=cell_dims)
-      call fiona_add_var('h0', 't850' , long_name='temperature on 850hPa'       , units='K'      , dim_names=cell_dims_2d)
-      call fiona_add_var('h0', 't700' , long_name='temperature on 700hPa'       , units='K'      , dim_names=cell_dims_2d)
-      call fiona_add_var('h0', 'pt'   , long_name='potential temperature'       , units='K'      , dim_names=cell_dims)
       call fiona_add_var('h0', 'phs'  , long_name='surface hydrostatic pressure', units='Pa'     , dim_names=cell_dims_2d)
-      call fiona_add_var('h0', 'ph'   , long_name='hydrostatic pressure'        , units='Pa'     , dim_names=cell_dims)
-      call fiona_add_var('h0', 'u'    , long_name='u wind component'            , units='m s-1'  , dim_names=lon_dims)
-      call fiona_add_var('h0', 'u850' , long_name='u wind component on 850hPa'  , units='m s-1'  , dim_names=cell_dims_2d)
-      call fiona_add_var('h0', 'u700' , long_name='u wind component on 700hPa'  , units='m s-1'  , dim_names=cell_dims_2d)
-      call fiona_add_var('h0', 'v'    , long_name='v wind component'            , units='m s-1'  , dim_names=lat_dims)
-      call fiona_add_var('h0', 'v850' , long_name='v wind component on 850hPa'  , units='m s-1'  , dim_names=cell_dims_2d)
-      call fiona_add_var('h0', 'v700' , long_name='v wind component on 700hPa'  , units='m s-1'  , dim_names=cell_dims_2d)
-      call fiona_add_var('h0', 'z'    , long_name='height'                      , units='m'      , dim_names=cell_lev_dims)
-      call fiona_add_var('h0', 'zs'   , long_name='surface height'              , units='m'      , dim_names=cell_dims_2d)
-      call fiona_add_var('h0', 'pv'   , long_name='potential vorticity'         , units='m-1 s-1', dim_names=vtx_dims)
-      call fiona_add_var('h0', 'vor'  , long_name='relative vorticity'          , units='s-1'    , dim_names=vtx_dims)
-      call fiona_add_var('h0', 'div'  , long_name='divergence'                  , units='s-1'    , dim_names=cell_dims)
-      call fiona_add_var('h0', 'tm'   , long_name='total mass'                  , units='m'      , dim_names=['time'])
-      call fiona_add_var('h0', 'te'   , long_name='total energy'                , units='m4 s-4' , dim_names=['time'], data_type='real(8)')
-      call fiona_add_var('h0', 'tpe'  , long_name='total potential enstrophy'   , units='m2 s-5' , dim_names=['time'], data_type='real(8)')
-      call fiona_add_var('h0', 'tpv'  , long_name='total potential vorticity'   , units='m2 s-5' , dim_names=['time'], data_type='real(8)')
-      if (nonhydrostatic) then
-        call fiona_add_var('h0', 'w', long_name='vertical speed', units='m s-1', dim_names=lev_dims)
-        call fiona_add_var('h0', 'p', long_name='full pressure' , units='Pa'   , dim_names=lev_dims)
-        call fiona_add_var('h0', 'rhod', long_name='dry air density', units='', dim_names=cell_dims)
-      end if
     else
       call fiona_add_var('h0', 'u'    , long_name='u wind component'            , units='m s-1'  , dim_names=lon_dims_2d)
       call fiona_add_var('h0', 'v'    , long_name='v wind component'            , units='m s-1'  , dim_names=lat_dims_2d)
       call fiona_add_var('h0', 'z'    , long_name='height'                      , units='m'      , dim_names=cell_dims_2d)
-      call fiona_add_var('h0', 'zs'   , long_name='surface height'              , units='m'      , dim_names=cell_dims_2d)
       call fiona_add_var('h0', 'pv'   , long_name='potential vorticity'         , units='m-1 s-1', dim_names=vtx_dims_2d)
       call fiona_add_var('h0', 'vor'  , long_name='relative vorticity'          , units='s-1'    , dim_names=vtx_dims_2d)
       call fiona_add_var('h0', 'div'  , long_name='divergence'                  , units='s-1'    , dim_names=cell_dims_2d)
-      call fiona_add_var('h0', 'tm'   , long_name='total mass'                  , units='m'      , dim_names=['time'])
-      call fiona_add_var('h0', 'te'   , long_name='total energy'                , units='m4 s-4' , dim_names=['time'], data_type='real(8)')
-      call fiona_add_var('h0', 'tpe'  , long_name='total potential enstrophy'   , units='m2 s-5' , dim_names=['time'], data_type='real(8)')
-      call fiona_add_var('h0', 'tpv'  , long_name='total potential vorticity'   , units='m2 s-5' , dim_names=['time'], data_type='real(8)')
+    end if
+    call fiona_add_var('h0', 'zs' , long_name='surface height'           , units='m'     , dim_names=cell_dims_2d)
+    call fiona_add_var('h0', 'tm' , long_name='total mass'               , units='m'     , dim_names=['time'])
+    call fiona_add_var('h0', 'te' , long_name='total energy'             , units='m4 s-4', dim_names=['time'], data_type='r8')
+    call fiona_add_var('h0', 'tpe', long_name='total potential enstrophy', units='m2 s-5', dim_names=['time'], data_type='r8')
+    call fiona_add_var('h0', 'tpv', long_name='total potential vorticity', units='m2 s-5', dim_names=['time'], data_type='r8')
+
+    if (baroclinic) then
+      if (diag_state(1)%is_init()) then
+        select case (diag_state(1)%level_type)
+        case (height_levels)
+          diag_dims(1) = 'lon'; diag_dims(2) = 'lat'; diag_dims(3) = 'zlev'; diag_dims(4) = 'time'
+          call fiona_add_dim('h0', 'zlev', size=size(diag_state(1)%levels), add_var=.true., decomp=.false.)
+        case (pressure_levels)
+          diag_dims(1) = 'lon'; diag_dims(2) = 'lat'; diag_dims(3) = 'plev'; diag_dims(4) = 'time'
+          call fiona_add_dim('h0', 'plev', size=size(diag_state(1)%levels), add_var=.true., decomp=.false.)
+          call fiona_add_var('h0', 'z'   , long_name='geopotential height', units='m', dim_names=diag_dims)
+        end select
+        call fiona_add_var('h0', 'u'    , long_name='u wind component'      , units='m s-1'  , dim_names=diag_dims)
+        call fiona_add_var('h0', 'v'    , long_name='v wind component'      , units='m s-1'  , dim_names=diag_dims)
+        call fiona_add_var('h0', 'pt'   , long_name='potential temperature' , units='K'      , dim_names=diag_dims)
+        call fiona_add_var('h0', 't'    , long_name='temperature'           , units='K'      , dim_names=diag_dims)
+        if (nonhydrostatic) then
+          call fiona_add_var('h0', 'w'  , long_name='vertical speed'        , units='m s-1'  , dim_names=diag_dims)
+        end if
+      else
+        call fiona_add_dim('h0', 'lev'  , size=global_mesh%num_full_lev, add_var=.true., decomp=.false.)
+        call fiona_add_dim('h0', 'ilev' , size=global_mesh%num_half_lev, add_var=.true., decomp=.false.)
+        call fiona_add_var('h0', 'u'    , long_name='u wind component'      , units='m s-1'  , dim_names=lon_dims)
+        call fiona_add_var('h0', 'v'    , long_name='v wind component'      , units='m s-1'  , dim_names=lat_dims)
+        call fiona_add_var('h0', 'pt'   , long_name='potential temperature' , units='K'      , dim_names=cell_dims)
+        call fiona_add_var('h0', 'ph'   , long_name='hydrostatic pressure'  , units='Pa'     , dim_names=cell_dims)
+        call fiona_add_var('h0', 'z'    , long_name='height'                , units='m'      , dim_names=lev_dims)
+        call fiona_add_var('h0', 'pv'   , long_name='potential vorticity'   , units='m-1 s-1', dim_names=vtx_dims)
+        call fiona_add_var('h0', 'vor'  , long_name='relative vorticity'    , units='s-1'    , dim_names=vtx_dims)
+        call fiona_add_var('h0', 'div'  , long_name='divergence'            , units='s-1'    , dim_names=cell_dims)
+        if (nonhydrostatic) then
+          call fiona_add_var('h0', 'w', long_name='vertical speed', units='m s-1', dim_names=lev_dims)
+          call fiona_add_var('h0', 'p', long_name='full pressure' , units='Pa'   , dim_names=lev_dims)
+        end if
+      end if
     end if
 
     call fiona_create_dataset('h1', desc=case_desc, file_prefix=trim(case_name), mpi_comm=proc%comm)
@@ -204,11 +218,20 @@ contains
     call fiona_start_output('h0', elapsed_seconds, new_file=time_step==0)
     call fiona_output('h0', 'lon' , global_mesh%full_lon_deg(1:global_mesh%num_full_lon))
     call fiona_output('h0', 'lat' , global_mesh%full_lat_deg(1:global_mesh%num_full_lat))
-    call fiona_output('h0', 'ilon', global_mesh%half_lon_deg(1:global_mesh%num_half_lon))
-    call fiona_output('h0', 'ilat', global_mesh%half_lat_deg(1:global_mesh%num_half_lat))
     if (baroclinic) then
-      call fiona_output('h0', 'lev' , global_mesh%full_lev)
-      call fiona_output('h0', 'ilev', global_mesh%half_lev)
+      if (diag_state(1)%is_init()) then
+        select case (diag_state(1)%level_type)
+        case (height_levels)
+          call fiona_output('h0', 'zlev', diag_state(1)%levels)
+        case (pressure_levels)
+          call fiona_output('h0', 'plev', diag_state(1)%levels)
+        end select
+      else
+        call fiona_output('h0', 'ilon', global_mesh%half_lon_deg(1:global_mesh%num_half_lon))
+        call fiona_output('h0', 'ilat', global_mesh%half_lat_deg(1:global_mesh%num_half_lat))
+        call fiona_output('h0', 'lev' , global_mesh%full_lev)
+        call fiona_output('h0', 'ilev', global_mesh%half_lev)
+      end if
     end if
 
     do iblk = 1, size(blocks)
@@ -222,20 +245,29 @@ contains
       start = [is,js,ks]
       count = [mesh%num_full_lon,mesh%num_full_lat,mesh%num_full_lev]
 
-      call fiona_output('h0', 'zs' , static%gzs(is:ie,js:je      ) / g, start=start, count=count)
-      call fiona_output('h0', 'div', state%div (is:ie,js:je,ks:ke)    , start=start, count=count)
+      call fiona_output('h0', 'zs' , static%gzs(is:ie,js:je) / g, start=start, count=count)
 
       if (baroclinic) then
-        call fiona_output('h0', 'u850'  , state%u850  (is:ie,js:je      ), start=start, count=count)
-        call fiona_output('h0', 'u700'  , state%u700  (is:ie,js:je      ), start=start, count=count)
-        call fiona_output('h0', 'v850'  , state%v850  (is:ie,js:je      ), start=start, count=count)
-        call fiona_output('h0', 'v700'  , state%v700  (is:ie,js:je      ), start=start, count=count)
-        call fiona_output('h0', 't'     , state%t     (is:ie,js:je,ks:ke), start=start, count=count)
-        call fiona_output('h0', 't850'  , state%t850  (is:ie,js:je      ), start=start, count=count)
-        call fiona_output('h0', 't700'  , state%t700  (is:ie,js:je      ), start=start, count=count)
-        call fiona_output('h0', 'pt'    , state%pt    (is:ie,js:je,ks:ke), start=start, count=count)
-        call fiona_output('h0', 'phs'   , state%phs   (is:ie,js:je      ), start=start, count=count)
-        call fiona_output('h0', 'ph'    , state%ph    (is:ie,js:je,ks:ke), start=start, count=count)
+        call fiona_output('h0', 'phs', state%phs(is:ie,js:je), start=start, count=count)
+        if (diag_state(1)%is_init()) then
+          count(3) = size(diag_state(iblk)%levels)
+          call fiona_output('h0', 'u'  , diag_state(iblk)%u (is:ie,js:je,:), start=start, count=count)
+          call fiona_output('h0', 'v'  , diag_state(iblk)%v (is:ie,js:je,:), start=start, count=count)
+          call fiona_output('h0', 'pt' , diag_state(iblk)%pt(is:ie,js:je,:), start=start, count=count)
+          call fiona_output('h0', 't'  , diag_state(iblk)%t (is:ie,js:je,:), start=start, count=count)
+          if (nonhydrostatic) then
+            call fiona_output('h0', 'w', diag_state(iblk)%w (is:ie,js:je,:), start=start, count=count)
+          end if
+          if (diag_state(iblk)%level_type == pressure_levels) then
+            call fiona_output('h0', 'z', diag_state(iblk)%z (is:ie,js:je,:), start=start, count=count)
+          end if
+        else
+          call fiona_output('h0', 'pt' , state%pt (is:ie,js:je,ks:ke), start=start, count=count)
+          call fiona_output('h0', 'ph' , state%ph (is:ie,js:je,ks:ke), start=start, count=count)
+          call fiona_output('h0', 'div', state%div(is:ie,js:je,ks:ke), start=start, count=count)
+        end if
+      else
+        call fiona_output('h0', 'div', state%div(is:ie,js:je,ks:ke), start=start, count=count)
       end if
 
       is = mesh%half_lon_ibeg; ie = mesh%half_lon_iend
@@ -244,7 +276,9 @@ contains
       start = [is,js,ks]
       count = [mesh%num_half_lon,mesh%num_full_lat,mesh%num_full_lev]
 
-      call fiona_output('h0', 'u'   , state%u   (is:ie,js:je,ks:ke), start=start, count=count)
+      if (.not. diag_state(1)%is_init()) then
+        call fiona_output('h0', 'u', state%u(is:ie,js:je,ks:ke), start=start, count=count)
+      end if
 
       is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
       js = mesh%half_lat_ibeg; je = mesh%half_lat_iend
@@ -252,7 +286,9 @@ contains
       start = [is,js,ks]
       count = [mesh%num_full_lon,mesh%num_half_lat,mesh%num_full_lev]
 
-      call fiona_output('h0', 'v'   , state%v   (is:ie,js:je,ks:ke), start=start, count=count)
+      if (.not. diag_state(1)%is_init()) then
+        call fiona_output('h0', 'v', state%v(is:ie,js:je,ks:ke), start=start, count=count)
+      end if
 
       is = mesh%half_lon_ibeg; ie = mesh%half_lon_iend
       js = mesh%half_lat_ibeg; je = mesh%half_lat_iend
@@ -260,8 +296,10 @@ contains
       start = [is,js,ks]
       count = [mesh%num_half_lon,mesh%num_half_lat,mesh%num_full_lev]
 
-      call fiona_output('h0', 'pv' , state %pv (is:ie,js:je,ks:ke), start=start, count=count)
-      call fiona_output('h0', 'vor', state %vor(is:ie,js:je,ks:ke), start=start, count=count)
+      if (.not. diag_state(1)%is_init()) then
+        call fiona_output('h0', 'pv' , state%pv (is:ie,js:je,ks:ke), start=start, count=count)
+        call fiona_output('h0', 'vor', state%vor(is:ie,js:je,ks:ke), start=start, count=count)
+      end if
 
       is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
       js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
@@ -269,11 +307,12 @@ contains
       start = [is,js,ks]
       count = [mesh%num_full_lon,mesh%num_full_lat,mesh%num_half_lev]
 
-      call fiona_output('h0', 'z'  , state%gz_lev(is:ie,js:je,ks:ke) / g, start=start, count=count)
-      if (nonhydrostatic) then
-        call fiona_output('h0', 'w', state%w_lev(is:ie,js:je,ks:ke), start=start, count=count)
-        call fiona_output('h0', 'p', state%p_lev(is:ie,js:je,ks:ke), start=start, count=count)
-        call fiona_output('h0', 'rhod', state%rhod(is:ie,js:je,ks:ke), start=start, count=count)
+      if (.not. diag_state(1)%is_init()) then
+        call fiona_output('h0', 'z', state%gz_lev(is:ie,js:je,ks:ke) / g, start=start, count=count)
+        if (nonhydrostatic) then
+          call fiona_output('h0', 'w'   , state%w_lev(is:ie,js:je,ks:ke), start=start, count=count)
+          call fiona_output('h0', 'p'   , state%p_lev(is:ie,js:je,ks:ke), start=start, count=count)
+        end if
       end if
 
       call fiona_output('h0', 'tm' , state %tm)

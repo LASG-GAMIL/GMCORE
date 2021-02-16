@@ -17,6 +17,7 @@ module nh_mod
 
   public nh_prepare
   public nh_solve
+  public interp_gz
 
 contains
 

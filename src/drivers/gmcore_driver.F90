@@ -3,6 +3,7 @@ program gmcore_driver
   use log_mod
   use namelist_mod
   use block_mod
+  use diag_state_mod
   use parallel_mod
   use initial_mod
   use restart_mod
@@ -14,6 +15,7 @@ program gmcore_driver
   use held_suarez_test_mod
   use steady_state_pgf_test_mod
   use ksp15_test_mod
+  use dcmip31_test_mod
 
   implicit none
 
@@ -41,6 +43,9 @@ program gmcore_driver
       call steady_state_pgf_test_set_params()
     case ('ksp15_01', 'ksp15_02')
       call ksp15_test_set_params()
+    case ('dcmip31')
+      call dcmip31_test_set_params()
+      init_diag_state => dcmip31_test_init_diag_state
     end select
   end if
 
@@ -68,6 +73,8 @@ program gmcore_driver
       set_ic => ksp15_01_test_set_ic
     case ('ksp15_02')
       set_ic => ksp15_02_test_set_ic
+    case ('dcmip31')
+      set_ic => dcmip31_test_set_ic
     case default
       call log_error('Unknown test case ' // trim(test_case) // '!')
     end select

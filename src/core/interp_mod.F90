@@ -47,9 +47,14 @@ module interp_mod
   public interp_lev_edge_to_cell
   public interp_lev_edge_to_lev_lon_edge
   public interp_lev_edge_to_lev_lat_edge
-  public interp_cell_to_isobaric_level
-  public interp_lon_edge_to_isobaric_level
-  public interp_lat_edge_to_isobaric_level
+  public interp_cell_to_height_level
+  public interp_lon_edge_to_height_level
+  public interp_lat_edge_to_height_level
+  public interp_lev_edge_to_height_level
+  public interp_cell_to_pressure_level
+  public interp_lon_edge_to_pressure_level
+  public interp_lat_edge_to_pressure_level
+  public interp_lev_edge_to_pressure_level
 
   real(r8), allocatable :: pole_wgt(:)
 
@@ -638,7 +643,226 @@ contains
 
   end subroutine interp_cell_to_lev_edge
 
-  subroutine interp_cell_to_isobaric_level(mesh, p, x, po, y, logp)
+  subroutine interp_cell_to_height_level(mesh, z, x, zo, y)
+
+    type(mesh_type), intent(in) :: mesh
+    real(r8), intent(in) :: z(mesh%full_lon_lb:mesh%full_lon_ub, &
+                              mesh%full_lat_lb:mesh%full_lat_ub, &
+                              mesh%full_lev_lb:mesh%full_lev_ub)
+    real(r8), intent(in) :: x(mesh%full_lon_lb:mesh%full_lon_ub, &
+                              mesh%full_lat_lb:mesh%full_lat_ub, &
+                              mesh%full_lev_lb:mesh%full_lev_ub)
+    real(r8), intent(in) :: zo
+    real(r8), intent(inout) :: y(mesh%full_lon_lb:mesh%full_lon_ub, &
+                                 mesh%full_lat_lb:mesh%full_lat_ub)
+
+    real(r8) dz1, dz2, z1, z2, a, b
+    integer i, j, k
+
+    ! --o-- z(k-1)
+    !
+    ! --?-- zo
+    !
+    ! --o-- z(k)
+    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+        do k = mesh%full_lev_iend, mesh%full_lev_ibeg + 1, -1
+          if (z(i,j,k) <= zo .and. zo <= z(i,j,k-1)) then
+            dz1 = z(i,j,k-1) - zo
+            dz2 = zo - z(i,j,k)
+            y(i,j) = (dz2 * x(i,j,k-1) + dz1 * x(i,j,k)) / (dz1 + dz2)
+            exit
+          else if (zo < z(i,j,k) .and. k == mesh%full_lev_iend) then
+            z1 = z(i,j,k  ) - zo
+            z2 = z(i,j,k-1) - zo
+            a  =  z2 / (z2 - z1)
+            b  = -z1 / (z2 - z1)
+            y(i,j) = a * x(i,j,k) + b * x(i,j,k-1)
+            exit
+          else if (zo > z(i,j,k-1) .and. k == mesh%full_lev_ibeg + 1) then
+            z1 = zo - z(i,j,k-1)
+            z2 = zo - z(i,j,k  )
+            a  =  z2 / (z2 - z1)
+            b  = -z1 / (z2 - z1)
+            y(i,j) = a * x(i,j,k-1) + b * x(i,j,k)
+            exit
+          end if
+        end do
+      end do
+    end do
+
+  end subroutine interp_cell_to_height_level
+
+  subroutine interp_lon_edge_to_height_level(mesh, z, x, zo, y)
+
+    type(mesh_type), intent(in) :: mesh
+    real(r8), intent(in) :: z(mesh%full_lon_lb:mesh%full_lon_ub, &
+                              mesh%full_lat_lb:mesh%full_lat_ub, &
+                              mesh%full_lev_lb:mesh%full_lev_ub)
+    real(r8), intent(in) :: x(mesh%half_lon_lb:mesh%half_lon_ub, &
+                              mesh%full_lat_lb:mesh%full_lat_ub, &
+                              mesh%full_lev_lb:mesh%full_lev_ub)
+    real(r8), intent(in) :: zo
+    real(r8), intent(out) :: y(mesh%full_lon_lb:mesh%full_lon_ub, &
+                               mesh%full_lat_lb:mesh%full_lat_ub)
+
+    real(r8) dz1, dz2, x1, x2, z1, z2, a, b
+    integer i, j, k
+
+    !               x1
+    ! x(i-1,k-1) o--x--o x(i,k-1)
+    !
+    !               ? zo
+    !
+    ! x(i-1,k  ) o--x--o x(i,k  )
+    !               x2
+    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+        do k = mesh%full_lev_iend, mesh%full_lev_ibeg + 1, -1
+          if (z(i,j,k) <= zo .and. zo <= z(i,j,k-1)) then
+            dz1 = z(i,j,k-1) - zo
+            dz2 = zo - z(i,j,k)
+            x1 = 0.5_r8 * (x(i-1,j,k-1) + x(i,j,k-1))
+            x2 = 0.5_r8 * (x(i-1,j,k  ) + x(i,j,k  ))
+            y(i,j) = (dz2 * x1 + dz1 * x2) / (dz1 + dz2)
+            exit
+          else if (zo < z(i,j,k) .and. k == mesh%full_lev_iend) then
+            z1 = z(i,j,k  ) - zo
+            z2 = z(i,j,k-1) - zo
+            a  =  z2 / (z2 - z1)
+            b  = -z1 / (z2 - z1)
+            x1 = 0.5_r8 * (x(i-1,j,k-1) + x(i,j,k-1))
+            x2 = 0.5_r8 * (x(i-1,j,k  ) + x(i,j,k  ))
+            y(i,j) = a * x1 + b * x2
+            exit
+          else if (zo > z(i,j,k-1) .and. k == mesh%full_lev_ibeg + 1) then
+            z1 = zo - z(i,j,k-1)
+            z2 = zo - z(i,j,k  )
+            a  =  z2 / (z2 - z1)
+            b  = -z1 / (z2 - z1)
+            x1 = 0.5_r8 * (x(i-1,j,k-1) + x(i,j,k-1))
+            x2 = 0.5_r8 * (x(i-1,j,k  ) + x(i,j,k  ))
+            y(i,j) = a * x1 + b * x2
+            exit
+          end if
+        end do
+      end do
+    end do
+
+  end subroutine interp_lon_edge_to_height_level
+
+  subroutine interp_lat_edge_to_height_level(mesh, z, x, zo, y)
+
+    type(mesh_type), intent(in) :: mesh
+    real(r8), intent(in) :: z(mesh%full_lon_lb:mesh%full_lon_ub, &
+                              mesh%full_lat_lb:mesh%full_lat_ub, &
+                              mesh%full_lev_lb:mesh%full_lev_ub)
+    real(r8), intent(in) :: x(mesh%full_lon_lb:mesh%full_lon_ub, &
+                              mesh%half_lat_lb:mesh%half_lat_ub, &
+                              mesh%full_lev_lb:mesh%full_lev_ub)
+    real(r8), intent(in) :: zo
+    real(r8), intent(out) :: y(mesh%full_lon_lb:mesh%full_lon_ub, &
+                               mesh%full_lat_lb:mesh%full_lat_ub)
+
+    real(r8) dz1, dz2, x1, x2, z1, z2, a, b
+    integer i, j, k
+
+    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+        do k = mesh%full_lev_iend, mesh%full_lev_ibeg + 1, -1
+          if (z(i,j,k) <= zo .and. zo <= z(i,j,k-1)) then
+            dz1 = z(i,j,k-1) - zo
+            dz2 = zo - z(i,j,k)
+#ifdef V_POLE
+            x1 = 0.5_r8 * (x(i,j+1,k-1) + x(i,j,k-1))
+            x2 = 0.5_r8 * (x(i,j+1,k  ) + x(i,j,k  ))
+#else
+            x1 = 0.5_r8 * (x(i,j-1,k-1) + x(i,j,k-1))
+            x2 = 0.5_r8 * (x(i,j-1,k  ) + x(i,j,k  ))
+#endif
+            y(i,j) = (dz2 * x1 + dz1 * x2) / (dz1 + dz2)
+            exit
+          else if (zo < z(i,j,k) .and. k == mesh%full_lev_iend) then
+            z1 = z(i,j,k  ) - zo
+            z2 = z(i,j,k-1) - zo
+            a  =  z2 / (z2 - z1)
+            b  = -z1 / (z2 - z1)
+#ifdef V_POLE
+            x1 = 0.5_r8 * (x(i,j+1,k-1) + x(i,j,k-1))
+            x2 = 0.5_r8 * (x(i,j+1,k  ) + x(i,j,k  ))
+#else
+            x1 = 0.5_r8 * (x(i,j-1,k-1) + x(i,j,k-1))
+            x2 = 0.5_r8 * (x(i,j-1,k  ) + x(i,j,k  ))
+#endif
+            y(i,j) = a * x1 + b * x2
+            exit
+          else if (zo > z(i,j,k-1) .and. k == mesh%full_lev_ibeg + 1) then
+            z1 = zo - z(i,j,k-1)
+            z2 = zo - z(i,j,k  )
+            a  =  z2 / (z2 - z1)
+            b  = -z1 / (z2 - z1)
+#ifdef V_POLE
+            x1 = 0.5_r8 * (x(i,j+1,k-1) + x(i,j,k-1))
+            x2 = 0.5_r8 * (x(i,j+1,k  ) + x(i,j,k  ))
+#else
+            x1 = 0.5_r8 * (x(i,j-1,k-1) + x(i,j,k-1))
+            x2 = 0.5_r8 * (x(i,j-1,k  ) + x(i,j,k  ))
+#endif
+            y(i,j) = a * x1 + b * x2
+            exit
+          end if
+        end do
+      end do
+    end do
+
+  end subroutine interp_lat_edge_to_height_level
+
+  subroutine interp_lev_edge_to_height_level(mesh, z, x, zo, y)
+
+    type(mesh_type), intent(in) :: mesh
+    real(r8), intent(in) :: z(mesh%full_lon_lb:mesh%full_lon_ub, &
+                              mesh%full_lat_lb:mesh%full_lat_ub, &
+                              mesh%half_lev_lb:mesh%half_lev_ub)
+    real(r8), intent(in) :: x(mesh%full_lon_lb:mesh%full_lon_ub, &
+                              mesh%full_lat_lb:mesh%full_lat_ub, &
+                              mesh%half_lev_lb:mesh%half_lev_ub)
+    real(r8), intent(in) :: zo
+    real(r8), intent(out) :: y(mesh%full_lon_lb:mesh%full_lon_ub, &
+                               mesh%full_lat_lb:mesh%full_lat_ub)
+
+    real(r8) dz1, dz2, x1, x2, z1, z2, a, b
+    integer i, j, k
+
+    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+        do k = mesh%half_lev_iend, mesh%half_lev_ibeg + 1, -1
+          if (z(i,j,k) <= zo .and. zo <= z(i,j,k-1)) then
+            dz1 = z(i,j,k-1) - zo
+            dz2 = zo - z(i,j,k)
+            y(i,j) = (dz2 * x(i,j,k-1) + dz1 * x(i,j,k)) / (dz1 + dz2)
+            exit
+          else if (zo < z(i,j,k) .and. k == mesh%full_lev_iend) then
+            z1 = z(i,j,k  ) - zo
+            z2 = z(i,j,k-1) - zo
+            a  =  z2 / (z2 - z1)
+            b  = -z1 / (z2 - z1)
+            y(i,j) = a * x(i,j,k) + b * x(i,j,k-1)
+            exit
+          else if (zo > z(i,j,k-1) .and. k == mesh%full_lev_ibeg + 1) then
+            z1 = zo - z(i,j,k-1)
+            z2 = zo - z(i,j,k  )
+            a  =  z2 / (z2 - z1)
+            b  = -z1 / (z2 - z1)
+            y(i,j) = a * x(i,j,k-1) + b * x(i,j,k)
+            exit
+          end if
+        end do
+      end do
+    end do
+
+  end subroutine interp_lev_edge_to_height_level
+
+  subroutine interp_cell_to_pressure_level(mesh, p, x, po, y, logp)
 
     type(mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: p(mesh%full_lon_lb:mesh%full_lon_ub, &
@@ -663,7 +887,7 @@ contains
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         do k = mesh%full_lev_iend, mesh%full_lev_ibeg + 1, -1
-          if (p(i,j,k) >= po .and. p(i,j,k-1) <= po) then
+          if (p(i,j,k-1) <= po .and. po <= p(i,j,k)) then
             if (logp_) then
               dp1 = p0 - log(p(i,j,k-1))
               dp2 = log(p(i,j,k)) - p0
@@ -678,9 +902,9 @@ contains
       end do
     end do
 
-  end subroutine interp_cell_to_isobaric_level
+  end subroutine interp_cell_to_pressure_level
 
-  subroutine interp_lon_edge_to_isobaric_level(mesh, p, x, po, y, logp)
+  subroutine interp_lon_edge_to_pressure_level(mesh, p, x, po, y, logp)
 
     type(mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: p(mesh%full_lon_lb:mesh%full_lon_ub, &
@@ -695,7 +919,7 @@ contains
     logical, intent(in), optional :: logp
 
     logical logp_
-    real(r8) p0, p1_lon, p2_lon, dp1, dp2, y1, y2
+    real(r8) p0, dp1, dp2, x1, x2
     integer i, j, k
 
     logp_ = merge(logp, .false., present(logp))
@@ -704,45 +928,27 @@ contains
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        ! West side
         do k = mesh%full_lev_iend, mesh%full_lev_ibeg + 1, -1
-          p1_lon = 0.5_r8 * (p(i-1,j,k-1) + p(i,j,k-1))
-          p2_lon = 0.5_r8 * (p(i-1,j,k  ) + p(i,j,k  ))
-          if (p2_lon >= po .and. p1_lon <= po) then
+          if (p(i,j,k-1) <= po .and. po <= p(i,j,k)) then
             if (logp_) then
-              dp1 = p0 - log(p1_lon)
-              dp2 = log(p2_lon) - p0
+              dp1 = p0 - log(p(i,j,k-1))
+              dp2 = log(p(i,j,k)) - p0
             else
-              dp1 = p0 - p1_lon
-              dp2 = p2_lon - p0
+              dp1 = p0 - p(i,j,k-1)
+              dp2 = p(i,j,k) - p0
             end if
-            y1 = (dp2 * x(i-1,j,k-1) + dp1 * x(i-1,j,k)) / (dp1 + dp2)
+            x1 = 0.5_r8 * (x(i-1,j,k-1) + x(i,j,k-1))
+            x2 = 0.5_r8 * (x(i-1,j,k  ) + x(i,j,k  ))
+            y(i,j) = (dp2 * x1 + dp1 * x2) / (dp1 + dp2)
             exit
           end if
         end do
-        ! East side
-        do k = mesh%full_lev_iend, mesh%full_lev_ibeg + 1, -1
-          p1_lon = 0.5_r8 * (p(i,j,k-1) + p(i+1,j,k-1))
-          p2_lon = 0.5_r8 * (p(i,j,k  ) + p(i+1,j,k  ))
-          if (p2_lon >= po .and. p1_lon <= po) then
-            if (logp_) then
-              dp1 = p0 - log(p1_lon)
-              dp2 = log(p2_lon) - p0
-            else
-              dp1 = p0 - p1_lon
-              dp2 = p2_lon - p0
-            end if
-            y2 = (dp2 * x(i,j,k-1) + dp1 * x(i,j,k)) / (dp1 + dp2)
-            exit
-          end if
-        end do
-        y(i,j) = (mesh%area_lon_east(j) * y1 + mesh%area_lon_west(j) * y2) / mesh%area_cell(j)
       end do
     end do
 
-  end subroutine interp_lon_edge_to_isobaric_level
+  end subroutine interp_lon_edge_to_pressure_level
 
-  subroutine interp_lat_edge_to_isobaric_level(mesh, p, x, po, y, logp)
+  subroutine interp_lat_edge_to_pressure_level(mesh, p, x, po, y, logp)
 
     type(mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: p(mesh%full_lon_lb:mesh%full_lon_ub, &
@@ -757,7 +963,7 @@ contains
     logical, intent(in), optional :: logp
 
     logical logp_
-    real(r8) p0, p1_lat, p2_lat, dp1, dp2, y1, y2
+    real(r8) p0, dp1, dp2, x1, x2
     integer i, j, k
 
     logp_ = merge(logp, .false., present(logp))
@@ -766,55 +972,72 @@ contains
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        ! South side
         do k = mesh%full_lev_iend, mesh%full_lev_ibeg + 1, -1
-          p1_lat = 0.5_r8 * (p(i,j-1,k-1) + p(i,j,k-1))
-          p2_lat = 0.5_r8 * (p(i,j-1,k  ) + p(i,j,k  ))
-          if (p2_lat >= po .and. p1_lat <= po) then
+          if (p(i,j,k-1) <= po .and. po <= p(i,j,k)) then
             if (logp_) then
-              dp1 = p0 - log(p1_lat)
-              dp2 = log(p2_lat) - p0
+              dp1 = p0 - log(p(i,j,k-1))
+              dp2 = log(p(i,j,k)) - p0
             else
-              dp1 = p0 - p1_lat
-              dp2 = p2_lat - p0
+              dp1 = p0 - p(i,j,k-1)
+              dp2 = p(i,j,k) - p0
             end if
 #ifdef V_POLE
-            y1 = (dp2 * x(i,j  ,k-1) + dp1 * x(i,j  ,k)) / (dp1 + dp2)
+            x1 = 0.5_r8 * (x(i,j+1,k-1) + x(i,j,k-1))
+            x2 = 0.5_r8 * (x(i,j+1,k  ) + x(i,j,k  ))
 #else
-            y1 = (dp2 * x(i,j-1,k-1) + dp1 * x(i,j-1,k)) / (dp1 + dp2)
+            x1 = 0.5_r8 * (x(i,j-1,k-1) + x(i,j,k-1))
+            x2 = 0.5_r8 * (x(i,j-1,k  ) + x(i,j,k  ))
 #endif
+            y(i,j) = (dp2 * x1 + dp1 * x2) / (dp1 + dp2)
             exit
           end if
         end do
-        ! North side
-        do k = mesh%full_lev_iend, mesh%full_lev_ibeg + 1, -1
-          p1_lat = 0.5_r8 * (p(i,j,k-1) + p(i,j+1,k-1))
-          p2_lat = 0.5_r8 * (p(i,j,k  ) + p(i,j+1,k  ))
-          if (p2_lat >= po .and. p1_lat <= po) then
-            if (logp_) then
-              dp1 = p0 - log(p1_lat)
-              dp2 = log(p2_lat) - p0
-            else
-              dp1 = p0 - p1_lat
-              dp2 = p2_lat - p0
-            end if
-#ifdef V_POLE
-            y2 = (dp2 * x(i,j+1,k-1) + dp1 * x(i,j+1,k)) / (dp1 + dp2)
-#else
-            y2 = (dp2 * x(i,j  ,k-1) + dp1 * x(i,j  ,k)) / (dp1 + dp2)
-#endif
-            exit
-          end if
-        end do
-#ifdef V_POLE
-        y(i,j) = (mesh%area_lat_north(j) * y1 + mesh%area_lat_south(j+1) * y2) / mesh%area_cell(j)
-#else
-        y(i,j) = (mesh%area_lat_north(j-1) * y1 + mesh%area_lat_south(j) * y2) / mesh%area_cell(j)
-#endif
       end do
     end do
 
-  end subroutine interp_lat_edge_to_isobaric_level
+  end subroutine interp_lat_edge_to_pressure_level
+
+  subroutine interp_lev_edge_to_pressure_level(mesh, p, x, po, y, logp)
+
+    type(mesh_type), intent(in) :: mesh
+    real(r8), intent(in) :: p(mesh%full_lon_lb:mesh%full_lon_ub, &
+                              mesh%full_lat_lb:mesh%full_lat_ub, &
+                              mesh%half_lev_lb:mesh%half_lev_ub)
+    real(r8), intent(in) :: x(mesh%full_lon_lb:mesh%full_lon_ub, &
+                              mesh%full_lat_lb:mesh%full_lat_ub, &
+                              mesh%half_lev_lb:mesh%half_lev_ub)
+    real(r8), intent(in) :: po
+    real(r8), intent(out) :: y(mesh%full_lon_lb:mesh%full_lon_ub, &
+                               mesh%full_lat_lb:mesh%full_lat_ub)
+    logical, intent(in), optional :: logp
+
+    logical logp_
+    real(r8) p0, dp1, dp2, x1, x2
+    integer i, j, k
+
+    logp_ = merge(logp, .false., present(logp))
+
+    p0 = merge(log(po), po, logp_)
+
+    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+        do k = mesh%half_lev_iend, mesh%half_lev_ibeg + 1, -1
+          if (p(i,j,k-1) <= po .and. po <= p(i,j,k)) then
+            if (logp_) then
+              dp1 = p0 - log(p(i,j,k-1))
+              dp2 = log(p(i,j,k)) - p0
+            else
+              dp1 = p0 - p(i,j,k-1)
+              dp2 = p(i,j,k) - p0
+            end if
+            y(i,j) = (dp2 * x(i,j,k-1) + dp1 * x(i,j,k)) / (dp1 + dp2)
+            exit
+          end if
+        end do
+      end do
+    end do
+
+  end subroutine interp_lev_edge_to_pressure_level
 
   subroutine interp_lon_edge_to_cell(mesh, x_lon, x)
 

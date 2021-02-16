@@ -18,6 +18,7 @@ module hybrid_coord_test_mod
   public hybrid_coord_wrf_l64
   public hybrid_coord_schar_l40
   public hybrid_coord_dcmip21_l60
+  public hybrid_coord_dcmip31_l10
 
 contains
 
@@ -955,5 +956,48 @@ contains
     ptop = p0 * hyai(1)
 
   end subroutine hybrid_coord_dcmip21_l60
+
+  subroutine hybrid_coord_dcmip31_l10(p0, ptop, hyai, hybi)
+
+    real(r8), intent(out) :: p0
+    real(r8), intent(out) :: ptop
+    real(r8), intent(out) :: hyai(11)
+    real(r8), intent(out) :: hybi(11)
+
+    if (global_mesh%num_full_lev /= 10 .and. is_root_proc()) then
+      call log_error('num_lev should be 10 in namelist!')
+    end if
+
+    hyai = [                  &
+      0.2737592327457158_r8 , & !  1
+      0.2574691274856134_r8 , & !  2
+      0.2392257778961169_r8 , & !  3
+      0.2188579122253837_r8 , & !  4
+      0.1961834482057335_r8 , & !  5
+      0.171008960410953_r8  , & !  6
+      0.1431291236866448_r8 , & !  7
+      0.1123261317013542_r8 , & !  8
+      0.07836908962461686_r8, & !  9
+      0.04101337989532572_r8, & ! 10
+      0.0_r8                  & ! 11
+    ]
+    hybi = [                  &
+      0.0_r8                , & !  1
+      0.05950522689853417_r8, & !  2
+      0.1261453522616924_r8 , & !  3
+      0.2005460052239693_r8 , & !  4
+      0.283372304056826_r8  , & !  5
+      0.3753308018298088_r8 , & !  6
+      0.4771715194731282_r8 , & !  7
+      0.5896900697201707_r8 , & !  8
+      0.7137298755603581_r8 , & !  9
+      0.8501844869888955_r8 , & ! 10
+      1.0_r8                  & ! 11
+    ]
+
+    p0 = 1d5 ! Pa
+    ptop = p0 * hyai(1)
+
+  end subroutine hybrid_coord_dcmip31_l10
 
 end module hybrid_coord_test_mod

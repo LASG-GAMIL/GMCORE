@@ -35,6 +35,7 @@ module operators_mod
   public calc_wedudlev_wedvdlev
   public nh_prepare
   public nh_solve
+  public interp_gz
 
   interface operators_prepare
     module procedure operators_prepare_1
