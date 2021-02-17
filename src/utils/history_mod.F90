@@ -233,6 +233,9 @@ contains
         call fiona_output('h0', 'lev' , global_mesh%full_lev)
         call fiona_output('h0', 'ilev', global_mesh%half_lev)
       end if
+    else
+      call fiona_output('h0', 'ilon', global_mesh%half_lon_deg(1:global_mesh%num_half_lon))
+      call fiona_output('h0', 'ilat', global_mesh%half_lat_deg(1:global_mesh%num_half_lat))
     end if
 
     do iblk = 1, size(blocks)

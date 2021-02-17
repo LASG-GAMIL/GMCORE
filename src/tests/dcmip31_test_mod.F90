@@ -28,9 +28,9 @@ module dcmip31_test_mod
   real(r8), parameter :: latc = 0.0_r8
   real(r8), parameter :: dpt  = 1.0_r8       ! K
   real(r8), parameter :: lz   = 20000.0_r8   ! m
-  real(r8), parameter :: N    = 0.01         ! s-1
+  real(r8), parameter :: N    = 0.01_r8      ! s-1
   real(r8), parameter :: N2   = N**2
-  real(r8), parameter :: t0   = g**2 / N**2 / cp
+  real(r8), parameter :: t0   = g**2 / N2 / cp
   real(r8), parameter :: p0   = 1.0e5_r8     ! Pa
 
 contains
