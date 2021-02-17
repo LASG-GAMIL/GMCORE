@@ -45,7 +45,6 @@ program gmcore_driver
       call ksp15_test_set_params()
     case ('dcmip31')
       call dcmip31_test_set_params()
-      init_diag_state => dcmip31_test_init_diag_state
     end select
   end if
 

@@ -103,6 +103,7 @@ contains
         case (height_levels)
           diag_dims(1) = 'lon'; diag_dims(2) = 'lat'; diag_dims(3) = 'zlev'; diag_dims(4) = 'time'
           call fiona_add_dim('h0', 'zlev', size=size(diag_state(1)%levels), add_var=.true., decomp=.false.)
+          call fiona_add_var('h0', 'p'   , long_name='pressure'           , units='Pa', dim_names=diag_dims)
         case (pressure_levels)
           diag_dims(1) = 'lon'; diag_dims(2) = 'lat'; diag_dims(3) = 'plev'; diag_dims(4) = 'time'
           call fiona_add_dim('h0', 'plev', size=size(diag_state(1)%levels), add_var=.true., decomp=.false.)
@@ -258,9 +259,12 @@ contains
           if (nonhydrostatic) then
             call fiona_output('h0', 'w', diag_state(iblk)%w (is:ie,js:je,:), start=start, count=count)
           end if
-          if (diag_state(iblk)%level_type == pressure_levels) then
+          select case (diag_state(1)%level_type)
+          case (height_levels)
+            call fiona_output('h0', 'p', diag_state(iblk)%p (is:ie,js:je,:), start=start, count=count)
+          case (pressure_levels)
             call fiona_output('h0', 'z', diag_state(iblk)%z (is:ie,js:je,:), start=start, count=count)
-          end if
+          end select
         else
           call fiona_output('h0', 'pt' , state%pt (is:ie,js:je,ks:ke), start=start, count=count)
           call fiona_output('h0', 'ph' , state%ph (is:ie,js:je,ks:ke), start=start, count=count)

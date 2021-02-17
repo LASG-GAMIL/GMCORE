@@ -610,7 +610,6 @@ contains
     type(state_type), intent(inout) :: new_state
     real(8), intent(in) :: dt
 
-    real(r8), parameter :: implicit_w_beta = 0.75_r8
     real(r8) w1 (block%mesh%half_lev_lb:block%mesh%half_lev_ub)
     real(r8) gz1(block%mesh%half_lev_lb:block%mesh%half_lev_ub)
     real(r8) dgz(block%mesh%full_lev_lb:block%mesh%full_lev_ub)
@@ -636,7 +635,7 @@ contains
     !                                dp1
     !
     associate (mesh        => block%mesh       , &
-               beta        => implicit_w_beta  , &
+               beta        => implicit_w_wgt   , &
                adv_gz_lon  => tend%adv_gz_lon  , & ! FIXME: After test success, merge advection tends togethor.
                adv_gz_lat  => tend%adv_gz_lat  , & !
                adv_gz_lev  => tend%adv_gz_lev  , & !

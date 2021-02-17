@@ -32,6 +32,7 @@ module diag_state_mod
     real(r8), allocatable, dimension(:,:,:) :: v
     real(r8), allocatable, dimension(:,:,:) :: w
     real(r8), allocatable, dimension(:,:,:) :: z
+    real(r8), allocatable, dimension(:,:,:) :: p
     real(r8), allocatable, dimension(:,:,:) :: pt
     real(r8), allocatable, dimension(:,:,:) :: t
     type(datetime_type) last_time
@@ -106,6 +107,7 @@ contains
     allocate(this%v  (is:ie,js:je,size(z)))
     allocate(this%pt (is:ie,js:je,size(z)))
     allocate(this%t  (is:ie,js:je,size(z)))
+    allocate(this%p  (is:ie,js:je,size(z)))
     if (nonhydrostatic) then
       allocate(this%w(is:ie,js:je,size(z)))
     end if
@@ -162,6 +164,7 @@ contains
     if (allocated(this%v     )) deallocate(this%v     )
     if (allocated(this%w     )) deallocate(this%w     )
     if (allocated(this%z     )) deallocate(this%z     )
+    if (allocated(this%p     )) deallocate(this%p     )
     if (allocated(this%pt    )) deallocate(this%pt    )
     if (allocated(this%t     )) deallocate(this%t     )
     if (allocated(this%buf   )) deallocate(this%buf   )
@@ -180,6 +183,7 @@ contains
     if (allocated(this%pt)) this%pt = 0
     if (allocated(this%t )) this%t  = 0
     if (allocated(this%z )) this%z  = 0
+    if (allocated(this%p )) this%p  = 0
 
   end subroutine diag_state_zeros
 
@@ -228,13 +232,15 @@ contains
         this%pt(:,:,k) = this%pt(:,:,k) + this%buf
         call interp_cell_to_height_level(state%mesh, this%zm, state%t, this%levels(k), this%buf)
         this%t(:,:,k) = this%t(:,:,k) + this%buf
+        call interp_lev_edge_to_height_level(state%mesh, this%zm_lev, state%p_lev, this%levels(k), this%buf)
+        this%p(:,:,k) = this%p(:,:,k) + this%buf
         if (nonhydrostatic) then
           call interp_lev_edge_to_height_level(state%mesh, this%zm_lev, state%w, this%levels(k), this%buf)
           this%w(:,:,k) = this%w(:,:,k) + this%buf
         end if
       end do
     case (pressure_levels)
-      this%zm = state%gz / g
+      this%zm_lev = state%gz_lev / g
       do k = 1, size(this%levels)
         call interp_lon_edge_to_pressure_level(state%mesh, state%p, state%u, this%levels(k), this%buf)
         this%u(:,:,k) = this%u(:,:,k) + this%buf
@@ -244,7 +250,7 @@ contains
         this%pt(:,:,k) = this%pt(:,:,k) + this%buf
         call interp_cell_to_pressure_level(state%mesh, state%p, state%t, this%levels(k), this%buf)
         this%t(:,:,k) = this%t(:,:,k) + this%buf
-        call interp_cell_to_pressure_level(state%mesh, state%p, this%zm, this%levels(k), this%buf)
+        call interp_lev_edge_to_pressure_level(state%mesh, state%p, this%zm_lev, this%levels(k), this%buf)
         this%z(:,:,k) = this%z(:,:,k) + this%buf
         if (nonhydrostatic) then
           call interp_lev_edge_to_pressure_level(state%mesh, state%p_lev, state%w, this%levels(k), this%buf)
@@ -259,9 +265,12 @@ contains
       this%v  = this%v  / this%time_step_counter
       this%pt = this%pt / this%time_step_counter
       this%t  = this%t  / this%time_step_counter
-      if (this%level_type == pressure_levels) then
+      select case (this%level_type)
+      case (height_levels)
+        this%p = this%p / this%time_step_counter
+      case (pressure_levels)
         this%z = this%z / this%time_step_counter
-      end if
+      end select
       if (nonhydrostatic) then
         this%w = this%w / this%time_step_counter
       end if

@@ -108,9 +108,9 @@ contains
     end do
 
     call operators_prepare(proc%blocks, old, dt_in_seconds)
+    if (nonhydrostatic) call nh_prepare(proc%blocks)
     call diagnose(proc%blocks, old)
     call output(old)
-    if (nonhydrostatic) call nh_prepare(proc%blocks)
 
     do while (.not. time_is_finished())
       call time_integrate(dt_in_seconds, proc%blocks)

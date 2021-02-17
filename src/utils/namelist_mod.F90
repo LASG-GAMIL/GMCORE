@@ -30,6 +30,8 @@ module namelist_mod
 
   character(30)   :: tangent_wgt_scheme   = 'classic'
 
+  real(r8)        :: implicit_w_wgt       = 0.5_r8
+
   character(30)   :: vert_coord_scheme    = 'hybrid'
   character(30)   :: vert_coord_template  = 'N/A'
   character(30)   :: refer_state_scheme   = 'wrf'
@@ -122,6 +124,7 @@ module namelist_mod
     restart_file              , &
     restart                   , &
     tangent_wgt_scheme        , &
+    implicit_w_wgt            , &
     vert_coord_scheme         , &
     vert_coord_template       , &
     refer_state_scheme        , &
@@ -242,6 +245,7 @@ contains
       write(*, *) 'use_polar_damp      = ', to_str(use_polar_damp)
       write(*, *) 'use_rayleigh_damp   = ', to_str(use_rayleigh_damp)
     if (nonhydrostatic) then
+      write(*, *) 'implicit_w_wgt      = ', to_str(implicit_w_wgt, 3)
       write(*, *) 'rayleigh_damp_w_coef= ', to_str(rayleigh_damp_w_coef, 2)
       write(*, *) 'div_damp_3d_coef    = ', to_str(div_damp_3d_coef, 3)
     end if

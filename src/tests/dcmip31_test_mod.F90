@@ -16,7 +16,6 @@ module dcmip31_test_mod
 
   public dcmip31_test_set_params
   public dcmip31_test_set_ic
-  public dcmip31_test_init_diag_state
 
   real(r8), parameter :: X    = 125.0_r8
   real(r8), parameter :: ptop = 273.919e2_r8 ! Pa
@@ -59,6 +58,7 @@ contains
                ph     => block%state(1)%ph    , &
                pt     => block%state(1)%pt    , &
                t      => block%state(1)%t     , &
+               gz_lev => block%state(1)%gz_lev, &
                gz     => block%state(1)%gz    , &
                gzs    => block%static%gzs)
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
@@ -101,25 +101,39 @@ contains
       end do
       call fill_halo(block, ph, full_lon=.true., full_lat=.true., full_lev=.true.)
 
+      if (nonhydrostatic) then
+        w = 0.0_r8
+        do k = mesh%half_lev_ibeg, mesh%half_lev_iend
+          do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+            cos_2lat = cos(2 * mesh%full_lat(j))
+            ts = t0 + (teq - t0) * exp(-u0 * N2 / (4 * g**2) * (u0 + 2 * omega * radius) * (cos_2lat - 1))
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              gz_lev(i,j,k) = - g**2 / N2 * log(ts / t0 * ((ph_lev(i,j,k) / phs(i,j))**Rd_o_cp - 1) + 1)
+            end do
+          end do
+        end do
+        call fill_halo(block, gz_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
+        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+          do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+            cos_2lat = cos(2 * mesh%full_lat(j))
+            ts = t0 + (teq - t0) * exp(-u0 * N2 / (4 * g**2) * (u0 + 2 * omega * radius) * (cos_2lat - 1))
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              gz(i,j,k) = - g**2 / N2 * log(ts / t0 * ((ph(i,j,k) / phs(i,j))**Rd_o_cp - 1) + 1)
+            end do
+          end do
+        end do
+        call fill_halo(block, gz, full_lon=.true., full_lat=.true., full_lev=.true.)
+      end if
+
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           cos_2lat = cos(2 * mesh%full_lat(j))
           ts = t0 + (teq - t0) * exp(-u0 * N2 / (4 * g**2) * (u0 + 2 * omega * radius) * (cos_2lat - 1))
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            pt(i,j,k) = ts * (p0 / phs(i,j))**Rd_o_cp / (         &
-              ts / t0 * ((ph(i,j,k) / phs(i,j))**Rd_o_cp - 1) + 1 &
-            )
-            t(i,j,k) = temperature(pt(i,j,k), ph(i,j,k))
+            pt(i,j,k) = ts * (p0 / phs(i,j))**Rd_o_cp / (ts / t0 * ((ph(i,j,k) / phs(i,j))**Rd_o_cp - 1) + 1)
           end do
         end do
       end do
-      call fill_halo(block, t, full_lon=.true., full_lat=.true., full_lev=.true.)
-
-      if (nonhydrostatic) then
-        w = 0.0_r8
-        call diag_gz_lev(block, block%state(1))
-        call interp_gz(block, block%state(1))
-      end if
 
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -135,19 +149,4 @@ contains
   
   end subroutine dcmip31_test_set_ic
 
-  subroutine dcmip31_test_init_diag_state(blocks)
-
-    type(block_type), intent(in) :: blocks(:)
-
-    real(r8) z(11)
-    integer iblk
-
-    z = [0.0_r8, 1.0e3_r8, 2.0e3_r8, 3.0e3_r8, 4.0e3_r8, 5.0e3_r8, 6.0e3_r8, 7.0e3_r8, 8.0e3_r8, 9.0e3_r8, 10.0e3_r8]
-
-    do iblk = 1, size(blocks)
-      call diag_state(iblk)%init_height_levels(blocks(iblk), z, instance)
-    end do
-
-  end subroutine dcmip31_test_init_diag_state
-  
 end module dcmip31_test_mod
