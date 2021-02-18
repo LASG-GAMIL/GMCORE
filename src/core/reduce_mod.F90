@@ -505,7 +505,6 @@ contains
     end if
 
     if (baroclinic) then
-      call apply_reduce(reduce_args(ph_lev         , reduce_ph_lev      ))
       call apply_reduce(reduce_args(pt             , reduce_pt          ))
       call apply_reduce(reduce_args(t              , reduce_t           ))
       call apply_reduce(reduce_args(gz             , reduce_gz          ))
@@ -515,6 +514,7 @@ contains
         call apply_reduce(reduce_args(ak_t_lon     , reduce_ak_t_lon    ))
       end if
       if (pgf_scheme == 'lin97' .and. .not. nonhydrostatic) then
+        call apply_reduce(reduce_args(ph_lev       , reduce_ph_lev      ))
         call apply_reduce(reduce_args(gz_lev       , reduce_gz_lev      ))
       end if
     else
@@ -564,6 +564,8 @@ contains
     real(8), intent(in) :: dt
 
     call apply_reduce(reduce_args(m_lon        , reduce_m_lon       ))
+    call apply_reduce(reduce_args(ph_lev       , reduce_ph_lev      ))
+    call apply_reduce(reduce_args(gz_lev       , reduce_gz_lev      ))
     call apply_reduce(reduce_args(p_lev        , reduce_p_lev       ))
     call apply_reduce(reduce_args(p_lev_lon    , reduce_p_lev_lon   ))
     call apply_reduce(reduce_args(rhod_lon     , reduce_rhod_lon    ))
