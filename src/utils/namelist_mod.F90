@@ -40,8 +40,11 @@ module namelist_mod
   integer         :: ke_scheme            = 1
   real(r8)        :: ke_cell_wgt          = 3.0_r8 / 8.0_r8
 
-  integer         :: pv_scheme            = 1
+  integer         :: pv_scheme            = 1 ! 1: midpoint, 2: upwind, 3: apvm
   logical         :: pv_pole_stokes       = .true.
+  integer         :: upwind_order_pv      = 3
+  real(r8)        :: upwind_wgt_pv        = 0.25
+
   character(8)    :: pgf_scheme           = 'lin97'
   integer         :: coriolis_scheme      = 1
   integer         :: upwind_order         = -1 ! -1, 1, 3
@@ -133,6 +136,8 @@ module namelist_mod
     ke_cell_wgt               , &
     pv_scheme                 , &
     pv_pole_stokes            , &
+    upwind_order_pv           , &
+    upwind_wgt_pv             , &
     pgf_scheme                , &
     coriolis_scheme           , &
     upwind_order              , &
@@ -220,6 +225,10 @@ contains
     end if
       write(*, *) 'pv_scheme           = ', to_str(pv_scheme)
       write(*, *) 'pv_pole_stokes      = ', to_str(pv_pole_stokes)
+    if (pv_scheme == 2) then
+      write(*, *) 'upwind_order_pv     = ', to_str(upwind_order_pv)
+      write(*, *) 'upwind_wgt_pv       = ', to_str(upwind_wgt_pv, 2)
+    end if
       write(*, *) 'time_scheme         = ', trim(time_scheme)
       write(*, *) 'upwind_order        = ', to_str(upwind_order)
     if (upwind_order > 0) then

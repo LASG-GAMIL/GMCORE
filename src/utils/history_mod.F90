@@ -274,6 +274,7 @@ contains
           call fiona_output('h0', 'div', state%div(is:ie,js:je,ks:ke), start=start, count=count)
         end if
       else
+        call fiona_output('h0', 'z'  , state%gz (is:ie,js:je,ks:ke) / g, start=start, count=count)
         call fiona_output('h0', 'div', state%div(is:ie,js:je,ks:ke), start=start, count=count)
       end if
 
@@ -314,11 +315,11 @@ contains
       start = [is,js,ks]
       count = [mesh%num_full_lon,mesh%num_full_lat,mesh%num_half_lev]
 
-      if (.not. diag_state(1)%is_init()) then
+      if (nonhydrostatic .and. .not. diag_state(1)%is_init()) then
         call fiona_output('h0', 'z', state%gz_lev(is:ie,js:je,ks:ke) / g, start=start, count=count)
         if (nonhydrostatic) then
-          call fiona_output('h0', 'w'   , state%w_lev(is:ie,js:je,ks:ke), start=start, count=count)
-          call fiona_output('h0', 'p'   , state%p_lev(is:ie,js:je,ks:ke), start=start, count=count)
+          call fiona_output('h0', 'w', state%w_lev(is:ie,js:je,ks:ke), start=start, count=count)
+          call fiona_output('h0', 'p', state%p_lev(is:ie,js:je,ks:ke), start=start, count=count)
         end if
       end if
 
