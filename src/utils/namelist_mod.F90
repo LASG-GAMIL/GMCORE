@@ -40,13 +40,16 @@ module namelist_mod
   integer         :: ke_scheme            = 1
   real(r8)        :: ke_cell_wgt          = 3.0_r8 / 8.0_r8
 
-  integer         :: pv_scheme            = 1 ! 1: midpoint, 2: upwind, 3: apvm
+  integer         :: pv_scheme            = 1 ! 1: midpoint, 2: upwind, 3: weno, 4: apvm
   logical         :: pv_pole_stokes       = .true.
+  integer         :: weno_order_pv        = 3
   integer         :: upwind_order_pv      = 3
   real(r8)        :: upwind_wgt_pv        = 0.25
 
   character(8)    :: pgf_scheme           = 'lin97'
   integer         :: coriolis_scheme      = 1
+
+  integer         :: weno_order           = -1 ! -1, 3, 5
   integer         :: upwind_order         = -1 ! -1, 1, 3
   real(r8)        :: upwind_wgt           = 1.0_r8
   real(r8)        :: upwind_wgt_pt        = 0.25_r8
@@ -136,10 +139,12 @@ module namelist_mod
     ke_cell_wgt               , &
     pv_scheme                 , &
     pv_pole_stokes            , &
+    weno_order_pv             , &
     upwind_order_pv           , &
     upwind_wgt_pv             , &
     pgf_scheme                , &
     coriolis_scheme           , &
+    weno_order                , &
     upwind_order              , &
     upwind_wgt                , &
     upwind_wgt_pt             , &
@@ -228,8 +233,11 @@ contains
     if (pv_scheme == 2) then
       write(*, *) 'upwind_order_pv     = ', to_str(upwind_order_pv)
       write(*, *) 'upwind_wgt_pv       = ', to_str(upwind_wgt_pv, 2)
+    else if (pv_scheme == 3) then
+      write(*, *) 'weno_order_pv       = ', to_str(weno_order_pv)
     end if
       write(*, *) 'time_scheme         = ', trim(time_scheme)
+      write(*, *) 'weno_order          = ', to_str(weno_order)
       write(*, *) 'upwind_order        = ', to_str(upwind_order)
     if (upwind_order > 0) then
       write(*, *) 'upwind_wgt          = ', to_str(upwind_wgt, 2)

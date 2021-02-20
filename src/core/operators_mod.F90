@@ -518,7 +518,11 @@ contains
     select case (pv_scheme)
     case (1)
       call interp_pv_midpoint(block, state)
+    case (2)
+      call interp_pv_upwind(block, state)
     case (3)
+      call interp_pv_weno(block, state)
+    case (4)
       call interp_pv_apvm(block, state, dt)
     case default
       if (is_root_proc()) call log_error('Unknown PV scheme!')

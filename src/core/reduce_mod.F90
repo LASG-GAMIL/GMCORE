@@ -30,6 +30,9 @@ module reduce_mod
   use parallel_mod
   use block_mod
   use reduced_types_mod
+  use interp_mod, only: upwind_pole_wgt
+  use upwind_mod
+  use weno_mod
 
   implicit none
 
@@ -161,7 +164,7 @@ contains
     allocate(reduced_mesh%weights(reduce_factor))
     reduced_mesh%weights = 1.0_r8 / reduce_factor
 
-    reduced_mesh%halo_width    = 1
+    reduced_mesh%halo_width    = merge(2, 1, pv_scheme == 2 .or. pv_scheme == 3)
     reduced_mesh%num_full_lon  = raw_mesh%num_full_lon / reduce_factor
     reduced_mesh%num_half_lon  = raw_mesh%num_half_lon / reduce_factor
     reduced_mesh%full_lon_ibeg = raw_mesh%full_lon_ibeg / reduce_factor + 1
@@ -309,101 +312,29 @@ contains
 #define half_lev_half_lon_dims(x, buf_bound) reduced_state%x(reduced_mesh%half_lev_lb:reduced_mesh%half_lev_ub,reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub,buf_bound,reduced_mesh%reduce_factor)
 
 #ifdef V_POLE
-    if (baroclinic .and. hydrostatic) then
-      allocate(full_lev_half_lon_dims(mf_lon_n     , -2:2))
-      allocate(full_lev_half_lon_dims(mf_lon_t     ,  0:0))
-      allocate(full_lev_full_lon_dims(mf_lat_n     , -1:2))
-      allocate(full_lev_full_lon_dims(mf_lat_t     ,  0:1))
-      allocate(full_lev_full_lon_dims(m            , -2:2))
-      allocate(full_lev_half_lon_dims(m_lon        , -2:2))
-      allocate(full_lev_full_lon_dims(m_lat        , -1:2))
-      allocate(full_lev_half_lon_dims(u            , -2:2))
-      allocate(full_lev_full_lon_dims(v            , -1:2))
-      allocate(full_lev_half_lon_dims(pv           , -1:2))
-      allocate(full_lev_half_lon_dims(pv_lon       ,  0:0))
-      allocate(full_lev_full_lon_dims(pv_lat       ,  0:1))
-      allocate(full_lev_half_lon_dims(dpv_lon_n    ,  0:0))
-      allocate(full_lev_full_lon_dims(dpv_lon_t    , -1:1))
-      allocate(full_lev_full_lon_dims(dpv_lat_n    ,  0:1))
-      allocate(full_lev_half_lon_dims(dpv_lat_t    ,  0:1))
-      allocate(full_lev_full_lon_dims(ke           ,  0:0))
-      allocate(full_lev_full_lon_dims(gz           ,  0:0))
-      allocate(full_lev_full_lon_dims(pt           ,  0:0))
-      allocate(full_lev_half_lon_dims(pt_lon       ,  0:0))
-      allocate(full_lev_half_lon_dims(ptf_lon      ,  0:0))
-      allocate(full_lev_full_lon_dims(ph           ,  0:0))
-      allocate(half_lev_full_lon_dims(ph_lev       ,  0:0))
-      allocate(full_lev_full_lon_dims(t            ,  0:0))
-      if (pgf_scheme == 'sb81') then
-        allocate(full_lev_full_lon_dims(ak         ,  0:0))
-        allocate(full_lev_half_lon_dims(t_lnpop_lon,  0:0))
-        allocate(full_lev_half_lon_dims(ak_t_lon   ,  0:0))
-      else if (pgf_scheme == 'lin97' .or. pgf_scheme == 'dflx') then
-        allocate(half_lev_full_lon_dims(gz_lev     ,  0:0))
-      end if
-    else
-      allocate(full_lev_half_lon_dims(mf_lon_n     , -2:2))
-      allocate(full_lev_half_lon_dims(mf_lon_t     ,  0:0))
-      allocate(full_lev_full_lon_dims(mf_lat_n     , -1:2))
-      allocate(full_lev_full_lon_dims(mf_lat_t     ,  0:1))
-      allocate(full_lev_full_lon_dims(gz           , -2:2))
-      allocate(full_lev_full_lon_dims(m            , -2:2))
-      allocate(full_lev_half_lon_dims(m_lon        , -2:2))
-      allocate(full_lev_full_lon_dims(m_lat        , -1:2))
-      allocate(full_lev_half_lon_dims(u            , -2:2))
-      allocate(full_lev_full_lon_dims(v            , -1:2))
-      allocate(full_lev_half_lon_dims(pv           , -1:2))
-      allocate(full_lev_half_lon_dims(pv_lon       ,  0:0))
-      allocate(full_lev_full_lon_dims(pv_lat       ,  0:1))
-      allocate(full_lev_full_lon_dims(dpv_lon_n    ,  0:0))
-      allocate(full_lev_full_lon_dims(dpv_lon_t    , -1:1))
-      allocate(full_lev_half_lon_dims(dpv_lat_n    ,  0:1))
-      allocate(full_lev_half_lon_dims(dpv_lat_t    ,  0:1))
-      allocate(full_lev_full_lon_dims(ke           ,  0:0))
-    end if
+    call log_error('Prepare to remove V_POLE codes.')
 #else
     if (baroclinic) then
-      allocate(full_lev_half_lon_dims(mf_lon_n     , -2:2))
-      allocate(full_lev_full_lon_dims(mf_lat_n     , -2:1))
-      allocate(full_lev_full_lon_dims(m            , -2:2))
-      allocate(full_lev_half_lon_dims(m_lon        , -2:2))
-      allocate(full_lev_full_lon_dims(m_lat        , -2:1))
-      allocate(full_lev_half_lon_dims(u            , -2:2))
-      allocate(full_lev_full_lon_dims(v            , -2:1))
-      if (reduce_pv_directly) then
-        allocate(full_lev_half_lon_dims(pv         , -1:0))
-      else
-        allocate(full_lev_half_lon_dims(pv         , -2:1))
-      end if
-      allocate(full_lev_half_lon_dims(pv_lon       ,  0:0))
-      allocate(full_lev_full_lon_dims(pv_lat       , -1:0))
-      if (.not. reduce_pv_directly .and. pv_scheme == 3) then
-        allocate(full_lev_half_lon_dims(mf_lon_t   ,  0:0))
-        allocate(full_lev_full_lon_dims(mf_lat_t   , -1:0))
-        allocate(full_lev_half_lon_dims(dpv_lon_n  ,  0:0))
-        allocate(full_lev_half_lon_dims(dpv_lat_t  , -1:0))
-        allocate(full_lev_full_lon_dims(dpv_lon_t  , -1:1))
-        allocate(full_lev_full_lon_dims(dpv_lat_n  , -1:0))
-      end if
-      allocate(full_lev_full_lon_dims(ke           ,  0:0))
-      allocate(full_lev_full_lon_dims(gz           ,  0:0))
-      allocate(full_lev_full_lon_dims(pt           ,  0:0))
-      allocate(full_lev_half_lon_dims(pt_lon       ,  0:0))
-      allocate(full_lev_half_lon_dims(ptf_lon      ,  0:0))
-      allocate(full_lev_full_lon_dims(ph           ,  0:0))
-      allocate(half_lev_full_lon_dims(ph_lev       ,  0:0))
-      allocate(full_lev_full_lon_dims(t            ,  0:0))
+      allocate(full_lev_half_lon_dims(mf_lon_n      , -2:2))
+      allocate(full_lev_full_lon_dims(mf_lat_n      , -2:1))
+      allocate(full_lev_full_lon_dims(m             , -2:2))
+      allocate(full_lev_half_lon_dims(m_lon         , -2:2))
+      allocate(full_lev_full_lon_dims(m_lat         , -2:1))
+      allocate(full_lev_full_lon_dims(ke            ,  0:0))
+      allocate(full_lev_full_lon_dims(gz            ,  0:0))
+      allocate(full_lev_full_lon_dims(pt            ,  0:0))
+      allocate(full_lev_half_lon_dims(pt_lon        ,  0:0))
+      allocate(full_lev_half_lon_dims(ptf_lon       ,  0:0))
+      allocate(full_lev_full_lon_dims(ph            ,  0:0))
+      allocate(half_lev_full_lon_dims(ph_lev        ,  0:0))
+      allocate(full_lev_full_lon_dims(t             ,  0:0))
       if (pgf_scheme == 'sb81') then
-        allocate(full_lev_full_lon_dims(ak         ,  0:0))
-        allocate(full_lev_half_lon_dims(t_lnpop_lon,  0:0))
-        allocate(full_lev_half_lon_dims(ak_t_lon   ,  0:0))
+        allocate(full_lev_full_lon_dims(ak          ,  0:0))
+        allocate(full_lev_half_lon_dims(t_lnpop_lon ,  0:0))
+        allocate(full_lev_half_lon_dims(ak_t_lon    ,  0:0))
       end if
       if (pgf_scheme == 'lin97' .or. nonhydrostatic) then
-        allocate(half_lev_full_lon_dims(gz_lev     ,  0:0))
-      end if
-      if (pgf_scheme == 'dflx' .or. nonhydrostatic) then
-        if (.not. allocated(reduced_state%gz_lev)) allocate(half_lev_full_lon_dims(gz_lev, 0:0))
-        allocate(half_lev_full_lon_dims(p_lev      ,  0:0))
+        allocate(half_lev_full_lon_dims(gz_lev      ,  0:0))
       end if
       if (nonhydrostatic) then
         allocate(half_lev_full_lon_dims(m_lev       ,  0:0))
@@ -414,32 +345,39 @@ contains
         allocate(half_lev_half_lon_dims(gz_lev_lon  ,  0:0))
         allocate(full_lev_half_lon_dims(rhod_lon    ,  0:0))
       end if
-    else
-      allocate(full_lev_half_lon_dims(mf_lon_n     , -2:2))
-      allocate(full_lev_full_lon_dims(mf_lat_n     , -2:1))
-      allocate(full_lev_full_lon_dims(gz           , -2:2))
-      allocate(full_lev_full_lon_dims(m            , -2:2))
-      allocate(full_lev_half_lon_dims(m_lon        , -2:2))
-      allocate(full_lev_full_lon_dims(m_lat        , -2:1))
-      allocate(full_lev_half_lon_dims(u            , -2:2))
-      allocate(full_lev_full_lon_dims(v            , -2:1))
-      if (reduce_pv_directly) then
-        allocate(full_lev_half_lon_dims(pv         , -1:0))
-      else
-        allocate(full_lev_half_lon_dims(pv         , -2:1))
-      end if
-      allocate(full_lev_half_lon_dims(pv_lon       ,  0:0))
-      allocate(full_lev_full_lon_dims(pv_lat       , -1:0))
-      if (.not. reduce_pv_directly .and. pv_scheme == 3) then
-        allocate(full_lev_half_lon_dims(mf_lon_t   ,  0:0))
-        allocate(full_lev_full_lon_dims(mf_lat_t   , -1:0))
-        allocate(full_lev_half_lon_dims(dpv_lon_n  ,  0:0))
-        allocate(full_lev_half_lon_dims(dpv_lat_t  , -1:0))
-        allocate(full_lev_full_lon_dims(dpv_lon_t  , -1:1))
-        allocate(full_lev_full_lon_dims(dpv_lat_n  , -1:0))
-      end if
-      allocate(full_lev_full_lon_dims(ke           ,  0:0))
+    else ! barotropic
+      allocate(full_lev_half_lon_dims(mf_lon_n      , -2:2))
+      allocate(full_lev_full_lon_dims(mf_lat_n      , -2:1))
+      allocate(full_lev_full_lon_dims(m             , -2:2))
+      allocate(full_lev_half_lon_dims(m_lon         , -2:2))
+      allocate(full_lev_full_lon_dims(m_lat         , -2:1))
+      allocate(full_lev_full_lon_dims(ke            ,  0:0))
+      allocate(full_lev_full_lon_dims(gz            , -2:2))
     end if
+
+    ! Potential vorticity
+    allocate(full_lev_half_lon_dims(pv_lon          ,  0:0))
+    allocate(full_lev_full_lon_dims(pv_lat          , -1:0))
+    if (.not. reduce_pv_directly .or. pv_scheme == 4) then
+      allocate(full_lev_half_lon_dims(u             , -2:2))
+      allocate(full_lev_full_lon_dims(v             , -2:1))
+    end if
+    select case (pv_scheme)
+    case (1)
+      allocate(full_lev_half_lon_dims(pv            , -1:0))
+    case (2, 3)
+      allocate(full_lev_half_lon_dims(pv            , -2:1))
+      allocate(full_lev_half_lon_dims(mf_lon_t      ,  0:0))
+      allocate(full_lev_full_lon_dims(mf_lat_t      , -1:0))
+    case (4)
+      allocate(full_lev_half_lon_dims(pv            , -2:1))
+      allocate(full_lev_half_lon_dims(mf_lon_t      ,  0:0))
+      allocate(full_lev_full_lon_dims(mf_lat_t      , -1:0))
+      allocate(full_lev_half_lon_dims(dpv_lon_n     ,  0:0))
+      allocate(full_lev_half_lon_dims(dpv_lat_t     , -1:0))
+      allocate(full_lev_full_lon_dims(dpv_lon_t     , -1:1))
+      allocate(full_lev_full_lon_dims(dpv_lat_n     , -1:0))
+    end select
 #endif
     allocate(reduced_state%async(11,-2:2,reduced_mesh%reduce_factor))
 
@@ -468,7 +406,7 @@ contains
 
 #define reduce_args(x, sub) lbound(reduced_state%x, 3), ubound(reduced_state%x, 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, sub, dt
 
-    if (.not. reduce_pv_directly .or. pv_scheme == 3 .or. pgf_scheme == 'sb81') then
+    if (.not. reduce_pv_directly .or. pv_scheme == 4 .or. pgf_scheme == 'sb81') then
       call apply_reduce(reduce_args(m, reduce_m))
     end if
     if (pass /= no_wind_pass) then
@@ -481,14 +419,28 @@ contains
       end if
       ! Potential vorticity
       if (pass == all_pass .or. pass == slow_pass) then
-        if (.not. reduce_pv_directly) then
+        if (.not. reduce_pv_directly .or. pv_scheme == 4) then
           call apply_reduce(reduce_args(m_lon      , reduce_m_lon      ))
           call apply_reduce(reduce_args(m_lat      , reduce_m_lat      ))
           call apply_reduce(reduce_args(u          , reduce_u          ))
           call apply_reduce(reduce_args(v          , reduce_v          ))
         end if
         call apply_reduce(reduce_args(pv           , reduce_pv         ))
-        if (.not. reduce_pv_directly .and. pv_scheme == 3) then
+        select case (pv_scheme)
+        case (1)
+          call apply_reduce(reduce_args(pv_lon     , reduce_pv_lon_midpoint))
+          call apply_reduce(reduce_args(pv_lat     , reduce_pv_lat_midpoint))
+        case (2)
+          call apply_reduce(reduce_args(mf_lon_t   , reduce_mf_lon_t     ))
+          call apply_reduce(reduce_args(mf_lat_t   , reduce_mf_lat_t     ))
+          call apply_reduce(reduce_args(pv_lon     , reduce_pv_lon_upwind))
+          call apply_reduce(reduce_args(pv_lat     , reduce_pv_lat_upwind))
+        case (3)
+          call apply_reduce(reduce_args(mf_lon_t   , reduce_mf_lon_t   ))
+          call apply_reduce(reduce_args(mf_lat_t   , reduce_mf_lat_t   ))
+          call apply_reduce(reduce_args(pv_lon     , reduce_pv_lon_weno))
+          call apply_reduce(reduce_args(pv_lat     , reduce_pv_lat_weno))
+        case (4)
           call apply_reduce(reduce_args(mf_lon_t   , reduce_mf_lon_t   ))
           call apply_reduce(reduce_args(mf_lat_t   , reduce_mf_lat_t   ))
           call apply_reduce(reduce_args(dpv_lon_t  , reduce_dpv_lon_t  ))
@@ -497,37 +449,28 @@ contains
           call apply_reduce(reduce_args(dpv_lon_n  , reduce_dpv_lon_n  ))
           call apply_reduce(reduce_args(pv_lon     , reduce_pv_lon_apvm))
           call apply_reduce(reduce_args(pv_lat     , reduce_pv_lat_apvm))
-        else
-          call apply_reduce(reduce_args(pv_lon     , reduce_pv_lon_midpoint))
-          call apply_reduce(reduce_args(pv_lat     , reduce_pv_lat_midpoint))
-        end if
+        end select
       end if
     end if
-
+    ! Potential temperature flux
     if (baroclinic) then
       call apply_reduce(reduce_args(pt             , reduce_pt          ))
+      call apply_reduce(reduce_args(ptf_lon        , reduce_ptf_lon     ))
+    end if
+    ! Horizontal pressure gradient force
+    if (hydrostatic) then ! Nonhydrostatic PGF terms is in reduce_nh_state_2.
       call apply_reduce(reduce_args(t              , reduce_t           ))
       call apply_reduce(reduce_args(gz             , reduce_gz          ))
-      call apply_reduce(reduce_args(ptf_lon        , reduce_ptf_lon     ))
-      if (pgf_scheme == 'sb81') then
+      select case (pgf_scheme)
+      case ('sb81')
         call apply_reduce(reduce_args(t_lnpop_lon  , reduce_t_lnpop_lon ))
         call apply_reduce(reduce_args(ak_t_lon     , reduce_ak_t_lon    ))
-      end if
-      if (pgf_scheme == 'lin97' .and. .not. nonhydrostatic) then
+      case ('lin97')
         call apply_reduce(reduce_args(ph_lev       , reduce_ph_lev      ))
         call apply_reduce(reduce_args(gz_lev       , reduce_gz_lev      ))
-      end if
-    else
+      end select
+    else if (.not. baroclinic) then
       call apply_reduce(reduce_args(gz             , reduce_gz          ))
-    end if
-
-    if (pgf_scheme == 'dflx') then
-      if (hydrostatic) then
-        call apply_reduce(reduce_args(p_lev        , reduce_p_lev       ))
-        if (reduce_pv_directly) then
-          call apply_reduce(reduce_args(m_lon      , reduce_m_lon       ))
-        end if
-      end if
     end if
 
   end subroutine reduce_state
@@ -543,9 +486,10 @@ contains
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
+    ! Advection of w and gz
     call apply_reduce(reduce_args(m_lev        , reduce_m_lev       ))
     call apply_reduce(reduce_args(mf_lev_lon_n , reduce_mf_lev_lon_n))
-    call apply_reduce(reduce_args(gz_lev       , reduce_gz_lev      ))
+    call apply_reduce(reduce_args(gz_lev       , reduce_gz_lev      )) ! TODO: This should be called at the first time.
     call apply_reduce(reduce_args(gz_lev_lon   , reduce_gz_lev_lon  ))
     call apply_reduce(reduce_args(w_lev        , reduce_w_lev       ))
     call apply_reduce(reduce_args(w_lev_lon    , reduce_w_lev_lon   ))
@@ -563,6 +507,7 @@ contains
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
+    ! Horizontal pressure gradient force
     call apply_reduce(reduce_args(m_lon        , reduce_m_lon       ))
     call apply_reduce(reduce_args(ph_lev       , reduce_ph_lev      ))
     call apply_reduce(reduce_args(gz_lev       , reduce_gz_lev      ))
@@ -975,30 +920,6 @@ contains
       end if
     else
 #ifdef V_POLE
-      if (raw_mesh%is_outside_pole_half_lat(j+buf_j)) then
-        return
-      else if (raw_mesh%is_south_pole(j+buf_j)) then
-        reduced_state%pv(:,:,buf_j,move) = raw_state%pv(raw_mesh%full_lon_ibeg,raw_mesh%half_lat_ibeg,1)
-      else if (raw_mesh%is_north_pole(j+buf_j)) then
-        reduced_state%pv(:,:,buf_j,move) = raw_state%pv(raw_mesh%full_lon_ibeg,raw_mesh%half_lat_iend,1)
-      else
-        do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
-          do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
-            m_vtx = (                                                                                                            &
-              (reduced_state%m(k,i,buf_j-1,move) + reduced_state%m(k,i+1,buf_j-1,move)) * reduced_mesh%area_subcell(2,buf_j-1) + &
-              (reduced_state%m(k,i,buf_j  ,move) + reduced_state%m(k,i+1,buf_j  ,move)) * reduced_mesh%area_subcell(1,buf_j  )   &
-            ) / reduced_mesh%area_vtx(buf_j)
-            reduced_state%pv(k,i,buf_j,move) = (                                     &
-              (                                                                      &
-                reduced_state%u(k,i  ,buf_j-1,move) * reduced_mesh%de_lon(buf_j-1) - &
-                reduced_state%u(k,i  ,buf_j  ,move) * reduced_mesh%de_lon(buf_j  ) + &
-                reduced_state%v(k,i+1,buf_j  ,move) * reduced_mesh%de_lat(buf_j  ) - &
-                reduced_state%v(k,i  ,buf_j  ,move) * reduced_mesh%de_lat(buf_j  )   &
-              ) / reduced_mesh%area_vtx(buf_j) + reduced_mesh%half_f(buf_j)          &
-            ) / m_vtx
-          end do
-        end do
-      end if
 #else
       if (raw_mesh%is_outside_pole_half_lat(j+buf_j)) then
         return
@@ -1031,7 +952,7 @@ contains
       end if
 #endif
     end if
-    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%pv(:,:,buf_j,move), east_halo=.false.)
+    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%pv(:,:,buf_j,move))
 
   end subroutine reduce_pv
 
@@ -1397,6 +1318,82 @@ contains
 
   end subroutine reduce_pv_lon_midpoint
 
+  subroutine reduce_pv_lon_upwind(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+
+    integer, intent(in) :: j
+    integer, intent(in) :: buf_j
+    integer, intent(in) :: move
+    type(block_type), intent(in) :: block
+    type(mesh_type), intent(in) :: raw_mesh
+    type(state_type), intent(inout) :: raw_state
+    type(reduced_mesh_type), intent(in) :: reduced_mesh
+    type(reduced_static_type), intent(in) :: reduced_static
+    type(reduced_state_type), intent(inout) :: reduced_state
+    real(8), intent(in) :: dt
+
+    integer i, k
+
+    if (reduced_mesh%le_lon(buf_j) == 0 .or. reduced_mesh%de_lon(buf_j) == 0) return
+    associate (v => reduced_state%mf_lon_t, pv => reduced_state%pv, pv_lon => reduced_state%pv_lon)
+      select case (upwind_order_pv)
+      case (3)
+        if (raw_mesh%is_full_lat_next_to_pole(j+buf_j)) then
+          do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
+            do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
+              pv_lon(k,i,buf_j,move) = upwind1(sign(1.0_r8, v(k,i,buf_j,move)), upwind_wgt_pv, pv(k,i,buf_j-1:buf_j,move))
+            end do
+          end do
+        else
+          do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
+            do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
+              pv_lon(k,i,buf_j,move) = upwind3(sign(1.0_r8, v(k,i,buf_j,move)), upwind_wgt_pv, pv(k,i,buf_j-2:buf_j+1,move))
+            end do
+          end do
+        end if
+      end select
+      call fill_zonal_halo(block, reduced_mesh%halo_width, pv_lon(:,:,buf_j,move), east_halo=.false.)
+    end associate
+
+  end subroutine reduce_pv_lon_upwind
+
+  subroutine reduce_pv_lon_weno(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+
+    integer, intent(in) :: j
+    integer, intent(in) :: buf_j
+    integer, intent(in) :: move
+    type(block_type), intent(in) :: block
+    type(mesh_type), intent(in) :: raw_mesh
+    type(state_type), intent(inout) :: raw_state
+    type(reduced_mesh_type), intent(in) :: reduced_mesh
+    type(reduced_static_type), intent(in) :: reduced_static
+    type(reduced_state_type), intent(inout) :: reduced_state
+    real(8), intent(in) :: dt
+
+    integer i, k
+
+    if (reduced_mesh%le_lon(buf_j) == 0 .or. reduced_mesh%de_lon(buf_j) == 0) return
+    associate (v => reduced_state%mf_lon_t, pv => reduced_state%pv, pv_lon => reduced_state%pv_lon)
+      select case (weno_order_pv)
+      case (3)
+        if (raw_mesh%is_full_lat_next_to_pole(j+buf_j)) then
+          do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
+            do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
+              pv_lon(k,i,buf_j,move) = upwind1(sign(1.0_r8, v(k,i,buf_j,move)), upwind_wgt_pv, pv(k,i,buf_j-1:buf_j,move))
+            end do
+          end do
+        else
+          do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
+            do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
+              pv_lon(k,i,buf_j,move) = weno3(sign(1.0_r8, v(k,i,buf_j,move)), pv(k,i,buf_j-2:buf_j+1,move))
+            end do
+          end do
+        end if
+      end select
+      call fill_zonal_halo(block, reduced_mesh%halo_width, pv_lon(:,:,buf_j,move), east_halo=.false.)
+    end associate
+
+  end subroutine reduce_pv_lon_weno
+
   subroutine reduce_pv_lon_apvm(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
 
     integer, intent(in) :: j
@@ -1470,6 +1467,66 @@ contains
     call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%pv_lat(:,:,buf_j,move), west_halo=.false.)
 
   end subroutine reduce_pv_lat_midpoint
+
+  subroutine reduce_pv_lat_upwind(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+
+    integer, intent(in) :: j
+    integer, intent(in) :: buf_j
+    integer, intent(in) :: move
+    type(block_type), intent(in) :: block
+    type(mesh_type), intent(in) :: raw_mesh
+    type(state_type), intent(inout) :: raw_state
+    type(reduced_mesh_type), intent(in) :: reduced_mesh
+    type(reduced_static_type), intent(in) :: reduced_static
+    type(reduced_state_type), intent(inout) :: reduced_state
+    real(8), intent(in) :: dt
+
+    integer i, k
+
+    if (reduced_mesh%le_lat(buf_j) == 0 .or. reduced_mesh%de_lat(buf_j) == 0) return
+    associate (u => reduced_state%mf_lat_t, pv => reduced_state%pv, pv_lat => reduced_state%pv_lat)
+      select case (upwind_order_pv)
+      case (3)
+        do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
+          do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
+            pv_lat(k,i,buf_j,move) = upwind3(sign(1.0_r8, u(k,i,buf_j,move)), upwind_wgt_pv, pv(k,i-2:i+1,buf_j,move))
+          end do
+        end do
+      end select
+      call fill_zonal_halo(block, reduced_mesh%halo_width, pv_lat(:,:,buf_j,move), west_halo=.false.)
+    end associate
+
+  end subroutine reduce_pv_lat_upwind
+
+  subroutine reduce_pv_lat_weno(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+
+    integer, intent(in) :: j
+    integer, intent(in) :: buf_j
+    integer, intent(in) :: move
+    type(block_type), intent(in) :: block
+    type(mesh_type), intent(in) :: raw_mesh
+    type(state_type), intent(inout) :: raw_state
+    type(reduced_mesh_type), intent(in) :: reduced_mesh
+    type(reduced_static_type), intent(in) :: reduced_static
+    type(reduced_state_type), intent(inout) :: reduced_state
+    real(8), intent(in) :: dt
+
+    integer i, k
+
+    if (reduced_mesh%le_lat(buf_j) == 0 .or. reduced_mesh%de_lat(buf_j) == 0) return
+    associate (u => reduced_state%mf_lat_t, pv => reduced_state%pv, pv_lat => reduced_state%pv_lat)
+      select case (weno_order_pv)
+      case (3)
+        do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
+          do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
+            pv_lat(k,i,buf_j,move) = weno3(sign(1.0_r8, u(k,i,buf_j,move)), pv(k,i-2:i+1,buf_j,move))
+          end do
+        end do
+      end select
+      call fill_zonal_halo(block, reduced_mesh%halo_width, pv_lat(:,:,buf_j,move), west_halo=.false.)
+    end associate
+
+  end subroutine reduce_pv_lat_weno
 
   subroutine reduce_pv_lat_apvm(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
 
@@ -1555,7 +1612,7 @@ contains
       end do
       raw_i = raw_i + reduced_mesh%reduce_factor
     end do
-    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%pt(:,:,buf_j,move), west_halo=.false.)
+    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%pt(:,:,buf_j,move))
 
   end subroutine reduce_pt
 
@@ -1573,26 +1630,47 @@ contains
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
-    integer raw_i, i, k
+    real(r8) beta
+    integer i, k
 
     if (reduced_mesh%area_lon(buf_j) == 0) return
+    associate (pt       => reduced_state%pt      , &
+               pt_lon   => reduced_state%pt_lon  , &
+               mf_lon_n => reduced_state%mf_lon_n, &
+               ptf_lon  => reduced_state%ptf_lon)
+      if (upwind_order == -1 .and. weno_order == -1) then
+        do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
+          do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
+            pt_lon(k,i,buf_j,move) = 0.5_r8 * (pt(k,i,buf_j,move) + pt(k,i+1,buf_j,move))
+          end do
+        end do
+      else
+        select case (upwind_order)
+        case (3)
+          beta = upwind_wgt_pt * upwind_pole_wgt(j+buf_j)
+          do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
+            do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
+              pt_lon(k,i,buf_j,move) = upwind3(sign(1.0_r8, mf_lon_n(k,i,buf_j,move)), beta, pt(k,i-1:i+2,buf_j,move))
+            end do
+          end do
+        end select
+        select case (weno_order)
+        case (3)
+          do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
+            do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
+              pt_lon(k,i,buf_j,move) = weno3(sign(1.0_r8, mf_lon_n(k,i,buf_j,move)), pt(k,i-1:i+2,buf_j,move))
+            end do
+          end do
+        end select
+      end if
 
-    do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
-      do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
-        reduced_state%pt_lon(k,i,buf_j,move) = (                                   &
-          reduced_mesh%area_lon_east(buf_j) * reduced_state%pt(k,i  ,buf_j,move) + &
-          reduced_mesh%area_lon_west(buf_j) * reduced_state%pt(k,i+1,buf_j,move)   &
-        ) / reduced_mesh%area_lon(buf_j)
+      do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
+        do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
+          ptf_lon(k,i,buf_j,move) = mf_lon_n(k,i,buf_j,move) * pt_lon(k,i,buf_j,move)
+        end do
       end do
-    end do
-
-    do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
-      do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
-        reduced_state%ptf_lon(k,i,buf_j,move) = reduced_state%mf_lon_n(k,i,buf_j,move) * &
-                                                reduced_state%pt_lon  (k,i,buf_j,move)
-      end do
-    end do
-    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%ptf_lon(:,:,buf_j,move), east_halo=.false.)
+      call fill_zonal_halo(block, reduced_mesh%halo_width, ptf_lon(:,:,buf_j,move), east_halo=.false.)
+    end associate
 
   end subroutine reduce_ptf_lon
 

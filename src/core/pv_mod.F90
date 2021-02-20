@@ -6,6 +6,8 @@ module pv_mod
   use state_mod
   use block_mod
   use parallel_mod
+  use upwind_mod
+  use weno_mod
 
   implicit none
 
@@ -14,6 +16,8 @@ module pv_mod
   public calc_vor
   public diag_pv
   public interp_pv_midpoint
+  public interp_pv_upwind
+  public interp_pv_weno
   public interp_pv_apvm
 
 contains
@@ -256,6 +260,108 @@ contains
 #endif
 
   end subroutine interp_pv_midpoint
+
+  subroutine interp_pv_upwind(block, state)
+
+    type(block_type), intent(in) :: block
+    type(state_type), intent(inout) :: state
+
+    integer i, j, k
+
+    associate (mesh   => block%mesh    , &
+               u      => state%mf_lat_t, &
+               v      => state%mf_lon_t, &
+               pv     => state%pv      , &
+               pv_lon => state%pv_lon  , &
+               pv_lat => state%pv_lat)
+      select case (upwind_order_pv)
+      case (3)
+        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+            if (mesh%is_full_lat_next_to_pole(j)) then
+              do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+#ifdef V_POLE
+                pv_lon(i,j,k) = upwind1(sign(1.0_r8, v(i,j,k)), upwind_wgt_pv, pv(i,j:j+1,k))
+#else
+                pv_lon(i,j,k) = upwind1(sign(1.0_r8, v(i,j,k)), upwind_wgt_pv, pv(i,j-1:j,k))
+#endif
+              end do
+            else
+              do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+#ifdef V_POLE
+                pv_lon(i,j,k) = upwind3(sign(1.0_r8, v(i,j,k)), upwind_wgt_pv, pv(i,j-1:j+2,k))
+#else
+                pv_lon(i,j,k) = upwind3(sign(1.0_r8, v(i,j,k)), upwind_wgt_pv, pv(i,j-2:j+1,k))
+#endif
+              end do
+            end if
+          end do
+        end do
+        call fill_halo(block, pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., east_halo=.false., south_halo=.false.)
+
+        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+          do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              pv_lat(i,j,k) = upwind3(sign(1.0_r8, u(i,j,k)), upwind_wgt_pv, pv(i-2:i+1,j,k))
+            end do
+          end do
+        end do
+        call fill_halo(block, pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., west_halo=.false., north_halo=.false.)
+      end select
+    end associate
+
+  end subroutine interp_pv_upwind
+
+  subroutine interp_pv_weno(block, state)
+
+    type(block_type), intent(in) :: block
+    type(state_type), intent(inout) :: state
+
+    integer i, j, k
+
+    associate (mesh   => block%mesh    , &
+               u      => state%mf_lat_t, &
+               v      => state%mf_lon_t, &
+               pv     => state%pv      , &
+               pv_lon => state%pv_lon  , &
+               pv_lat => state%pv_lat)
+      select case (weno_order_pv)
+      case (3)
+        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+            if (mesh%is_full_lat_next_to_pole(j)) then
+              do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+#ifdef V_POLE
+                pv_lon(i,j,k) = upwind1(sign(1.0_r8, v(i,j,k)), upwind_wgt_pv, pv(i,j:j+1,k))
+#else
+                pv_lon(i,j,k) = upwind1(sign(1.0_r8, v(i,j,k)), upwind_wgt_pv, pv(i,j-1:j,k))
+#endif
+              end do
+            else
+              do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+#ifdef V_POLE
+                pv_lon(i,j,k) = weno3(sign(1.0_r8, v(i,j,k)), pv(i,j-1:j+2,k))
+#else
+                pv_lon(i,j,k) = weno3(sign(1.0_r8, v(i,j,k)), pv(i,j-2:j+1,k))
+#endif
+              end do
+            end if
+          end do
+        end do
+        call fill_halo(block, pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., east_halo=.false., south_halo=.false.)
+
+        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+          do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              pv_lat(i,j,k) = weno3(sign(1.0_r8, u(i,j,k)), pv(i-2:i+1,j,k))
+            end do
+          end do
+        end do
+        call fill_halo(block, pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., west_halo=.false., north_halo=.false.)
+      end select
+    end associate
+
+  end subroutine interp_pv_weno
 
   subroutine interp_pv_apvm(block, state, dt)
 

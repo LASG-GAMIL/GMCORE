@@ -5,6 +5,8 @@ module interp_mod
   use block_mod
   use process_mod
   use parallel_mod
+  use upwind_mod
+  use weno_mod
 
   implicit none
 
@@ -56,7 +58,7 @@ module interp_mod
   public interp_lat_edge_to_pressure_level
   public interp_lev_edge_to_pressure_level
 
-  real(r8), allocatable :: pole_wgt(:)
+  real(r8), public, allocatable :: upwind_pole_wgt(:)
 
 contains
 
@@ -66,13 +68,13 @@ contains
 
     call interp_final()
 
-    allocate(pole_wgt(global_mesh%num_full_lat))
+    allocate(upwind_pole_wgt(global_mesh%num_full_lat))
 
     do j = 1, global_mesh%num_full_lat
       if (abs(global_mesh%full_lat_deg(j)) > 85) then
-        pole_wgt(j) = 1 / upwind_wgt_pt
+        upwind_pole_wgt(j) = 1 / upwind_wgt_pt
       else
-        pole_wgt(j) = 1 + (1 / upwind_wgt_pt - 1) * &
+        upwind_pole_wgt(j) = 1 + (1 / upwind_wgt_pt - 1) * &
           exp(-0.1 * (abs(global_mesh%full_lat_deg(j)) - 85)**2)
       end if
     end do
@@ -81,7 +83,7 @@ contains
 
   subroutine interp_final()
 
-    if (allocated(pole_wgt)) deallocate(pole_wgt)
+    if (allocated(upwind_pole_wgt)) deallocate(upwind_pole_wgt)
 
   end subroutine interp_final
 
@@ -101,28 +103,33 @@ contains
     real(r8), intent(in), optional :: upwind_wgt_
     logical, intent(in), optional :: enhance_pole
 
-    real(r8), parameter :: c11 =  0.5_r8
-    real(r8), parameter :: c12 = -0.5_r8
-    real(r8), parameter :: c31 =  7.0_r8 / 12.0_r8
-    real(r8), parameter :: c32 = -1.0_r8 / 12.0_r8
-    real(r8), parameter :: c33 =  1.0_r8 / 12.0_r8
     real(r8) beta(mesh%full_lat_ibeg:mesh%full_lat_iend)
     integer i, j, k
 
     if (present(u)) then
+      ! WENO interpolation
+      select case (weno_order)
+      case (3)
+        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+            do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+              x_lon(i,j,k) = weno3(sign(1.0_r8, u(i,j,k)), x(i-1:i+2,j,k))
+            end do
+          end do
+        end do
+        return
+      end select
+      ! Upwind-biased interpolation
       beta = merge(upwind_wgt_, upwind_wgt, present(upwind_wgt_))
       if (present(enhance_pole)) then
-        if (enhance_pole) beta = beta * pole_wgt(mesh%full_lat_ibeg:mesh%full_lat_iend)
+        if (enhance_pole) beta = beta * upwind_pole_wgt(mesh%full_lat_ibeg:mesh%full_lat_iend)
       end if
-      ! Upwind-biased interpolation
       select case (upwind_order)
       case (1)
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              x_lon(i,j,k) = c11 * (x(i+1,j,k) + x(i,j,k)) + &
-                             c12 * (x(i+1,j,k) - x(i,j,k)) * &
-                         beta(j) * sign(1.0_r8, u(i,j,k))
+              x_lon(i,j,k) = upwind1(sign(1.0_r8, u(i,j,k)), beta(j), x(i:i+1,j,k))
             end do
           end do
         end do
@@ -131,11 +138,7 @@ contains
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              x_lon(i,j,k) = c31 * (x(i+1,j,k) + x(i  ,j,k))  + &
-                             c32 * (x(i+2,j,k) + x(i-1,j,k))  + &
-                             c33 * (x(i+2,j,k) - x(i-1,j,k)   - &
-                          3.0_r8 * (x(i+1,j,k) - x(i  ,j,k))) * &
-                         beta(j) * sign(1.0_r8, u(i,j,k))
+              x_lon(i,j,k) = upwind3(sign(1.0_r8, u(i,j,k)), beta(j), x(i-1:i+2,j,k))
             end do
           end do
         end do
@@ -184,19 +187,40 @@ contains
     real(r8), intent(in), optional :: upwind_wgt_
     logical, intent(in), optional :: enhance_pole
 
-    real(r8), parameter :: c11 =  0.5_r8
-    real(r8), parameter :: c12 = -0.5_r8
-    real(r8), parameter :: c31 =  7.0_r8 / 12.0_r8
-    real(r8), parameter :: c32 = -1.0_r8 / 12.0_r8
-    real(r8), parameter :: c33 =  1.0_r8 / 12.0_r8
     real(r8) beta(mesh%full_lat_ibeg:mesh%full_lat_iend)
-    integer i, j, k, jm1, jp2, io
+    integer i, j, k
 
     if (present(v)) then
       beta = merge(upwind_wgt_, upwind_wgt, present(upwind_wgt_))
       if (present(enhance_pole)) then
-        if (enhance_pole) beta = beta * pole_wgt(mesh%full_lat_ibeg:mesh%full_lat_iend)
+        if (enhance_pole) beta = beta * upwind_pole_wgt(mesh%full_lat_ibeg:mesh%full_lat_iend)
       end if
+      ! WENO interpolation
+      select case (weno_order)
+      case (3)
+         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+          do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+            if (mesh%is_half_lat_next_to_pole(j)) then
+              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+#ifdef V_POLE
+                x_lat(i,j,k) = upwind1(sign(1.0_r8, v(i,j,k)), beta(j), x(i,j-1:j,k))
+#else
+                x_lat(i,j,k) = upwind1(sign(1.0_r8, v(i,j,k)), beta(j), x(i,j:j+1,k))
+#endif
+              end do
+            else
+              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+#ifdef V_POLE
+                x_lat(i,j,k) = weno3(sign(1.0_r8, v(i,j,k)), x(i,j-2:j+1,k))
+#else
+                x_lat(i,j,k) = weno3(sign(1.0_r8, v(i,j,k)), x(i,j-1:j+2,k))
+              end do
+#endif
+            end if
+          end do
+        end do
+        return
+      end select
       ! Upwind-biased interpolation
       select case (upwind_order)
       case (1)
@@ -204,15 +228,11 @@ contains
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
 #ifdef V_POLE
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              x_lat(i,j,k) = c11 * (x(i,j,k) + x(i,j-1,k)) + &
-                             c12 * (x(i,j,k) - x(i,j-1,k)) * &
-                         beta(j) * sign(1.0_r8, v(i,j,k))
+              x_lat(i,j,k) = upwind1(sign(1.0_r8, v(i,j,k)), beta(j), x(i,j-1:j,k))
             end do
 #else
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              x_lat(i,j,k) = c11 * (x(i,j+1,k) + x(i,j,k)) + &
-                             c12 * (x(i,j+1,k) - x(i,j,k)) * &
-                         beta(j) * sign(1.0_r8, v(i,j,k))
+              x_lat(i,j,k) = upwind1(sign(1.0_r8, v(i,j,k)), beta(j), x(i,j:j+1,k))
             end do
 #endif
           end do
@@ -224,29 +244,17 @@ contains
             if (mesh%is_half_lat_next_to_pole(j)) then
               do i = mesh%full_lon_ibeg, mesh%full_lon_iend
 #ifdef V_POLE
-                x_lat(i,j,k) = c11 * (x(i,j,k) + x(i,j-1,k)) + &
-                               c12 * (x(i,j,k) - x(i,j-1,k)) * &
-                           beta(j) * sign(1.0_r8, v(i,j,k))
+                x_lat(i,j,k) = upwind1(sign(1.0_r8, v(i,j,k)), beta(j), x(i,j-1:j,k))
 #else
-                x_lat(i,j,k) = c11 * (x(i,j+1,k) + x(i,j,k)) + &
-                               c12 * (x(i,j+1,k) - x(i,j,k)) * &
-                           beta(j) * sign(1.0_r8, v(i,j,k))
+                x_lat(i,j,k) = upwind1(sign(1.0_r8, v(i,j,k)), beta(j), x(i,j:j+1,k))
 #endif
               end do
             else
               do i = mesh%full_lon_ibeg, mesh%full_lon_iend
 #ifdef V_POLE
-                x_lat(i,j,k) = c31 * (x(i,j  ,k) + x(i,j-1,k))  + &
-                               c32 * (x(i,j+1,k) + x(i,j-2,k))  + &
-                               c33 * (x(i,j+1,k) - x(i,j-2,k)   - &
-                            3.0_r8 * (x(i,j  ,k) - x(i,j-1,k))) * &
-                           beta(j) * sign(1.0_r8, v(i,j,k))
+                x_lat(i,j,k) = upwind3(sign(1.0_r8, v(i,j,k)), beta(j), x(i,j-2:j+1,k))
 #else
-                x_lat(i,j,k) = c31 * (x(i,j+1,k) + x(i,j  ,k))  + &
-                               c32 * (x(i,j+2,k) + x(i,j-1,k))  + &
-                               c33 * (x(i,j+2,k) - x(i,j-1,k)   - &
-                            3.0_r8 * (x(i,j+1,k) - x(i,j  ,k))) * &
-                           beta(j) * sign(1.0_r8, v(i,j,k))
+                x_lat(i,j,k) = upwind3(sign(1.0_r8, v(i,j,k)), beta(j), x(i,j-1:j+2,k))
               end do
 #endif
             end if
@@ -357,25 +365,30 @@ contains
                                         mesh%half_lev_lb:mesh%half_lev_ub)
     real(r8), intent(in), optional :: upwind_wgt_
 
-    real(r8), parameter :: c11 =  0.5_r8
-    real(r8), parameter :: c12 = -0.5_r8
-    real(r8), parameter :: c31 =  7.0_r8 / 12.0_r8
-    real(r8), parameter :: c32 = -1.0_r8 / 12.0_r8
-    real(r8), parameter :: c33 =  1.0_r8 / 12.0_r8
     real(r8) beta
     integer i, j, k
 
     if (present(u)) then
-      beta = merge(upwind_wgt_, upwind_wgt, present(upwind_wgt_))
+      ! WENO interpolation
+      select case (weno_order)
+      case (3)
+        do k = mesh%half_lev_ibeg, mesh%half_lev_iend
+          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+            do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+              x_lev_lon(i,j,k) = weno3(sign(1.0_r8, u(i,j,k)), x_lev(i-1:i+2,j,k))
+            end do
+          end do
+        end do
+        return
+      end select
       ! Upwind-biased interpolation
+      beta = merge(upwind_wgt_, upwind_wgt, present(upwind_wgt_))
       select case (upwind_order)
       case (1)
         do k = mesh%half_lev_ibeg, mesh%half_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              x_lev_lon(i,j,k) = c11 * (x_lev(i+1,j,k) + x_lev(i,j,k)) + &
-                                 c12 * (x_lev(i+1,j,k) - x_lev(i,j,k)) * &
-                                beta * sign(1.0_r8, u(i,j,k))
+              x_lev_lon(i,j,k) = upwind1(sign(1.0_r8, u(i,j,k)), beta, x_lev(i:i+1,j,k))
             end do
           end do
         end do
@@ -384,11 +397,7 @@ contains
         do k = mesh%half_lev_ibeg, mesh%half_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              x_lev_lon(i,j,k) = c31 * (x_lev(i+1,j,k) + x_lev(i  ,j,k))  + &
-                                 c32 * (x_lev(i+2,j,k) + x_lev(i-1,j,k))  + &
-                                 c33 * (x_lev(i+2,j,k) - x_lev(i-1,j,k)   - &
-                              3.0_r8 * (x_lev(i+1,j,k) - x_lev(i  ,j,k))) * &
-                                beta * sign(1.0_r8, u(i,j,k))
+              x_lev_lon(i,j,k) = upwind3(sign(1.0_r8, u(i,j,k)), beta, x_lev(i-1:i+2,j,k))
             end do
           end do
         end do
@@ -421,16 +430,37 @@ contains
                                         mesh%half_lev_lb:mesh%half_lev_ub)
     real(r8), intent(in), optional :: upwind_wgt_
 
-    real(r8), parameter :: c11 =  0.5_r8
-    real(r8), parameter :: c12 = -0.5_r8
-    real(r8), parameter :: c31 =  7.0_r8 / 12.0_r8
-    real(r8), parameter :: c32 = -1.0_r8 / 12.0_r8
-    real(r8), parameter :: c33 =  1.0_r8 / 12.0_r8
     real(r8) beta
     integer i, j, k
 
     if (present(v)) then
       beta = merge(upwind_wgt_, upwind_wgt, present(upwind_wgt_))
+      ! WENO interpolation
+      select case (weno_order)
+      case (3)
+        do k = mesh%half_lev_ibeg, mesh%half_lev_iend
+          do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+            if (mesh%is_half_lat_next_to_pole(j)) then
+              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+#ifdef V_POLE
+                x_lev_lat(i,j,k) = upwind1(sign(1.0_r8, v(i,j,k)), beta, x_lev(i,j-1:j,k))
+#else
+                x_lev_lat(i,j,k) = upwind1(sign(1.0_r8, v(i,j,k)), beta, x_lev(i,j:j+1,k))
+#endif
+              end do
+            else
+              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+#ifdef V_POLE
+                x_lev_lat(i,j,k) = weno3(sign(1.0_r8, v(i,j,k)), x_lev(i,j-2:j+1,k))
+#else
+                x_lev_lat(i,j,k) = weno3(sign(1.0_r8, v(i,j,k)), x_lev(i,j-1:j+2,k))
+#endif
+              end do
+            end if
+          end do
+        end do
+        return
+      end select
       ! Upwind-biased interpolation
       select case (upwind_order)
       case (1)
@@ -438,13 +468,9 @@ contains
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
 #ifdef V_POLE
-              x_lev_lat(i,j,k) = c11 * (x_lev(i,j,k) + x_lev(i,j-1,k)) + &
-                                 c12 * (x_lev(i,j,k) - x_lev(i,j-1,k)) * &
-                                beta * sign(1.0_r8, v(i,j,k))
+              x_lev_lat(i,j,k) = upwind1(sign(1.0_r8, v(i,j,k)), beta, x_lev(i,j-1:j,k))
 #else
-              x_lev_lat(i,j,k) = c11 * (x_lev(i,j+1,k) + x_lev(i,j,k)) + &
-                                 c12 * (x_lev(i,j+1,k) - x_lev(i,j,k)) * &
-                                beta * sign(1.0_r8, v(i,j,k))
+              x_lev_lat(i,j,k) = upwind1(sign(1.0_r8, v(i,j,k)), beta, x_lev(i,j:j+1,k))
 #endif
             end do
           end do
@@ -456,29 +482,17 @@ contains
             if (mesh%is_half_lat_next_to_pole(j)) then
               do i = mesh%full_lon_ibeg, mesh%full_lon_iend
 #ifdef V_POLE
-                x_lev_lat(i,j,k) = c11 * (x_lev(i,j,k) + x_lev(i,j-1,k)) + &
-                                   c12 * (x_lev(i,j,k) - x_lev(i,j-1,k)) * &
-                                  beta * sign(1.0_r8, v(i,j,k))
+                x_lev_lat(i,j,k) = upwind1(sign(1.0_r8, v(i,j,k)), beta, x_lev(i,j-1:j,k))
 #else
-                x_lev_lat(i,j,k) = c11 * (x_lev(i,j+1,k) + x_lev(i,j,k)) + &
-                                   c12 * (x_lev(i,j+1,k) - x_lev(i,j,k)) * &
-                                  beta * sign(1.0_r8, v(i,j,k))
+                x_lev_lat(i,j,k) = upwind1(sign(1.0_r8, v(i,j,k)), beta, x_lev(i,j:j+1,k))
 #endif
               end do
             else
               do i = mesh%full_lon_ibeg, mesh%full_lon_iend
 #ifdef V_POLE
-                x_lev_lat(i,j,k) = c31 * (x_lev(i,j  ,k) + x_lev(i,j-1,k))  + &
-                                   c32 * (x_lev(i,j+1,k) + x_lev(i,j-2,k))  + &
-                                   c33 * (x_lev(i,j+1,k) - x_lev(i,j-2,k)   - &
-                                3.0_r8 * (x_lev(i,j  ,k) - x_lev(i,j-1,k))) * &
-                                  beta * sign(1.0_r8, v(i,j,k))
+                x_lev_lat(i,j,k) = upwind3(sign(1.0_r8, v(i,j,k)), beta, x_lev(i,j-2:j+1,k))
 #else
-                x_lev_lat(i,j,k) = c31 * (x_lev(i,j+1,k) + x_lev(i,j  ,k))  + &
-                                   c32 * (x_lev(i,j+2,k) + x_lev(i,j-1,k))  + &
-                                   c33 * (x_lev(i,j+2,k) - x_lev(i,j-1,k)   - &
-                                3.0_r8 * (x_lev(i,j+1,k) - x_lev(i,j  ,k))) * &
-                                  beta * sign(1.0_r8, v(i,j,k))
+                x_lev_lat(i,j,k) = upwind3(sign(1.0_r8, v(i,j,k)), beta, x_lev(i,j-1:j+2,k))
 #endif
               end do
             end if

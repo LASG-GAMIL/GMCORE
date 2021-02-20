@@ -136,6 +136,8 @@ set(gmcore_files
   src/core/ke_mod.F90
   src/core/nh_mod.F90
   src/core/interp_mod.F90
+  src/core/upwind_mod.F90
+  src/core/weno_mod.F90
   src/core/operators_mod.F90
   src/core/reduced_types_mod.F90
   ${CMAKE_CURRENT_BINARY_DIR}/reduce_mod.F90
