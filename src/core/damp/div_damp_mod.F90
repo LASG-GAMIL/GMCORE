@@ -60,9 +60,10 @@ contains
             jr = global_mesh%full_lat_iend_no_pole - j + 1
           end if
           if (baroclinic) then
-            c0 = div_damp_coef2 * global_mesh%full_cos_lat(j)**r
-            c1 = c0 + exp(jr**2 * log(div_damp_decay_pole) / j0**2) * (div_damp_coef2_pole - c0)
-            c2 = c1 + exp(k**2 * log(div_damp_decay_top) / div_damp_k0**2) * (div_damp_coef2_top - c1)
+            c0 = div_damp_coef2 + exp(k**2 * log(div_damp_decay_top) / div_damp_k0**2) * &
+                (div_damp_coef2_top - div_damp_coef2)
+            c1 = c0 * global_mesh%full_cos_lat(j)**r
+            c2 = c1 + exp(jr**2 * log(div_damp_decay_pole) / j0**2) * (div_damp_coef2_pole - c1)
             if (c2 < 1.0e-9) c2 = 0
             cd_full_lat(j,k) = c2 * radius**2 * dlat0 * global_mesh%dlon / dt_in_seconds
           else
@@ -81,9 +82,10 @@ contains
             jr = global_mesh%half_lat_iend_no_pole - j + 1
           end if
           if (baroclinic) then
-            c0 = div_damp_coef2 * global_mesh%half_cos_lat(j)**r
-            c1 = c0 + exp(jr**2 * log(div_damp_decay_pole) / j0**2) * (div_damp_coef2_pole - c0)
-            c2 = c1 + exp(k**2 * log(div_damp_decay_top) / div_damp_k0**2) * (div_damp_coef2_top - c1)
+            c0 = div_damp_coef2 + exp(k**2 * log(div_damp_decay_top) / div_damp_k0**2) * &
+                (div_damp_coef2_top - div_damp_coef2)
+            c1 = c0 * global_mesh%half_cos_lat(j)**r
+            c2 = c1 + exp(jr**2 * log(div_damp_decay_pole) / j0**2) * (div_damp_coef2_pole - c1)
             if (c2 < 1.0e-9) c2 = 0
             cd_half_lat(j,k) = c2 * radius**2 * dlat0 * global_mesh%dlon / dt_in_seconds
           else
