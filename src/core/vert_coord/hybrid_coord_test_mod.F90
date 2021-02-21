@@ -29,6 +29,10 @@ contains
     real(r8), intent(out) :: hyai(16)
     real(r8), intent(out) :: hybi(16)
 
+    if (global_mesh%num_full_lev /= 15 .and. is_root_proc()) then
+      call log_error('num_lev should be 15 in namelist!')
+    end if
+
     hyai = [0.20540233  , & !  1
             0.19853043  , & !  2
             0.19095544  , & !  3
@@ -73,6 +77,10 @@ contains
     real(r8), intent(out) :: ptop
     real(r8), intent(out) :: hyai(27)
     real(r8), intent(out) :: hybi(27)
+
+    if (global_mesh%num_full_lev /= 26 .and. is_root_proc()) then
+      call log_error('num_lev should be 26 in namelist!')
+    end if
 
     hyai = [0.002194067  , & !  1
             0.004895209  , & !  2
@@ -141,6 +149,10 @@ contains
     real(r8), intent(out) :: ptop
     real(r8), intent(out) :: hyai(31)
     real(r8), intent(out) :: hybi(31)
+
+    if (global_mesh%num_full_lev /= 30 .and. is_root_proc()) then
+      call log_error('num_lev should be 30 in namelist!')
+    end if
 
     hyai = [0.20540233  , & !  1
             0.20205101  , & !  2
@@ -217,6 +229,10 @@ contains
     real(r8), intent(out) :: ptop
     real(r8), intent(out) :: hyai(96)
     real(r8), intent(out) :: hybi(96)
+
+    if (global_mesh%num_full_lev /= 95 .and. is_root_proc()) then
+      call log_error('num_lev should be 95 in namelist!')
+    end if
 
     hyai = [          &
       5.0000000e-02,  &
