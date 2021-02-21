@@ -212,16 +212,13 @@ contains
     type(tend_type), intent(in) :: tend
     real(8), intent(in) :: dt
 
-    type(mesh_type), pointer :: mesh
     integer i, j, k, l
     real(r8) mf
-
-    mesh => state%mesh
 
     associate (mesh              => block%mesh             , & ! in
                dmfdlon           => tend%dmfdlon           , & ! in
                dmfdlat           => tend%dmfdlat           , & ! in
-               dphs              => tend%dphs              , & ! out
+               dphs              => tend%dphs              , & ! in
                wedphdlev_lev     => state%wedphdlev_lev    , & ! out
                wedphdlev_lev_lon => state%wedphdlev_lev_lon, & ! out
                wedphdlev_lev_lat => state%wedphdlev_lev_lat)   ! out
@@ -421,7 +418,7 @@ contains
 
     call interp_cell_to_lon_edge(state%mesh, state%pt, state%pt_lon, reversed_area=.true., u=state%u, upwind_wgt_=upwind_wgt_pt, enhance_pole=.true.)
     call interp_cell_to_lat_edge(state%mesh, state%pt, state%pt_lat, reversed_area=.true., v=state%v, upwind_wgt_=upwind_wgt_pt, enhance_pole=.true.)
-    call fill_halo(block, state%pt_lon, full_lon=.false., full_lat=.true., full_lev=.true., east_halo=.false., south_halo=.false., north_halo=.false.)
+    call fill_halo(block, state%pt_lon, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
 #ifdef V_POLE
     call fill_halo(block, state%pt_lat, full_lon=.true., full_lat=.false., full_lev=.true., west_halo=.false., east_halo=.false., south_halo=.false.)
 #else
@@ -1088,61 +1085,68 @@ contains
     type(tend_type), intent(inout) :: tend
     real(8), intent(in) :: dt
 
-    type(mesh_type), pointer :: mesh
     integer i, j, k
 
     if (baroclinic) then
-      mesh => state%mesh
-
-      do k = mesh%full_lev_ibeg + 1, mesh%full_lev_iend - 1
+      associate (mesh              => block%mesh             , &
+                 u                 => state%u                , & ! in
+                 v                 => state%v                , & ! in
+                 m_lon             => state%m_lon            , & ! in
+                 m_lat             => state%m_lat            , & ! in
+                 wedphdlev_lev_lon => state%wedphdlev_lev_lon, & ! in
+                 wedphdlev_lev_lat => state%wedphdlev_lev_lat, & ! in
+                 wedudlev          => tend%wedudlev          , & ! out
+                 wedvdlev          => tend%wedvdlev)             ! out
+        do k = mesh%full_lev_ibeg + 1, mesh%full_lev_iend - 1
+          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+            do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+              wedudlev(i,j,k) = (                                          &
+                  wedphdlev_lev_lon(i,j,k+1) * (u(i,j,k+1) - u(i,j,k  )) + &
+                  wedphdlev_lev_lon(i,j,k  ) * (u(i,j,k  ) - u(i,j,k-1))   &
+                ) / m_lon(i,j,k) / 2.0_r8
+            end do
+          end do
+        end do
+        k = mesh%full_lev_ibeg
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            tend%wedudlev(i,j,k) = (                                                       &
-                state%wedphdlev_lev_lon(i,j,k+1) * (state%u(i,j,k+1) - state%u(i,j,k  )) + &
-                state%wedphdlev_lev_lon(i,j,k  ) * (state%u(i,j,k  ) - state%u(i,j,k-1))   &
-              ) / state%m_lon(i,j,k) / 2.0_r8
+            wedudlev(i,j,k) = (wedphdlev_lev_lon(i,j,k+1) * &
+              (u(i,j,k+1) - u(i,j,k  ))) / m_lon(i,j,k) / 2.0_r8
           end do
         end do
-      end do
-      k = mesh%full_lev_ibeg
-      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          tend%wedudlev(i,j,k) = (state%wedphdlev_lev_lon(i,j,k+1) * &
-            (state%u(i,j,k+1) - state%u(i,j,k  ))) / state%m_lon(i,j,k) / 2.0_r8
+        k = mesh%full_lev_iend
+        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+            wedudlev(i,j,k) = (wedphdlev_lev_lon(i,j,k  ) * &
+              (u(i,j,k  ) - u(i,j,k-1))) / m_lon(i,j,k) / 2.0_r8
+          end do
         end do
-      end do
-      k = mesh%full_lev_iend
-      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          tend%wedudlev(i,j,k) = (state%wedphdlev_lev_lon(i,j,k  ) * &
-            (state%u(i,j,k  ) - state%u(i,j,k-1))) / state%m_lon(i,j,k) / 2.0_r8
-        end do
-      end do
 
-      do k = mesh%full_lev_ibeg + 1, mesh%full_lev_iend - 1
+        do k = mesh%full_lev_ibeg + 1, mesh%full_lev_iend - 1
+          do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              wedvdlev(i,j,k) = (                                        &
+                wedphdlev_lev_lat(i,j,k+1) * (v(i,j,k+1) - v(i,j,k  )) + &
+                wedphdlev_lev_lat(i,j,k  ) * (v(i,j,k  ) - v(i,j,k-1))   &
+              ) / m_lat(i,j,k) / 2.0_r8
+            end do
+          end do
+        end do
+        k = mesh%full_lev_ibeg
         do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            tend%wedvdlev(i,j,k) = (                                                     &
-              state%wedphdlev_lev_lat(i,j,k+1) * (state%v(i,j,k+1) - state%v(i,j,k  )) + &
-              state%wedphdlev_lev_lat(i,j,k  ) * (state%v(i,j,k  ) - state%v(i,j,k-1))   &
-            ) / state%m_lat(i,j,k) / 2.0_r8
+            wedvdlev(i,j,k) = (wedphdlev_lev_lat(i,j,k+1) * &
+              (v(i,j,k+1) - v(i,j,k  ))) / m_lat(i,j,k) / 2.0_r8
           end do
         end do
-      end do
-      k = mesh%full_lev_ibeg
-      do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          tend%wedvdlev(i,j,k) = (state%wedphdlev_lev_lat(i,j,k+1) * &
-            (state%v(i,j,k+1) - state%v(i,j,k  ))) / state%m_lat(i,j,k) / 2.0_r8
+        k = mesh%full_lev_iend
+        do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            wedvdlev(i,j,k) = (wedphdlev_lev_lat(i,j,k  ) * &
+              (v(i,j,k  ) - v(i,j,k-1))) / m_lat(i,j,k) / 2.0_r8
+          end do
         end do
-      end do
-      k = mesh%full_lev_iend
-      do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          tend%wedvdlev(i,j,k) = (state%wedphdlev_lev_lat(i,j,k  ) * &
-            (state%v(i,j,k  ) - state%v(i,j,k-1))) / state%m_lat(i,j,k) / 2.0_r8
-        end do
-      end do
+      end associate
     end if
 
   end subroutine calc_wedudlev_wedvdlev

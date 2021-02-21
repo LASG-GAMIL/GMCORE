@@ -120,7 +120,11 @@ contains
         return
       end select
       ! Upwind-biased interpolation
-      beta = merge(upwind_wgt_, upwind_wgt, present(upwind_wgt_))
+      if (present(upwind_wgt_)) then
+        beta = upwind_wgt_
+      else
+        beta = upwind_wgt
+      end if
       if (present(enhance_pole)) then
         if (enhance_pole) beta = beta * upwind_pole_wgt(mesh%full_lat_ibeg:mesh%full_lat_iend)
       end if
@@ -191,7 +195,11 @@ contains
     integer i, j, k
 
     if (present(v)) then
-      beta = merge(upwind_wgt_, upwind_wgt, present(upwind_wgt_))
+      if (present(upwind_wgt_)) then
+        beta = upwind_wgt_
+      else
+        beta = upwind_wgt
+      end if
       if (present(enhance_pole)) then
         if (enhance_pole) beta = beta * upwind_pole_wgt(mesh%full_lat_ibeg:mesh%full_lat_iend)
       end if
@@ -382,7 +390,11 @@ contains
         return
       end select
       ! Upwind-biased interpolation
-      beta = merge(upwind_wgt_, upwind_wgt, present(upwind_wgt_))
+      if (present(upwind_wgt_)) then
+        beta = upwind_wgt_
+      else
+        beta = upwind_wgt
+      end if
       select case (upwind_order)
       case (1)
         do k = mesh%half_lev_ibeg, mesh%half_lev_iend
@@ -434,7 +446,11 @@ contains
     integer i, j, k
 
     if (present(v)) then
-      beta = merge(upwind_wgt_, upwind_wgt, present(upwind_wgt_))
+      if (present(upwind_wgt_)) then
+        beta = upwind_wgt_
+      else
+        beta = upwind_wgt
+      end if
       ! WENO interpolation
       select case (weno_order)
       case (3)

@@ -1631,38 +1631,19 @@ contains
     real(8), intent(in) :: dt
 
     real(r8) beta
-    integer i, k
+    integer raw_i, i, k
 
     if (reduced_mesh%area_lon(buf_j) == 0) return
-    associate (pt       => reduced_state%pt      , &
-               pt_lon   => reduced_state%pt_lon  , &
+    associate (pt_lon   => reduced_state%pt_lon  , &
                mf_lon_n => reduced_state%mf_lon_n, &
                ptf_lon  => reduced_state%ptf_lon)
-      if (upwind_order == -1 .and. weno_order == -1) then
-        do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
-          do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
-            pt_lon(k,i,buf_j,move) = 0.5_r8 * (pt(k,i,buf_j,move) + pt(k,i+1,buf_j,move))
-          end do
+      raw_i = raw_mesh%full_lon_ibeg + move - 1
+      do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
+        do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
+          pt_lon(k,i,buf_j,move) = sum(raw_state%pt_lon(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j,k) * reduced_mesh%weights)
         end do
-      else
-        select case (upwind_order)
-        case (3)
-          beta = upwind_wgt_pt * upwind_pole_wgt(j+buf_j)
-          do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
-            do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
-              pt_lon(k,i,buf_j,move) = upwind3(sign(1.0_r8, mf_lon_n(k,i,buf_j,move)), beta, pt(k,i-1:i+2,buf_j,move))
-            end do
-          end do
-        end select
-        select case (weno_order)
-        case (3)
-          do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
-            do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
-              pt_lon(k,i,buf_j,move) = weno3(sign(1.0_r8, mf_lon_n(k,i,buf_j,move)), pt(k,i-1:i+2,buf_j,move))
-            end do
-          end do
-        end select
-      end if
+        raw_i = raw_i + reduced_mesh%reduce_factor
+      end do
 
       do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
         do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
