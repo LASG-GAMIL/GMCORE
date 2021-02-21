@@ -341,6 +341,7 @@ contains
         allocate(half_lev_half_lon_dims(mf_lev_lon_n,  0:0))
         allocate(half_lev_full_lon_dims(w_lev       ,  0:0))
         allocate(half_lev_half_lon_dims(w_lev_lon   ,  0:0))
+        allocate(half_lev_half_lon_dims(p_lev       ,  0:0))
         allocate(half_lev_half_lon_dims(p_lev_lon   ,  0:0))
         allocate(half_lev_half_lon_dims(gz_lev_lon  ,  0:0))
         allocate(full_lev_half_lon_dims(rhod_lon    ,  0:0))
