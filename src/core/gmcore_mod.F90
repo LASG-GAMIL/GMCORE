@@ -50,7 +50,7 @@ contains
     real(8) seconds
 
     call log_init()
-    call global_mesh%init_global(num_lon, num_lat, num_lev, lon_halo_width=max(2, maxval(reduce_factors) - 1), lat_halo_width=2)
+    call global_mesh%init_global(num_lon, num_lat, num_lev, lon_halo_width=max(2, maxval(reduce_factors) - 1), lat_halo_width=3)
     !call debug_check_areas()
     call process_init()
     call vert_coord_init(num_lev, namelist_path)

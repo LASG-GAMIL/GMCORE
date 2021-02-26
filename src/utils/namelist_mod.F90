@@ -49,7 +49,7 @@ module namelist_mod
   character(8)    :: pgf_scheme           = 'lin97'
   integer         :: coriolis_scheme      = 1
 
-  integer         :: weno_order           = -1 ! -1, 3, 5
+  integer         :: weno_order           = -1 ! -1, 3
   integer         :: upwind_order         = -1 ! -1, 1, 3
   real(r8)        :: upwind_wgt           = 1.0_r8
   real(r8)        :: upwind_wgt_pt        = 0.25_r8
@@ -63,7 +63,7 @@ module namelist_mod
 
   ! Reduce settings
   integer         :: reduce_factors(100)  = 0
-  logical         :: reduce_pv_directly   = .true.
+  logical         :: reduce_pv_directly   = .false.
   logical         :: do_reduce_ke         = .true.
 
   ! Damping settings
@@ -74,9 +74,9 @@ module namelist_mod
   integer         :: div_damp_order       = 2
   integer         :: div_damp_j0          = 0
   integer         :: div_damp_k0          = 3
-  real(r8)        :: div_damp_imp_lat0    = 80
-  real(r8)        :: div_damp_coef2_top   = 0.02_r8
-  real(r8)        :: div_damp_coef2_pole  = 0.005_r8
+  real(r8)        :: div_damp_imp_lat0    = 90
+  real(r8)        :: div_damp_coef2_top   = 0
+  real(r8)        :: div_damp_coef2_pole  = 0
   real(r8)        :: div_damp_coef2       = 1.0_r8 / 128.0_r8
   real(r8)        :: div_damp_coef4       = 0.01_r8
   real(r8)        :: div_damp_decay_top   = 0.01_r8
@@ -84,12 +84,12 @@ module namelist_mod
   real(r8)        :: div_damp_3d_coef     = 0.1_r8
   logical         :: use_vor_damp         = .false.
   integer         :: vor_damp_order       = 2
-  real(r8)        :: vor_damp_imp_lat0    = 80
+  real(r8)        :: vor_damp_imp_lat0    = 90
   real(r8)        :: vor_damp_lat0        = 70.0_r8
   real(r8)        :: vor_damp_decay       = 0.2_r8
   real(r8)        :: vor_damp_coef2       = 0.001_r8
   real(r8)        :: vor_damp_coef4       = 0.01_r8
-  real(r8)        :: vor_damp_bkg_coef    = 0.0001_r8
+  real(r8)        :: vor_damp_bkg_coef    = 0
   logical         :: use_rayleigh_damp    = .false.
   real(r8)        :: rayleigh_damp_w_coef = 0.2
   logical         :: use_smag_damp        = .false.
