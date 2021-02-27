@@ -601,7 +601,7 @@ contains
 
   end subroutine interp_cell_to_vtx
 
-  subroutine interp_cell_to_lev_edge(mesh, x, x_lev, handle_top_bottom)
+  subroutine interp_cell_to_lev_edge(mesh, x, x_lev, w, upwind_wgt_, handle_top_bottom)
 
     type(mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: x(mesh%full_lon_lb:mesh%full_lon_ub, &
@@ -610,11 +610,70 @@ contains
     real(r8), intent(inout) :: x_lev(mesh%full_lon_lb:mesh%full_lon_ub, &
                                      mesh%full_lat_lb:mesh%full_lat_ub, &
                                      mesh%half_lev_lb:mesh%half_lev_ub)
+    real(r8), intent(in), optional :: w(mesh%full_lon_lb:mesh%full_lon_ub, &
+                                        mesh%full_lat_lb:mesh%full_lat_ub, &
+                                        mesh%half_lev_lb:mesh%half_lev_ub)
+    real(r8), intent(in), optional :: upwind_wgt_
     logical, intent(in), optional :: handle_top_bottom
 
     integer i, j, k
-    real(r8) x1, x2, a, b
+    real(r8) x1, x2, a, b, beta
 
+    if (present(w)) then
+      ! WENO interpolation
+      select case (vert_weno_order)
+      case (3)
+        do k = mesh%half_lev_ibeg + 2, mesh%half_lev_iend - 2
+          do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              x_lev(i,j,k) = weno3(sign(1.0_r8, w(i,j,k)), x(i,j,k-2:k+1))
+            end do
+          end do
+        end do
+        k = mesh%half_lev_ibeg
+        x_lev(:,:,k  ) = 1.5_r8 * x(:,:,k) - 0.5_r8 * x(:,:,k+1)
+        x_lev(:,:,k+1) = 0.5_r8 * (x(:,:,k) + x(:,:,k+1))
+        k = mesh%half_lev_iend
+        x_lev(:,:,k  ) = 1.5_r8 * x(:,:,k-1) - 0.5_r8 * x(:,:,k-2)
+        x_lev(:,:,k-1) = 0.5_r8 * (x(:,:,k-1) + x(:,:,k-2))
+        return
+      end select
+      ! Upwind-biased interpolation
+      if (present(upwind_wgt_)) then
+        beta = upwind_wgt_
+      else
+        beta = vert_upwind_wgt
+      end if
+      select case (vert_upwind_order)
+      case (1)
+        do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
+          do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              x_lev(i,j,k) = upwind1(sign(1.0_r8, w(i,j,k)), beta, x(i,j,k-1:k))
+            end do
+          end do
+        end do
+        return
+      case (3)
+        do k = mesh%half_lev_ibeg + 2, mesh%half_lev_iend - 2
+          do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              x_lev(i,j,k) = upwind3(sign(1.0_r8, w(i,j,k)), beta, x(i,j,k-2:k+1))
+            end do
+          end do
+        end do
+        k = mesh%half_lev_ibeg
+        x_lev(:,:,k  ) = 1.5_r8 * x(:,:,k) - 0.5_r8 * x(:,:,k+1)
+        x_lev(:,:,k+1) = 0.5_r8 * (x(:,:,k) + x(:,:,k+1))
+        k = mesh%half_lev_iend
+        x_lev(:,:,k  ) = 1.5_r8 * x(:,:,k-1) - 0.5_r8 * x(:,:,k-2)
+        x_lev(:,:,k-1) = 0.5_r8 * (x(:,:,k-1) + x(:,:,k-2))
+        return
+      end select
+    end if
+
+    ! --------------------------------------------------------------------------
+    ! Distance weighted interpolation (low order)
     ! -------
     !
     ! ===o=== k-1

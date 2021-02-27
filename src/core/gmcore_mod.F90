@@ -551,7 +551,7 @@ contains
         call polar_damp_run(blocks(iblk), dt, blocks(iblk)%state(new))
       end if
       if (use_smag_damp) then
-        call smag_damp_run(blocks(iblk), dt, blocks(iblk)%state(new))
+        call smag_damp_run(blocks(iblk), dt, blocks(iblk)%tend(new), blocks(iblk)%state(new))
       end if
       call test_forcing_run(blocks(iblk), dt, blocks(iblk)%state(new))
     end do

@@ -54,6 +54,10 @@ module namelist_mod
   real(r8)        :: upwind_wgt           = 1.0_r8
   real(r8)        :: upwind_wgt_pt        = 0.25_r8
 
+  integer         :: vert_weno_order      = -1 ! -1, 3
+  integer         :: vert_upwind_order    = -1 ! -1, 1, 3
+  integer         :: vert_upwind_wgt      = 1.0_r8
+
   integer         :: fast_cycles          = 1
   character(30)   :: split_scheme         = ''
   character(30)   :: time_scheme          = 'pc2'
@@ -148,6 +152,9 @@ module namelist_mod
     upwind_order              , &
     upwind_wgt                , &
     upwind_wgt_pt             , &
+    vert_weno_order           , &
+    vert_upwind_order         , &
+    vert_upwind_wgt           , &
     split_scheme              , &
     time_scheme               , &
     fast_cycles               , &

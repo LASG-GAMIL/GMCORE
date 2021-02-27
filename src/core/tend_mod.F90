@@ -44,6 +44,7 @@ module tend_mod
     real(r8), allocatable, dimension(:,:,:) :: pgf_lat
     real(r8), allocatable, dimension(:,:,:) :: wedudlev
     real(r8), allocatable, dimension(:,:,:) :: wedvdlev
+    real(r8), allocatable, dimension(:,:,:) :: smag_dpt ! Smagorinsky damping potential temperature tendency
     ! Nonhydrostatic tendencies
     real(r8), allocatable, dimension(:,:,:) :: adv_gz_lon ! Advection terms of geopotential
     real(r8), allocatable, dimension(:,:,:) :: adv_gz_lat ! Advection terms of geopotential
@@ -103,6 +104,9 @@ contains
     call allocate_array(mesh, this%pgf_lat , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%wedudlev, half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%wedvdlev, full_lon=.true., half_lat=.true., full_lev=.true.)
+    if (use_smag_damp) then
+      call allocate_array(mesh, this%smag_dpt, full_lon=.true., full_lat=.true., full_lev=.true.)
+    end if
 
     call allocate_array(mesh, this%adv_gz_lon, full_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%adv_gz_lat, full_lon=.true., full_lat=.true., half_lev=.true.)
@@ -150,6 +154,7 @@ contains
     if (allocated(this%pgf_lat )) deallocate(this%pgf_lat )
     if (allocated(this%wedudlev)) deallocate(this%wedudlev)
     if (allocated(this%wedvdlev)) deallocate(this%wedvdlev)
+    if (allocated(this%smag_dpt)) deallocate(this%smag_dpt)
 
     if (allocated(this%adv_gz_lon)) deallocate(this%adv_gz_lon)
     if (allocated(this%adv_gz_lat)) deallocate(this%adv_gz_lat)

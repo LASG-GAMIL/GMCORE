@@ -13,260 +13,171 @@ module smag_damp_mod
 
   public smag_damp_run
 
-contains 
+contains
 
-  subroutine smag_damp_run(block, dt, state)
+  subroutine smag_damp_run(block, dt, tend, state)
 
     type(block_type), intent(in) :: block
     real(8), intent(in) :: dt
+    type(tend_type), intent(inout) :: tend
     type(state_type), intent(inout) :: state
 
-    type(mesh_type), pointer :: mesh
     integer i, j, k
     real(r8) ls
 
-    mesh => state%mesh
-    
-    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-#ifdef V_POLE
-          state%tension_h(i,j,k) = (                    &
-            state%u(i,j,k) - state%u(i-1,j,k)           &
-          ) / mesh%de_lon(j) - (                        &
-            state%v(i,j+1,k) * mesh%half_cos_lat(j+1) - &
-            state%v(i,j  ,k) * mesh%half_cos_lat(j  )   &
-          ) / mesh%le_lon(j) / mesh%full_cos_lat(j)
-#else
-          state%tension_h(i,j,k) = (                    &
-            state%u(i,j,k) - state%u(i-1,j,k)           &
-          ) / mesh%de_lon(j) - (                        &
-            state%v(i,j  ,k) * mesh%half_cos_lat(j  ) - &
-            state%v(i,j-1,k) * mesh%half_cos_lat(j-1)   &
-          ) / mesh%le_lon(j) / mesh%full_cos_lat(j)
-#endif
+    associate (mesh      => block%mesh     , &
+               tension_h => state%tension_h, &
+               shear_h   => state%shear_h  , &
+               kmh       => state%kmh      , &
+               kmh_lon   => state%kmh_lon  , &
+               kmh_lat   => state%kmh_lat  , &
+               kmh_vtx   => state%kmh_vtx  , &
+               dpt       => tend%smag_dpt  , &
+               u         => state%u        , &
+               v         => state%v        , &
+               pt        => state%pt)
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            tension_h(i,j,k) = (                    &
+              u(i,j,k) - u(i-1,j,k)                 &
+            ) / mesh%de_lon(j) - (                  &
+              v(i,j  ,k) * mesh%half_cos_lat(j  ) - &
+              v(i,j-1,k) * mesh%half_cos_lat(j-1)   &
+            ) / mesh%le_lon(j) / mesh%full_cos_lat(j)
+          end do
         end do
       end do
-    end do
-    call fill_halo(block, state%tension_h, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call fill_halo(block, tension_h, full_lon=.true., full_lat=.true., full_lev=.true.)
 
-    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
-        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-#ifdef V_POLE
-          state%shear_h(i,j,k) = (                      &
-            state%v(i+1,j,k) - state%v(i,j,k)           &
-          ) / mesh%le_lat(j) + (                        &
-            state%u(i,j  ,k) * mesh%full_cos_lat(j  ) - &
-            state%u(i,j-1,k) * mesh%full_cos_lat(j-1)   &
-          ) / mesh%de_lat(j) / mesh%half_cos_lat(j)
-#else
-          state%shear_h(i,j,k) = (                      &
-            state%v(i+1,j,k) - state%v(i,j,k)           &
-          ) / mesh%le_lat(j) + (                        &
-            state%u(i,j+1,k) * mesh%full_cos_lat(j+1) - &
-            state%u(i,j  ,k) * mesh%full_cos_lat(j  )   &
-          ) / mesh%de_lat(j) / mesh%half_cos_lat(j)
-#endif
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+            shear_h(i,j,k) = (                      &
+              v(i+1,j,k) - v(i,j,k)                 &
+            ) / mesh%le_lat(j) + (                  &
+              u(i,j+1,k) * mesh%full_cos_lat(j+1) - &
+              u(i,j  ,k) * mesh%full_cos_lat(j  )   &
+            ) / mesh%de_lat(j) / mesh%half_cos_lat(j)
+          end do
         end do
       end do
-    end do
-    call fill_halo(block, state%shear_h, full_lon=.false., full_lat=.false., full_lev=.true.)
+      call fill_halo(block, shear_h, full_lon=.false., full_lat=.false., full_lev=.true.)
 
-    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-        ls = radius * mesh%full_cos_lat(j) * mesh%dlon
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-#ifdef V_POLE
-          state%kmh(i,j,k) = 2.0 * (smag_damp_coef * ls)**2 * sqrt(     &
-            state%tension_h(i,j,k)**2 +                                 &
-            0.25_r8 * (                                                 &
-              state%shear_h(i-1,j  ,k)**2 + state%shear_h(i,j  ,k)**2 + &
-              state%shear_h(i-1,j+1,k)**2 + state%shear_h(i,j+1,k)**2   &
-            )                                                           &
-          )
-#else
-          state%kmh(i,j,k) = 2.0 * (smag_damp_coef * ls)**2 * sqrt(     &
-            state%tension_h(i,j,k)**2 +                                 &
-            0.25_r8 * (                                                 &
-              state%shear_h(i-1,j  ,k)**2 + state%shear_h(i,j  ,k)**2 + &
-              state%shear_h(i-1,j-1,k)**2 + state%shear_h(i,j-1,k)**2   &
-            )                                                           &
-          )
-#endif
-        end do
-      end do
-    end do
-    call fill_halo(block, state%kmh, full_lon=.true., full_lat=.true., full_lev=.true.)
-
-    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
-        ls = radius * mesh%half_cos_lat(j) * mesh%dlon
-        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-#ifdef V_POLE
-          state%kmh_vtx(i,j,k) = 2.0 * (smag_damp_coef * ls)**2 * sqrt(     &
-            state%shear_h(i,j,k)**2 +                                       &
-            0.25_r8 * (                                                     &
-              state%tension_h(i,j  ,k)**2 + state%tension_h(i+1,j  ,k)**2 + &
-              state%tension_h(i,j-1,k)**2 + state%tension_h(i+1,j-1,k)**2   &
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+          ls = radius * mesh%full_cos_lat(j) * mesh%dlon
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            kmh(i,j,k) = 2.0 * (smag_damp_coef * ls)**2 * sqrt( &
+              tension_h(i,j,k)**2 +                             &
+              0.25_r8 * (                                       &
+                shear_h(i-1,j  ,k)**2 + shear_h(i,j  ,k)**2 +   &
+                shear_h(i-1,j-1,k)**2 + shear_h(i,j-1,k)**2     &
+              )                                                 &
             )
-          )
-#else
-          state%kmh_vtx(i,j,k) = 2.0 * (smag_damp_coef * ls)**2 * sqrt(     &
-            state%shear_h(i,j,k)**2 +                                       &
-            0.25_r8 * (                                                     &
-              state%tension_h(i,j  ,k)**2 + state%tension_h(i+1,j  ,k)**2 + &
-              state%tension_h(i,j+1,k)**2 + state%tension_h(i+1,j+1,k)**2   &
-            )                                                               &
-          )
-#endif
+          end do
         end do
       end do
-    end do
-    call fill_halo(block, state%kmh_vtx, full_lon=.false., full_lat=.false., full_lev=.true.)
-    
-    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-        ls = radius * mesh%full_cos_lat(j) * mesh%dlon
-        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-#ifdef V_POLE
-          state%kmh_lon(i,j,k) = 2.0 * (smag_damp_coef * ls)**2 * sqrt(            &
-            0.5_r8 * (state%tension_h(i,j,k)**2 + state%tension_h(i+1,j  ,k)**2) + &
-            0.5_r8 * (state%shear_h  (i,j,k)**2 + state%shear_h  (i  ,j+1,k)**2)   &
-          )
-#else
-          state%kmh_lon(i,j,k) = 2.0 * (smag_damp_coef * ls)**2 * sqrt(            &
-            0.5_r8 * (state%tension_h(i,j,k)**2 + state%tension_h(i+1,j  ,k)**2) + &
-            0.5_r8 * (state%shear_h  (i,j,k)**2 + state%shear_h  (i  ,j-1,k)**2)   &
-          )
-#endif
-        end do
-      end do
-    end do
-    call fill_halo(block, state%kmh_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
+      call fill_halo(block, kmh, full_lon=.true., full_lat=.true., full_lev=.true.)
 
-    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
-        ls = radius * mesh%half_cos_lat(j) * mesh%dlon
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-#ifdef V_POLE
-          state%kmh_lat(i,j,k) = 2.0 * (smag_damp_coef * ls)**2 * sqrt(            &
-            0.5_r8 * (state%tension_h(i,j,k)**2 + state%tension_h(i  ,j-1,k)**2) + &
-            0.5_r8 * (  state%shear_h(i,j,k)**2 +   state%shear_h(i-1,j  ,k)**2)   &
-          )
-#else 
-          state%kmh_lat(i,j,k) = 2.0 * (smag_damp_coef * ls)**2 * sqrt(            &
-            0.5_r8 * (state%tension_h(i,j,k)**2 + state%tension_h(i  ,j+1,k)**2) + &
-            0.5_r8 * (  state%shear_h(i,j,k)**2 +   state%shear_h(i-1,j  ,k)**2)   &
-          )
-#endif
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+          ls = radius * mesh%half_cos_lat(j) * mesh%dlon
+          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+            kmh_vtx(i,j,k) = 2.0 * (smag_damp_coef * ls)**2 * sqrt( &
+              shear_h(i,j,k)**2 +                                   &
+              0.25_r8 * (                                           &
+                tension_h(i,j  ,k)**2 + tension_h(i+1,j  ,k)**2 +   &
+                tension_h(i,j+1,k)**2 + tension_h(i+1,j+1,k)**2     &
+              )                                                     &
+            )
+          end do
         end do
       end do
-    end do
-    call fill_halo(block, state%kmh_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
+      call fill_halo(block, kmh_vtx, full_lon=.false., full_lat=.false., full_lev=.true.)
 
-    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-#ifdef V_POLE
-          state%u(i,j,k) = state%u(i,j,k) + dt * ((           &
-            state%kmh(i+1,j,k) * state%tension_h(i+1,j,k) -   &
-            state%kmh(i  ,j,k) * state%tension_h(i  ,j,k)     &
-          ) / mesh%de_lon(j) + (                              &
-            state%kmh_vtx(i,j+1,k) * state%shear_h(i,j+1,k) - &
-            state%kmh_vtx(i,j  ,k) * state%shear_h(i,j  ,k)   &
-          ) / mesh%le_lon(j))
-#else
-          state%u(i,j,k) = state%u(i,j,k) + dt * ((           &
-            state%kmh(i+1,j,k) * state%tension_h(i+1,j,k) -   &
-            state%kmh(i  ,j,k) * state%tension_h(i  ,j,k)     &
-          ) / mesh%de_lon(j) + (                              &
-            state%kmh_vtx(i,j  ,k) * state%shear_h(i,j  ,k) - &
-            state%kmh_vtx(i,j-1,k) * state%shear_h(i,j-1,k)   &
-          ) / mesh%le_lon(j))
-#endif
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+          ls = radius * mesh%full_cos_lat(j) * mesh%dlon
+          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+            kmh_lon(i,j,k) = 2.0 * (smag_damp_coef * ls)**2 * sqrt(      &
+              0.5_r8 * (tension_h(i,j,k)**2 + tension_h(i+1,j  ,k)**2) + &
+              0.5_r8 * (shear_h  (i,j,k)**2 + shear_h  (i  ,j-1,k)**2)   &
+            )
+          end do
         end do
       end do
-    end do
-    call fill_halo(block, state%u, full_lon=.false., full_lat=.true., full_lev=.true.)    
+      call fill_halo(block, kmh_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
 
-    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-#ifdef V_POLE
-          state%v(i,j,k) = state%v(i,j,k) + dt * ((           &
-            state%kmh_vtx(i  ,j,k) * state%shear_h(i  ,j,k) - &
-            state%kmh_vtx(i-1,j,k) * state%shear_h(i-1,j,k)   &
-          ) / mesh%le_lat(j) - (                              &
-            state%kmh(i,j  ,k) * state%tension_h(i,j  ,k) -   &
-            state%kmh(i,j-1,k) * state%tension_h(i,j-1,k)     &
-          ) / mesh%de_lat(j))
-#else
-          state%v(i,j,k) = state%v(i,j,k) + dt * ((           &
-            state%kmh_vtx(i  ,j,k) * state%shear_h(i  ,j,k) - &
-            state%kmh_vtx(i-1,j,k) * state%shear_h(i-1,j,k)   &
-          ) / mesh%le_lat(j) - (                              &
-            state%kmh(i,j+1,k) * state%tension_h(i,j+1,k) -   &
-            state%kmh(i,j  ,k) * state%tension_h(i,j  ,k)     &
-          ) / mesh%de_lat(j))
-#endif
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+          ls = radius * mesh%half_cos_lat(j) * mesh%dlon
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            kmh_lat(i,j,k) = 2.0 * (smag_damp_coef * ls)**2 * sqrt(      &
+              0.5_r8 * (tension_h(i,j,k)**2 + tension_h(i  ,j+1,k)**2) + &
+              0.5_r8 * (  shear_h(i,j,k)**2 +   shear_h(i-1,j  ,k)**2)   &
+            )
+          end do
         end do
       end do
-    end do 
-    call fill_halo(block, state%v, full_lon=.true., full_lat=.false., full_lev=.true.)
-    
-    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-#ifdef V_POLE
-          if (j == mesh%full_lat_ibeg_no_pole) then
-            state%pt(i,j,k) = state%pt(i,j,k) + dt * ((                          &
-              state%kmh_lon(i  ,j,k) * (state%pt(i+1,j,k) - state%pt(i  ,j,k)) - &
-              state%kmh_lon(i-1,j,k) * (state%pt(i  ,j,k) - state%pt(i-1,j,k))   &
-            ) / mesh%de_lon(j)**2 + (                                            &
-              state%kmh_lat(i,j+1,k) * mesh%half_cos_lat(j+1) * (                &
-                state%pt(i,j+1,k) - state%pt(i,j  ,k)                            &
-              ) / mesh%de_lat(j+1)                                               &
-            ) / mesh%full_cos_lat(j) / mesh%le_lon(j))
-          else if (j == mesh%full_lat_iend_no_pole) then
-            state%pt(i,j,k) = state%pt(i,j,k) + dt * ((                          &
-              state%kmh_lon(i  ,j,k) * (state%pt(i+1,j,k) - state%pt(i  ,j,k)) - &
-              state%kmh_lon(i-1,j,k) * (state%pt(i  ,j,k) - state%pt(i-1,j,k))   &
-            ) / mesh%de_lon(j)**2 - (                                            &
-              state%kmh_lat(i,j  ,k) * mesh%half_cos_lat(j  ) * (                &
-                state%pt(i,j  ,k) - state%pt(i,j-1,k)                            &
-              ) / mesh%de_lat(j  )                                               &
-            ) / mesh%full_cos_lat(j) / mesh%le_lon(j))
-          else
-            state%pt(i,j,k) = state%pt(i,j,k) + dt * ((                          &
-              state%kmh_lon(i  ,j,k) * (state%pt(i+1,j,k) - state%pt(i  ,j,k)) - &
-              state%kmh_lon(i-1,j,k) * (state%pt(i  ,j,k) - state%pt(i-1,j,k))   &
-            ) / mesh%de_lon(j)**2 + (                                            &
-              state%kmh_lat(i,j+1,k) * mesh%half_cos_lat(j+1) * (                &
-                state%pt(i,j+1,k) - state%pt(i,j  ,k)                            &
-              ) / mesh%de_lat(j+1) -                                             &
-              state%kmh_lat(i,j  ,k) * mesh%half_cos_lat(j  ) * (                &
-                state%pt(i,j  ,k) - state%pt(i,j-1,k)                            &
-              ) / mesh%de_lat(j  )                                               &
-            ) / mesh%full_cos_lat(j) / mesh%le_lon(j))
-          end if
-#else
-          state%pt(i,j,k) = state%pt(i,j,k) + dt * ((                          &
-            state%kmh_lon(i  ,j,k) * (state%pt(i+1,j,k) - state%pt(i  ,j,k)) - &
-            state%kmh_lon(i-1,j,k) * (state%pt(i  ,j,k) - state%pt(i-1,j,k))   &
-          ) / mesh%de_lon(j)**2 + (                                            &
-            state%kmh_lat(i,j  ,k) * mesh%half_cos_lat(j  ) * (                &
-              state%pt(i,j+1,k) - state%pt(i,j  ,k)                            &
-            ) / mesh%de_lat(j  ) -                                             &
-            state%kmh_lat(i,j-1,k) * mesh%half_cos_lat(j-1) * (                &
-              state%pt(i,j  ,k) - state%pt(i,j-1,k)                            &
-            ) / mesh%de_lat(j-1)                                               &
-          ) / mesh%full_cos_lat(j) / mesh%le_lon(j))
-#endif
+      call fill_halo(block, kmh_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
+
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+            u(i,j,k) = u(i,j,k) + dt * ((           &
+              kmh(i+1,j,k) * tension_h(i+1,j,k) -   &
+              kmh(i  ,j,k) * tension_h(i  ,j,k)     &
+            ) / mesh%de_lon(j) + (                  &
+              kmh_vtx(i,j  ,k) * shear_h(i,j  ,k) - &
+              kmh_vtx(i,j-1,k) * shear_h(i,j-1,k)   &
+            ) / mesh%le_lon(j))
+          end do
         end do
       end do
-    end do
-    call fill_halo(block, state%pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call fill_halo(block, u, full_lon=.false., full_lat=.true., full_lev=.true.)
+
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            v(i,j,k) = v(i,j,k) + dt * ((           &
+              kmh_vtx(i  ,j,k) * shear_h(i  ,j,k) - &
+              kmh_vtx(i-1,j,k) * shear_h(i-1,j,k)   &
+            ) / mesh%le_lat(j) - (                  &
+              kmh(i,j+1,k) * tension_h(i,j+1,k) -   &
+              kmh(i,j  ,k) * tension_h(i,j  ,k)     &
+            ) / mesh%de_lat(j))
+          end do
+        end do
+      end do
+      call fill_halo(block, v, full_lon=.true., full_lat=.false., full_lev=.true.)
+
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            dpt(i,j,k) = (                                     &
+              kmh_lon(i  ,j,k) * (pt(i+1,j,k) - pt(i  ,j,k)) - &
+              kmh_lon(i-1,j,k) * (pt(i  ,j,k) - pt(i-1,j,k))   &
+            ) / mesh%de_lon(j)**2 + (                          &
+              kmh_lat(i,j  ,k) * mesh%half_cos_lat(j  ) * (    &
+                pt(i,j+1,k) - pt(i,j  ,k)                      &
+              ) / mesh%de_lat(j  ) -                           &
+              kmh_lat(i,j-1,k) * mesh%half_cos_lat(j-1) * (    &
+                pt(i,j  ,k) - pt(i,j-1,k)                      &
+              ) / mesh%de_lat(j-1)                             &
+            ) / mesh%full_cos_lat(j) / mesh%le_lon(j)
+          end do
+        end do
+      end do
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            pt(i,j,k) = pt(i,j,k) + dt * dpt(i,j,k)
+          end do
+        end do
+      end do
+      call fill_halo(block, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+    end associate
 
   end subroutine smag_damp_run
 
