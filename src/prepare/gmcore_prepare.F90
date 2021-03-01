@@ -82,7 +82,7 @@ program gmcore_prepare
 
   call fiona_init(start_time=initial_time, time_units='hours')
 
-  call global_mesh%init_global(num_lon, num_lat, num_lev, lon_halo_width=2, lat_halo_width=2)
+  call global_mesh%init_global(num_lon, num_lat, num_lev, lon_halo_width=5, lat_halo_width=5)
   call process_init()
   call vert_coord_init(num_lev, scheme=vert_coord_scheme, template=vert_coord_template)
   call process_create_blocks()

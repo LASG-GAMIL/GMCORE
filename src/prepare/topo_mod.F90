@@ -6,6 +6,7 @@ module topo_mod
   use const_mod
   use block_mod
   use process_mod
+  use parallel_mod
 
   implicit none
 
@@ -184,6 +185,26 @@ contains
           gzs(i,j) = gzs0
         end do
       end if
+      ! Fill halo outside poles for later smoothing if used.
+      if (mesh%has_south_pole()) then
+        do j = 1, mesh%lat_halo_width
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            i1 = i + mesh%num_full_lon / 2
+            if (i1 > mesh%num_full_lon) i1 = i1 - mesh%num_full_lon
+            gzs(i,mesh%full_lat_ibeg-j) = gzs(i1,mesh%full_lat_ibeg+j-1)
+          end do
+        end do
+      end if
+      if (mesh%has_north_pole()) then
+        do j = 1, mesh%lat_halo_width
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            i1 = i + mesh%num_full_lon / 2
+            if (i1 > mesh%num_full_lon) i1 = i1 - mesh%num_full_lon
+            gzs(i,mesh%full_lat_iend+j) = gzs(i1,mesh%full_lat_iend-j+1)
+          end do
+        end do
+      end if
+      call fill_halo(block, gzs, full_lon=.true., full_lat=.true.)
     end associate
 
   end subroutine topo_regrid
@@ -238,7 +259,8 @@ contains
     real(r8), intent(in) :: min_lat
     real(r8), intent(in) :: max_lat
 
-    integer ibeg, iend, jbeg, jend
+    integer ibeg, iend, jbeg, jend, i, j
+    real(r8) ib, jb, zero_wgt
 
     associate (mesh => block%mesh, gzs => block%static%gzs)
       do ibeg = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -253,13 +275,22 @@ contains
       do jend = mesh%full_lat_ibeg, mesh%full_lat_iend
         if (block%mesh%full_lat_deg(jend) >= max_lat) exit
       end do
+      ibeg = max(1, ibeg); iend = min(mesh%full_lon_iend, iend)
       if (ibeg > mesh%full_lon_iend .or. iend > mesh%full_lon_iend .or. &
           jbeg > mesh%full_lat_iend .or. jend > mesh%full_lat_iend) then
         call log_error('Invalid region parameters for topo_zero!', __FILE__, __LINE__)
       end if
       call log_notice('Zero topography in (' // to_str(ibeg) // '-' // to_str(iend) // ',' // &
                                                 to_str(jbeg) // '-' // to_str(jend) // ').')
-      gzs(ibeg:iend,jbeg:jend) = 0.0_r8
+      do j = jbeg, jend
+        do i = ibeg, iend
+          ib = merge(i - ibeg, iend - i, i < (ibeg + iend) * 0.5)
+          jb = merge(j - jbeg, jend - j, j < (jbeg + jend) * 0.5)
+          zero_wgt = 1 - max(exp(ib**2 * log(0.1_r8) / ((iend - ibeg) * 0.1_r8)**2), &
+                             exp(jb**2 * log(0.1_r8) / ((jend - jbeg) * 0.1_r8)**2))
+          gzs(i,j) = (1 - zero_wgt) * gzs(i,j)
+        end do
+      end do
     end associate
 
   end subroutine topo_zero
@@ -275,7 +306,8 @@ contains
 
     real(r8), allocatable :: smooth_kernel(:,:)
     real(r8), allocatable :: smoothed_gzs(:,:)
-    integer ibeg, iend, jbeg, jend, i, j, ig, jg, step
+    integer ibeg, iend, jbeg, jend, i, j, step
+    real(r8) ib, jb, smooth_wgt
 
     associate (mesh => block%mesh, gzs => block%static%gzs)
       do ibeg = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -290,6 +322,7 @@ contains
       do jend = mesh%full_lat_ibeg, mesh%full_lat_iend
         if (block%mesh%full_lat_deg(jend) >= max_lat) exit
       end do
+      ibeg = max(1, ibeg); iend = min(mesh%full_lon_iend, iend)
       if (ibeg > mesh%full_lon_iend .or. iend > mesh%full_lon_iend .or. &
           jbeg > mesh%full_lat_iend .or. jend > mesh%full_lat_iend) then
         call log_error('Invalid region parameters for topo_smooth!', __FILE__, __LINE__)
@@ -310,7 +343,11 @@ contains
             if (gzs(i,j) == 0) then
               smoothed_gzs(i,j) = gzs(i,j)
             else
-              smoothed_gzs(i,j) = sum(smooth_kernel * gzs(i-5:i+5,j-5:j+5))
+              ib = merge(i - ibeg, iend - i, i < (ibeg + iend) * 0.5)
+              jb = merge(j - jbeg, jend - j, j < (jbeg + jend) * 0.5)
+              smooth_wgt = 1 - max(exp(ib**2 * log(0.1_r8) / ((iend - ibeg) * 0.1_r8)**2), &
+                                   exp(jb**2 * log(0.1_r8) / ((jend - jbeg) * 0.1_r8)**2))
+              smoothed_gzs(i,j) = sum(smooth_kernel * gzs(i-5:i+5,j-5:j+5)) * smooth_wgt + (1 - smooth_wgt) * gzs(i,j)
             end if
           end do
         end do
