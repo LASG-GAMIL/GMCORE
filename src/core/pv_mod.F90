@@ -237,9 +237,9 @@ contains
       end do
     end do
 #ifdef V_POLE
-    call fill_halo(block, state%pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., west_halo=.false., south_halo=.false.)
+    call fill_halo(block, state%pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., south_halo=.false.)
 #else
-    call fill_halo(block, state%pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., west_halo=.false., north_halo=.false.)
+    call fill_halo(block, state%pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., north_halo=.false.)
 #endif
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
@@ -254,9 +254,9 @@ contains
       end do
     end do
 #ifdef V_POLE
-    call fill_halo(block, state%pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., east_halo=.false., north_halo=.false.)
+    call fill_halo(block, state%pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., north_halo=.false.)
 #else
-    call fill_halo(block, state%pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., east_halo=.false., south_halo=.false.)
+    call fill_halo(block, state%pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false.)
 #endif
 
   end subroutine interp_pv_midpoint
@@ -297,7 +297,7 @@ contains
             end if
           end do
         end do
-        call fill_halo(block, pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., east_halo=.false., south_halo=.false.)
+        call fill_halo(block, pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false.)
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
@@ -306,7 +306,7 @@ contains
             end do
           end do
         end do
-        call fill_halo(block, pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., west_halo=.false., north_halo=.false.)
+        call fill_halo(block, pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., north_halo=.false.)
       end select
     end associate
 
@@ -348,7 +348,7 @@ contains
             end if
           end do
         end do
-        call fill_halo(block, pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., east_halo=.false., south_halo=.false.)
+        call fill_halo(block, pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false.)
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
@@ -357,7 +357,7 @@ contains
             end do
           end do
         end do
-        call fill_halo(block, pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., west_halo=.false., north_halo=.false.)
+        call fill_halo(block, pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., north_halo=.false.)
       end select
     end associate
 
@@ -396,9 +396,9 @@ contains
     if (mesh%has_north_pole()) state%pv_lat(:,mesh%half_lat_iend,:) = state%pv(:,mesh%half_lat_iend,:)
 #endif
 #ifdef V_POLE
-    call fill_halo(block, state%pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., west_halo=.false., south_halo=.false.)
+    call fill_halo(block, state%pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., south_halo=.false.)
 #else
-    call fill_halo(block, state%pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., west_halo=.false., north_halo=.false.)
+    call fill_halo(block, state%pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., north_halo=.false.)
 #endif
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
@@ -425,9 +425,9 @@ contains
       end do
     end do
 #ifdef V_POLE
-    call fill_halo(block, state%pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., east_halo=.false., north_halo=.false.)
+    call fill_halo(block, state%pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., north_halo=.false.)
 #else
-    call fill_halo(block, state%pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., east_halo=.false., south_halo=.false.)
+    call fill_halo(block, state%pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false.)
 #endif
 
   end subroutine interp_pv_apvm
