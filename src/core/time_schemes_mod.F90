@@ -148,6 +148,16 @@ contains
           end do
         end do
       end do
+      if (limit_pole_v) then
+        if (mesh%has_south_pole()) then
+          j = mesh%half_lat_ibeg
+          new_state%v(:,j,:) = (1 - limit_pole_v_wgt) * new_state%v(:,j,:) + limit_pole_v_wgt * new_state%v(:,j+1,:)
+        end if
+        if (mesh%has_north_pole()) then
+          j = mesh%half_lat_iend
+          new_state%v(:,j,:) = (1 - limit_pole_v_wgt) * new_state%v(:,j,:) + limit_pole_v_wgt * new_state%v(:,j-1,:)
+        end if
+      end if
       call fill_halo(block, new_state%v, full_lon=.true., full_lat=.false., full_lev=.true.)
     end if
 

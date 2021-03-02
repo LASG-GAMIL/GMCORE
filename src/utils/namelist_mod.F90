@@ -78,17 +78,15 @@ module namelist_mod
   integer         :: div_damp_order       = 2
   integer         :: div_damp_j0          = 0
   integer         :: div_damp_k0          = 3
-  real(r8)        :: div_damp_imp_lat0    = 90
-  real(r8)        :: div_damp_coef2_top   = 0
-  real(r8)        :: div_damp_coef2_pole  = 0
+  real(r8)        :: div_damp_imp_lat0    = 80
+  real(r8)        :: div_damp_upper       = 2.0_r8
+  real(r8)        :: div_damp_polar       = 0.5_r8
+  real(r8)        :: div_damp_exp         = 0.01_r8
   real(r8)        :: div_damp_coef2       = 1.0_r8 / 128.0_r8
   real(r8)        :: div_damp_coef4       = 0.01_r8
-  real(r8)        :: div_damp_decay_top   = 0.01_r8
-  real(r8)        :: div_damp_decay_pole  = 0.01_r8
-  real(r8)        :: div_damp_3d_coef     = 0.1_r8
   logical         :: use_vor_damp         = .false.
   integer         :: vor_damp_order       = 2
-  real(r8)        :: vor_damp_imp_lat0    = 90
+  real(r8)        :: vor_damp_imp_lat0    = 80
   real(r8)        :: vor_damp_lat0        = 70.0_r8
   real(r8)        :: vor_damp_decay       = 0.2_r8
   real(r8)        :: vor_damp_coef2       = 0.001_r8
@@ -111,6 +109,10 @@ module namelist_mod
   real(r8)        :: nest_lon_end(20)     = inf
   real(r8)        :: nest_lat_beg(20)     = inf
   real(r8)        :: nest_lat_end(20)     = inf
+
+  ! Test settings
+  logical         :: limit_pole_v         = .false.
+  real(r8)        :: limit_pole_v_wgt     = 0.4_r8
 
   namelist /gmcore_control/     &
     case_name                 , &
@@ -171,13 +173,11 @@ module namelist_mod
     div_damp_imp_lat0         , &
     div_damp_j0               , &
     div_damp_k0               , &
-    div_damp_coef2_top        , &
-    div_damp_coef2_pole       , &
+    div_damp_upper            , &
+    div_damp_polar            , &
+    div_damp_exp              , &
     div_damp_coef2            , &
     div_damp_coef4            , &
-    div_damp_decay_top        , &
-    div_damp_decay_pole       , &
-    div_damp_3d_coef          , &
     use_vor_damp              , &
     vor_damp_order            , &
     vor_damp_imp_lat0         , &
@@ -198,7 +198,9 @@ module namelist_mod
     nest_lon_beg              , &
     nest_lon_end              , &
     nest_lat_beg              , &
-    nest_lat_end
+    nest_lat_end              , &
+    limit_pole_v              , &
+    limit_pole_v_wgt
 
 contains
 
@@ -255,10 +257,8 @@ contains
       write(*, *) 'use_div_damp        = ', to_str(use_div_damp)
     if (use_div_damp) then
       write(*, *) 'div_damp_coef2      = ', to_str(div_damp_coef2, 3)
-      write(*, *) 'div_damp_coef2_top  = ', to_str(div_damp_coef2_top, 3)
-      write(*, *) 'div_damp_coef2_pole = ', to_str(div_damp_coef2_pole, 3)
-      write(*, *) 'div_damp_decay_top  = ', to_str(div_damp_decay_top, 3)
-      write(*, *) 'div_damp_decay_pole = ', to_str(div_damp_decay_pole, 3)
+      write(*, *) 'div_damp_upper      = ', to_str(div_damp_upper, 3)
+      write(*, *) 'div_damp_polar      = ', to_str(div_damp_polar, 3)
     end if
       write(*, *) 'use_vor_damp        = ', to_str(use_vor_damp)
     if (use_vor_damp) then
@@ -271,7 +271,6 @@ contains
     if (nonhydrostatic) then
       write(*, *) 'implicit_w_wgt      = ', to_str(implicit_w_wgt, 3)
       write(*, *) 'rayleigh_damp_w_coef= ', to_str(rayleigh_damp_w_coef, 2)
-      write(*, *) 'div_damp_3d_coef    = ', to_str(div_damp_3d_coef, 3)
     end if
       write(*, *) 'use_smag_damp       = ', to_str(use_smag_damp)
     if (use_smag_damp) then
