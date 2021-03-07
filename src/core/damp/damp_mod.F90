@@ -50,13 +50,13 @@ contains
 
     integer cyc
 
-    do cyc = 1, 5
+    do cyc = 1, polar_damp_cycles
       call zonal_damp_on_cell(block, polar_damp_order, dt, state%pt)
       call zonal_damp_on_lon_edge(block, polar_damp_order, dt, state%u)
       call zonal_damp_on_lat_edge(block, polar_damp_order, dt, state%v)
     end do
     if (nonhydrostatic) then
-      do cyc = 1, 5
+      do cyc = 1, polar_damp_cycles
         call zonal_damp_on_lev_edge(block, polar_damp_order, dt, state%w_lev)
       end do
     end if

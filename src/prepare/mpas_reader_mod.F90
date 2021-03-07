@@ -37,7 +37,7 @@ contains
 
     if (is_root_proc()) call log_notice('Use MPAS ' // trim(bkg_file) // ' as background.')
 
-    call fiona_open_dataset('mpas', file_path=bkg_file)
+    call fiona_open_dataset('mpas', file_path=bkg_file, mpi_comm=proc%comm)
     call fiona_get_dim('mpas', 'lon', size=num_mpas_lon)
     call fiona_get_dim('mpas', 'lat', size=num_mpas_lat)
     call fiona_get_dim('mpas', 'lev', size=num_mpas_lev)

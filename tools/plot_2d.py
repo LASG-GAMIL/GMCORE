@@ -2,6 +2,7 @@
 
 import argparse
 import cartopy.crs as crs
+from cartopy.feature import COASTLINE
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
@@ -19,6 +20,8 @@ parser.add_argument('-t', dest='time_step', help='Time step', required=True, typ
 parser.add_argument('-k', dest='level_idx', help='Vertical level index', type=int)
 parser.add_argument('-p', dest='plev', help='Pressure level in hPa', type=float)
 parser.add_argument('-l', dest='with_lines', help='Draw contour lines', action='store_true')
+parser.add_argument('--grid-lines', dest='with_grid_lines', help='Draw grid liens', action='store_true')
+parser.add_argument('--coast-lines', dest='with_coast_lines', help='Draw coast lines', action='store_true')
 args = parser.parse_args()
 
 if not args.output: args.output = args.var + '.png'
@@ -29,10 +32,11 @@ if not args.var in ds:
 	print(f'[Error]: Invalid variable name {args.var}!')
 	exit(1)
 
-proj = crs.PlateCarree()
+proj = crs.PlateCarree(central_longitude=180)
 
 ax = plt.axes(projection=proj)
-ax.gridlines(crs=proj, draw_labels=True, linewidth=1, color='k', alpha=0.5, linestyle='--')
+if args.with_grid_lines:
+	ax.gridlines(crs=proj, draw_labels=True, linewidth=1, color='k', alpha=0.5, linestyle='--')
 
 cbar_kwargs = {
 	'orientation': 'horizontal',
@@ -50,5 +54,8 @@ if 'lev' in var.dims:
 var.plot(ax=ax, transform=proj, cmap='Spectral_r', cbar_kwargs=cbar_kwargs)
 if args.with_lines:
 	var.plot.contour(ax=ax, transform=proj)
+
+if args.with_coast_lines:
+	ax.add_feature(COASTLINE.with_scale('50m'), linewidth=0.5)
 
 plt.savefig(args.output)

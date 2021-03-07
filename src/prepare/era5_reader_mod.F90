@@ -34,7 +34,7 @@ contains
 
     if (is_root_proc()) call log_notice('Use ERA5 ' // trim(bkg_file) // ' as background.')
 
-    call fiona_open_dataset('era5', file_path=bkg_file)
+    call fiona_open_dataset('era5', file_path=bkg_file, mpi_comm=proc%comm)
     call fiona_get_dim('era5', 'longitude', size=num_era5_lon)
     call fiona_get_dim('era5', 'latitude' , size=num_era5_lat)
     call fiona_get_dim('era5', 'level'    , size=num_era5_lev)

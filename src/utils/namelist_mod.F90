@@ -73,6 +73,7 @@ module namelist_mod
   ! Damping settings
   logical         :: use_polar_damp       = .false.
   integer         :: polar_damp_order     = 4
+  integer         :: polar_damp_cycles    = 5
   real(r8)        :: polar_damp_lat0      = 80.0_r8
   logical         :: use_div_damp         = .false.
   integer         :: div_damp_order       = 2
@@ -167,6 +168,7 @@ module namelist_mod
     do_reduce_ke              , &
     use_polar_damp            , &
     polar_damp_order          , &
+    polar_damp_cycles         , &
     polar_damp_lat0           , &
     use_div_damp              , &
     div_damp_order            , &
@@ -267,6 +269,11 @@ contains
       write(*, *) 'vor_damp_coef2      = ', to_str(vor_damp_coef2, 3)
     end if
       write(*, *) 'use_polar_damp      = ', to_str(use_polar_damp)
+    if (use_polar_damp) then
+      write(*, *) 'polar_damp_order    = ', to_str(polar_damp_order)
+      write(*, *) 'polar_damp_cycles   = ', to_str(polar_damp_cycles)
+      write(*, *) 'polar_damp_lat0     = ', to_str(polar_damp_lat0, 2)
+    end if
       write(*, *) 'use_rayleigh_damp   = ', to_str(use_rayleigh_damp)
     if (nonhydrostatic) then
       write(*, *) 'implicit_w_wgt      = ', to_str(implicit_w_wgt, 3)

@@ -164,7 +164,7 @@ contains
     allocate(reduced_mesh%weights(reduce_factor))
     reduced_mesh%weights = 1.0_r8 / reduce_factor
 
-    reduced_mesh%halo_width    = merge(2, 1, pv_scheme == 2 .or. pv_scheme == 3)
+    reduced_mesh%halo_width    = 2 ! For pv and pt upwind or weno
     reduced_mesh%num_full_lon  = raw_mesh%num_full_lon / reduce_factor
     reduced_mesh%num_half_lon  = raw_mesh%num_half_lon / reduce_factor
     reduced_mesh%full_lon_ibeg = raw_mesh%full_lon_ibeg / reduce_factor + 1
@@ -465,10 +465,11 @@ contains
     end if
     ! Horizontal pressure gradient force
     if (hydrostatic) then ! Nonhydrostatic PGF terms is in reduce_nh_state_2.
-      call apply_reduce(reduce_args(t              , reduce_t           ))
       call apply_reduce(reduce_args(gz             , reduce_gz          ))
       select case (pgf_scheme)
       case ('sb81')
+        call apply_reduce(reduce_args(ph_lev       , reduce_ph_lev      ))
+        call apply_reduce(reduce_args(t            , reduce_t           ))
         call apply_reduce(reduce_args(t_lnpop_lon  , reduce_t_lnpop_lon ))
         call apply_reduce(reduce_args(ak_t_lon     , reduce_ak_t_lon    ))
       case ('lin97')
