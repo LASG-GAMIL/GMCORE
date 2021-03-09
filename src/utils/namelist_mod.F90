@@ -66,7 +66,7 @@ module namelist_mod
   real(r8)        :: coarse_pole_decay    = 100.0
 
   ! Reduce settings
-  integer         :: reduce_factors(100)  = 0
+  integer         :: reduce_factors(200)  = 0
   logical         :: reduce_pv_directly   = .false.
   logical         :: do_reduce_ke         = .true.
 
@@ -75,6 +75,8 @@ module namelist_mod
   integer         :: polar_damp_order     = 4
   integer         :: polar_damp_cycles    = 5
   real(r8)        :: polar_damp_lat0      = 80.0_r8
+  logical         :: polar_damp_phs       = .false.
+  real(r8)        :: polar_damp_phs_lat0  = 85.0_r8
   logical         :: use_div_damp         = .false.
   integer         :: div_damp_order       = 2
   integer         :: div_damp_j0          = 0
@@ -170,6 +172,8 @@ module namelist_mod
     polar_damp_order          , &
     polar_damp_cycles         , &
     polar_damp_lat0           , &
+    polar_damp_phs            , &
+    polar_damp_phs_lat0       , &
     use_div_damp              , &
     div_damp_order            , &
     div_damp_imp_lat0         , &
@@ -273,6 +277,8 @@ contains
       write(*, *) 'polar_damp_order    = ', to_str(polar_damp_order)
       write(*, *) 'polar_damp_cycles   = ', to_str(polar_damp_cycles)
       write(*, *) 'polar_damp_lat0     = ', to_str(polar_damp_lat0, 2)
+      write(*, *) 'polar_damp_phs      = ', to_str(polar_damp_phs)
+      write(*, *) 'polar_damp_phs_lat0 = ', to_str(polar_damp_phs_lat0, 2)
     end if
       write(*, *) 'use_rayleigh_damp   = ', to_str(use_rayleigh_damp)
     if (nonhydrostatic) then

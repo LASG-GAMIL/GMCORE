@@ -54,6 +54,7 @@ contains
       call zonal_damp_on_cell(block, polar_damp_order, dt, state%pt)
       call zonal_damp_on_lon_edge(block, polar_damp_order, dt, state%u)
       call zonal_damp_on_lat_edge(block, polar_damp_order, dt, state%v)
+      if (polar_damp_phs) call zonal_damp_on_cell(block, polar_damp_order, dt, state%phs, lat0=polar_damp_phs_lat0)
     end do
     if (nonhydrostatic) then
       do cyc = 1, polar_damp_cycles

@@ -424,7 +424,7 @@ contains
 #else
     call fill_halo(block, state%pt_lat, full_lon=.true., full_lat=.false., full_lev=.true., west_halo=.false., east_halo=.false., north_halo=.false.)
 #endif
-    call interp_cell_to_lev_edge(state%mesh, state%pt, state%pt_lev)
+    call interp_cell_to_lev_edge(state%mesh, state%pt, state%pt_lev, w=state%wedphdlev_lev, upwind_wgt_=upwind_wgt_pt)
 
   end subroutine interp_pt
 

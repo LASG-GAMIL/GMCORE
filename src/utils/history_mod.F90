@@ -87,7 +87,6 @@ contains
       call fiona_add_var('h0', 'u'    , long_name='u wind component'            , units='m s-1'  , dim_names=lon_dims_2d)
       call fiona_add_var('h0', 'v'    , long_name='v wind component'            , units='m s-1'  , dim_names=lat_dims_2d)
       call fiona_add_var('h0', 'z'    , long_name='height'                      , units='m'      , dim_names=cell_dims_2d)
-      call fiona_add_var('h0', 'pv'   , long_name='potential vorticity'         , units='m-1 s-1', dim_names=vtx_dims_2d)
       call fiona_add_var('h0', 'vor'  , long_name='relative vorticity'          , units='s-1'    , dim_names=vtx_dims_2d)
       call fiona_add_var('h0', 'div'  , long_name='divergence'                  , units='s-1'    , dim_names=cell_dims_2d)
     end if
@@ -122,9 +121,7 @@ contains
         call fiona_add_var('h0', 'u'    , long_name='u wind component'      , units='m s-1'  , dim_names=lon_dims)
         call fiona_add_var('h0', 'v'    , long_name='v wind component'      , units='m s-1'  , dim_names=lat_dims)
         call fiona_add_var('h0', 'pt'   , long_name='potential temperature' , units='K'      , dim_names=cell_dims)
-        call fiona_add_var('h0', 'ph'   , long_name='hydrostatic pressure'  , units='Pa'     , dim_names=cell_dims)
         call fiona_add_var('h0', 'z'    , long_name='height'                , units='m'      , dim_names=lev_dims)
-        call fiona_add_var('h0', 'pv'   , long_name='potential vorticity'   , units='m-1 s-1', dim_names=vtx_dims)
         call fiona_add_var('h0', 'vor'  , long_name='relative vorticity'    , units='s-1'    , dim_names=vtx_dims)
         call fiona_add_var('h0', 'div'  , long_name='divergence'            , units='s-1'    , dim_names=cell_dims)
         if (nonhydrostatic) then
@@ -270,7 +267,6 @@ contains
           end select
         else
           call fiona_output('h0', 'pt' , state%pt (is:ie,js:je,ks:ke), start=start, count=count)
-          call fiona_output('h0', 'ph' , state%ph (is:ie,js:je,ks:ke), start=start, count=count)
           call fiona_output('h0', 'div', state%div(is:ie,js:je,ks:ke), start=start, count=count)
         end if
       else
@@ -305,7 +301,6 @@ contains
       count = [mesh%num_half_lon,mesh%num_half_lat,mesh%num_full_lev]
 
       if (.not. diag_state(1)%is_init()) then
-        call fiona_output('h0', 'pv' , state%pv (is:ie,js:je,ks:ke), start=start, count=count)
         call fiona_output('h0', 'vor', state%vor(is:ie,js:je,ks:ke), start=start, count=count)
       end if
 

@@ -105,10 +105,10 @@ contains
     integer start(3), count(3)
 
     if (present(initial_file_)) then
-      call fiona_open_dataset('i0', file_path=initial_file_, mpi_comm=proc%comm)
+      call fiona_open_dataset('i0', file_path=initial_file_)
       if (is_root_proc()) call log_notice('Read initial data from ' // trim(initial_file_) // '.')
     else
-      call fiona_open_dataset('i0', file_path=initial_file, mpi_comm=proc%comm)
+      call fiona_open_dataset('i0', file_path=initial_file)
       if (is_root_proc()) call log_notice('Read initial data from ' // trim(initial_file) // '.')
     end if
     call fiona_start_input('i0')
