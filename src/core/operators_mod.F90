@@ -59,6 +59,9 @@ contains
         call diag_t                   (blocks(iblk), blocks(iblk)%state(itime))
       end if
       call diag_m                     (blocks(iblk), blocks(iblk)%state(itime))
+      if (nonhydrostatic) then
+        call diag_m_lev               (blocks(iblk), blocks(iblk)%state(itime))
+      end if
       call interp_m_vtx               (blocks(iblk), blocks(iblk)%state(itime))
       call calc_mf                    (blocks(iblk), blocks(iblk)%state(itime))
       call calc_ke                    (blocks(iblk), blocks(iblk)%state(itime))
@@ -93,6 +96,9 @@ contains
         call diag_t                   (block, state)
       end if
       call diag_m                     (block, state)
+      if (nonhydrostatic) then
+        call diag_m_lev               (block, state)
+      end if
       if (pass /= no_wind_pass) then
         call calc_mf                  (block, state)
         call calc_ke                  (block, state)
