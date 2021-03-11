@@ -1390,22 +1390,33 @@ contains
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
+    real(r8) vt, b
     integer i, k
 
     if (reduced_mesh%le_lon(buf_j) == 0 .or. reduced_mesh%de_lon(buf_j) == 0) return
-    associate (v => reduced_state%mf_lon_t, pv => reduced_state%pv, pv_lon => reduced_state%pv_lon)
+    associate (un       => reduced_state%u       , & ! in
+               m_lon    => reduced_state%m_lon   , & ! in
+               mf_lon_t => reduced_state%mf_lon_t, & ! in
+               pv       => reduced_state%pv      , & ! in
+               pv_lon   => reduced_state%pv_lon)     ! out
       select case (upwind_order_pv)
       case (3)
         if (raw_mesh%is_full_lat_next_to_pole(j+buf_j)) then
           do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
             do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
-              pv_lon(k,i,buf_j,move) = upwind1(sign(1.0_r8, v(k,i,buf_j,move)), upwind_wgt_pv, pv(k,i,buf_j-1:buf_j,move))
+              vt = mf_lon_t(k,i,buf_j,move) / m_lon(k,i,buf_j,move)
+              b  = abs(vt) / sqrt(un(k,i,buf_j,move)**2 + vt**2)
+              pv_lon(k,i,buf_j,move) = b * upwind1(sign(1.0_r8, vt), upwind_wgt_pv, pv(k,i,buf_j-1:buf_j,move)) + &
+                                       (1 - b) * 0.5_r8 * (pv(k,i,buf_j-1,move) + pv(k,i,buf_j,move))
             end do
           end do
         else
           do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
             do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
-              pv_lon(k,i,buf_j,move) = upwind3(sign(1.0_r8, v(k,i,buf_j,move)), upwind_wgt_pv, pv(k,i,buf_j-2:buf_j+1,move))
+              vt = mf_lon_t(k,i,buf_j,move) / m_lon(k,i,buf_j,move)
+              b  = abs(vt) / sqrt(un(k,i,buf_j,move)**2 + vt**2)
+              pv_lon(k,i,buf_j,move) = b * upwind3(sign(1.0_r8, vt), upwind_wgt_pv, pv(k,i,buf_j-2:buf_j+1,move)) + &
+                                       (1 - b) * 0.5_r8 * (pv(k,i,buf_j-1,move) + pv(k,i,buf_j,move))
             end do
           end do
         end if
@@ -1540,17 +1551,33 @@ contains
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
+    real(r8) ut, b
     integer i, k
 
     if (reduced_mesh%le_lat(buf_j) == 0 .or. reduced_mesh%de_lat(buf_j) == 0) return
-    associate (u => reduced_state%mf_lat_t, pv => reduced_state%pv, pv_lat => reduced_state%pv_lat)
+    associate (vn       => reduced_state%v       , & ! in
+               m_lat    => reduced_state%m_lat   , & ! in
+               mf_lat_t => reduced_state%mf_lat_t, & ! in
+               pv       => reduced_state%pv      , & ! in
+               pv_lat   => reduced_state%pv_lat)     ! out
       select case (upwind_order_pv)
       case (3)
-        do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
-          do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
-            pv_lat(k,i,buf_j,move) = upwind3(sign(1.0_r8, u(k,i,buf_j,move)), upwind_wgt_pv, pv(k,i-2:i+1,buf_j,move))
+        if (raw_mesh%is_south_pole(j + buf_j) .or. raw_mesh%is_north_pole(j + buf_j + 1)) then
+          do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
+            do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
+              pv_lat(k,i,buf_j,move) = upwind3(sign(1.0_r8, mf_lat_t(k,i,buf_j,move)), upwind_wgt_pv, pv(k,i-2:i+1,buf_j,move))
+            end do
           end do
-        end do
+        else
+          do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
+            do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
+              ut = mf_lat_t(k,i,buf_j,move) / m_lat(k,i,buf_j,move)
+              b  = abs(ut) / sqrt(ut**2 + vn(k,i,buf_j,move)**2)
+              pv_lat(k,i,buf_j,move) = b * upwind3(sign(1.0_r8, ut), upwind_wgt_pv, pv(k,i-2:i+1,buf_j,move)) + &
+                                       (1 - b) * 0.5_r8 * (pv(k,i-1,buf_j,move) + pv(k,i,buf_j,move))
+            end do
+          end do
+        end if
       end select
       call fill_zonal_halo(block, reduced_mesh%halo_width, pv_lat(:,:,buf_j,move), west_halo=.false.)
     end associate
