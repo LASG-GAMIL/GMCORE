@@ -81,7 +81,7 @@ module namelist_mod
   integer         :: div_damp_order       = 2
   integer         :: div_damp_j0          = 0
   integer         :: div_damp_k0          = 3
-  real(r8)        :: div_damp_imp_lat0    = 80
+  real(r8)        :: div_damp_imp_lat0    = 90
   real(r8)        :: div_damp_upper       = 2.0_r8
   real(r8)        :: div_damp_polar       = 0.5_r8
   real(r8)        :: div_damp_exp         = 0.01_r8
@@ -89,7 +89,7 @@ module namelist_mod
   real(r8)        :: div_damp_coef4       = 0.01_r8
   logical         :: use_vor_damp         = .false.
   integer         :: vor_damp_order       = 2
-  real(r8)        :: vor_damp_imp_lat0    = 80
+  real(r8)        :: vor_damp_imp_lat0    = 90
   real(r8)        :: vor_damp_lat0        = 70.0_r8
   real(r8)        :: vor_damp_decay       = 0.2_r8
   real(r8)        :: vor_damp_coef2       = 0.001_r8
@@ -225,6 +225,7 @@ contains
   subroutine print_namelist()
 
       write(*, *) '=================== GMCORE Parameters ==================='
+      write(*, *) 'case_name           = ', trim(case_name)
       write(*, *) 'num_lon             = ', to_str(num_lon)
       write(*, *) 'num_lat             = ', to_str(num_lat)
       write(*, *) 'num_lev             = ', to_str(num_lev)

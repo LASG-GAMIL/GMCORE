@@ -21,11 +21,7 @@ module state_mod
     integer :: id = 0
     type(state_type), pointer :: parent => null()
     real(r8), allocatable, dimension(:,:,:) :: u                 ! Zonal wind speed (m s-1)
-    real(r8), allocatable, dimension(:,:  ) :: u850              ! Zonal wind speed on 850hPa
-    real(r8), allocatable, dimension(:,:  ) :: u700              ! Zonal wind speed on 700hPa
     real(r8), allocatable, dimension(:,:,:) :: v                 ! Meridional wind speed (m s-1)
-    real(r8), allocatable, dimension(:,:  ) :: v850              ! Meridional wind speed on 850hPa
-    real(r8), allocatable, dimension(:,:  ) :: v700              ! Meridional wind speed on 700hPa
     real(r8), allocatable, dimension(:,:,:) :: wp                ! ω = dp / dt (Pa s-1)
     real(r8), allocatable, dimension(:,:,:) :: wedphdlev_lev     ! Vertical coordinate speed multiplied by 𝛛π/𝛛η
     real(r8), allocatable, dimension(:,:,:) :: wedphdlev_lev_lon ! Vertical coordinate speed multiplied by 𝛛π/𝛛η on zonal edge
@@ -43,6 +39,7 @@ module state_mod
     real(r8), allocatable, dimension(:,:,:) :: pv                ! Potential vorticity
     real(r8), allocatable, dimension(:,:,:) :: pv_lon            ! Potential vorticity on zonal edge
     real(r8), allocatable, dimension(:,:,:) :: pv_lat            ! Potential vorticity on merdional edge
+    ! TODO: Consider to remove APVM.
     real(r8), allocatable, dimension(:,:,:) :: dpv_lon_t         ! Meridional potential vorticity difference on zonal edge
     real(r8), allocatable, dimension(:,:,:) :: dpv_lon_n         ! Zonal potential vorticity difference on zonal edge
     real(r8), allocatable, dimension(:,:,:) :: dpv_lat_t         ! Zonal potential vorticity difference on merdional edge
@@ -54,8 +51,6 @@ module state_mod
     real(r8), allocatable, dimension(:,:,:) :: pt_lev            ! Potential temperature on the vertical edge
     real(r8), allocatable, dimension(:,:,:) :: pt_p              ! Perturbed potential temperature
     real(r8), allocatable, dimension(:,:,:) :: t                 ! Temperature
-    real(r8), allocatable, dimension(:,:  ) :: t850              ! Temperature on 850hPa
-    real(r8), allocatable, dimension(:,:  ) :: t700              ! Temperature on 700hPa
     real(r8), allocatable, dimension(:,:,:) :: t_lnpop           ! T ln(p_{k+1/2} / p_{k-1/2})
     real(r8), allocatable, dimension(:,:,:) :: t_lnpop_lon       ! T ln(p_{k+1/2} / p_{k-1/2})
     real(r8), allocatable, dimension(:,:,:) :: t_lnpop_lat       ! T ln(p_{k+1/2} / p_{k-1/2})
@@ -121,11 +116,7 @@ contains
     this%mesh => mesh
 
     call allocate_array(mesh, this%u                , half_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%u850             , full_lon=.true., full_lat=.true.                 )
-    call allocate_array(mesh, this%u700             , full_lon=.true., full_lat=.true.                 )
     call allocate_array(mesh, this%v                , full_lon=.true., half_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%v850             , full_lon=.true., half_lat=.true.                 )
-    call allocate_array(mesh, this%v700             , full_lon=.true., half_lat=.true.                 )
     call allocate_array(mesh, this%wp               , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%wedphdlev_lev    , full_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%wedphdlev_lev_lon, half_lon=.true., full_lat=.true., half_lev=.true.)
@@ -143,18 +134,18 @@ contains
     call allocate_array(mesh, this%pv               , half_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%pv_lon           , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%pv_lat           , full_lon=.true., half_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%dpv_lon_t        , half_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%dpv_lon_n        , half_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%dpv_lat_t        , full_lon=.true., half_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%dpv_lat_n        , full_lon=.true., half_lat=.true., full_lev=.true.)
+    if (pv_scheme == 4) then
+      call allocate_array(mesh, this%dpv_lon_t      , half_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%dpv_lon_n      , half_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%dpv_lat_t      , full_lon=.true., half_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%dpv_lat_n      , full_lon=.true., half_lat=.true., full_lev=.true.)
+    end if
     call allocate_array(mesh, this%ke               , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%pt               , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%pt_lon           , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%pt_lat           , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%pt_lev           , full_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%t                , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%t850             , full_lon=.true., full_lat=.true.                 )
-    call allocate_array(mesh, this%t700             , full_lon=.true., full_lat=.true.                 )
     call allocate_array(mesh, this%ph               , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%ph_lev           , full_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%phs              , full_lon=.true., full_lat=.true.                 )
@@ -217,11 +208,7 @@ contains
     class(state_type), intent(inout) :: this
 
     if (allocated(this%u                )) deallocate(this%u                )
-    if (allocated(this%u850             )) deallocate(this%u850             )
-    if (allocated(this%u700             )) deallocate(this%u700             )
     if (allocated(this%v                )) deallocate(this%v                )
-    if (allocated(this%v850             )) deallocate(this%v850             )
-    if (allocated(this%v700             )) deallocate(this%v700             )
     if (allocated(this%wp               )) deallocate(this%wp               )
     if (allocated(this%wedphdlev_lev    )) deallocate(this%wedphdlev_lev    )
     if (allocated(this%wedphdlev_lev_lon)) deallocate(this%wedphdlev_lev_lon)
@@ -250,8 +237,6 @@ contains
     if (allocated(this%pt_lev           )) deallocate(this%pt_lev           )
     if (allocated(this%pt_p             )) deallocate(this%pt_p             )
     if (allocated(this%t                )) deallocate(this%t                )
-    if (allocated(this%t850             )) deallocate(this%t850             )
-    if (allocated(this%t700             )) deallocate(this%t700             )
     if (allocated(this%t_lnpop          )) deallocate(this%t_lnpop          )
     if (allocated(this%t_lnpop_lon      )) deallocate(this%t_lnpop_lon      )
     if (allocated(this%t_lnpop_lat      )) deallocate(this%t_lnpop_lat      )

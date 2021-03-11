@@ -53,7 +53,7 @@ contains
     case ('seconds')
       seconds = seconds
     case default
-      call log_error('Invalid history interval ' // trim(history_interval(1)) // '!')
+      if (is_root_proc()) call log_error('Invalid history interval ' // trim(history_interval(1)) // '!')
     end select
 
         cell_dims(1) =  'lon';     cell_dims(2) =  'lat';     cell_dims(3) =  'lev';     cell_dims(4) = 'time'
