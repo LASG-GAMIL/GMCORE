@@ -35,7 +35,7 @@ contains
     character(4) vtx_dims(4), vtx_dims_2d(3)
     character(4) lon_lev_dims(4), lat_lev_dims(4), lev_dims(4)
     character(4) diag_dims(4)
-    real(8) seconds
+    real(8) seconds, months
 
     if (history_interval(1) == 'N/A') call log_error('Parameter history_interval is not set!')
     if (case_name == 'N/A') call log_error('Parameter case_name is not set!')
@@ -56,6 +56,8 @@ contains
       if (is_root_proc()) call log_error('Invalid history interval ' // trim(history_interval(1)) // '!')
     end select
 
+    call time_add_alert('history_write', seconds=seconds)
+
         cell_dims(1) =  'lon';     cell_dims(2) =  'lat';     cell_dims(3) =  'lev';     cell_dims(4) = 'time'
          lon_dims(1) = 'ilon';      lon_dims(2) =  'lat';      lon_dims(3) =  'lev';      lon_dims(4) = 'time'
      lon_lev_dims(1) = 'ilon';  lon_lev_dims(2) =  'lat';  lon_lev_dims(3) = 'ilev';  lon_lev_dims(4) = 'time'
@@ -69,7 +71,7 @@ contains
       vtx_dims_2d(1) = 'ilon';   vtx_dims_2d(2) = 'ilat';   vtx_dims_2d(3) = 'time'
 
     call fiona_init(time_units, start_time_str)
-    call fiona_create_dataset('h0', desc=case_desc, file_prefix=trim(case_name), mpi_comm=proc%comm)
+    call fiona_create_dataset('h0', desc=case_desc, file_prefix=trim(case_name), mpi_comm=proc%comm, group_size=output_group_size)
     call fiona_add_att('h0', 'time_step_size', dt)
     call fiona_add_dim('h0', 'time' , add_var=.true.)
     call fiona_add_dim('h0', 'lon'  , size=global_mesh%num_full_lon, add_var=.true., decomp=.true.)
@@ -131,7 +133,7 @@ contains
       end if
     end if
 
-    call fiona_create_dataset('h1', desc=case_desc, file_prefix=trim(case_name), mpi_comm=proc%comm)
+    call fiona_create_dataset('h1', desc=case_desc, file_prefix=trim(case_name), mpi_comm=proc%comm, group_size=output_group_size)
     call fiona_add_att('h1', 'time_step_size', dt)
     call fiona_add_dim('h1', 'time' , add_var=.true.)
     call fiona_add_dim('h1', 'lon'  , size=global_mesh%num_full_lon, add_var=.true., decomp=.true.)
@@ -194,7 +196,39 @@ contains
       call fiona_add_var('h1', 'ke'           , long_name='kinetic energy on cell grid'                   , units='', dim_names=cell_dims_2d)
     end if
 
-    call time_add_alert('history_write', seconds=seconds)
+    if (output_h0_new_file == '') then
+      call time_add_alert('h0_new_file', seconds=seconds)
+      if (is_root_proc()) call log_notice('Output data every ' // trim(history_interval(1)) // '.')
+    else if (output_h0_new_file == 'one_file') then
+      if (is_root_proc()) call log_notice('Output data in one file.')
+    else
+      time_value = split_string(output_h0_new_file, ' ', 1)
+      time_units = split_string(output_h0_new_file, ' ', 2)
+      if (time_units == 'months') then
+        read(time_value, *) months
+        if (is_root_proc()) call log_notice('Output data every ' // trim(time_value) // ' months.')
+        call time_add_alert('h0_new_file', months=months)
+      else
+        read(time_value, *) seconds
+        select case (time_units)
+        case ('days')
+          if (is_root_proc()) call log_notice('Output data every ' // trim(time_value) // ' days.')
+          seconds = seconds * 86400
+        case ('hours')
+          if (is_root_proc()) call log_notice('Output data every ' // trim(time_value) // ' hours.')
+          seconds = seconds * 3600
+        case ('minutes')
+          if (is_root_proc()) call log_notice('Output data every ' // trim(time_value) // ' minutes.')
+          seconds = seconds * 60
+        case ('seconds')
+          if (is_root_proc()) call log_notice('Output data every ' // trim(time_value) // ' seconds.')
+          seconds = seconds
+        case default
+          if (is_root_proc()) call log_error('Invalid output_h0_new_file ' // trim(output_h0_new_file) // '!')
+        end select
+        call time_add_alert('h0_new_file', seconds=seconds)
+      end if
+    end if
 
   end subroutine history_init
 
@@ -213,7 +247,15 @@ contains
     integer iblk, is, ie, js, je, ks, ke
     integer start(3), count(3)
 
-    call fiona_start_output('h0', elapsed_seconds, new_file=time_step==0)
+    if (is_root_proc()) call log_notice('Write state.')
+
+    if (.not. time_has_alert('h0_new_file')) then
+      call fiona_start_output('h0', elapsed_seconds, new_file=time_step==0)
+    else if (time_is_alerted('h0_new_file')) then
+      call fiona_start_output('h0', elapsed_seconds, new_file=.true., tag=curr_time%format('%Y-%m-%d_%H_%M'))
+    else
+      call fiona_start_output('h0', elapsed_seconds, new_file=.false.)
+    end if
     call fiona_output('h0', 'lon' , global_mesh%full_lon_deg(1:global_mesh%num_full_lon))
     call fiona_output('h0', 'lat' , global_mesh%full_lat_deg(1:global_mesh%num_full_lat))
     if (baroclinic) then
@@ -325,6 +367,8 @@ contains
     end do
     call fiona_end_output('h0')
 
+    if (is_root_proc()) call log_notice('Done write state.')
+
   end subroutine history_write_state
 
   subroutine history_write_debug(blocks, itime)
@@ -343,7 +387,13 @@ contains
     state => blocks(1)%state(itime)
     tend => blocks(1)%tend(itime)
 
-    call fiona_start_output('h1', elapsed_seconds, new_file=time_step==0)
+    if (.not. time_has_alert('h0_new_file')) then
+      call fiona_start_output('h1', elapsed_seconds, new_file=time_step==0)
+    else if (time_is_alerted('h0_new_file')) then
+      call fiona_start_output('h1', elapsed_seconds, new_file=.true., tag=curr_time%format('%Y-%m-%d_%H_%M'))
+    else
+      call fiona_start_output('h1', elapsed_seconds, new_file=.false.)
+    end if
     call fiona_output('h1', 'lon'   , global_mesh%full_lon_deg(1:global_mesh%num_full_lon))
     call fiona_output('h1', 'lat'   , global_mesh%full_lat_deg(1:global_mesh%num_full_lat))
     call fiona_output('h1', 'ilon'  , global_mesh%half_lon_deg(1:global_mesh%num_half_lon))

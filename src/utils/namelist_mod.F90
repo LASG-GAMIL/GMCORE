@@ -101,7 +101,9 @@ module namelist_mod
   real(r8)        :: smag_damp_coef       = 0.2
 
   ! Output settings
+  character(30)   :: output_h0_new_file   = ''
   character(8)    :: output_h0_vars(100)  = ''
+  integer         :: output_group_size    = 0
   logical         :: output_debug         = .false.
 
   ! Nest settings
@@ -196,7 +198,9 @@ module namelist_mod
     rayleigh_damp_w_coef      , &
     use_smag_damp             , &
     smag_damp_coef            , &
+    output_h0_new_file        , &
     output_h0_vars            , &
+    output_group_size         , &
     output_debug              , &
     nest_time_scheme          , &
     nest_max_dom              , &

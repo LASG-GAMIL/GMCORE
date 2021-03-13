@@ -19,6 +19,7 @@ module time_mod
   public time_is_first_step
   public time_is_finished
   public time_add_alert
+  public time_has_alert
   public time_is_alerted
 
   public curr_time
@@ -243,6 +244,18 @@ contains
     call alerts%insert(trim(name), alert)
 
   end subroutine time_add_alert
+
+  function time_has_alert(name) result(res)
+
+    character(*), intent(in) :: name
+    logical res
+
+    type(alert_type), pointer :: alert => null()
+
+    alert => get_alert(name)
+    res = associated(alert)
+
+  end function time_has_alert
 
   function time_is_alerted(name) result(res)
 
