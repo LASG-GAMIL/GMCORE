@@ -96,11 +96,11 @@ contains
       if (pass /= no_wind_pass) then
         call calc_mf                  (block, state)
         call calc_ke                  (block, state)
+        call calc_div                 (block, state)
         if (pass == all_pass .or. pass == slow_pass) then
           call interp_m_vtx           (block, state)
           call diag_pv                (block, state, dt)
           call interp_pv              (block, state, dt)
-          call calc_div               (block, state)
         end if
       end if
       if (hydrostatic) then

@@ -31,10 +31,10 @@ module gmcore_mod
   public gmcore_final
 
   interface
-    subroutine splitter_interface(dt, block)
+    subroutine splitter_interface(dt, blocks)
       import block_type
       real(8), intent(in) :: dt
-      type(block_type), intent(inout) :: block
+      type(block_type), intent(inout) :: blocks(:)
     end subroutine splitter_interface
   end interface
 
@@ -538,55 +538,56 @@ contains
     real(8), intent(in) :: dt
     type(block_type), intent(inout) :: blocks(:)
 
-    integer iblk
-
-    do iblk = 1, size(blocks)
-      call splitter(dt, blocks(iblk))
-
-      if (use_div_damp) then
-        call div_damp_run(blocks(iblk), dt, blocks(iblk)%state(new))
-      end if
-      if (use_vor_damp) then
-        call vor_damp_run(blocks(iblk), dt, blocks(iblk)%state(new))
-      end if
-      if (use_polar_damp) then
-        call polar_damp_run(blocks(iblk), dt, blocks(iblk)%state(new))
-      end if
-      if (use_smag_damp) then
-        call smag_damp_run(blocks(iblk), dt, blocks(iblk)%tend(new), blocks(iblk)%state(new))
-      end if
-      call test_forcing_run(blocks(iblk), dt, blocks(iblk)%state(new))
-    end do
+    call splitter(dt, blocks)
 
   end subroutine time_integrate
 
-  subroutine csp2_splitting(dt, block)
+  subroutine csp2_splitting(dt, blocks)
 
     real(8), intent(in) :: dt
-    type(block_type), intent(inout) :: block
+    type(block_type), intent(inout) :: blocks(:)
 
-    real(8) fast_dt
-    integer subcycle, t1, t2
+    real(8) fast_dt, slow_dt
+    integer iblk, subcycle, t1, t2
 
     fast_dt = dt / fast_cycles
-    t1 = 3
+    slow_dt = dt * 0.5_r8
+    t1 = new
     t2 = old
 
-    call time_integrator(space_operators, block, old, t1, 0.5_r8 * dt, slow_pass)
+    do iblk = 1, size(blocks)
+      call time_integrator(space_operators, blocks(iblk), old, t1, slow_dt, slow_pass)
+      call test_forcing_run(blocks(iblk), slow_dt, blocks(iblk)%state(t1))
+    end do
+    call damp_run(slow_dt, t1, blocks)
     do subcycle = 1, fast_cycles
-      call time_integrator(space_operators, block, t1, t2, fast_dt, fast_pass)
+      do iblk = 1, size(blocks)
+        call time_integrator(space_operators, blocks(iblk), t1, t2, fast_dt, fast_pass)
+        call test_forcing_run(blocks(iblk), fast_dt, blocks(iblk)%state(t2))
+      end do
+      call damp_run(fast_dt, t2, blocks)
       call time_swap_indices(t1, t2)
     end do
-    call time_integrator(space_operators, block, t1, new, 0.5_r8 * dt, slow_pass)
+    do iblk = 1, size(blocks)
+      call time_integrator(space_operators, blocks(iblk), t1, new, slow_dt, slow_pass)
+      call test_forcing_run(blocks(iblk), slow_dt, blocks(iblk)%state(new))
+    end do
+    call damp_run(slow_dt, new, blocks)
 
   end subroutine csp2_splitting
 
-  subroutine no_splitting(dt, block)
+  subroutine no_splitting(dt, blocks)
 
     real(8), intent(in) :: dt
-    type(block_type), intent(inout) :: block
+    type(block_type), intent(inout) :: blocks(:)
 
-    call time_integrator(space_operators, block, old, new, dt, all_pass)
+    integer iblk
+
+    do iblk = 1, size(blocks)
+      call time_integrator(space_operators, blocks(iblk), old, new, dt, all_pass)
+      call test_forcing_run(blocks(iblk), dt, blocks(iblk)%state(new))
+    end do
+    call damp_run(dt, new, blocks)
 
   end subroutine no_splitting
 

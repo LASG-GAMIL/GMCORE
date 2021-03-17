@@ -18,6 +18,7 @@ module damp_mod
 
   public damp_init
   public damp_final
+  public damp_run
   public polar_damp_run
   public div_damp_run
   public vor_damp_run
@@ -41,6 +42,31 @@ contains
     call vor_damp_final()
 
   end subroutine damp_final
+
+  subroutine damp_run(dt, new, blocks)
+
+    real(8), intent(in) :: dt
+    integer, intent(in) :: new
+    type(block_type), intent(inout) :: blocks(:)
+
+    integer iblk
+
+    do iblk = 1, size(blocks)
+      if (use_div_damp) then
+        call div_damp_run(blocks(iblk), dt, blocks(iblk)%state(new))
+      end if
+      if (use_vor_damp) then
+        call vor_damp_run(blocks(iblk), dt, blocks(iblk)%state(new))
+      end if
+      if (use_polar_damp) then
+        call polar_damp_run(blocks(iblk), dt, blocks(iblk)%state(new))
+      end if
+      if (use_smag_damp) then
+        call smag_damp_run(blocks(iblk), dt, blocks(iblk)%tend(new), blocks(iblk)%state(new))
+      end if
+    end do
+
+  end subroutine damp_run
 
   subroutine polar_damp_run(block, dt, state)
 
