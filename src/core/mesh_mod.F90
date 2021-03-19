@@ -149,21 +149,12 @@ contains
     this%full_lon_iend = this%num_full_lon
     this%half_lon_ibeg = 1
     this%half_lon_iend = this%num_half_lon
-#ifdef V_POLE
-    this%num_full_lat  = num_lat - 1
-    this%num_half_lat  = num_lat
-    this%half_lat_ibeg = 1
-    this%half_lat_iend = this%num_half_lat
-    this%full_lat_ibeg = 1
-    this%full_lat_iend = this%num_full_lat
-#else
     this%num_full_lat  = num_lat
     this%num_half_lat  = num_lat - 1
     this%full_lat_ibeg = 1
     this%full_lat_iend = this%num_full_lat
     this%half_lat_ibeg = 1
     this%half_lat_iend = this%num_half_lat
-#endif
     this%num_full_lev  = merge(num_lev, 1, present(num_lev))
     this%num_half_lev  = this%num_full_lev + 1
     this%full_lev_ibeg = 1
@@ -196,43 +187,6 @@ contains
       this%half_lon_deg(i) = this%half_lon(i) * deg
     end do
 
-#ifdef V_POLE
-    ! Set initial guess latitudes of full merdional grids.
-    dlat0 = (this%end_lat - this%start_lat) / this%num_full_lat
-    do j = 1, this%num_full_lat
-      this%full_lat(j) = this%start_lat + (j - 0.5_r8) * dlat0
-      if (abs(this%full_lat(j)) < 1.0e-12) this%full_lat(j) = 0.0_r8
-    end do
-
-    if (coarse_pole_mul /= 0) then
-      ! Calculate real dlat which is large at polar region.
-      do j = 1, this%num_full_lat
-        this%dlat(j) = dlat0 * (1 + (coarse_pole_mul - 1) * exp(-coarse_pole_decay * (abs(this%full_lat(j)) - pi05)**2))
-      end do
-      this%dlat(1:this%num_full_lat) = this%dlat(1:this%num_full_lat) / sum(this%dlat(1:this%num_full_lat)) * pi
-    else
-      this%dlat(1:this%num_full_lat) = dlat0
-    end if
-
-    ! Set latitudes of full merdional grids.
-    this%half_lat(1) = this%start_lat
-    this%half_lat_deg(1) = this%start_lat * deg
-    do j = 2, this%num_half_lat - 1
-      this%half_lat(j) = this%half_lat(j-1) + this%dlat(j-1)
-      if (abs(this%half_lat(j)) < 1.0e-12) this%half_lat(j) = 0.0_r8
-      this%half_lat_deg(j) = this%half_lat(j) * deg
-    end do
-    this%half_lat(this%num_half_lat) = this%end_lat
-    this%half_lat_deg(this%num_half_lat) = this%end_lat * deg
-
-    ! Set latitudes of half merdional grids.
-    do j = 1, this%num_full_lat
-      if (is_inf(this%half_lat(j)) .or. this%half_lat(j) == pi05) cycle
-      this%full_lat(j) = this%half_lat(j) + 0.5_r8 * this%dlat(j)
-      if (abs(this%full_lat(j)) < 1.0e-12) this%full_lat(j) = 0.0_r8
-      this%full_lat_deg(j) = this%full_lat(j) * deg
-    end do
-#else
     ! Set initial guess latitudes of full merdional grids.
     dlat0 = (this%end_lat - this%start_lat) / this%num_half_lat
     do j = 1, this%num_half_lat
@@ -269,7 +223,6 @@ contains
       if (abs(this%half_lat(j)) < 1.0e-12) this%half_lat(j) = 0.0_r8
       this%half_lat_deg(j) = this%half_lat(j) * deg
     end do
-#endif
 
     ! Ensure the grids are equatorial symmetry.
     do j = 1, this%num_full_lat
@@ -310,121 +263,11 @@ contains
     end do
 
     ! Ensure the values of cos_lat and sin_lat are expected at the Poles.
-#ifdef V_POLE
-    this%half_cos_lat(this%half_lat_ibeg) =  0.0_r8
-    this%half_sin_lat(this%half_lat_ibeg) = -1.0_r8
-    this%half_cos_lat(this%half_lat_iend) =  0.0_r8
-    this%half_sin_lat(this%half_lat_iend) =  1.0_r8
-#else
     this%full_cos_lat(this%full_lat_ibeg) =  0.0_r8
     this%full_sin_lat(this%full_lat_ibeg) = -1.0_r8
     this%full_cos_lat(this%full_lat_iend) =  0.0_r8
     this%full_sin_lat(this%full_lat_iend) =  1.0_r8
-#endif
 
-#ifdef V_POLE
-    do j = this%full_lat_ibeg, this%full_lat_iend
-      this%area_cell(j) = radius**2 * this%dlon * (this%half_sin_lat(j+1) - this%half_sin_lat(j))
-      this%area_subcell(1,j) = radius**2 * 0.5d0 * this%dlon * (this%full_sin_lat(j) - this%half_sin_lat(j))
-      this%area_subcell(2,j) = radius**2 * 0.5d0 * this%dlon * (this%half_sin_lat(j+1) - this%full_sin_lat(j))
-      !
-      !          1,j+1
-      !           /|
-      !          / |
-      !         /  |
-      !        /   |
-      !    1,j \   |
-      !         \  |
-      !          \ |
-      !           \|
-      !           1,j
-      !
-      call cartesian_transform(this%full_lon(1), this%full_lat(j  ), x(1), y(1), z(1))
-      call cartesian_transform(this%half_lon(1), this%half_lat(j  ), x(2), y(2), z(2))
-      call cartesian_transform(this%half_lon(1), this%half_lat(j+1), x(3), y(3), z(3))
-      this%area_lon_west(j) = calc_area(x, y, z)
-      this%area_lon_east(j) = this%area_lon_west(j)
-      this%area_lon(j) = this%area_lon_west(j) + this%area_lon_east(j)
-      !
-      !         1,j+1
-      !           /\
-      !          /  \
-      !         /    \
-      !        /______\
-      !    1,j          2,j
-      !
-      call cartesian_transform(this%half_lon(1), this%half_lat(j+1), x(1), y(1), z(1))
-      call cartesian_transform(this%full_lon(1), this%full_lat(j  ), x(2), y(2), z(2))
-      call cartesian_transform(this%full_lon(2), this%full_lat(j  ), x(3), y(3), z(3))
-      this%area_lon_north(j) = calc_area_with_last_small_arc(x, y, z)
-      !
-      !    1,j          2,j
-      !        --------
-      !        \      /
-      !         \    /
-      !          \  /
-      !           \/
-      !          1,j
-      !
-      call cartesian_transform(this%half_lon(1), this%half_lat(j  ), x(1), y(1), z(1))
-      call cartesian_transform(this%full_lon(2), this%full_lat(j  ), x(2), y(2), z(2))
-      call cartesian_transform(this%full_lon(1), this%full_lat(j  ), x(3), y(3), z(3))
-      this%area_lon_south(j) = calc_area_with_last_small_arc(x, y, z)
-    end do
-
-    do j = this%half_lat_ibeg, this%half_lat_iend
-      if (this%is_south_pole(j)) then
-        this%area_vtx(j) = radius**2 * this%dlon * (this%full_sin_lat(j) + 1)
-      else if (this%is_north_pole(j)) then
-        this%area_vtx(j) = radius**2 * this%dlon * (1 - this%full_sin_lat(j-1))
-      else
-        this%area_vtx(j) = radius**2 * this%dlon * (this%full_sin_lat(j) - this%full_sin_lat(j-1))
-        !
-        !           2,j
-        !           /|
-        !          / |
-        !         /  |
-        !        /   |
-        !    1,j \   |
-        !         \  |
-        !          \ |
-        !           \|
-        !          2,j-1
-        !
-        call cartesian_transform(this%half_lon(1), this%half_lat(j  ), x(1), y(1), z(1))
-        call cartesian_transform(this%full_lon(2), this%full_lat(j-1), x(2), y(2), z(2))
-        call cartesian_transform(this%full_lon(2), this%full_lat(j  ), x(3), y(3), z(3))
-        this%area_lat_west(j) = calc_area(x, y, z)
-        this%area_lat_east(j) = this%area_lat_west(j)
-        !
-        !          2,j
-        !           /\
-        !          /  \
-        !         /    \
-        !        /______\
-        !    1,j          2,j
-        !
-        call cartesian_transform(this%full_lon(2), this%full_lat(j  ), x(1), y(1), z(1))
-        call cartesian_transform(this%half_lon(1), this%half_lat(j  ), x(2), y(2), z(2))
-        call cartesian_transform(this%half_lon(2), this%half_lat(j  ), x(3), y(3), z(3))
-        this%area_lat_north(j) = calc_area_with_last_small_arc(x, y, z)
-        !
-        !    1,j          2,j
-        !        --------
-        !        \      /
-        !         \    /
-        !          \  /
-        !           \/
-        !          2,j-1
-        !
-        call cartesian_transform(this%full_lon(2), this%full_lat(j-1), x(1), y(1), z(1))
-        call cartesian_transform(this%half_lon(2), this%half_lat(j  ), x(2), y(2), z(2))
-        call cartesian_transform(this%half_lon(1), this%half_lat(j  ), x(3), y(3), z(3))
-        this%area_lat_south(j) = calc_area_with_last_small_arc(x, y, z)
-        this%area_lat(j) = this%area_lat_north(j) + this%area_lat_south(j)
-      end if
-    end do
-#else
     do j = this%full_lat_ibeg, this%full_lat_iend
       if (this%is_south_pole(j)) then
         this%area_cell(j) = radius**2 * this%dlon * (this%half_sin_lat(j) + 1.0d0)
@@ -534,13 +377,11 @@ contains
       end if
       this%area_lat(j) = this%area_lat_north(j) + this%area_lat_south(j)
     end do
-#endif
 
     do j = this%full_lat_ibeg_no_pole, this%full_lat_iend_no_pole
       this%de_lon(j) = radius * this%full_cos_lat(j) * this%dlon
       this%le_lon(j) = 2.0d0 * this%area_lon(j) / this%de_lon(j)
     end do
-#ifndef V_POLE
     if (this%has_south_pole()) then
       this%le_lon(this%full_lat_ibeg) = 0.0_r8
       this%de_lon(this%full_lat_ibeg) = 0.0_r8
@@ -549,7 +390,6 @@ contains
       this%le_lon(this%full_lat_iend) = 0.0_r8
       this%de_lon(this%full_lat_iend) = 0.0_r8
     end if
-#endif
 
     do j = this%half_lat_ibeg_no_pole, this%half_lat_iend_no_pole
       this%le_lat(j) = radius * this%half_cos_lat(j) * this%dlon
@@ -579,43 +419,23 @@ contains
     select case (tangent_wgt_scheme)
     case ('classic')
       do j = this%full_lat_ibeg_no_pole, this%full_lat_iend_no_pole
-#ifdef V_POLE
-        this%full_tangent_wgt(1,j) = this%le_lat(j  ) / this%de_lon(j) * 0.25d0
-        this%full_tangent_wgt(2,j) = this%le_lat(j+1) / this%de_lon(j) * 0.25d0
-#else
         this%full_tangent_wgt(1,j) = this%le_lat(j-1) / this%de_lon(j) * 0.25d0
         this%full_tangent_wgt(2,j) = this%le_lat(j  ) / this%de_lon(j) * 0.25d0
-#endif
       end do
 
       do j = this%half_lat_ibeg_no_pole, this%half_lat_iend_no_pole
-#ifdef V_POLE
-        this%half_tangent_wgt(1,j) = this%le_lon(j-1) / this%de_lat(j) * 0.25d0
-        this%half_tangent_wgt(2,j) = this%le_lon(j  ) / this%de_lat(j) * 0.25d0
-#else
         this%half_tangent_wgt(1,j) = this%le_lon(j  ) / this%de_lat(j) * 0.25d0
         this%half_tangent_wgt(2,j) = this%le_lon(j+1) / this%de_lat(j) * 0.25d0
-#endif
       end do
     case ('thuburn09')
       do j = this%full_lat_ibeg_no_pole, this%full_lat_iend_no_pole
-#ifdef V_POLE
-        this%full_tangent_wgt(1,j) = this%le_lat(j  ) / this%de_lon(j) * this%area_subcell(2,j  ) / this%area_cell(j  )
-        this%full_tangent_wgt(2,j) = this%le_lat(j+1) / this%de_lon(j) * this%area_subcell(1,j  ) / this%area_cell(j  )
-#else
         this%full_tangent_wgt(1,j) = this%le_lat(j-1) / this%de_lon(j) * this%area_subcell(2,j  ) / this%area_cell(j  )
         this%full_tangent_wgt(2,j) = this%le_lat(j  ) / this%de_lon(j) * this%area_subcell(1,j  ) / this%area_cell(j  )
-#endif
       end do
 
       do j = this%half_lat_ibeg_no_pole, this%half_lat_iend_no_pole
-#ifdef V_POLE
-        this%half_tangent_wgt(1,j) = this%le_lon(j-1) / this%de_lat(j) * this%area_subcell(1,j-1) / this%area_cell(j-1)
-        this%half_tangent_wgt(2,j) = this%le_lon(j  ) / this%de_lat(j) * this%area_subcell(2,j  ) / this%area_cell(j  )
-#else
         this%half_tangent_wgt(1,j) = this%le_lon(j  ) / this%de_lat(j) * this%area_subcell(1,j  ) / this%area_cell(j  )
         this%half_tangent_wgt(2,j) = this%le_lon(j+1) / this%de_lat(j) * this%area_subcell(2,j+1) / this%area_cell(j+1)
-#endif
       end do
     end select
 
@@ -650,21 +470,12 @@ contains
     this%full_lon_iend = lon_iend
     this%half_lon_ibeg = lon_ibeg
     this%half_lon_iend = lon_iend
-#ifdef V_POLE
-    this%num_half_lat  = lat_iend - lat_ibeg + 1
-    this%half_lat_ibeg = lat_ibeg
-    this%half_lat_iend = lat_iend
-    this%full_lat_ibeg = lat_ibeg
-    this%full_lat_iend = merge(lat_iend - 1, lat_iend, this%has_north_pole())
-    this%num_full_lat  = this%full_lat_iend - this%full_lat_ibeg + 1
-#else
     this%num_full_lat  = lat_iend - lat_ibeg + 1
     this%full_lat_ibeg = lat_ibeg
     this%full_lat_iend = lat_iend
     this%half_lat_ibeg = lat_ibeg
     this%half_lat_iend = merge(lat_iend - 1, lat_iend, this%has_north_pole())
     this%num_half_lat  = this%half_lat_iend - this%half_lat_ibeg + 1
-#endif
 
     this%num_full_lev  = parent%num_full_lev
     this%num_half_lev  = parent%num_half_lev
@@ -682,13 +493,8 @@ contains
     this%lat_halo_width = lat_halo_width
     this%start_lon      = parent%full_lon(lon_ibeg)
     this%end_lon        = parent%full_lon(lon_iend) + parent%dlon
-#ifdef V_POLE
-    this%start_lat      = merge(parent%full_lat(lat_ibeg-1), -pi05, .not. this%has_south_pole())
-    this%end_lat        = merge(parent%full_lat(lat_iend  ),  pi05, .not. this%has_north_pole())
-#else
     this%start_lat      = merge(parent%half_lat(lat_ibeg-1), -pi05, .not. this%has_south_pole())
     this%end_lat        = merge(parent%half_lat(lat_iend  ),  pi05, .not. this%has_north_pole())
-#endif
 
     call this%common_init()
 
@@ -755,17 +561,10 @@ contains
 
     this%total_area = radius**2 * (this%end_lon - this%start_lon) * (sin(this%end_lat) - sin(this%start_lat))
 
-#ifdef V_POLE
-    this%full_lat_ibeg_no_pole = this%full_lat_ibeg
-    this%full_lat_iend_no_pole = this%full_lat_iend
-    this%half_lat_ibeg_no_pole = merge(this%half_lat_ibeg + 1, this%half_lat_ibeg, this%has_south_pole())
-    this%half_lat_iend_no_pole = merge(this%half_lat_iend - 1, this%half_lat_iend, this%has_north_pole())
-#else
     this%full_lat_ibeg_no_pole = merge(this%full_lat_ibeg + 1, this%full_lat_ibeg, this%has_south_pole())
     this%full_lat_iend_no_pole = merge(this%full_lat_iend - 1, this%full_lat_iend, this%has_north_pole())
     this%half_lat_ibeg_no_pole = this%half_lat_ibeg
     this%half_lat_iend_no_pole = this%half_lat_iend
-#endif
 
     this%full_lon_lb = this%full_lon_ibeg - this%lon_halo_width
     this%full_lon_ub = this%full_lon_iend + this%lon_halo_width
@@ -780,11 +579,7 @@ contains
     this%half_lev_lb = this%half_lev_ibeg
     this%half_lev_ub = this%half_lev_iend
 
-#ifdef V_POLE
-    allocate(this%dlat               (this%full_lat_lb:this%full_lat_ub)); this%dlat                = 0.0_r8
-#else
     allocate(this%dlat               (this%half_lat_lb:this%half_lat_ub)); this%dlat                = 0.0_r8
-#endif
     allocate(this%full_dlev          (this%full_lev_lb:this%full_lev_ub)); this%full_dlev           = 0.0_r8
     allocate(this%half_dlev          (this%half_lev_lb:this%half_lev_ub)); this%half_dlev           = 0.0_r8
     allocate(this%half_dlev_upper    (this%half_lev_lb:this%half_lev_ub)); this%half_dlev_upper     = 0.0_r8
@@ -835,11 +630,7 @@ contains
 
     class(mesh_type), intent(in) :: this
 
-#ifdef V_POLE
-    res = this%half_lat_ibeg == 1
-#else
     res = this%full_lat_ibeg == 1
-#endif
 
   end function mesh_has_south_pole
 
@@ -847,11 +638,7 @@ contains
 
     class(mesh_type), intent(in) :: this
 
-#ifdef V_POLE
-    res = this%half_lat_iend == global_mesh%num_half_lat
-#else
     res = this%full_lat_iend == global_mesh%num_full_lat
-#endif
 
   end function mesh_has_north_pole
 
@@ -870,11 +657,7 @@ contains
     class(mesh_type), intent(in) :: this
     integer, intent(in) :: j
 
-#ifdef V_POLE
-    res = j == global_mesh%num_half_lat
-#else
     res = j == global_mesh%num_full_lat
-#endif
 
   end function mesh_is_north_pole
 
@@ -892,11 +675,7 @@ contains
     class(mesh_type), intent(in) :: this
     integer, intent(in) :: j
 
-#ifdef V_POLE
-    res = j == 1 .or. j == global_mesh%num_full_lat
-#else
     res = j == 2 .or. j == global_mesh%num_full_lat - 1
-#endif
 
   end function mesh_is_full_lat_next_to_pole
 
@@ -905,11 +684,7 @@ contains
     class(mesh_type), intent(in) :: this
     integer, intent(in) :: j
 
-#ifdef V_POLE
-    res = j == 2 .or. j == global_mesh%num_half_lat - 1
-#else
     res = j == 1 .or. j == global_mesh%num_half_lat
-#endif
 
   end function mesh_is_half_lat_next_to_pole
 

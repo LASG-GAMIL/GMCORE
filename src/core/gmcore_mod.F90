@@ -152,11 +152,7 @@ contains
       end do
       do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-#ifdef V_POLE
-          dzsdlat(i,j) = (gzs(i,j) - gzs(i,j-1)) / g / mesh%de_lat(j)
-#else
           dzsdlat(i,j) = (gzs(i,j+1) - gzs(i,j)) / g / mesh%de_lat(j)
-#endif
         end do
       end do
       call fill_halo(block, dzsdlon, full_lon=.false., full_lat=.true.)
@@ -339,8 +335,6 @@ contains
             end do
           end do
         end do
-
-        if (use_rayleigh_damp) call rayleigh_damp_append_tend(block, star_state, tend)
 
         tend%update_u   = .true.
         tend%update_v   = .true.

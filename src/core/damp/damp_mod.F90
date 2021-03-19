@@ -9,7 +9,6 @@ module damp_mod
   use zonal_damp_mod
   use div_damp_mod
   use vor_damp_mod
-  use rayleigh_damp_mod
   use smag_damp_mod
 
   implicit none
@@ -22,7 +21,6 @@ module damp_mod
   public polar_damp_run
   public div_damp_run
   public vor_damp_run
-  public rayleigh_damp_append_tend
   public smag_damp_run
 
 contains

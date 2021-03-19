@@ -210,20 +210,12 @@ contains
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
             if (mesh%is_half_lat_next_to_pole(j)) then
               do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-#ifdef V_POLE
-                x_lat(i,j,k) = upwind1(sign(1.0_r8, v(i,j,k)), beta(j), x(i,j-1:j,k))
-#else
                 x_lat(i,j,k) = upwind1(sign(1.0_r8, v(i,j,k)), beta(j), x(i,j:j+1,k))
-#endif
               end do
             else
               do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-#ifdef V_POLE
-                x_lat(i,j,k) = weno3(sign(1.0_r8, v(i,j,k)), x(i,j-2:j+1,k))
-#else
                 x_lat(i,j,k) = weno3(sign(1.0_r8, v(i,j,k)), x(i,j-1:j+2,k))
               end do
-#endif
             end if
           end do
         end do
@@ -234,15 +226,9 @@ contains
       case (1)
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
-#ifdef V_POLE
-            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              x_lat(i,j,k) = upwind1(sign(1.0_r8, v(i,j,k)), beta(j), x(i,j-1:j,k))
-            end do
-#else
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
               x_lat(i,j,k) = upwind1(sign(1.0_r8, v(i,j,k)), beta(j), x(i,j:j+1,k))
             end do
-#endif
           end do
         end do
         return
@@ -251,20 +237,12 @@ contains
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
             if (mesh%is_half_lat_next_to_pole(j)) then
               do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-#ifdef V_POLE
-                x_lat(i,j,k) = upwind1(sign(1.0_r8, v(i,j,k)), beta(j), x(i,j-1:j,k))
-#else
                 x_lat(i,j,k) = upwind1(sign(1.0_r8, v(i,j,k)), beta(j), x(i,j:j+1,k))
-#endif
               end do
             else
               do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-#ifdef V_POLE
-                x_lat(i,j,k) = upwind3(sign(1.0_r8, v(i,j,k)), beta(j), x(i,j-2:j+1,k))
-#else
                 x_lat(i,j,k) = upwind3(sign(1.0_r8, v(i,j,k)), beta(j), x(i,j-1:j+2,k))
               end do
-#endif
             end if
           end do
         end do
@@ -276,15 +254,9 @@ contains
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-#ifdef V_POLE
-            x_lat(i,j,k) = (mesh%area_lat_south(j) * x(i,j  ,k) + &
-                            mesh%area_lat_north(j) * x(i,j-1,k)   &
-                           ) / mesh%area_lat(j)
-#else
             x_lat(i,j,k) = (mesh%area_lat_south(j) * x(i,j+1,k) + &
                             mesh%area_lat_north(j) * x(i,j  ,k)   &
                            ) / mesh%area_lat(j)
-#endif
           end do
         end do
       end do
@@ -292,20 +264,13 @@ contains
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-#ifdef V_POLE
-            x_lat(i,j,k) = (mesh%area_lat_north(j) * x(i,j  ,k) + &
-                            mesh%area_lat_south(j) * x(i,j-1,k)   &
-                           ) / mesh%area_lat(j)
-#else
             x_lat(i,j,k) = (mesh%area_lat_north(j) * x(i,j+1,k) + &
                             mesh%area_lat_south(j) * x(i,j  ,k)   &
                            ) / mesh%area_lat(j)
-#endif
           end do
         end do
       end do
     end if
-#ifndef V_POLE
     if (merge(handle_pole, .false., present(handle_pole))) then
       if (mesh%has_south_pole()) then
         j = mesh%half_lat_ibeg
@@ -320,7 +285,6 @@ contains
         end do
       end if
     end if
-#endif
 
   end subroutine interp_cell_to_lat_edge
 
@@ -458,19 +422,11 @@ contains
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
             if (mesh%is_half_lat_next_to_pole(j)) then
               do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-#ifdef V_POLE
-                x_lev_lat(i,j,k) = upwind1(sign(1.0_r8, v(i,j,k)), beta, x_lev(i,j-1:j,k))
-#else
                 x_lev_lat(i,j,k) = upwind1(sign(1.0_r8, v(i,j,k)), beta, x_lev(i,j:j+1,k))
-#endif
               end do
             else
               do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-#ifdef V_POLE
-                x_lev_lat(i,j,k) = weno3(sign(1.0_r8, v(i,j,k)), x_lev(i,j-2:j+1,k))
-#else
                 x_lev_lat(i,j,k) = weno3(sign(1.0_r8, v(i,j,k)), x_lev(i,j-1:j+2,k))
-#endif
               end do
             end if
           end do
@@ -483,11 +439,7 @@ contains
         do k = mesh%half_lev_ibeg, mesh%half_lev_iend
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-#ifdef V_POLE
-              x_lev_lat(i,j,k) = upwind1(sign(1.0_r8, v(i,j,k)), beta, x_lev(i,j-1:j,k))
-#else
               x_lev_lat(i,j,k) = upwind1(sign(1.0_r8, v(i,j,k)), beta, x_lev(i,j:j+1,k))
-#endif
             end do
           end do
         end do
@@ -497,19 +449,11 @@ contains
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
             if (mesh%is_half_lat_next_to_pole(j)) then
               do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-#ifdef V_POLE
-                x_lev_lat(i,j,k) = upwind1(sign(1.0_r8, v(i,j,k)), beta, x_lev(i,j-1:j,k))
-#else
                 x_lev_lat(i,j,k) = upwind1(sign(1.0_r8, v(i,j,k)), beta, x_lev(i,j:j+1,k))
-#endif
               end do
             else
               do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-#ifdef V_POLE
-                x_lev_lat(i,j,k) = upwind3(sign(1.0_r8, v(i,j,k)), beta, x_lev(i,j-2:j+1,k))
-#else
                 x_lev_lat(i,j,k) = upwind3(sign(1.0_r8, v(i,j,k)), beta, x_lev(i,j-1:j+2,k))
-#endif
               end do
             end if
           end do
@@ -520,15 +464,9 @@ contains
     do k = mesh%half_lev_ibeg, mesh%half_lev_iend
       do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-#ifdef V_POLE
-          x_lev_lat(i,j,k) = (mesh%area_lat_north(j) * x_lev(i,j  ,k) + &
-                              mesh%area_lat_south(j) * x_lev(i,j-1,k)   &
-                             ) / mesh%area_lat(j)
-#else
           x_lev_lat(i,j,k) = (mesh%area_lat_north(j) * x_lev(i,j+1,k) + &
                               mesh%area_lat_south(j) * x_lev(i,j  ,k)   &
                              ) / mesh%area_lat(j)
-#endif
         end do
       end do
     end do
@@ -552,52 +490,13 @@ contains
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-#ifdef V_POLE
-          x_vtx(i,j,k) = (                                           &
-            (x(i,j-1,k) + x(i+1,j-1,k)) * mesh%area_subcell(2,j-1) + &
-            (x(i,j  ,k) + x(i+1,j  ,k)) * mesh%area_subcell(1,j  )   &
-          ) / mesh%area_vtx(j)
-#else
           x_vtx(i,j,k) = (                                           &
             (x(i,j  ,k) + x(i+1,j  ,k)) * mesh%area_subcell(2,j  ) + &
             (x(i,j+1,k) + x(i+1,j+1,k)) * mesh%area_subcell(1,j+1)   &
           ) / mesh%area_vtx(j)
-#endif
         end do
       end do
     end do
-#ifdef V_POLE
-    if (mesh%has_south_pole()) then
-      j = mesh%half_lat_ibeg
-      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          work(i,k) = x(i,j,k)
-        end do
-      end do
-      call zonal_sum(proc%zonal_comm, work, pole)
-      pole = pole / global_mesh%num_half_lon
-      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          x_vtx(i,j,k) = pole(k)
-        end do
-      end do
-    end if
-    if (mesh%has_north_pole()) then
-      j = mesh%half_lat_iend
-      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          work(i,k) = x(i,j-1,k)
-        end do
-      end do
-      call zonal_sum(proc%zonal_comm, work, pole)
-      pole = pole / global_mesh%num_half_lon
-      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          x_vtx(i,j,k) = pole(k)
-        end do
-      end do
-    end if
-#endif
 
   end subroutine interp_cell_to_vtx
 
@@ -862,13 +761,8 @@ contains
           if (z(i,j,k) <= zo .and. zo <= z(i,j,k-1)) then
             dz1 = z(i,j,k-1) - zo
             dz2 = zo - z(i,j,k)
-#ifdef V_POLE
-            x1 = 0.5_r8 * (x(i,j+1,k-1) + x(i,j,k-1))
-            x2 = 0.5_r8 * (x(i,j+1,k  ) + x(i,j,k  ))
-#else
             x1 = 0.5_r8 * (x(i,j-1,k-1) + x(i,j,k-1))
             x2 = 0.5_r8 * (x(i,j-1,k  ) + x(i,j,k  ))
-#endif
             y(i,j) = (dz2 * x1 + dz1 * x2) / (dz1 + dz2)
             exit
           else if (zo < z(i,j,k) .and. k == mesh%full_lev_iend) then
@@ -876,13 +770,8 @@ contains
             z2 = z(i,j,k-1) - zo
             a  =  z2 / (z2 - z1)
             b  = -z1 / (z2 - z1)
-#ifdef V_POLE
-            x1 = 0.5_r8 * (x(i,j+1,k-1) + x(i,j,k-1))
-            x2 = 0.5_r8 * (x(i,j+1,k  ) + x(i,j,k  ))
-#else
             x1 = 0.5_r8 * (x(i,j-1,k-1) + x(i,j,k-1))
             x2 = 0.5_r8 * (x(i,j-1,k  ) + x(i,j,k  ))
-#endif
             y(i,j) = a * x1 + b * x2
             exit
           else if (zo > z(i,j,k-1) .and. k == mesh%full_lev_ibeg + 1) then
@@ -890,13 +779,8 @@ contains
             z2 = zo - z(i,j,k  )
             a  =  z2 / (z2 - z1)
             b  = -z1 / (z2 - z1)
-#ifdef V_POLE
-            x1 = 0.5_r8 * (x(i,j+1,k-1) + x(i,j,k-1))
-            x2 = 0.5_r8 * (x(i,j+1,k  ) + x(i,j,k  ))
-#else
             x1 = 0.5_r8 * (x(i,j-1,k-1) + x(i,j,k-1))
             x2 = 0.5_r8 * (x(i,j-1,k  ) + x(i,j,k  ))
-#endif
             y(i,j) = a * x1 + b * x2
             exit
           end if
@@ -1070,13 +954,8 @@ contains
               dp1 = p0 - p(i,j,k-1)
               dp2 = p(i,j,k) - p0
             end if
-#ifdef V_POLE
-            x1 = 0.5_r8 * (x(i,j+1,k-1) + x(i,j,k-1))
-            x2 = 0.5_r8 * (x(i,j+1,k  ) + x(i,j,k  ))
-#else
             x1 = 0.5_r8 * (x(i,j-1,k-1) + x(i,j,k-1))
             x2 = 0.5_r8 * (x(i,j-1,k  ) + x(i,j,k  ))
-#endif
             y(i,j) = (dp2 * x1 + dp1 * x2) / (dp1 + dp2)
             exit
           end if
@@ -1167,15 +1046,9 @@ contains
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-#ifdef V_POLE
-          x(i,j,k) = (mesh%area_lat_north(j  ) * x_lat(i,j  ,k) + &
-                      mesh%area_lat_south(j+1) * x_lat(i,j+1,k)   &
-                     ) / (mesh%area_lat_north(j) + mesh%area_lat_south(j+1))
-#else
           x(i,j,k) = (mesh%area_lat_south(j  ) * x_lat(i,j  ,k) + &
                       mesh%area_lat_north(j-1) * x_lat(i,j-1,k)   &
                      ) / (mesh%area_lat_south(j) + mesh%area_lat_north(j-1))
-#endif
         end do
       end do
     end do

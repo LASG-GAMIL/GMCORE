@@ -127,13 +127,8 @@ contains
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-#ifdef V_POLE
-            state%u(i,j,k) = state%u(i,j,k) - dt * cv_full_lat(j,k) * ( &
-              state%vor(i,j+1,k) - state%vor(i,j,k)) / mesh%le_lon(j)
-#else
             state%u(i,j,k) = state%u(i,j,k) - dt * cv_full_lat(j,k) * ( &
               state%vor(i,j,k) - state%vor(i,j-1,k)) / mesh%le_lon(j)
-#endif
           end do
         end do
       end do
@@ -149,13 +144,8 @@ contains
                          state%vor(i,j,k) - state%vor(i-1,j,k)                 &
                        ) +                                                     &
                        cv_half_lat(j,k) * (1 - beta) * dt / mesh%le_lat(j) * ( &
-#ifdef V_POLE
-                         state%u(i-1,j,k) - state%u(i-1,j-1,k) -               &
-                         state%u(i  ,j,k) + state%u(i  ,j-1,k)                 &
-#else
                          state%u(i-1,j+1,k) - state%u(i-1,j,k) -               &
                          state%u(i  ,j+1,k) + state%u(i  ,j,k)                 &
-#endif
                        ) / mesh%de_lat(j)
             end do
             call zonal_solver(j,k)%solve(rhs, state%v(mesh%full_lon_ibeg:mesh%full_lon_iend,j,k))

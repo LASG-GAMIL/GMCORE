@@ -81,20 +81,12 @@ contains
             ' cannot divide zonal grid number ' // to_str(global_mesh%num_full_lon) // '!')
         end if
         ! South Pole
-#ifdef V_POLE
-        full_j = j
-#else
         full_j = j + 1
-#endif
         if (full_j >= blocks(iblk)%mesh%full_lat_lb .and. full_j <= blocks(iblk)%mesh%full_lat_ub) then
           call reduce_mesh(reduce_factors(j), full_j, blocks(iblk)%mesh, blocks(iblk)%reduced_mesh(full_j))
         end if
         ! North Pole
-#ifdef V_POLE
-        full_j = global_mesh%full_lat_iend - j + 1
-#else
         full_j = global_mesh%full_lat_iend - j
-#endif
         if (full_j >= blocks(iblk)%mesh%full_lat_lb .and. full_j <= blocks(iblk)%mesh%full_lat_ub) then
           call reduce_mesh(reduce_factors(j), full_j, blocks(iblk)%mesh, blocks(iblk)%reduced_mesh(full_j))
         end if
@@ -257,16 +249,6 @@ contains
       end if
     end do
 
-#ifdef V_POLE
-    do buf_j = lbound(reduced_mesh%full_tangent_wgt, 2), ubound(reduced_mesh%full_tangent_wgt, 2)
-      if (reduced_mesh%le_lat(buf_j  ) /= 0 .and. reduced_mesh%de_lon(buf_j) /= 0) then
-        reduced_mesh%full_tangent_wgt(1,buf_j) = reduced_mesh%le_lat(buf_j  ) / reduced_mesh%de_lon(buf_j) * 0.25_r8
-      end if
-      if (reduced_mesh%le_lat(buf_j+1) /= 0 .and. reduced_mesh%de_lon(buf_j) /= 0) then
-        reduced_mesh%full_tangent_wgt(2,buf_j) = reduced_mesh%le_lat(buf_j+1) / reduced_mesh%de_lon(buf_j) * 0.25_r8
-      end if
-    end do
-#else
     do buf_j = lbound(reduced_mesh%full_tangent_wgt, 2), ubound(reduced_mesh%full_tangent_wgt, 2)
       if (reduced_mesh%le_lat(buf_j-1) /= 0 .and. reduced_mesh%de_lon(buf_j) /= 0) then
         reduced_mesh%full_tangent_wgt(1,buf_j) = reduced_mesh%le_lat(buf_j-1) / reduced_mesh%de_lon(buf_j) * 0.25_r8
@@ -275,18 +257,6 @@ contains
         reduced_mesh%full_tangent_wgt(2,buf_j) = reduced_mesh%le_lat(buf_j  ) / reduced_mesh%de_lon(buf_j) * 0.25_r8
       end if
     end do
-#endif
-#ifdef V_POLE
-    do buf_j = lbound(reduced_mesh%half_tangent_wgt, 2), ubound(reduced_mesh%half_tangent_wgt, 2)
-      if (raw_mesh%is_south_pole(j+buf_j+1)) cycle
-      if (reduced_mesh%le_lon(buf_j-1) /= 0 .and. reduced_mesh%de_lat(buf_j) /= 0) then
-        reduced_mesh%half_tangent_wgt(1,buf_j) = reduced_mesh%le_lon(buf_j-1) / reduced_mesh%de_lat(buf_j) * 0.25_r8
-      end if
-      if (reduced_mesh%le_lon(buf_j  ) /= 0 .and. reduced_mesh%de_lat(buf_j) /= 0) then
-        reduced_mesh%half_tangent_wgt(2,buf_j) = reduced_mesh%le_lon(buf_j  ) / reduced_mesh%de_lat(buf_j) * 0.25_r8
-      end if
-    end do
-#else
     do buf_j = lbound(reduced_mesh%half_tangent_wgt, 2), ubound(reduced_mesh%half_tangent_wgt, 2)
       if (reduced_mesh%le_lon(buf_j  ) /= 0 .and. reduced_mesh%de_lat(buf_j) /= 0) then
         reduced_mesh%half_tangent_wgt(1,buf_j) = reduced_mesh%le_lon(buf_j  ) / reduced_mesh%de_lat(buf_j) * 0.25_r8
@@ -295,7 +265,6 @@ contains
         reduced_mesh%half_tangent_wgt(2,buf_j) = reduced_mesh%le_lon(buf_j+1) / reduced_mesh%de_lat(buf_j) * 0.25_r8
       end if
     end do
-#endif
 
   end subroutine reduce_mesh
 
@@ -311,9 +280,6 @@ contains
 #define half_lev_full_lon_dims(x, buf_bound) reduced_state%x(reduced_mesh%half_lev_lb:reduced_mesh%half_lev_ub,reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub,buf_bound,reduced_mesh%reduce_factor)
 #define half_lev_half_lon_dims(x, buf_bound) reduced_state%x(reduced_mesh%half_lev_lb:reduced_mesh%half_lev_ub,reduced_mesh%half_lon_lb:reduced_mesh%half_lon_ub,buf_bound,reduced_mesh%reduce_factor)
 
-#ifdef V_POLE
-    call log_error('Prepare to remove V_POLE codes.')
-#else
     if (baroclinic) then
       allocate(full_lev_half_lon_dims(mf_lon_n      , -2:2))
       allocate(full_lev_full_lon_dims(mf_lat_n      , -2:1))
@@ -379,7 +345,6 @@ contains
       allocate(full_lev_full_lon_dims(dpv_lon_t     , -1:1))
       allocate(full_lev_full_lon_dims(dpv_lat_n     , -1:0))
     end select
-#endif
     allocate(reduced_state%async(11,-2:2,reduced_mesh%reduce_factor))
 
     ! Initialize async objects.
@@ -926,8 +891,6 @@ contains
         end do
       end if
     else
-#ifdef V_POLE
-#else
       if (raw_mesh%is_outside_pole_half_lat(j+buf_j)) then
         return
       else if (raw_mesh%is_south_pole(j+buf_j) .or. raw_mesh%is_north_pole(j+buf_j+1)) then
@@ -957,7 +920,6 @@ contains
           end do
         end do
       end if
-#endif
     end if
     call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%pv(:,:,buf_j,move))
 
@@ -1118,15 +1080,9 @@ contains
 
     do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
       do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
-#ifdef V_POLE
-        reduced_state%mf_lon_t(k,i,buf_j,move) =                                                                                             &
-          reduced_mesh%full_tangent_wgt(1,buf_j) * (reduced_state%mf_lat_n(k,i,buf_j  ,move) + reduced_state%mf_lat_n(k,i+1,buf_j  ,move)) + &
-          reduced_mesh%full_tangent_wgt(2,buf_j) * (reduced_state%mf_lat_n(k,i,buf_j+1,move) + reduced_state%mf_lat_n(k,i+1,buf_j+1,move))
-#else
         reduced_state%mf_lon_t(k,i,buf_j,move) =                                                                                             &
           reduced_mesh%full_tangent_wgt(1,buf_j) * (reduced_state%mf_lat_n(k,i,buf_j-1,move) + reduced_state%mf_lat_n(k,i+1,buf_j-1,move)) + &
           reduced_mesh%full_tangent_wgt(2,buf_j) * (reduced_state%mf_lat_n(k,i,buf_j  ,move) + reduced_state%mf_lat_n(k,i+1,buf_j  ,move))
-#endif
       end do
     end do
 
@@ -1150,15 +1106,9 @@ contains
     if (is_inf(reduced_mesh%half_tangent_wgt(1,buf_j)) .or. is_inf(reduced_mesh%half_tangent_wgt(2,buf_j))) return
     do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
       do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
-#ifdef V_POLE
-        reduced_state%mf_lat_t(k,i,buf_j,move) =                                                                                             &
-          reduced_mesh%half_tangent_wgt(1,buf_j) * (reduced_state%mf_lon_n(k,i-1,buf_j-1,move) + reduced_state%mf_lon_n(k,i,buf_j-1,move)) + &
-          reduced_mesh%half_tangent_wgt(2,buf_j) * (reduced_state%mf_lon_n(k,i-1,buf_j  ,move) + reduced_state%mf_lon_n(k,i,buf_j  ,move))
-#else
         reduced_state%mf_lat_t(k,i,buf_j,move) =                                                                                             &
           reduced_mesh%half_tangent_wgt(1,buf_j) * (reduced_state%mf_lon_n(k,i-1,buf_j  ,move) + reduced_state%mf_lon_n(k,i,buf_j  ,move)) + &
           reduced_mesh%half_tangent_wgt(2,buf_j) * (reduced_state%mf_lon_n(k,i-1,buf_j+1,move) + reduced_state%mf_lon_n(k,i,buf_j+1,move))
-#endif
       end do
     end do
 
@@ -1181,11 +1131,7 @@ contains
 
     do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
       do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
-#ifdef V_POLE
-        reduced_state%dpv_lon_t(k,i,buf_j,move) = reduced_state%pv(k,i,buf_j+1,move) - reduced_state%pv(k,i,buf_j  ,move)
-#else
         reduced_state%dpv_lon_t(k,i,buf_j,move) = reduced_state%pv(k,i,buf_j  ,move) - reduced_state%pv(k,i,buf_j-1,move)
-#endif
       end do
     end do
     call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%dpv_lon_t(:,:,buf_j,move), east_halo=.false.)
@@ -1233,21 +1179,12 @@ contains
 
     do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
       do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
-#ifdef V_POLE
-        reduced_state%dpv_lon_n(k,i,buf_j,move) = 0.25_r8 * ( &
-          reduced_state%dpv_lat_t(k,i  ,buf_j  ,move) +       &
-          reduced_state%dpv_lat_t(k,i+1,buf_j  ,move) +       &
-          reduced_state%dpv_lat_t(k,i  ,buf_j+1,move) +       &
-          reduced_state%dpv_lat_t(k,i+1,buf_j+1,move)         &
-        )
-#else
         reduced_state%dpv_lon_n(k,i,buf_j,move) = 0.25_r8 * ( &
           reduced_state%dpv_lat_t(k,i  ,buf_j-1,move) +       &
           reduced_state%dpv_lat_t(k,i+1,buf_j-1,move) +       &
           reduced_state%dpv_lat_t(k,i  ,buf_j  ,move) +       &
           reduced_state%dpv_lat_t(k,i+1,buf_j  ,move)         &
         )
-#endif
       end do
     end do
 
@@ -1270,21 +1207,12 @@ contains
 
     do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
       do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
-#ifdef V_POLE
-        reduced_state%dpv_lat_n(k,i,buf_j,move) = 0.25_r8 * ( &
-          reduced_state%dpv_lon_t(k,i-1,buf_j-1,move) +       &
-          reduced_state%dpv_lon_t(k,i  ,buf_j-1,move) +       &
-          reduced_state%dpv_lon_t(k,i-1,buf_j  ,move) +       &
-          reduced_state%dpv_lon_t(k,i  ,buf_j  ,move)         &
-        )
-#else
         reduced_state%dpv_lat_n(k,i,buf_j,move) = 0.25_r8 * ( &
           reduced_state%dpv_lon_t(k,i-1,buf_j  ,move) +       &
           reduced_state%dpv_lon_t(k,i  ,buf_j  ,move) +       &
           reduced_state%dpv_lon_t(k,i-1,buf_j+1,move) +       &
           reduced_state%dpv_lon_t(k,i  ,buf_j+1,move)         &
         )
-#endif
       end do
     end do
 
@@ -1360,17 +1288,10 @@ contains
     if (reduced_mesh%le_lon(buf_j) == 0 .or. reduced_mesh%de_lon(buf_j) == 0) return
     do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
       do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
-#ifdef V_POLE
-        reduced_state%pv_lon(k,i,buf_j,move) = 0.5_r8 * (    &
-          reduced_state%pv(k,i,buf_j+1,move) +               &
-          reduced_state%pv(k,i,buf_j  ,move)                 &
-        )
-#else
         reduced_state%pv_lon(k,i,buf_j,move) = 0.5_r8 * (    &
           reduced_state%pv(k,i,buf_j-1,move) +               &
           reduced_state%pv(k,i,buf_j  ,move)                 &
         )
-#endif
       end do
     end do
     call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%pv_lon(:,:,buf_j,move), east_halo=.false.)
@@ -1487,15 +1408,6 @@ contains
       do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
         u = reduced_state%u(k,i,buf_j,move)
         v = reduced_state%mf_lon_t(k,i,buf_j,move) / reduced_state%m_lon(k,i,buf_j,move)
-#ifdef V_POLE
-        reduced_state%pv_lon(k,i,buf_j,move) = 0.5_r8 * (    &
-          reduced_state%pv(k,i,buf_j+1,move) +               &
-          reduced_state%pv(k,i,buf_j  ,move)                 &
-        ) - 0.5_r8 * (                                       &
-          u * reduced_state%dpv_lon_n(k,i,buf_j,move) / de + &
-          v * reduced_state%dpv_lon_t(k,i,buf_j,move) / le   &
-        ) * dt
-#else
         reduced_state%pv_lon(k,i,buf_j,move) = 0.5_r8 * (    &
           reduced_state%pv(k,i,buf_j-1,move) +               &
           reduced_state%pv(k,i,buf_j  ,move)                 &
@@ -1503,7 +1415,6 @@ contains
           u * reduced_state%dpv_lon_n(k,i,buf_j,move) / de + &
           v * reduced_state%dpv_lon_t(k,i,buf_j,move) / le   &
         ) * dt
-#endif
       end do
     end do
     call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%pv_lon(:,:,buf_j,move), east_halo=.false.)

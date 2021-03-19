@@ -68,29 +68,11 @@ contains
       end if
     end do
 
-#ifdef V_POLE
-    do j = mesh%half_lat_ibeg, mesh%half_lat_iend
-      if (mesh%is_south_pole(j)) then
-        if (abs(mesh%area_vtx(j) - 2.0d0 * mesh%area_subcell(1,j)) / mesh%area_vtx(j) > 1.0d-12) then
-          call log_error('Failed to calculate subcell area!', __FILE__, __LINE__)
-        end if
-      else if (mesh%is_north_pole(j)) then
-        if (abs(mesh%area_vtx(j) - 2.0d0 * mesh%area_subcell(2,j-1)) / mesh%area_vtx(j) > 1.0d-12) then
-          call log_error('Failed to calculate subcell area!', __FILE__, __LINE__)
-        end if
-      else
-        if (abs(mesh%area_vtx(j) - 2.0d0 * (mesh%area_subcell(2,j-1) + mesh%area_subcell(1,j))) / mesh%area_vtx(j) > 1.0d-12) then
-          call log_error('Failed to calculate subcell area!', __FILE__, __LINE__)
-        end if
-      end if
-    end do
-#else
     do j = mesh%half_lat_ibeg, mesh%half_lat_iend
       if (abs(mesh%area_vtx(j) - 2.0_r8 * (mesh%area_subcell(2,j) + mesh%area_subcell(1,j+1))) / mesh%area_vtx(j) > 1.0d-12) then
         call log_error('Failed to calculate subcell area!', __FILE__, __LINE__)
       end if
     end do
-#endif
 
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       if (abs(mesh%area_lon_north(j) + mesh%area_lon_south(j) - mesh%area_lon(j)) / mesh%area_lon(j) > 1.0d-12) then

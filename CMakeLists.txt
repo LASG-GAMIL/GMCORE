@@ -2,16 +2,10 @@ cmake_minimum_required(VERSION 3.0)
 
 project(gmcore LANGUAGES Fortran)
 
-option(V_POLE "Stagger V on the two Poles" OFF)
 option(R4 "Use single precision" OFF)
 option(R16 "Use quadruple precision" OFF)
 option(ENSURE_ORDER "Ensure computation order in parallel" OFF)
 
-if (V_POLE)
-  add_definitions(-DV_POLE)
-	set(CPPFLAGS ${CPPFLAGS} -DV_POLE)
-	message(STATUS "Place v at Poles.")
-endif ()
 if (R4)
   add_definitions(-DREAL_KIND=4)
 	set(CPPFLAGS ${CPPFLAGS} -DREAL_KIND=4)
@@ -119,7 +113,6 @@ set(gmcore_files
   src/core/pgf/pgf_swm_mod.F90
   src/core/pgf/pgf_sb81_mod.F90
   src/core/pgf/pgf_lin97_mod.F90
-  src/core/pgf/pgf_dflx_mod.F90
   src/core/mesh_mod.F90
   src/core/vert_coord/sigma_coord_mod.F90
   src/core/vert_coord/hybrid_coord_test_mod.F90
@@ -145,7 +138,6 @@ set(gmcore_files
   src/core/damp/zonal_damp_mod.F90
   src/core/damp/div_damp_mod.F90
   src/core/damp/vor_damp_mod.F90
-  src/core/damp/rayleigh_damp_mod.F90
   src/core/damp/smag_damp_mod.F90
   src/core/damp/damp_mod.F90
   src/core/gmcore_mod.F90
