@@ -18,6 +18,7 @@ module nh_mod
   public nh_prepare
   public nh_solve
   public interp_gz
+  public diag_m_lev
 
 contains
 
@@ -35,10 +36,9 @@ contains
                  p_lev     => blocks(iblk)%state(1)%p_lev    , &
                  p_lev_lon => blocks(iblk)%state(1)%p_lev_lon, &
                  p_lev_lat => blocks(iblk)%state(1)%p_lev_lat)
-        p = ph; p_lev = ph_lev
-        call interp_lev_edge_to_lev_lon_edge(mesh, p_lev, p_lev_lon)
-        call interp_lev_edge_to_lev_lat_edge(mesh, p_lev, p_lev_lat)
-        call fill_halo(blocks(iblk), p_lev_lon, full_lon=.false., full_lat=.true., full_lev=.false., west_halo=.false., south_halo=.false., north_halo=.false.)
+        call diag_rhod(blocks(iblk), blocks(iblk)%state(1))
+        call diag_p   (blocks(iblk), blocks(iblk)%state(1))
+        call interp_p (blocks(iblk), blocks(iblk)%state(1))
       end associate
       call diag_m_lev(blocks(iblk), blocks(iblk)%state(1))
     end do
@@ -59,7 +59,6 @@ contains
     call interp_w             (block, star_state)
     call interp_wedphdlev     (block, star_state)
     call reduce_run           (block, star_state, dt, nh_pass_1)
-    call diag_m_lev           (block, new_state)
 
     call calc_adv_gz          (block, star_state, tend)
     call calc_adv_w           (block, star_state, tend)

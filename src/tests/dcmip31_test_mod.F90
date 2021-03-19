@@ -47,12 +47,12 @@ contains
     type(block_type), intent(inout), target :: block
 
     integer i, j, k
-    real(r8) ts, cos_2lat, r
+    real(r8) ts, cos_2lat, r, local_z, local_ztop
 
     associate (mesh   => block%mesh           , &
                u      => block%state(1)%u     , &
                v      => block%state(1)%v     , &
-               w      => block%state(1)%w     , &
+               w      => block%state(1)%w_lev , &
                phs    => block%state(1)%phs   , &
                ph_lev => block%state(1)%ph_lev, &
                ph     => block%state(1)%ph    , &
@@ -113,16 +113,6 @@ contains
           end do
         end do
         call fill_halo(block, gz_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
-        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-          do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-            cos_2lat = cos(2 * mesh%full_lat(j))
-            ts = t0 + (teq - t0) * exp(-u0 * N2 / (4 * g**2) * (u0 + 2 * omega * radius) * (cos_2lat - 1))
-            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              gz(i,j,k) = - g**2 / N2 * log(ts / t0 * ((ph(i,j,k) / phs(i,j))**Rd_o_cp - 1) + 1)
-            end do
-          end do
-        end do
-        call fill_halo(block, gz, full_lon=.true., full_lat=.true., full_lev=.true.)
       end if
 
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
@@ -139,8 +129,10 @@ contains
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             ! Perturbation
+            local_z = 0.5_r8 * (gz_lev(i,j,k+1) + gz_lev(i,j,k)) / g
+            local_ztop = gz_lev(i,j,mesh%half_lev_ibeg) / g 
             r = radius * acos(sin(latc) * mesh%full_sin_lat(j) + cos(latc) * mesh%full_cos_lat(j) * cos(mesh%full_lon(i) - lonc))
-            pt(i,j,k) = pt(i,j,k) + dpt * d2 / (d2 + r**2) * sin(pi2 * gz(i,j,k) / g / lz)
+            pt(i,j,k) = pt(i,j,k) + dpt * d2 / (d2 + r**2) * sin(pi * local_z / local_ztop)
           end do
         end do
       end do
