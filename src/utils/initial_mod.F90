@@ -159,6 +159,8 @@ contains
     end do
     call fiona_end_input('i0')
 
+    if (is_root_proc()) call log_notice('Done read initial file.')
+
   end subroutine initial_read
 
 end module initial_mod

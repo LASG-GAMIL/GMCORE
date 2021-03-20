@@ -56,6 +56,10 @@ contains
       call zonal_damp_on_lat_edge(block, polar_damp_order, dt, state%v)
       if (polar_damp_phs) call zonal_damp_on_cell(block, polar_damp_order, dt, state%phs, lat0=polar_damp_phs_lat0)
     end do
+    call fill_halo(block, state%pt, full_lon=.true. , full_lat=.true. , full_lev=.true.)
+    call fill_halo(block, state%u , full_lon=.false., full_lat=.true. , full_lev=.true.)
+    call fill_halo(block, state%v , full_lon=.true. , full_lat=.false., full_lev=.true.)
+    if (polar_damp_phs) call fill_halo(block, state%phs, full_lon=.true., full_lat=.true.)
     if (nonhydrostatic) then
       do cyc = 1, polar_damp_cycles
         call zonal_damp_on_lev_edge(block, polar_damp_order, dt, state%w_lev)
