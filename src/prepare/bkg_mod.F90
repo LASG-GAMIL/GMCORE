@@ -63,7 +63,7 @@ contains
     real(r8), parameter :: lapse_kappa = lapse * kappa
     integer iblk, i, j
 
-    call log_notice('Regrid mean sea level pressure and calculate surface pressure based on pressure-height formula.')
+    if (is_root_proc()) call log_notice('Regrid mean sea level pressure and calculate surface pressure based on pressure-height formula.')
 
     do iblk = 1, size(proc%blocks)
       associate (mesh => proc%blocks(iblk)%mesh, &
@@ -104,7 +104,7 @@ contains
 
     integer iblk, i, j, k
 
-    call log_notice('Calculate pressure on each grid.')
+    if (is_root_proc()) call log_notice('Calculate pressure on each grid.')
 
     do iblk = 1, size(proc%blocks)
       associate (mesh => proc%blocks(iblk)%mesh        , &
@@ -128,7 +128,7 @@ contains
     real(r8), allocatable, dimension(:,:,:) :: t1, pt1, p1
     integer iblk, i, j, k
 
-    call log_notice('Regrid temperature and calculate potential temperature.')
+    if (is_root_proc()) call log_notice('Regrid temperature and calculate potential temperature.')
 
     do iblk = 1, size(proc%blocks)
       associate (block => proc%blocks(iblk)             , &
@@ -175,7 +175,7 @@ contains
     real(r8), allocatable, dimension(:,:,:) :: u1, p1
     integer iblk, i, j, k
 
-    call log_notice('Regrid u wind component.')
+    if (is_root_proc()) call log_notice('Regrid u wind component.')
 
     do iblk = 1, size(proc%blocks)
       associate (block => proc%blocks(iblk)             , &
@@ -219,7 +219,7 @@ contains
     real(r8), allocatable, dimension(:,:,:) :: v1, p1
     integer iblk, i, j, k
 
-    call log_notice('Regrid v wind component.')
+    if (is_root_proc()) call log_notice('Regrid v wind component.')
 
     do iblk = 1, size(proc%blocks)
       associate (block => proc%blocks(iblk)             , &

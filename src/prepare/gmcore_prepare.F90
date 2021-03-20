@@ -60,23 +60,25 @@ program gmcore_prepare
   read(10, nml=gmcore_prepare_params)
   close(10)
 
-  write(*, *) '=================== GMCORE Parameters ==================='
-  write(*, *) 'num_lon              = ', to_str(num_lon)
-  write(*, *) 'num_lat              = ', to_str(num_lat)
-  write(*, *) 'num_lev              = ', to_str(num_lev)
-  if (coarse_pole_mul /= 0) then
-  write(*, *) 'coarse_pole_mul      = ', to_str(coarse_pole_mul, 2)
-  write(*, *) 'coarse_pole_decay    = ', to_str(coarse_pole_decay, 2)
+  if (is_root_proc()) then
+    write(*, *) '=================== GMCORE Parameters ==================='
+    write(*, *) 'num_lon              = ', to_str(num_lon)
+    write(*, *) 'num_lat              = ', to_str(num_lat)
+    write(*, *) 'num_lev              = ', to_str(num_lev)
+    if (coarse_pole_mul /= 0) then
+    write(*, *) 'coarse_pole_mul      = ', to_str(coarse_pole_mul, 2)
+    write(*, *) 'coarse_pole_decay    = ', to_str(coarse_pole_decay, 2)
+    end if
+    write(*, *) 'vert_coord_scheme    = ', trim(vert_coord_scheme)
+    write(*, *) 'vert_coord_template  = ', trim(vert_coord_template)
+    write(*, *) 'initial_time         = ', trim(initial_time)
+    write(*, *) 'namelist_file        = ', trim(namelist_file)
+    write(*, *) 'topo_file            = ', trim(topo_file)
+    write(*, *) 'bkg_file             = ', trim(bkg_file)
+    write(*, *) 'initial_file         = ', trim(initial_file)
+    write(*, *) 'bkg_type             = ', trim(bkg_type)
+    write(*, *) '========================================================='
   end if
-  write(*, *) 'vert_coord_scheme    = ', trim(vert_coord_scheme)
-  write(*, *) 'vert_coord_template  = ', trim(vert_coord_template)
-  write(*, *) 'initial_time         = ', trim(initial_time)
-  write(*, *) 'namelist_file        = ', trim(namelist_file)
-  write(*, *) 'topo_file            = ', trim(topo_file)
-  write(*, *) 'bkg_file             = ', trim(bkg_file)
-  write(*, *) 'initial_file         = ', trim(initial_file)
-  write(*, *) 'bkg_type             = ', trim(bkg_type)
-  write(*, *) '========================================================='
 
   time_scheme = 'N/A'
 
