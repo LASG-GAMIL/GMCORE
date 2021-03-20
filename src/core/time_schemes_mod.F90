@@ -178,15 +178,12 @@ contains
 
     call space_operators(block, block%state(old), block%state(old), block%state(new), block%tend(old), 0.5_r8 * dt, pass)
     call update_state(block, block%tend(old), block%state(old), block%state(new), 0.5_r8 * dt, pass)
-    call operators_prepare(block, block%state(new), 0.5_r8 * dt, pass)
 
     call space_operators(block, block%state(old), block%state(new), block%state(3), block%tend(new), 0.5_r8 * dt, pass)
     call update_state(block, block%tend(new), block%state(old), block%state(3), 0.5_r8 * dt, pass)
-    call operators_prepare(block, block%state(3)  , 0.5_r8 * dt, pass)
 
     call space_operators(block, block%state(old), block%state(3), block%state(new), block%tend(3), dt, pass)
     call update_state(block, block%tend(3), block%state(old), block%state(new), dt, pass)
-    call operators_prepare(block, block%state(new), dt, pass)
 
   end subroutine predict_correct
 
@@ -201,15 +198,12 @@ contains
 
     call space_operators(block, block%state(old), block%state(old), block%state(new), block%tend(old), dt / 3.0_r8, pass)
     call update_state(block, block%tend(old), block%state(old), block%state(new), dt / 3.0_r8, pass)
-    call operators_prepare(block, block%state(new), dt / 3.0_r8, pass)
 
     call space_operators(block, block%state(old), block%state(new), block%state(3), block%tend(new), 0.5_r8 * dt, pass)
     call update_state(block, block%tend(new), block%state(old), block%state(3), 0.5_r8 * dt, pass)
-    call operators_prepare(block, block%state(3), 0.5_r8*dt  , pass)
 
     call space_operators(block, block%state(old), block%state(3), block%state(new), block%tend(3), dt, pass)
     call update_state(block, block%tend(3), block%state(old), block%state(new), dt, pass)
-    call operators_prepare(block, block%state(new), dt       , pass)
 
   end subroutine wrf_runge_kutta_3rd
 
