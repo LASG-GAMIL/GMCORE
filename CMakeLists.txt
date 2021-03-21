@@ -5,6 +5,7 @@ project(gmcore LANGUAGES Fortran)
 option(R4 "Use single precision" OFF)
 option(R16 "Use quadruple precision" OFF)
 option(ENSURE_ORDER "Ensure computation order in parallel" OFF)
+option(USE_HZD "Use hzd tridiag solver for zonal damp" ON)
 
 if (R4)
   add_definitions(-DREAL_KIND=4)
@@ -19,6 +20,10 @@ if (ENSURE_ORDER)
   add_definitions(-DENSURE_ORDER)
   set(CPPFLAGS ${CPPFLAGS} -DENSURE_ORDER)
   message(STATUS "Ensure computation order in parallel.")
+endif ()
+
+if (USE_HZD)
+  add_definitions(-DUSE_HZD)
 endif ()
 
 if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
@@ -106,7 +111,8 @@ set(gmcore_files
   src/utils/allocator_mod.F90
   src/utils/parallel_types_mod.F90
   src/utils/parallel_mod.F90
-  src/utils/tridiag_mod.F90
+  src/utils/tridiag_mkl_mod.F90
+  src/utils/tridiag_hzd_mod.F90
   src/utils/debug_mod.F90
   src/core/time_schemes_mod.F90
   src/core/pgf/pgf_mod.F90

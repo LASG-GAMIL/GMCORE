@@ -10,6 +10,9 @@ module damp_mod
   use div_damp_mod
   use vor_damp_mod
   use smag_damp_mod
+#ifdef USE_HZD
+  use tridiag_hzd_mod
+#endif
 
   implicit none
 
@@ -26,6 +29,12 @@ module damp_mod
 contains
 
   subroutine damp_init()
+
+#ifdef USE_HZD
+    ! 初始化通信设置
+    call zonal_comm_init(proc%comm, proc%id, proc%ngb(east)%id, proc%ngb(west)%id)
+    call barrier()
+#endif
 
     call zonal_damp_init()
     call div_damp_init()
