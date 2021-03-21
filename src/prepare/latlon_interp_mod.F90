@@ -3,6 +3,8 @@ module latlon_interp_mod
   use flogger
   use const_mod
   use mesh_mod
+  use process_mod
+  use parallel_mod
 
   implicit none
 
@@ -30,7 +32,7 @@ contains
     integer i, ii, j, jj
     integer, allocatable :: i1(:), j1(:), i2(:), j2(:)
     real(r8), allocatable :: xwgt1(:), xwgt2(:), ywgt1(:), ywgt2(:)
-    real(r8) tmp1, tmp2
+    real(r8) tmp1, tmp2, pole
     logical is_found
 
     nx1 = size(src_lon)
@@ -47,8 +49,8 @@ contains
     allocate(ywgt1(lb_y2:ub_y2), ywgt2(lb_y2:ub_y2))
 
     associate (x1 => src_lon, y1 => src_lat, &
-               x2 => dst_mesh%full_lon_deg(lb_x2:ub_x2), &
-               y2 => dst_mesh%full_lat_deg(lb_y2:ub_y2))
+               x2 => dst_mesh%full_lon_deg, &
+               y2 => dst_mesh%full_lat_deg)
       do i = lb_x2, ub_x2
         is_found = .false.
         do ii = 1, nx1-1
@@ -98,7 +100,6 @@ contains
             deallocate(i1, i2, j1, j2, xwgt1, xwgt2, ywgt1, ywgt2)
             return
           else
-            print *, j, y2(j)
             call log_error('latlon_interp_bilinear: Latitude mismatch!', __FILE__, __LINE__)
           end if
         end if
@@ -124,14 +125,16 @@ contains
       if (merge(zero_pole, .false., present(zero_pole))) then
         dst_data(:,dst_mesh%full_lat_ibeg) = 0.0_r8
       else
-        dst_data(:,dst_mesh%full_lat_ibeg) = sum(dst_data(:,dst_mesh%full_lat_ibeg)) / dst_mesh%num_full_lon
+        call zonal_sum(proc%zonal_circle, dst_data(dst_mesh%full_lon_ibeg:dst_mesh%full_lon_iend,dst_mesh%full_lat_ibeg), pole)
+        dst_data(:,dst_mesh%full_lat_ibeg) = pole / global_mesh%num_full_lon
       end if
     end if
     if (dst_mesh%has_north_pole()) then
       if (merge(zero_pole, .false., present(zero_pole))) then
         dst_data(:,dst_mesh%full_lat_iend) = 0.0_r8
       else
-        dst_data(:,dst_mesh%full_lat_iend) = sum(dst_data(:,dst_mesh%full_lat_iend)) / dst_mesh%num_full_lon
+        call zonal_sum(proc%zonal_circle, dst_data(dst_mesh%full_lon_ibeg:dst_mesh%full_lon_iend,dst_mesh%full_lat_iend), pole)
+        dst_data(:,dst_mesh%full_lat_iend) = pole / global_mesh%num_full_lon
       end if
     end if
 
@@ -153,7 +156,7 @@ contains
     integer i, ii, j, jj
     integer, allocatable :: i1(:), j1(:), i2(:), j2(:)
     real(r8), allocatable :: xwgt1(:), xwgt2(:), ywgt1(:), ywgt2(:)
-    real(r8) tmp1, tmp2
+    real(r8) tmp1, tmp2, pole
     logical is_found
 
     nx1 = size(src_lon)
@@ -170,8 +173,8 @@ contains
     allocate(ywgt1(lb_y2:ub_y2), ywgt2(lb_y2:ub_y2))
 
     associate (x1 => src_lon, y1 => src_lat, &
-               x2 => dst_mesh%half_lon_deg(lb_x2:ub_x2), &
-               y2 => dst_mesh%full_lat_deg(lb_y2:ub_y2))
+               x2 => dst_mesh%half_lon_deg, &
+               y2 => dst_mesh%full_lat_deg)
       do i = lb_x2, ub_x2
         is_found = .false.
         do ii = 1, nx1-1
@@ -256,14 +259,16 @@ contains
       if (merge(zero_pole, .false., present(zero_pole))) then
         dst_data(:,dst_mesh%full_lat_ibeg) = 0.0_r8
       else
-        dst_data(:,dst_mesh%full_lat_ibeg) = sum(dst_data(:,dst_mesh%full_lat_ibeg)) / dst_mesh%num_full_lon
+        call zonal_sum(proc%zonal_circle, dst_data(dst_mesh%half_lon_ibeg:dst_mesh%half_lon_iend,dst_mesh%full_lat_ibeg), pole)
+        dst_data(:,dst_mesh%full_lat_ibeg) = pole / global_mesh%num_half_lon
       end if
     end if
     if (dst_mesh%has_north_pole()) then
       if (merge(zero_pole, .false., present(zero_pole))) then
         dst_data(:,dst_mesh%full_lat_iend) = 0.0_r8
       else
-        dst_data(:,dst_mesh%full_lat_iend) = sum(dst_data(:,dst_mesh%full_lat_iend)) / dst_mesh%num_full_lon
+        call zonal_sum(proc%zonal_circle, dst_data(dst_mesh%half_lon_ibeg:dst_mesh%half_lon_iend,dst_mesh%full_lat_iend), pole)
+        dst_data(:,dst_mesh%full_lat_iend) = pole / global_mesh%num_half_lon
       end if
     end if
 
@@ -302,8 +307,8 @@ contains
     allocate(ywgt1(lb_y2:ub_y2), ywgt2(lb_y2:ub_y2))
 
     associate (x1 => src_lon, y1 => src_lat, &
-               x2 => dst_mesh%full_lon_deg(lb_x2:ub_x2), &
-               y2 => dst_mesh%half_lat_deg(lb_y2:ub_y2))
+               x2 => dst_mesh%full_lon_deg, &
+               y2 => dst_mesh%half_lat_deg)
       do i = lb_x2, ub_x2
         is_found = .false.
         do ii = 1, nx1-1

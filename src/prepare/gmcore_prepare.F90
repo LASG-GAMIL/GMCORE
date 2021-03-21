@@ -60,6 +60,15 @@ program gmcore_prepare
   read(10, nml=gmcore_prepare_params)
   close(10)
 
+  time_scheme = 'N/A'
+
+  call fiona_init(start_time=initial_time, time_units='hours')
+
+  call global_mesh%init_global(num_lon, num_lat, num_lev, lon_halo_width=5, lat_halo_width=5)
+  call process_init()
+  call vert_coord_init(num_lev, scheme=vert_coord_scheme, template=vert_coord_template)
+  call process_create_blocks()
+
   if (is_root_proc()) then
     write(*, *) '=================== GMCORE Parameters ==================='
     write(*, *) 'num_lon              = ', to_str(num_lon)
@@ -79,15 +88,6 @@ program gmcore_prepare
     write(*, *) 'bkg_type             = ', trim(bkg_type)
     write(*, *) '========================================================='
   end if
-
-  time_scheme = 'N/A'
-
-  call fiona_init(start_time=initial_time, time_units='hours')
-
-  call global_mesh%init_global(num_lon, num_lat, num_lev, lon_halo_width=5, lat_halo_width=5)
-  call process_init()
-  call vert_coord_init(num_lev, scheme=vert_coord_scheme, template=vert_coord_template)
-  call process_create_blocks()
 
   call topo_read(topo_file)
 
