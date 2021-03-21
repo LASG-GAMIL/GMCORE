@@ -31,13 +31,8 @@ contains
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             ke(i,j,k) = (mesh%area_lon_west (j  ) * u(i-1,j  ,k)**2 + &
                          mesh%area_lon_east (j  ) * u(i  ,j  ,k)**2 + &
-#ifdef V_POLE
-                         mesh%area_lat_north(j  ) * v(i  ,j  ,k)**2 + &
-                         mesh%area_lat_south(j+1) * v(i  ,j+1,k)**2   &
-#else
                          mesh%area_lat_north(j-1) * v(i  ,j-1,k)**2 + &
                          mesh%area_lat_south(j  ) * v(i  ,j  ,k)**2   &
-#endif
                         ) / mesh%area_cell(j)
           end do
         end do
@@ -80,7 +75,6 @@ contains
         end do
       end if
 
-#ifndef V_POLE
       ! Note: area_lat_south and area_lat_north at the Poles is the same as area_cell.
       if (mesh%has_south_pole()) then
         j = mesh%full_lat_ibeg
@@ -112,12 +106,7 @@ contains
           end do
         end do
       end if
-#endif
-#ifdef V_POLE
-      call fill_halo(block, ke, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false., north_halo=.false.)
-#else
       call fill_halo(block, ke, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false., south_halo=.false.)
-#endif
     end associate
 
   end subroutine calc_ke

@@ -90,37 +90,17 @@ contains
     half_lon_ibeg = full_lon_ibeg
     half_lon_iend = full_lon_iend
     if (present(lat_ibeg) .and. present(lat_iend)) then
-#ifdef V_POLE
-      half_lat_ibeg = lat_ibeg - mesh%half_lat_lb
-      half_lat_iend = lat_iend - mesh%half_lat_lb
-#else
       full_lat_ibeg = lat_ibeg - mesh%full_lat_lb
       full_lat_iend = lat_iend - mesh%full_lat_lb
-#endif
     else if (orient == south) then
-#ifdef V_POLE
-      half_lat_ibeg = 0
-      half_lat_iend = mesh%lat_halo_width - 1
-#else
       full_lat_ibeg = 0
       full_lat_iend = mesh%lat_halo_width - 1
-#endif
     else if (orient == north) then
-#ifdef V_POLE
-      half_lat_ibeg = mesh%num_half_lat + mesh%lat_halo_width
-      half_lat_iend = half_lat_ibeg + mesh%lat_halo_width - 1
-#else
       full_lat_ibeg = mesh%num_full_lat + mesh%lat_halo_width
       full_lat_iend = full_lat_ibeg + mesh%lat_halo_width - 1
-#endif
     end if
-#ifdef V_POLE
-    full_lat_ibeg = merge(half_lat_ibeg - 1, half_lat_ibeg, mesh%has_north_pole() .and. orient == north)
-    full_lat_iend = merge(half_lat_iend - 1, half_lat_iend, mesh%has_north_pole() .and. orient == north)
-#else
     half_lat_ibeg = merge(full_lat_ibeg - 1, full_lat_ibeg, mesh%has_north_pole() .and. orient == north)
     half_lat_iend = merge(full_lat_iend - 1, full_lat_iend, mesh%has_north_pole() .and. orient == north)
-#endif
 
     ! NOTE: MPI array index starts from zero.
 

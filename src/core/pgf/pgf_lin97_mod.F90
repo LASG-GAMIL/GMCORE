@@ -113,17 +113,10 @@ contains
           !
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-#ifdef V_POLE
-              dph1 = ph_lev(i,j  ,k+1)**Rd_o_cp - ph_lev(i,j-1,k  )**Rd_o_cp ! 2 - 4
-              dph2 = ph_lev(i,j-1,k+1)**Rd_o_cp - ph_lev(i,j  ,k  )**Rd_o_cp ! 1 - 3
-              dgz1 = gz_lev(i,j-1,k+1)          - gz_lev(i,j  ,k  )          ! 1 - 3
-              dgz2 = gz_lev(i,j-1,k  )          - gz_lev(i,j  ,k+1)          ! 4 - 2
-#else
               dph1 = ph_lev(i,j+1,k+1)**Rd_o_cp - ph_lev(i,j  ,k  )**Rd_o_cp ! 2 - 4
               dph2 = ph_lev(i,j  ,k+1)**Rd_o_cp - ph_lev(i,j+1,k  )**Rd_o_cp ! 1 - 3
               dgz1 = gz_lev(i,j  ,k+1)          - gz_lev(i,j+1,k  )          ! 1 - 3
               dgz2 = gz_lev(i,j  ,k  )          - gz_lev(i,j+1,k+1)          ! 4 - 2
-#endif
               pgf_lat(i,j,k) = -(dph1 * dgz1 + dph2 * dgz2) / mesh%de_lat(j) / (dph1 + dph2)
             end do
           end do
@@ -169,21 +162,12 @@ contains
           end do
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-#ifdef V_POLE
-              dph1 = ph_lev(i,j  ,k+1)**Rd_o_cp - ph_lev(i,j-1,k  )**Rd_o_cp ! 2 - 4
-              dph2 = ph_lev(i,j-1,k+1)**Rd_o_cp - ph_lev(i,j  ,k  )**Rd_o_cp ! 1 - 3
-              dgz1 = gz_lev(i,j-1,k+1)          - gz_lev(i,j  ,k  )          ! 1 - 3
-              dgz2 = gz_lev(i,j-1,k  )          - gz_lev(i,j  ,k+1)          ! 4 - 2
-              dp1  = p_lev (i,j-1,k+1)          - p_lev (i,j  ,k  )          ! 1 - 3
-              dp2  = p_lev (i,j-1,k  )          - p_lev (i,j  ,k+1)          ! 4 - 2
-#else
               dph1 = ph_lev(i,j+1,k+1)**Rd_o_cp - ph_lev(i,j  ,k  )**Rd_o_cp ! 2 - 4
               dph2 = ph_lev(i,j  ,k+1)**Rd_o_cp - ph_lev(i,j+1,k  )**Rd_o_cp ! 1 - 3
               dgz1 = gz_lev(i,j  ,k+1)          - gz_lev(i,j+1,k  )          ! 1 - 3
               dgz2 = gz_lev(i,j  ,k  )          - gz_lev(i,j+1,k+1)          ! 4 - 2
               dp1  = p_lev (i,j  ,k+1)          - p_lev (i,j+1,k  )          ! 1 - 3
               dp2  = p_lev (i,j  ,k  )          - p_lev (i,j+1,k+1)          ! 4 - 2
-#endif
               dpdph = (p_lev_lat(i,j,k+1) - p_lev_lat(i,j,k)) / m_lat(i,j,k)
               pgf_lat(i,j,k) = -(                             &
                 (dph1 * dgz1 + dph2 * dgz2) * dpdph +         &

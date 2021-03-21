@@ -51,11 +51,7 @@ contains
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-#ifdef V_POLE
-          tend%pgf_lat(i,j,k) = (state%gz(i,j  ,k) - state%gz(i,j-1,k)) / mesh%de_lat(j)
-#else
           tend%pgf_lat(i,j,k) = (state%gz(i,j+1,k) - state%gz(i,j  ,k)) / mesh%de_lat(j)
-#endif
         end do
       end do
     end do

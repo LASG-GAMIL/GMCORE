@@ -74,7 +74,7 @@ contains
             deallocate(i1, i2, j1, j2, xwgt1, xwgt2, ywgt1, ywgt2)
             return
           else
-            call log_error('latlon_interp_bilinear: Longitude mismatch!')
+            call log_error('latlon_interp_bilinear: Longitude mismatch!', __FILE__, __LINE__)
           end if
         end if
         xwgt1(i) = (tmp2 - x2(i)) / (tmp2 - tmp1)
@@ -98,7 +98,8 @@ contains
             deallocate(i1, i2, j1, j2, xwgt1, xwgt2, ywgt1, ywgt2)
             return
           else
-            call log_error('latlon_interp_bilinear: Latitude mismatch!')
+            print *, j, y2(j)
+            call log_error('latlon_interp_bilinear: Latitude mismatch!', __FILE__, __LINE__)
           end if
         end if
         tmp1 = y1(j1(j))
@@ -196,7 +197,7 @@ contains
             deallocate(i1, i2, j1, j2, xwgt1, xwgt2, ywgt1, ywgt2)
             return
           else
-            call log_error('latlon_interp_bilinear: Longitude mismatch!')
+            call log_error('latlon_interp_bilinear: Longitude mismatch!', __FILE__, __LINE__)
           end if
         end if
         xwgt1(i) = (tmp2 - x2(i)) / (tmp2 - tmp1)

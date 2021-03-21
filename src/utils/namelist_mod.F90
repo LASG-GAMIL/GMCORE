@@ -1,6 +1,7 @@
 module namelist_mod
 
   use string
+  use flogger
   use const_mod
   use time_mod, start_time => start_time_array, end_time => end_time_array
 
@@ -223,6 +224,11 @@ contains
     close(10)
 
     hydrostatic = .not. nonhydrostatic
+
+    ! Validate parameters.
+    if (split_scheme /= '' .and. mod(fast_cycles, 2) == 0) then
+      call log_error('Parameter fast_cycles should be odd!')
+    end if
 
   end subroutine parse_namelist
 

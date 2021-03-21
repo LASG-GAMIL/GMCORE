@@ -204,11 +204,7 @@ contains
     proc%num_lon = global_mesh%num_full_lon
     select case (proc%decomp_loc)
     case (decomp_normal_region)
-#ifdef V_POLE
-      proc%num_lat = global_mesh%num_half_lat
-#else
       proc%num_lat = global_mesh%num_full_lat
-#endif
     end select
 
     call round_robin(proc%cart_dims(1), proc%cart_coords(1), proc%num_lon, proc%lon_ibeg, proc%lon_iend)

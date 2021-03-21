@@ -32,13 +32,13 @@ contains
 
     call topo_final()
 
-    call log_notice('Use ' // trim(topo_file) // ' as topography.')
+    if (is_root_proc()) call log_notice('Use ' // trim(topo_file) // ' as topography.')
 
     call fiona_open_dataset('topo', file_path=topo_file, mpi_comm=proc%comm)
     call fiona_get_dim('topo', 'x', size=num_topo_lon)
     call fiona_get_dim('topo', 'y', size=num_topo_lat)
 
-    call log_notice('num_topo_lon = ' // to_str(num_topo_lon) // ', num_topo_lat = ' // to_str(num_topo_lat))
+    if (is_root_proc()) call log_notice('num_topo_lon = ' // to_str(num_topo_lon) // ', num_topo_lat = ' // to_str(num_topo_lat))
 
     allocate(topo_lon(num_topo_lon))
     allocate(topo_lat(num_topo_lat))

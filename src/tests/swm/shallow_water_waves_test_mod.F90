@@ -318,15 +318,10 @@ contains
     do n=1,size(time)
        do j=1,size(ilat)
           do i=1,size(lon)
-#ifdef V_POLE
-             v(i,j,n) = vTilde(j) * &
-                 cos( k * lon(i) - k * C * time(n) - 0.5_dp * pi )
-#else
              if (j < size(ilat)) then
                v(i,j,n) = (vTilde(j) + vTilde(j+1)) * 0.5_dp * &
                    cos( k * lon(i) - k * C * time(n) - 0.5_dp * pi )
              end if
-#endif
           end do
        end do
     end do

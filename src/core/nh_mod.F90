@@ -9,7 +9,6 @@ module nh_mod
   use reduce_mod
   use math_mod
   use debug_mod
-  use rayleigh_damp_mod
 
   implicit none
 
@@ -177,11 +176,7 @@ contains
       call interp_lev_edge_to_lev_lon_edge(mesh, w_lev, w_lev_lon, u=mf_lev_lon_n)
       call interp_lev_edge_to_lev_lat_edge(mesh, w_lev, w_lev_lat, v=mf_lev_lat_n)
       call fill_halo(block, w_lev_lon, full_lon=.false., full_lat=.true. , full_lev=.false., south_halo=.false., north_halo=.false.)
-#ifdef V_POLE
-      call fill_halo(block, w_lev_lat, full_lon=.true. , full_lat=.false., full_lev=.false., west_halo=.false., east_halo=.false., south_halo=.false.)
-#else
       call fill_halo(block, w_lev_lat, full_lon=.true. , full_lat=.false., full_lev=.false., west_halo=.false., east_halo=.false., north_halo=.false.)
-#endif
     end associate
 
   end subroutine interp_w
@@ -247,21 +242,13 @@ contains
       do k = mesh%half_lev_ibeg, mesh%half_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-#ifdef V_POLE
-            adv_gz_lat(i,j,k) = (                                             &
-              mf_lev_lat_n(i,j+1,k) * (gz_lev_lat(i,j+1,k) - gz_lev(i,j,k)) - &
-              mf_lev_lat_n(i,j  ,k) * (gz_lev_lat(i,j  ,k) - gz_lev(i,j,k))   &
-            ) / mesh%de_lat(j) / m_lev(i,j,k)
-#else
             adv_gz_lat(i,j,k) = (                                             &
               mf_lev_lat_n(i,j  ,k) * (gz_lev_lat(i,j  ,k) - gz_lev(i,j,k)) - &
               mf_lev_lat_n(i,j-1,k) * (gz_lev_lat(i,j-1,k) - gz_lev(i,j,k))   &
             ) / mesh%de_lat(j) / m_lev(i,j,k)
-#endif
           end do
         end do
       end do
-#ifndef V_POLE
       if (mesh%has_south_pole()) then
         j = mesh%full_lat_ibeg
         do k = mesh%half_lev_ibeg, mesh%half_lev_iend
@@ -292,7 +279,6 @@ contains
           end do
         end do
       end if
-#endif
 
       do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
         a = mesh%half_dlev_upper(k) / mesh%half_dlev_lower(k)
@@ -385,21 +371,13 @@ contains
       do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-#ifdef V_POLE
-            adv_w_lat(i,j,k) = (                                            &
-              mf_lev_lat_n(i,j+1,k) * (w_lev_lat(i,j+1,k) - w_lev(i,j,k)) - &
-              mf_lev_lat_n(i,j  ,k) * (w_lev_lat(i,j  ,k) - w_lev(i,j,k))   &
-            ) / mesh%de_lat(j) / m_lev(i,j,k)
-#else
             adv_w_lat(i,j,k) = (                                            &
               mf_lev_lat_n(i,j  ,k) * (w_lev_lat(i,j  ,k) - w_lev(i,j,k)) - &
               mf_lev_lat_n(i,j-1,k) * (w_lev_lat(i,j-1,k) - w_lev(i,j,k))   &
             ) / mesh%de_lat(j) / m_lev(i,j,k)
-#endif
           end do
         end do
       end do
-#ifndef V_POLE
       if (mesh%has_south_pole()) then
         j = mesh%full_lat_ibeg
         do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
@@ -430,7 +408,6 @@ contains
           end do
         end do
       end if
-#endif
 
       do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
         a = mesh%half_dlev_upper(k) / mesh%half_dlev_lower(k)
@@ -586,13 +563,8 @@ contains
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           us_dzsdlon = (u_lev_lon(i-1,j,k) * dzsdlon(i-1,j) + &
                         u_lev_lon(i  ,j,k) * dzsdlon(i  ,j)) * 0.5_r8
-#ifdef V_POLE
-          vs_dzsdlat = (v_lev_lat(i,j+1,k) * dzsdlat(i,j+1) + &
-                        v_lev_lat(i,j  ,k) * dzsdlat(i,j  )) * 0.5_r8
-#else
           vs_dzsdlat = (v_lev_lat(i,j-1,k) * dzsdlat(i,j-1) + &
                         v_lev_lat(i,j  ,k) * dzsdlat(i,j  )) * 0.5_r8
-#endif
           w_lev(i,j,k) = us_dzsdlon + vs_dzsdlat
         end do
       end do

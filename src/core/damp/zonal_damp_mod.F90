@@ -55,11 +55,7 @@ contains
       end if
     end do
     do j = global_mesh%half_lat_ibeg_no_pole, global_mesh%half_lat_iend_no_pole
-#ifdef V_POLE
-      zonal_damp_on_half_lat(j) = zonal_damp_on_full_lat(j) .or. zonal_damp_on_full_lat(j-1)
-#else
       zonal_damp_on_half_lat(j) = zonal_damp_on_full_lat(j) .or. zonal_damp_on_full_lat(j+1)
-#endif
     end do
 
   end subroutine zonal_damp_init
