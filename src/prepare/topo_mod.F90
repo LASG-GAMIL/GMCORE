@@ -34,7 +34,7 @@ contains
 
     if (is_root_proc()) call log_notice('Use ' // trim(topo_file) // ' as topography.')
 
-    call fiona_open_dataset('topo', file_path=topo_file, mpi_comm=proc%comm)
+    call fiona_open_dataset('topo', file_path=topo_file)
     call fiona_get_dim('topo', 'x', size=num_topo_lon)
     call fiona_get_dim('topo', 'y', size=num_topo_lat)
 

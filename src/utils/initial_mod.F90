@@ -34,6 +34,8 @@ contains
         lat_dims(1) =  'lon';      lat_dims(2) = 'ilat';      lat_dims(3) =  'lev';      lat_dims(4) = 'time'
     cell_dims_2d(1) =  'lon';  cell_dims_2d(2) =  'lat';  cell_dims_2d(3) = 'time'
 
+    if (is_root_proc()) call log_notice('Write ' // trim(initial_file) // '.')
+
     call fiona_create_dataset('i0', file_path=initial_file, start_time='1970-01-01', time_units='hours', mpi_comm=proc%comm, group_size=output_group_size)
     call fiona_add_dim('i0', 'time', add_var=.true.)
     call fiona_add_dim('i0', 'lon'  , size=global_mesh%num_full_lon, add_var=.true., decomp=.true.)
@@ -94,6 +96,8 @@ contains
       end associate
     end do
     call fiona_end_output('i0')
+
+    if (is_root_proc()) call log_notice('Done write.')
 
   end subroutine initial_write
 

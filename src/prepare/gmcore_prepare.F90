@@ -44,6 +44,7 @@ program gmcore_prepare
     coarse_pole_decay            , &
     vert_coord_scheme            , &
     vert_coord_template          , &
+    output_group_size            , &
     zero_min_lon                 , &
     zero_max_lon                 , &
     zero_min_lat                 , &
@@ -80,6 +81,7 @@ program gmcore_prepare
     end if
     write(*, *) 'vert_coord_scheme    = ', trim(vert_coord_scheme)
     write(*, *) 'vert_coord_template  = ', trim(vert_coord_template)
+    write(*, *) 'output_group_size    = ', to_str(output_group_size)
     write(*, *) 'initial_time         = ', trim(initial_time)
     write(*, *) 'namelist_file        = ', trim(namelist_file)
     write(*, *) 'topo_file            = ', trim(topo_file)
