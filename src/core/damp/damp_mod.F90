@@ -6,6 +6,7 @@ module damp_mod
   use namelist_mod
   use parallel_mod
   use block_mod
+  use operators_mod
   use zonal_damp_mod
   use div_damp_mod
   use vor_damp_mod
@@ -49,6 +50,16 @@ contains
 
     integer iblk
 
+    if (use_div_damp) then
+      do iblk = 1, size(blocks)
+        call calc_div(blocks(iblk), blocks(iblk)%state(new))
+      end do
+    end if
+    if (use_vor_damp) then
+      do iblk = 1, size(blocks)
+        call calc_vor(blocks(iblk), blocks(iblk)%state(new), dt)
+      end do
+    end if
     do iblk = 1, size(blocks)
       if (use_div_damp) then
         call div_damp_run(blocks(iblk), dt, blocks(iblk)%state(new))

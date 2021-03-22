@@ -942,7 +942,7 @@ contains
     real(4), intent(in) :: local_array(:)
     real(4), intent(out) :: array(:)
 
-    integer ierr, i, status
+    integer status(MPI_STATUS_SIZE), ierr, i
 
     if (zonal_circle%id == 0) then
       array(1:size(local_array)) = local_array
@@ -961,7 +961,7 @@ contains
     real(8), intent(in) :: local_array(:)
     real(8), intent(out) :: array(:)
 
-    integer ierr, i, status
+    integer status(MPI_STATUS_SIZE), ierr, i
 
     if (zonal_circle%id == 0) then
       array(1:size(local_array)) = local_array
@@ -980,7 +980,7 @@ contains
     real(4), intent(in) :: local_array(:,:)
     real(4), intent(inout) :: array(:,:)
 
-    integer ierr, i, k, status
+    integer status(MPI_STATUS_SIZE), ierr, i, k
 
     if (zonal_circle%id == 0) then
       k = merge(1, 2, size(local_array, 2) == global_mesh%num_full_lev)
@@ -1000,7 +1000,7 @@ contains
     real(8), intent(in) :: local_array(:,:)
     real(8), intent(inout) :: array(:,:)
 
-    integer ierr, i, k, status
+    integer status(MPI_STATUS_SIZE), ierr, i, k
 
     if (zonal_circle%id == 0) then
       k = merge(1, 2, size(local_array, 2) == global_mesh%num_full_lev)
@@ -1020,7 +1020,7 @@ contains
     real(4), intent(in) :: array(:)
     real(4), intent(out) :: local_array(:)
 
-    integer ierr, i, status
+    integer status(MPI_STATUS_SIZE), ierr, i
 
     if (zonal_circle%id == 0) then
       local_array = array(1:size(local_array))
@@ -1039,7 +1039,7 @@ contains
     real(8), intent(in) :: array(:)
     real(8), intent(out) :: local_array(:)
 
-    integer ierr, i, status
+    integer status(MPI_STATUS_SIZE), ierr, i
 
     if (zonal_circle%id == 0) then
       local_array = array(1:size(local_array))
@@ -1058,7 +1058,7 @@ contains
     real(4), intent(in) :: array(:,:)
     real(4), intent(out) :: local_array(:,:)
 
-    integer ierr, i, k, status
+    integer status(MPI_STATUS_SIZE), ierr, i, k
 
     if (zonal_circle%id == 0) then
       k = merge(1, 2, size(local_array, 2) == global_mesh%num_full_lev)
@@ -1078,7 +1078,7 @@ contains
     real(8), intent(in) :: array(:,:)
     real(8), intent(out) :: local_array(:,:)
 
-    integer ierr, i, k, status
+    integer status(MPI_STATUS_SIZE), ierr, i, k
 
     if (zonal_circle%id == 0) then
       k = merge(1, 2, size(local_array, 2) == global_mesh%num_full_lev)

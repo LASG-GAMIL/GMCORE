@@ -534,27 +534,7 @@ contains
     real(8), intent(in) :: dt
     type(block_type), intent(inout) :: blocks(:)
 
-    integer iblk
-
     call splitter(dt, blocks)
-
-    do iblk = 1, size(blocks)
-      if (use_div_damp) then
-        call calc_div    (blocks(iblk), blocks(iblk)%state(new))
-        call div_damp_run(blocks(iblk), dt, blocks(iblk)%state(new))
-      end if
-      if (use_vor_damp) then
-        call calc_vor    (blocks(iblk), blocks(iblk)%state(new), dt)
-        call vor_damp_run(blocks(iblk), dt, blocks(iblk)%state(new))
-      end if
-      if (use_polar_damp) then
-        call polar_damp_run(blocks(iblk), dt, blocks(iblk)%state(new))
-      end if
-      if (use_smag_damp) then
-        call smag_damp_run(blocks(iblk), dt, blocks(iblk)%tend(new), blocks(iblk)%state(new))
-      end if
-      call test_forcing_run(blocks(iblk), dt, blocks(iblk)%state(new))
-    end do
 
   end subroutine time_integrate
 
