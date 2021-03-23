@@ -16,6 +16,7 @@ program gmcore_driver
   use steady_state_pgf_test_mod
   use ksp15_test_mod
   use dcmip31_test_mod
+  use prepare_mod
 
   implicit none
 
@@ -52,6 +53,8 @@ program gmcore_driver
 
   if (initial_file /= 'N/A') then
     call initial_read()
+  else if (topo_file /= 'N/A' .and. bkg_file /= 'N/A') then
+    call prepare_run(topo_file, bkg_file, bkg_type)
   else if (restart) then
     call restart_read()
   else

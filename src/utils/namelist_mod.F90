@@ -15,6 +15,9 @@ module namelist_mod
   character(30 )  :: print_interval       = '1 hours'
   character(256)  :: initial_file         = 'N/A'
   character(256)  :: restart_file         = 'N/A'
+  character(256)  :: topo_file            = 'N/A'
+  character(256)  :: bkg_file             = 'N/A'
+  character(30 )  :: bkg_type             = 'era5'
 
   logical         :: restart              = .false.
 
@@ -142,6 +145,9 @@ module namelist_mod
     initial_file              , &
     restart_file              , &
     restart                   , &
+    topo_file                 , &
+    bkg_file                  , &
+    bkg_type                  , &
     tangent_wgt_scheme        , &
     implicit_w_wgt            , &
     vert_coord_scheme         , &

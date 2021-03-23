@@ -141,6 +141,13 @@ set(gmcore_files
   src/core/damp/smag_damp_mod.F90
   src/core/damp/damp_mod.F90
   src/core/gmcore_mod.F90
+  src/prepare/prepare_mod.F90
+  src/prepare/topo_mod.F90
+  src/prepare/latlon_interp_mod.F90
+  src/prepare/vert_interp_mod.F90
+  src/prepare/era5_reader_mod.F90
+  src/prepare/mpas_reader_mod.F90
+  src/prepare/bkg_mod.F90
   src/physics/test_forcing_mod.F90
   src/tests/swm/rossby_haurwitz_wave_test_mod.F90
   src/tests/swm/mountain_zonal_flow_test_mod.F90
@@ -162,17 +169,7 @@ set(gmcore_files
 add_library(gmcore ${gmcore_files})
 target_link_libraries(gmcore netcdff fortran_container fortran_datetime fiona flogger ${MKL_LIBRARIES})
 
-set(gmcore_prepare_files
-  src/prepare/topo_mod.F90
-  src/prepare/latlon_interp_mod.F90
-  src/prepare/vert_interp_mod.F90
-  src/prepare/era5_reader_mod.F90
-  src/prepare/mpas_reader_mod.F90
-  src/prepare/bkg_mod.F90
-  src/prepare/gmcore_prepare.F90
-)
-
-add_executable(gmcore_prepare.exe ${gmcore_prepare_files})
+add_executable(gmcore_prepare.exe src/drivers/gmcore_prepare.F90)
 target_link_libraries(gmcore_prepare.exe gmcore)
 
 add_executable(gmcore_swm_driver.exe src/drivers/gmcore_swm_driver.F90)
