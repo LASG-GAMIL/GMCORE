@@ -175,8 +175,8 @@ contains
         if (is_root_proc()) call log_notice('Time cost ' // to_str(time2 - time1, 5) // ' seconds.')
         time1 = time2
       end if
-      call history_write_state(proc%blocks, itime)
-      if (output_debug) call history_write_debug(proc%blocks, itime)
+      if (output_h0) call history_write_state(proc%blocks, itime)
+      if (output_h1) call history_write_debug(proc%blocks, itime)
     end if
     if (time_is_alerted('restart_write')) then
       call restart_write(itime)

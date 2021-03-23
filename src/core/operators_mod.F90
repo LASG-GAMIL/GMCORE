@@ -363,8 +363,8 @@ contains
             state%m(i,j,k) = state%ph_lev(i,j,k+1) - state%ph_lev(i,j,k)
 #ifndef NDEBUG
             if (state%m(i,j,k) <= 0) then
-              print *, i, j, k
-              print *, 'phs    =', state%phs(i,j)
+              print *, mesh%full_lon_deg(i), '(', to_str(i), ')', mesh%full_lat_deg(j), '(', to_str(j), ')', k
+              print *, 'phs =', state%phs(i,j)
               call process_stop(1)
             end if
 #endif
