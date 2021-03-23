@@ -5,6 +5,7 @@ module div_damp_mod
   use const_mod
   use namelist_mod
   use parallel_mod
+  use process_mod
   use block_mod
   use tridiag_mod
 
@@ -28,6 +29,7 @@ contains
   subroutine div_damp_init()
 
     integer j, k, r, jr, j0
+    integer iblk, js, je
     real(r8) a, b
 
     call div_damp_final()
@@ -93,11 +95,18 @@ contains
     end select
 
     ! Initialize cyclic tridiagonal solvers on each zonal circles if need implicit integration.
-    allocate(use_implicit_solver(global_mesh%num_full_lat))
+    js =  1e8
+    je = -1e8
+    do iblk = 1, size(proc%blocks)
+      js = min(proc%blocks(iblk)%mesh%full_lat_ibeg_no_pole, js)
+      je = max(proc%blocks(iblk)%mesh%full_lat_iend_no_pole, je)
+    end do
+
+    allocate(use_implicit_solver(js:je))
     use_implicit_solver = .false.
-    allocate(zonal_solver(global_mesh%num_full_lat,global_mesh%num_full_lev))
+    allocate(zonal_solver(js:je,global_mesh%num_full_lev))
     do k = global_mesh%full_lev_ibeg, global_mesh%full_lev_iend
-      do j = global_mesh%full_lat_ibeg_no_pole, global_mesh%full_lat_iend_no_pole
+      do j = js, je
         if (abs(global_mesh%full_lat_deg(j)) > div_damp_imp_lat0) then
           use_implicit_solver(j) = .true.
           if (k > 1) then
