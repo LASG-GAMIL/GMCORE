@@ -71,7 +71,7 @@ contains
       vtx_dims_2d(1) = 'ilon';   vtx_dims_2d(2) = 'ilat';   vtx_dims_2d(3) = 'time'
 
     call fiona_init(time_units, start_time_str)
-    call fiona_create_dataset('h0', desc=case_desc, file_prefix=trim(case_name), mpi_comm=proc%comm, group_size=output_group_size)
+    call fiona_create_dataset('h0', desc=case_desc, file_prefix=trim(case_name), mpi_comm=proc%comm, group_size=output_group_size, split_file=split_h0)
     call fiona_add_att('h0', 'time_step_size', dt)
     call fiona_add_dim('h0', 'time' , add_var=.true.)
     call fiona_add_dim('h0', 'lon'  , size=global_mesh%num_full_lon, add_var=.true., decomp=.true.)
@@ -246,8 +246,12 @@ contains
     type(static_type), pointer :: static
     integer iblk, is, ie, js, je, ks, ke
     integer start(3), count(3)
+    real(8) time1, time2
 
-    if (is_root_proc()) call log_notice('Write state.')
+    if (is_root_proc()) then
+      call log_notice('Write state.')
+      call cpu_time(time1)
+    end if
 
     if (.not. time_has_alert('h0_new_file')) then
       call fiona_start_output('h0', elapsed_seconds, new_file=time_step==0)
@@ -367,7 +371,10 @@ contains
     end do
     call fiona_end_output('h0')
 
-    if (is_root_proc()) call log_notice('Done write state.')
+    if (is_root_proc()) then
+      call cpu_time(time2)
+      call log_notice('Done write state cost ' // to_str(time2 - time1, 5) // ' seconds.')
+    end if
 
   end subroutine history_write_state
 

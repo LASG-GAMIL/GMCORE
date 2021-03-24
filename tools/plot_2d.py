@@ -24,11 +24,13 @@ parser.add_argument('-c', '--colormap', help='Colormap to use', default='Spectra
 parser.add_argument('-l', dest='with_lines', help='Draw contour lines', action='store_true')
 parser.add_argument('--no-grid-lines', dest='without_grid_lines', help='Draw grid liens', action='store_true')
 parser.add_argument('--coast-lines', dest='with_coast_lines', help='Draw coast lines', action='store_true')
+parser.add_argument('--min-level', help='Minimum variable level', type=float)
+parser.add_argument('--max-level', help='Minimum variable level', type=float)
 args = parser.parse_args()
 
-ds = xr.open_mfdataset(args.input, concat_dim='time', combine='by_coords')
+ds = [xr.open_dataset(input_file) for input_file in args.input]
 
-if not args.var in ds:
+if not args.var in ds[0]:
 	print(f'[Error]: Invalid variable name {args.var}!')
 	exit(1)
 
@@ -47,7 +49,10 @@ cbar_kwargs = {
 #	'shrink': 0.8
 }
 
-var = ds[args.var].isel(time=args.time_step)
+var = ds[0][args.var].isel(time=args.time_step)
+for i in range(1, len(args.input)):
+	var0 = ds[i][args.var].isel(time=args.time_step)
+	var = xr.where(var == 9.96920997e+36, var0, var)
 if 'lev' in var.dims:
 	if args.level_idx != None:
 		var = var.isel(lev=args.level_idx)
@@ -55,7 +60,10 @@ if 'lev' in var.dims:
 		print('[Error]: Please select a vertical level with -k option!')
 		exit(1)
 
-var.plot(ax=ax, robust=True, transform=proj, cmap=args.colormap, cbar_kwargs=cbar_kwargs)
+if args.min_level != None and args.max_level != None:
+	var.plot(ax=ax, robust=True, transform=proj, cmap=args.colormap, cbar_kwargs=cbar_kwargs, levels=np.linspace(args.min_level, args.max_level, 21))
+else:
+	var.plot(ax=ax, robust=True, transform=proj, cmap=args.colormap, cbar_kwargs=cbar_kwargs)
 if args.with_lines:
 	var.plot.contour(ax=ax, transform=proj)
 

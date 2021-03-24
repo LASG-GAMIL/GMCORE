@@ -107,6 +107,7 @@ module namelist_mod
   ! Output settings
   logical         :: output_h0            = .true.
   logical         :: output_h1            = .false.
+  logical         :: split_h0             = .false.
   character(30)   :: output_h0_new_file   = ''
   character(8)    :: output_h0_vars(100)  = ''
   integer         :: output_group_size    = 0
@@ -208,6 +209,7 @@ module namelist_mod
     smag_damp_coef            , &
     output_h0                 , &
     output_h1                 , &
+    split_h0                  , &
     output_h0_new_file        , &
     output_h0_vars            , &
     output_group_size         , &
