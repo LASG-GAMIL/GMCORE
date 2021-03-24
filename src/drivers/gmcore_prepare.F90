@@ -15,7 +15,7 @@ program gmcore_prepare
   implicit none
 
   character(256) namelist_file
-  character(30) :: initial_time = '1970-01-01'
+  character(30) :: initial_time = '1970-01-01T00:00:00'
 
   real(r8) :: zero_min_lon(100) = -1.0e33
   real(r8) :: zero_max_lon(100) = -1.0e33
@@ -61,7 +61,7 @@ program gmcore_prepare
 
   time_scheme = 'N/A'
 
-  call fiona_init(start_time=initial_time, time_units='hours')
+  call fiona_init()
 
   call global_mesh%init_global(num_lon, num_lat, num_lev, lon_halo_width=5, lat_halo_width=5)
   call process_init()
@@ -94,7 +94,7 @@ program gmcore_prepare
                    smth_min_lon, smth_max_lon, smth_min_lat, smth_max_lat, &
                    smth_steps)
 
-  call initial_write(initial_file)
+  call initial_write(initial_file, initial_time)
 
   call prepare_final()
 

@@ -19,9 +19,10 @@ module initial_mod
 
 contains
 
-  subroutine initial_write(initial_file)
+  subroutine initial_write(initial_file, initial_time)
 
     character(*), intent(in) :: initial_file
+    character(*), intent(in) :: initial_time
 
     character(4) cell_dims(4), cell_dims_2d(3)
     character(4) lon_dims(4)
@@ -36,7 +37,7 @@ contains
 
     if (is_root_proc()) call log_notice('Write ' // trim(initial_file) // '.')
 
-    call fiona_create_dataset('i0', file_path=initial_file, start_time='1970-01-01', time_units='hours', mpi_comm=proc%comm, group_size=output_group_size)
+    call fiona_create_dataset('i0', file_path=initial_file, start_time=initial_time, time_units='hours', mpi_comm=proc%comm, group_size=output_group_size)
     call fiona_add_dim('i0', 'time', add_var=.true.)
     call fiona_add_dim('i0', 'lon'  , size=global_mesh%num_full_lon, add_var=.true., decomp=.true.)
     call fiona_add_dim('i0', 'lat'  , size=global_mesh%num_full_lat, add_var=.true., decomp=.true.)
