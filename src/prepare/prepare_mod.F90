@@ -28,10 +28,12 @@ contains
     integer iblk
 
     call topo_read(topo_file)
+    do iblk = 1, size(proc%blocks)
+      call topo_regrid(proc%blocks(iblk))
+    end do
   
     if (present(zero_min_lon) .and. present(zero_max_lon) .and. present(zero_min_lat) .and. present(zero_max_lat)) then
       do iblk = 1, size(proc%blocks)
-        call topo_regrid(proc%blocks(iblk))
         do i = 1, size(zero_min_lon)
           if (zero_min_lon(i) /= -1.0e33 .and. zero_max_lon(i) /= -1.0e33 .and. &
               zero_min_lat(i) /= -1.0e33 .and. zero_max_lat(i) /= -1.0e33) then

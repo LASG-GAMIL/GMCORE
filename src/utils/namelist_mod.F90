@@ -70,7 +70,7 @@ module namelist_mod
   real(r8)        :: coarse_pole_decay    = 100.0
 
   ! Reduce settings
-  integer         :: reduce_factors(200)  = 0
+  integer         :: reduce_factors(300)  = 0
   logical         :: reduce_pv_directly   = .false.
   logical         :: do_reduce_ke         = .true.
 
