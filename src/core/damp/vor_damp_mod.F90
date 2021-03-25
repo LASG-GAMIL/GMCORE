@@ -7,7 +7,11 @@ module vor_damp_mod
   use parallel_mod
   use process_mod
   use block_mod
-  use tridiag_mod
+#ifdef USE_HZD
+  use tridiag_hzd_mod
+#else
+  use tridiag_mkl_mod
+#endif
 
   implicit none
 
@@ -22,7 +26,11 @@ module vor_damp_mod
 
   logical, allocatable :: use_implicit_solver(:)
   real(r8), parameter :: beta = 0.5_r8
-  type(tridiag_solver_type), allocatable :: zonal_solver(:,:)
+#ifdef USE_HZD
+  type(hzd_tridiag_solver_type), allocatable :: zonal_solver(:,:)
+#else
+  type(mkl_tridiag_solver_type), allocatable :: zonal_solver(:,:)
+#endif
 
 contains
 
@@ -101,7 +109,7 @@ contains
           end if
           b = -cv_half_lat(j,k) * (1 - beta) * dt_in_seconds / global_mesh%le_lat(j)**2
           a = 2 * (-b) + 1
-          call zonal_solver(j,k)%init_sym_const(global_mesh%num_full_lon, a, b)
+          call zonal_solver(j,k)%init_sym_const(global_mesh%num_full_lon / num_proc_lon(1), a, b)
         end if
       end do
     end do

@@ -7,7 +7,11 @@ module div_damp_mod
   use parallel_mod
   use process_mod
   use block_mod
-  use tridiag_mod
+#ifdef USE_HZD
+  use tridiag_hzd_mod
+#else
+  use tridiag_mkl_mod
+#endif
 
   implicit none
 
@@ -22,7 +26,11 @@ module div_damp_mod
 
   logical, allocatable :: use_implicit_solver(:)
   real(r8), parameter :: beta = 0.5_r8
-  type(tridiag_solver_type), allocatable :: zonal_solver(:,:)
+#ifdef USE_HZD
+  type(hzd_tridiag_solver_type), allocatable :: zonal_solver(:,:)
+#else
+  type(mkl_tridiag_solver_type), allocatable :: zonal_solver(:,:)
+#endif
 
 contains
 
@@ -117,10 +125,40 @@ contains
           end if
           b = -cd_full_lat(j,k) * (1 - beta) * dt_in_seconds / global_mesh%de_lon(j)**2
           a = 2 * (-b) + 1
-          call zonal_solver(j,k)%init_sym_const(global_mesh%num_half_lon, a, b)
+          call zonal_solver(j,k)%init_sym_const(global_mesh%num_half_lon / num_proc_lon(1), a, b)
         end if
       end do
     end do
+
+    ! j = 2
+    ! k = 8
+    ! if (proc%id == 0) then
+    !   print *, "proc = 0"
+    !   print *, "matrix"
+    !   print *, zonal_solver(j,k)%A(1)%matrix
+    !   print *, "w"
+    !   print *, zonal_solver(j,k)%A(1)%w
+    !   print *, "w_next"
+    !   print *, zonal_solver(j,k)%A(1)%w_next
+    !   print *, "v"
+    !   print *, zonal_solver(j,k)%A(1)%v
+    !   print *, "v_prev"
+    !   print *, zonal_solver(j,k)%A(1)%v_prev
+    ! end if
+    ! call barrier()
+    ! if (proc%id == 0 + num_proc_lat(1)) then 
+    !   print *, "proc = ", 0 + num_proc_lat(1)
+    !   print *, "matrix"
+    !   print *, zonal_solver(j,k)%A(1)%matrix
+    !   print *, "w"
+    !   print *, zonal_solver(j,k)%A(1)%w
+    !   print *, "w_next"
+    !   print *, zonal_solver(j,k)%A(1)%w_next
+    !   print *, "v"
+    !   print *, zonal_solver(j,k)%A(1)%v
+    !   print *, "v_prev"
+    !   print *, zonal_solver(j,k)%A(1)%v_prev
+    ! end if
 
   end subroutine div_damp_init
 
@@ -142,6 +180,7 @@ contains
 
     type(mesh_type), pointer :: mesh
     real(r8) rhs(block%mesh%half_lon_ibeg:block%mesh%half_lon_iend)
+    real(r8) rhs_copy(block%mesh%half_lon_ibeg:block%mesh%half_lon_iend)
     integer i, j, k
 
     mesh => state%mesh
@@ -172,6 +211,7 @@ contains
                          state%v(i  ,j,k) + state%v(i  ,j-1,k)                 &
                        ) / mesh%le_lon(j)
             end do
+            if (j == 2 .and. k == 8) rhs_copy = rhs
             call zonal_solver(j,k)%solve(rhs, state%u(mesh%half_lon_ibeg:mesh%half_lon_iend,j,k))
           else
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
@@ -184,6 +224,22 @@ contains
       call fill_halo(block, state%u, full_lon=.false., full_lat=.true., full_lev=.true.)
     case (4)
     end select
+
+    ! if (proc%id == 0) then
+    !   print *, "proc = 0, j = 2, k = 8"
+    !   print *, "rhs"
+    !   print *, rhs_copy(mesh%half_lon_ibeg:mesh%half_lon_iend)
+    !   print *, "x"
+    !   print *, state%u(mesh%half_lon_ibeg:mesh%half_lon_iend,2,8)
+    ! end if
+    ! call barrier()
+    ! if (proc%id == 0 + num_proc_lat(1)) then
+    !   print *, "proc = ", 0+num_proc_lat(1), ", j = 2, k = 8"
+    !   print *, "rhs"
+    !   print *, rhs_copy(mesh%half_lon_ibeg:mesh%half_lon_iend)
+    !   print *, "x"
+    !   print *, state%u(mesh%half_lon_ibeg:mesh%half_lon_iend,2,8)
+    ! end if
 
   end subroutine div_damp_run
 

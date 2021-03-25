@@ -1,6 +1,6 @@
 include 'mkl_dss.f90'
 
-module tridiag_mod
+module tridiag_mkl_mod
 
   use mkl_dss
   use flogger
@@ -12,7 +12,7 @@ module tridiag_mod
 
   private
 
-  public tridiag_solver_type
+  public mkl_tridiag_solver_type
 
   type sparse_matrix_type
     integer :: nrow = 0
@@ -30,22 +30,22 @@ module tridiag_mod
     final :: sparse_matrix_final
   end type sparse_matrix_type
 
-  type tridiag_solver_type
+  type mkl_tridiag_solver_type
     type(MKL_DSS_HANDLE) handle
     type(sparse_matrix_type) A
   contains
     procedure :: init_sym_const => tridiag_solver_init_sym_const
     procedure :: clone => tridiag_solver_clone
     procedure :: solve => tridiag_solver_solve
-  end type tridiag_solver_type
+  end type mkl_tridiag_solver_type
 
-  type(tridiag_solver_type) zonal_div_damp_solver
+  ! ype(tridiag_solver_type) zonal_div_damp_solver
 
 contains
 
   subroutine tridiag_solver_init_sym_const(this, n, a, b)
 
-    class(tridiag_solver_type), intent(inout) :: this
+    class(mkl_tridiag_solver_type), intent(inout) :: this
     integer, intent(in) :: n
     real(r8), intent(in) :: a
     real(r8), intent(in) :: b
@@ -141,8 +141,8 @@ contains
 
   subroutine tridiag_solver_clone(this, other)
 
-    class(tridiag_solver_type), intent(inout) :: this
-    type(tridiag_solver_type), intent(in) :: other
+    class(mkl_tridiag_solver_type), intent(inout) :: this
+    type(mkl_tridiag_solver_type), intent(in) :: other
 
     this%handle = other%handle
 
@@ -150,7 +150,7 @@ contains
 
   subroutine tridiag_solver_solve(this, rhs, x)
 
-    class(tridiag_solver_type), intent(inout) :: this
+    class(mkl_tridiag_solver_type), intent(inout) :: this
     real(r8), intent(in) :: rhs(:)
     real(r8), intent(out) :: x(:)
 
@@ -163,4 +163,4 @@ contains
 
   end subroutine tridiag_solver_solve
 
-end module tridiag_mod
+end module tridiag_mkl_mod
