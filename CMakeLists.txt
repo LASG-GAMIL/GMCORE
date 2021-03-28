@@ -8,12 +8,14 @@ option(ENSURE_ORDER "Ensure computation order in parallel" OFF)
 
 if (R4)
   add_definitions(-DREAL_KIND=4)
-	set(CPPFLAGS ${CPPFLAGS} -DREAL_KIND=4)
+  set(CPPFLAGS ${CPPFLAGS} -DREAL_KIND=4)
   message(STATUS "Use single precision.")
 elseif (R16)
   add_definitions(-DREAL_KIND=16)
-	set(CPPFLAGS ${CPPFLAGS} -DREAL_KIND=16)
+  set(CPPFLAGS ${CPPFLAGS} -DREAL_KIND=16)
   message(STATUS "Use quadruple precision.")
+else ()
+  add_definitions(-DREAL_KIND=8)
 endif ()
 if (ENSURE_ORDER)
   add_definitions(-DENSURE_ORDER)
@@ -24,7 +26,7 @@ endif ()
 if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -ffree-line-length-none -ffpe-trap=invalid,zero,overflow")
   if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O0 -fcheck=all -g -fbacktrace")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O0 -ftrapuv -fpe0 -fcheck=all -g -fbacktrace")
   else ()
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Ofast")
   endif ()
@@ -60,19 +62,31 @@ else ()
     message(FATAL_ERROR "Unable to find pkg-config library!")
   endif ()
 endif ()
+set(EXTERNAL_LIBS netcdf netcdff)
+
+if (DEFINED ENV{HDF5})
+  include_directories("$ENV{HDF5}/include")
+  link_directories("$ENV{HDF5}/lib")
+  set(EXTERNAL_LIBS ${EXTERNAL_LIBS} hdf5 hdf5_hl z)
+  message(STATUS "Add HDF5 $ENV{HDF5} into compilation process.")
+endif ()
 
 if (DEFINED ENV{MKLROOT})
+  add_definitions(-DHAS_MKL)
   include_directories("$ENV{MKLROOT}/include")
   link_directories("$ENV{MKLROOT}/lib")
 elseif (DEFINED ENV{MKL_INC} AND DEFINED ENV{MKL_LIB})
+  add_definitions(-DHAS_MKL)
   include_directories("$ENV{MKL_INC}")
   link_directories("$ENV{MKL_LIB}")
 else ()
-  message (FATAL_ERROR "Unable to find MKL library!")
+  message (WARNING "Unable to find MKL library!")
 endif ()
 
-if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
-  set(MKL_LIBRARIES "lapack64")
+if (HAS_MKL)
+  if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
+    set(EXTERNAL_LIBS ${EXTERNAL_LIBS} lapack64)
+  endif ()
 endif ()
 
 add_subdirectory(lib/container)
@@ -106,6 +120,8 @@ set(gmcore_files
   src/utils/allocator_mod.F90
   src/utils/parallel_types_mod.F90
   src/utils/parallel_mod.F90
+  src/utils/tridiag_mkl_mod.F90
+  src/utils/tridiag_spk_mod.F90
   src/utils/tridiag_mod.F90
   src/utils/debug_mod.F90
   src/core/time_schemes_mod.F90
@@ -167,7 +183,7 @@ set(gmcore_files
 )
 
 add_library(gmcore ${gmcore_files})
-target_link_libraries(gmcore netcdff fortran_container fortran_datetime fiona flogger ${MKL_LIBRARIES})
+target_link_libraries(gmcore fortran_container fortran_datetime fiona flogger ${EXTERNAL_LIBS})
 
 add_executable(gmcore_prepare.exe src/drivers/gmcore_prepare.F90)
 target_link_libraries(gmcore_prepare.exe gmcore)

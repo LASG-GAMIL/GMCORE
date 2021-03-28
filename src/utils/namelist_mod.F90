@@ -53,6 +53,8 @@ module namelist_mod
   character(8)    :: pgf_scheme           = 'lin97'
   integer         :: coriolis_scheme      = 1
 
+  character(8)    :: zonal_tridiag_solver = 'mkl' ! mkl, spk
+
   integer         :: weno_order           = -1 ! -1, 3
   integer         :: upwind_order         = -1 ! -1, 1, 3
   real(r8)        :: upwind_wgt           = 1.0_r8
@@ -164,6 +166,7 @@ module namelist_mod
     upwind_wgt_pv             , &
     pgf_scheme                , &
     coriolis_scheme           , &
+    zonal_tridiag_solver      , &
     weno_order                , &
     upwind_order              , &
     upwind_wgt                , &
@@ -272,6 +275,7 @@ contains
     else if (pv_scheme == 3) then
       write(*, *) 'weno_order_pv       = ', to_str(weno_order_pv)
     end if
+      write(*, *) 'zonal_tridiag_solver= ', trim(zonal_tridiag_solver)
       write(*, *) 'time_scheme         = ', trim(time_scheme)
       write(*, *) 'weno_order          = ', to_str(weno_order)
       write(*, *) 'upwind_order        = ', to_str(upwind_order)

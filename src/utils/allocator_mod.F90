@@ -108,6 +108,8 @@ contains
       allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
     end if
 
+    array = 0.0d0
+
   end subroutine allocate_array_3d_r4
 
   subroutine allocate_array_1d_r8(mesh, array, full_lon, half_lon, full_lat, half_lat)
@@ -193,6 +195,8 @@ contains
       allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
     end if
 
+    array = 0.0d0
+
   end subroutine allocate_array_3d_r8
 
   subroutine allocate_array_pointer_3d_r4(mesh, array, full_lon, half_lon, full_lat, half_lat, full_lev, half_lev)
@@ -226,6 +230,8 @@ contains
       allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
     end if
 
+    array = 0.0d0
+
   end subroutine allocate_array_pointer_3d_r4
 
   subroutine allocate_array_pointer_3d_r8(mesh, array, full_lon, half_lon, full_lat, half_lat, full_lev, half_lev)
@@ -258,6 +264,8 @@ contains
     else
       allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
     end if
+
+    array = 0.0d0
 
   end subroutine allocate_array_pointer_3d_r8
 
@@ -343,6 +351,8 @@ contains
     else
       allocate(array(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
     end if
+
+    array = 0.0d0
 
   end subroutine allocate_array_3d_r16
 

@@ -26,11 +26,13 @@ module damp_mod
 
 contains
 
-  subroutine damp_init()
+  subroutine damp_init(blocks)
+
+    type(block_type), intent(in) :: blocks(:)
 
     call zonal_damp_init()
-    call div_damp_init()
-    call vor_damp_init()
+    call div_damp_init(blocks)
+    call vor_damp_init(blocks)
 
   end subroutine damp_init
 

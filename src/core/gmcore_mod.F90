@@ -65,7 +65,7 @@ contains
     call time_scheme_init()
     call pgf_init()
     call interp_init()
-    call damp_init()
+    call damp_init(proc%blocks)
 
     select case (split_scheme)
     case ('csp2')
@@ -277,7 +277,7 @@ contains
       blocks(iblk)%state(itime)%te  = te
       blocks(iblk)%state(itime)%tav = tav
       blocks(iblk)%state(itime)%tpe = tpe
-      call diag_state(iblk)%run(proc%blocks(iblk)%state(itime))
+      if (diag_state(iblk)%is_init()) call diag_state(iblk)%run(proc%blocks(iblk)%state(itime))
     end do
 
     call log_add_diag('tm' , tm )

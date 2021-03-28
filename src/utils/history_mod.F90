@@ -92,7 +92,7 @@ contains
       call fiona_add_var('h0', 'vor'  , long_name='relative vorticity'          , units='s-1'    , dim_names=vtx_dims_2d)
       call fiona_add_var('h0', 'div'  , long_name='divergence'                  , units='s-1'    , dim_names=cell_dims_2d)
     end if
-    call fiona_add_var('h0', 'zs' , long_name='surface height'           , units='m'     , dim_names=cell_dims_2d)
+    ! call fiona_add_var('h0', 'zs' , long_name='surface height'           , units='m'     , dim_names=cell_dims_2d)
     call fiona_add_var('h0', 'tm' , long_name='total mass'               , units='m'     , dim_names=['time'])
     call fiona_add_var('h0', 'te' , long_name='total energy'             , units='m4 s-4', dim_names=['time'], data_type='r8')
     call fiona_add_var('h0', 'tpe', long_name='total potential enstrophy', units='m2 s-5', dim_names=['time'], data_type='r8')
@@ -123,9 +123,9 @@ contains
         call fiona_add_var('h0', 'u'    , long_name='u wind component'      , units='m s-1'  , dim_names=lon_dims)
         call fiona_add_var('h0', 'v'    , long_name='v wind component'      , units='m s-1'  , dim_names=lat_dims)
         call fiona_add_var('h0', 'pt'   , long_name='potential temperature' , units='K'      , dim_names=cell_dims)
-        call fiona_add_var('h0', 'z'    , long_name='height'                , units='m'      , dim_names=lev_dims)
+        !call fiona_add_var('h0', 'z'    , long_name='height'                , units='m'      , dim_names=lev_dims)
         call fiona_add_var('h0', 'vor'  , long_name='relative vorticity'    , units='s-1'    , dim_names=vtx_dims)
-        call fiona_add_var('h0', 'div'  , long_name='divergence'            , units='s-1'    , dim_names=cell_dims)
+        !call fiona_add_var('h0', 'div'  , long_name='divergence'            , units='s-1'    , dim_names=cell_dims)
         if (nonhydrostatic) then
           call fiona_add_var('h0', 'w', long_name='vertical speed', units='m s-1', dim_names=lev_dims)
           call fiona_add_var('h0', 'p', long_name='full pressure' , units='Pa'   , dim_names=lev_dims)
@@ -292,7 +292,7 @@ contains
       start = [is,js,ks]
       count = [mesh%num_full_lon,mesh%num_full_lat,mesh%num_full_lev]
 
-      call fiona_output('h0', 'zs' , static%gzs(is:ie,js:je) / g, start=start, count=count)
+      ! call fiona_output('h0', 'zs' , static%gzs(is:ie,js:je) / g, start=start, count=count)
 
       if (baroclinic) then
         call fiona_output('h0', 'phs', state%phs(is:ie,js:je), start=start, count=count)
@@ -309,11 +309,11 @@ contains
           case (height_levels)
             call fiona_output('h0', 'p', diag_state(iblk)%p (is:ie,js:je,:), start=start, count=count)
           case (pressure_levels)
-            call fiona_output('h0', 'z', diag_state(iblk)%z (is:ie,js:je,:), start=start, count=count)
+            !call fiona_output('h0', 'z', diag_state(iblk)%z (is:ie,js:je,:), start=start, count=count)
           end select
         else
           call fiona_output('h0', 'pt' , state%pt (is:ie,js:je,ks:ke), start=start, count=count)
-          call fiona_output('h0', 'div', state%div(is:ie,js:je,ks:ke), start=start, count=count)
+          !call fiona_output('h0', 'div', state%div(is:ie,js:je,ks:ke), start=start, count=count)
         end if
       else
         call fiona_output('h0', 'z'  , state%gz (is:ie,js:je,ks:ke) / g, start=start, count=count)

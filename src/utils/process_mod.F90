@@ -47,6 +47,8 @@ module process_mod
     integer :: comm  = MPI_COMM_NULL
     integer :: np    = 0
     integer :: id    = MPI_PROC_NULL
+    integer :: west_ngb_id    = MPI_PROC_NULL
+    integer :: east_ngb_id    = MPI_PROC_NULL
     integer, allocatable :: recv_type_r4(:,:) ! 0: one level, 1: full_lev, 2: half_lev
     integer, allocatable :: recv_type_r8(:,:) ! 0: one level, 1: full_lev, 2: half_lev
   contains
@@ -299,6 +301,7 @@ contains
     class(zonal_circle_type), intent(inout) :: this
 
     integer ierr, i, num_lon, ibeg, iend
+    integer west_cart_id, east_cart_id, tmp_id(1)
     integer, allocatable :: zonal_proc_id(:)
 
     allocate(zonal_proc_id(proc%cart_dims(1)))
@@ -310,6 +313,11 @@ contains
     call MPI_COMM_SIZE(this%comm, this%np, ierr)
     call MPI_COMM_RANK(this%comm, this%id, ierr)
     deallocate(zonal_proc_id)
+
+    ! Get IDs of the west and east neighbors in zonal circle comm.
+    call MPI_CART_SHIFT(proc%cart_comm, 0, 1, west_cart_id, east_cart_id, ierr)
+    call MPI_GROUP_TRANSLATE_RANKS(proc%cart_group, 1, [west_cart_id], this%group, tmp_id, ierr); this%west_ngb_id = tmp_id(1)
+    call MPI_GROUP_TRANSLATE_RANKS(proc%cart_group, 1, [east_cart_id], this%group, tmp_id, ierr); this%east_ngb_id = tmp_id(1)
 
     if (this%id == 0) then
       ! Single precision

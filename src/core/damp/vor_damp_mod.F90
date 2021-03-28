@@ -26,11 +26,15 @@ module vor_damp_mod
 
 contains
 
-  subroutine vor_damp_init()
+  subroutine vor_damp_init(blocks)
+
+    type(block_type), intent(in) :: blocks(:)
 
     integer j, j0, jr, k
     integer iblk, js, je
     real(r8) a, b
+
+    if (.not. use_vor_damp) return
 
     call vor_damp_final()
 
@@ -101,7 +105,7 @@ contains
           end if
           b = -cv_half_lat(j,k) * (1 - beta) * dt_in_seconds / global_mesh%le_lat(j)**2
           a = 2 * (-b) + 1
-          call zonal_solver(j,k)%init_sym_const(global_mesh%num_full_lon, a, b)
+          call zonal_solver(j,k)%init_sym_const(blocks(1)%mesh%num_full_lon, a, b, zonal_tridiag_solver)
         end if
       end do
     end do
