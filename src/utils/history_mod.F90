@@ -123,7 +123,7 @@ contains
         call fiona_add_var('h0', 'u'    , long_name='u wind component'      , units='m s-1'  , dim_names=lon_dims)
         call fiona_add_var('h0', 'v'    , long_name='v wind component'      , units='m s-1'  , dim_names=lat_dims)
         call fiona_add_var('h0', 'pt'   , long_name='potential temperature' , units='K'      , dim_names=cell_dims)
-        !call fiona_add_var('h0', 'z'    , long_name='height'                , units='m'      , dim_names=lev_dims)
+        call fiona_add_var('h0', 'z'    , long_name='height'                , units='m'      , dim_names=lev_dims)
         call fiona_add_var('h0', 'vor'  , long_name='relative vorticity'    , units='s-1'    , dim_names=vtx_dims)
         !call fiona_add_var('h0', 'div'  , long_name='divergence'            , units='s-1'    , dim_names=cell_dims)
         if (nonhydrostatic) then
@@ -309,7 +309,7 @@ contains
           case (height_levels)
             call fiona_output('h0', 'p', diag_state(iblk)%p (is:ie,js:je,:), start=start, count=count)
           case (pressure_levels)
-            !call fiona_output('h0', 'z', diag_state(iblk)%z (is:ie,js:je,:), start=start, count=count)
+            call fiona_output('h0', 'z', diag_state(iblk)%z (is:ie,js:je,:), start=start, count=count)
           end select
         else
           call fiona_output('h0', 'pt' , state%pt (is:ie,js:je,ks:ke), start=start, count=count)
