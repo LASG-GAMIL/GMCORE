@@ -30,7 +30,6 @@ module reduce_mod
   use parallel_mod
   use block_mod
   use reduced_types_mod
-  use interp_mod, only: upwind_pole_wgt
   use upwind_mod
   use weno_mod
 
@@ -1644,7 +1643,7 @@ contains
       else
         select case (upwind_order)
         case (3)
-          beta = upwind_wgt_pt * upwind_pole_wgt(j+buf_j)
+          beta = upwind_wgt_pt
           do i = reduced_mesh%half_lon_ibeg, reduced_mesh%half_lon_iend
             do k = reduced_mesh%full_lev_ibeg, reduced_mesh%full_lev_iend
               pt_lon(k,i,buf_j,move) = upwind3(sign(1.0_r8, mf_lon_n(k,i,buf_j,move)), beta, pt(k,i-1:i+2,buf_j,move))

@@ -21,6 +21,7 @@ module time_schemes_mod
   public euler
   public ssp_runge_kutta_3rd
   public update_state
+  public space_operators_interface
 
   interface
     subroutine space_operators_interface(block, old_state, star_state, new_state, tend, dt, pass)

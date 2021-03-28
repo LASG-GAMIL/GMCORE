@@ -39,6 +39,7 @@ module gmcore_mod
   end interface
 
   procedure(splitter_interface), pointer :: splitter
+  procedure(space_operators_interface), pointer :: operators
 
 contains
 
@@ -64,7 +65,6 @@ contains
     call reduce_init(proc%blocks)
     call time_scheme_init()
     call pgf_init()
-    call interp_init()
     call damp_init(proc%blocks)
 
     select case (split_scheme)
@@ -74,6 +74,8 @@ contains
       splitter => no_splitting
       if (is_root_proc()) call log_notice('No fast-slow split.')
     end select
+
+    operators => space_operators
 
     time_value = split_string(print_interval, ' ', 1)
     time_units = split_string(print_interval, ' ', 2)
@@ -127,7 +129,6 @@ contains
 
   subroutine gmcore_final()
 
-    call interp_final()
     call damp_final()
     call diag_state_final()
     call history_final()
@@ -552,20 +553,20 @@ contains
     t2 = old
 
     do iblk = 1, size(blocks)
-      call time_integrator(space_operators, blocks(iblk), old, t1, slow_dt, slow_pass)
+      call time_integrator(operators, blocks(iblk), old, t1, slow_dt, slow_pass)
       call test_forcing_run(blocks(iblk), slow_dt, blocks(iblk)%state(t1))
     end do
     call damp_run(slow_dt, t1, blocks)
     do subcycle = 1, fast_cycles
       do iblk = 1, size(blocks)
-        call time_integrator(space_operators, blocks(iblk), t1, t2, fast_dt, fast_pass)
+        call time_integrator(operators, blocks(iblk), t1, t2, fast_dt, fast_pass)
         call test_forcing_run(blocks(iblk), fast_dt, blocks(iblk)%state(t2))
       end do
       call damp_run(fast_dt, t2, blocks)
       call time_swap_indices(t1, t2)
     end do
     do iblk = 1, size(blocks)
-      call time_integrator(space_operators, blocks(iblk), t1, new, slow_dt, slow_pass)
+      call time_integrator(operators, blocks(iblk), t1, new, slow_dt, slow_pass)
       call test_forcing_run(blocks(iblk), slow_dt, blocks(iblk)%state(new))
     end do
     call damp_run(slow_dt, new, blocks)
@@ -580,7 +581,7 @@ contains
     integer iblk
 
     do iblk = 1, size(blocks)
-      call time_integrator(space_operators, blocks(iblk), old, new, dt, all_pass)
+      call time_integrator(operators, blocks(iblk), old, new, dt, all_pass)
       call test_forcing_run(blocks(iblk), dt, blocks(iblk)%state(new))
     end do
     call damp_run(dt, new, blocks)

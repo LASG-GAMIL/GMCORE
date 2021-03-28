@@ -36,8 +36,6 @@ module interp_mod
   !       o-------------o------------o
   !
 
-  public interp_init
-  public interp_final
   public interp_cell_to_lon_edge
   public interp_cell_to_lat_edge
   public interp_cell_to_lev_edge
@@ -58,36 +56,9 @@ module interp_mod
   public interp_lat_edge_to_pressure_level
   public interp_lev_edge_to_pressure_level
 
-  real(r8), public, allocatable :: upwind_pole_wgt(:)
-
 contains
 
-  subroutine interp_init()
-
-    integer j
-
-    call interp_final()
-
-    allocate(upwind_pole_wgt(global_mesh%num_full_lat))
-
-    do j = 1, global_mesh%num_full_lat
-      if (abs(global_mesh%full_lat_deg(j)) > 85) then
-        upwind_pole_wgt(j) = 1 / upwind_wgt_pt
-      else
-        upwind_pole_wgt(j) = 1 + (1 / upwind_wgt_pt - 1) * &
-          exp(-0.1 * (abs(global_mesh%full_lat_deg(j)) - 85)**2)
-      end if
-    end do
-
-  end subroutine interp_init
-
-  subroutine interp_final()
-
-    if (allocated(upwind_pole_wgt)) deallocate(upwind_pole_wgt)
-
-  end subroutine interp_final
-
-  subroutine interp_cell_to_lon_edge(mesh, x, x_lon, reversed_area, u, upwind_wgt_, enhance_pole)
+  subroutine interp_cell_to_lon_edge(mesh, x, x_lon, reversed_area, u, upwind_wgt_)
 
     type(mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: x(mesh%full_lon_lb:mesh%full_lon_ub, &
@@ -101,7 +72,6 @@ contains
                                         mesh%full_lat_lb:mesh%full_lat_ub, &
                                         mesh%full_lev_lb:mesh%full_lev_ub)
     real(r8), intent(in), optional :: upwind_wgt_
-    logical, intent(in), optional :: enhance_pole
 
     real(r8) beta(mesh%full_lat_ibeg:mesh%full_lat_iend)
     integer i, j, k
@@ -124,9 +94,6 @@ contains
         beta = upwind_wgt_
       else
         beta = upwind_wgt
-      end if
-      if (present(enhance_pole)) then
-        if (enhance_pole) beta = beta * upwind_pole_wgt(mesh%full_lat_ibeg:mesh%full_lat_iend)
       end if
       select case (upwind_order)
       case (1)
@@ -174,7 +141,7 @@ contains
 
   end subroutine interp_cell_to_lon_edge
 
-  subroutine interp_cell_to_lat_edge(mesh, x, x_lat, reversed_area, handle_pole, v, upwind_wgt_, enhance_pole)
+  subroutine interp_cell_to_lat_edge(mesh, x, x_lat, reversed_area, handle_pole, v, upwind_wgt_)
 
     type(mesh_type), intent(in) :: mesh
     real(r8), intent(in) :: x(mesh%full_lon_lb:mesh%full_lon_ub, &
@@ -189,7 +156,6 @@ contains
                                         mesh%half_lat_lb:mesh%half_lat_ub, &
                                         mesh%full_lev_lb:mesh%full_lev_ub)
     real(r8), intent(in), optional :: upwind_wgt_
-    logical, intent(in), optional :: enhance_pole
 
     real(r8) beta(mesh%full_lat_ibeg:mesh%full_lat_iend)
     integer i, j, k
@@ -199,9 +165,6 @@ contains
         beta = upwind_wgt_
       else
         beta = upwind_wgt
-      end if
-      if (present(enhance_pole)) then
-        if (enhance_pole) beta = beta * upwind_pole_wgt(mesh%full_lat_ibeg:mesh%full_lat_iend)
       end if
       ! WENO interpolation
       select case (weno_order)
