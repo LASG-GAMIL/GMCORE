@@ -240,6 +240,7 @@ contains
     is = lb + hw
     ie = ub - hw
     if (order > 2) then
+      g = 0
       ns = diff_halo_width(order-1)
       w => diff_weights(:,order-1)
       ! Calculate damping flux at interfaces.
