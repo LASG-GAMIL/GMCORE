@@ -392,8 +392,8 @@ contains
     type(block_type), intent(in) :: block
     type(state_type), intent(inout) :: state
 
-    call interp_cell_to_lon_edge(state%mesh, state%pt, state%pt_lon, reversed_area=.true., u=state%u, upwind_wgt_=upwind_wgt_pt)
-    call interp_cell_to_lat_edge(state%mesh, state%pt, state%pt_lat, reversed_area=.true., v=state%v, upwind_wgt_=upwind_wgt_pt)
+    call interp_cell_to_lon_edge(state%mesh, state%pt, state%pt_lon, reversed_area=.true., u=state%u, upwind_wgt_=upwind_wgt_pt, enhance_pole=.true.)
+    call interp_cell_to_lat_edge(state%mesh, state%pt, state%pt_lat, reversed_area=.true., v=state%v, upwind_wgt_=upwind_wgt_pt, enhance_pole=.true.)
     call fill_halo(block, state%pt_lon, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
     call fill_halo(block, state%pt_lat, full_lon=.true., full_lat=.false., full_lev=.true., west_halo=.false., east_halo=.false., north_halo=.false.)
     call interp_cell_to_lev_edge(state%mesh, state%pt, state%pt_lev, w=state%wedphdlev_lev, upwind_wgt_=upwind_wgt_pt)

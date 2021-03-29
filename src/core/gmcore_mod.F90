@@ -65,6 +65,7 @@ contains
     call reduce_init(proc%blocks)
     call time_scheme_init()
     call pgf_init()
+    call interp_init()
     call damp_init(proc%blocks)
 
     select case (split_scheme)
@@ -129,6 +130,7 @@ contains
 
   subroutine gmcore_final()
 
+    call interp_final()
     call damp_final()
     call diag_state_final()
     call history_final()
