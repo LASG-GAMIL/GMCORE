@@ -277,7 +277,10 @@ contains
       end if
       area2 = calc_area(xv, yv, zv)
       area3 = area1 - area2
-      if (area3 < 0.0 .and. abs(area3) > 1.0e-10) call log_error('Lune area is negative!', __FILE__, __LINE__)
+      if (area3 < 0.0 .and. abs(area3) > 1.0e-10) then
+        area3 = 0
+        !call log_warning('Lune area is negative!', __FILE__, __LINE__)
+      end if
 
       if (lat0 * lat1 >= 0 .and. abs(lat0) > abs(lat1)) then
         res = res + area3

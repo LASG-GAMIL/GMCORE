@@ -38,17 +38,17 @@ if not os.path.isdir('GMCORE-TESTBED'):
 
 testbed_root = os.getcwd() + '/GMCORE-TESTBED'
 
-#os.chdir(testbed_root + '/swm.rh.180x90')
-#mpiexec('gmcore_swm_driver.exe', 'namelist', args)
-#
-#os.chdir(testbed_root + '/swm.rh.360x180')
-#mpiexec('gmcore_swm_driver.exe', 'namelist', args)
+os.chdir(testbed_root + '/swm.rh.180x90')
+mpiexec('gmcore_swm_driver.exe', 'namelist', args)
 
-#os.chdir(testbed_root + '/swm.mz.180x90')
-#mpiexec('gmcore_swm_driver.exe', 'namelist', args)
-#
-#os.chdir(testbed_root + '/swm.mz.360x180')
-#mpiexec('gmcore_swm_driver.exe', 'namelist', args)
+os.chdir(testbed_root + '/swm.rh.360x180')
+mpiexec('gmcore_swm_driver.exe', 'namelist', args)
+
+os.chdir(testbed_root + '/swm.mz.180x90')
+mpiexec('gmcore_swm_driver.exe', 'namelist', args)
+
+os.chdir(testbed_root + '/swm.mz.360x180')
+mpiexec('gmcore_swm_driver.exe', 'namelist', args)
 
 os.chdir(testbed_root + '/rh.180x90')
 mpiexec('gmcore_driver.exe', 'namelist', args)
