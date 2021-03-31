@@ -1,19 +1,19 @@
 [submodule "lib/datetime"]
 	path = lib/datetime
-	url = https://github.com/dongli/fortran-datetime
+	url = https://gitee.com/dongli85/fortran-datetime
 	shallow = true
 [submodule "lib/container"]
 	path = lib/container
-	url = https://github.com/dongli/fortran-container
+	url = https://gitee.com/dongli85/fortran-container
 	shallow = true
 [submodule "lib/flogger"]
 	path = lib/flogger
-	url = https://github.com/dongli/flogger
+	url = https://gitee.com/dongli85/flogger
 	shallow = true
 [submodule "lib/fiona"]
 	path = lib/fiona
-	url = https://github.com/dongli/fiona
+	url = https://gitee.com/dongli85/fiona
 	shallow = true
 [submodule "lib/string"]
 	path = lib/string
-	url = https://github.com/dongli/fortran-string
+	url = https://gitee.com/dongli85/fortran-string
