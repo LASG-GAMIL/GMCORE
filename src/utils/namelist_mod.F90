@@ -53,7 +53,7 @@ module namelist_mod
   character(8)    :: pgf_scheme           = 'lin97'
   integer         :: coriolis_scheme      = 1
 
-  character(8)    :: zonal_tridiag_solver = 'mkl' ! mkl, spk
+  character(8)    :: zonal_tridiag_solver = 'spk' ! mkl, spk
 
   integer         :: weno_order           = -1 ! -1, 3
   integer         :: upwind_order         = -1 ! -1, 1, 3

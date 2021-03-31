@@ -9,7 +9,7 @@ Check barotropic test results [here](https://github.com/gmcore-project/gmcore/wi
 - [ ] Parallelization using MPI:
   - [X] 1D latitudional decomposition (done)
   - [X] 2D decomposition (partially done)
-  - [ ] Optimize for X86 (~2021.03)
+  - [ ] Optimize for X86 (~2021.04)
 - [ ] Nesting at middle and low latitudes (~2021.11).
 - [ ] Acceleration using GPU (~?).
 - [ ] Baroclinic version (~2021.02).
@@ -23,9 +23,9 @@ Check barotropic test results [here](https://github.com/gmcore-project/gmcore/wi
     - [X] X-Z version (done)
     - [X] Quasi-2D mountain wave on reduced sphere (done)
     - [X] Circular mountain wave on reduced sphere (done)
-    - [ ] Internal gravity wave
-- [ ] Advection module (~2021.03).
-- [ ] Incorporation with physics parameterisation (2021.04-2021.10).
+    - [X] Internal gravity wave (done)
+- [ ] Advection module (~2021.04).
+- [ ] Incorporation with physics parameterisation (2021.05-2021.12).
 - [ ] Data assimilation (~?).
 
 # Usage
@@ -34,9 +34,9 @@ First make sure you have installed netCDF library, and set `NETCDF_ROOT` environ
 ```
 $ git clone https://github.com/LASG-GAMIL/GMCORE gmcore
 ```
-There is a shell script `run_tests.sh`, which will clone the submodules, compile the model and run several tests, but it assumes MPI to be installed:
+There is a Python script `run_tests.py`, which will clone the testbed repository, and run several tests, but it assumes MPI to be installed or SLURM job manager is available:
 ```
-$ ./run_tests.sh <work_directory> <process_number>
+$ ./run_tests.py -w <work_directory> --slurm -q <job_queue> -n <process_number> --ntasks-per-node <n>
 ```
 It will take some time to run the tests. When the tests are finished, cd to `<work_directory>`, and use some visualization tools, such as Panoply, to view the results.
 

@@ -38,7 +38,15 @@ contains
     real(r8), intent(in) :: b
     character(*), intent(in) :: solver
 
-    select case (solver)
+    character(30) solver_
+
+#ifndef HAS_MKL
+    solver_ = merge('spk', solver, solver == 'mkl')
+#else
+    solver_ = solver
+#endif
+
+    select case (solver_)
 #ifdef HAS_MKL
     case ('mkl')
       this%solver = 1
