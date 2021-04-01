@@ -70,7 +70,7 @@ contains
           half_lon = mesh%half_lon(i)
           r = 10.0 * acos(sin(latc) * sin_lat + cos(latc) * cos_lat * cos(half_lon - lonc))
           state%u(i,j,k) = u0 * cos(etav)**(1.5d0) * sin(2 * mesh%full_lat(j))**2 + &
-                           up * exp(-r**2)
+                           up * merge(exp(-r**2), 0.0_r8, r**2 <= 50)
         end do
       end do
     end do

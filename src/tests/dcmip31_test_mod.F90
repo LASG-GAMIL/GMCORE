@@ -18,7 +18,6 @@ module dcmip31_test_mod
   public dcmip31_test_set_ic
 
   real(r8), parameter :: X    = 125.0_r8
-  real(r8), parameter :: ptop = 273.919e2_r8 ! Pa
   real(r8), parameter :: u0   = 20.0_r8      ! m s-1
   real(r8), parameter :: teq  = 300.0_r8     ! K
   real(r8), parameter :: peq  = 1.0e5_r8     ! Pa

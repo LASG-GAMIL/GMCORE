@@ -76,7 +76,7 @@ contains
         upwind_pole_wgt(j) = 1 / upwind_wgt_pt
       else
         a = 0.1 * (abs(global_mesh%full_lat_deg(j)) - 85)**2
-        upwind_pole_wgt(j) = 1 + (1 / upwind_wgt_pt - 1) * merge(exp(-a), 0.0_r8, a >= 50)
+        upwind_pole_wgt(j) = 1 + (1 / upwind_wgt_pt - 1) * merge(exp(-a), 0.0_r8, a <= 50)
       end if
     end do
 

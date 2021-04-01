@@ -36,7 +36,7 @@ contains
 
   subroutine ksp15_01_test_set_ic(block)
 
-    type(block_type), intent(inout) :: block
+    type(block_type), intent(inout), target :: block
 
     real(r8) dlon, r0
     integer i, j, k
@@ -122,7 +122,7 @@ contains
 
   subroutine ksp15_02_test_set_ic(block)
 
-    type(block_type), intent(inout) :: block
+    type(block_type), intent(inout), target :: block
 
     real(r8) r
     integer i, j, k

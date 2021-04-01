@@ -41,7 +41,12 @@ contains
     character(30) solver_
 
 #ifndef HAS_MKL
-    solver_ = merge('spk', solver, solver == 'mkl')
+    if (solver == 'mkl') then
+      solver_ = 'spk'
+      if (is_root_proc()) call log_notice('Switch to spk tridiag solver!')
+    else
+      solver_ = solver
+    end if
 #else
     solver_ = solver
 #endif
