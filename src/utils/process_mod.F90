@@ -12,7 +12,9 @@ module process_mod
   private
 
   public process_init
-  public process_create_blocks
+  public process_blocks_create
+  public process_blocks_init_stage_1
+  public process_blocks_init_stage_2
   public process_stop
   public process_final
   public proc
@@ -38,6 +40,7 @@ module process_mod
     integer :: lon_iend = inf_i4
     integer :: lat_ibeg = inf_i4
     integer :: lat_iend = inf_i4
+    integer :: lon_halo_width = 0
   contains
     procedure :: init => process_neighbor_init
   end type process_neighbor_type
@@ -183,7 +186,6 @@ contains
   subroutine decompose_domains()
 
     integer ierr, tmp_id(1), i, j
-    integer hw
 
     ! Set neighborhood of the process.
     if (allocated(proc%ngb)) deallocate(proc%ngb)
@@ -212,14 +214,6 @@ contains
     call round_robin(proc%cart_dims(1), proc%cart_coords(1), proc%num_lon, proc%lon_ibeg, proc%lon_iend)
     call round_robin(proc%cart_dims(2), proc%cart_coords(2), proc%num_lat, proc%lat_ibeg, proc%lat_iend)
 
-    hw = global_mesh%lon_halo_width
-
-    ! TODO: Support 2D decomposition.
-    call proc%ngb(west )%init(west , lat_ibeg=proc%lat_ibeg, lat_iend=proc%lat_iend)
-    call proc%ngb(east )%init(east , lat_ibeg=proc%lat_ibeg, lat_iend=proc%lat_iend)
-    call proc%ngb(south)%init(south, lon_ibeg=proc%lon_ibeg-hw, lon_iend=proc%lon_iend+hw)
-    call proc%ngb(north)%init(north, lon_ibeg=proc%lon_ibeg-hw, lon_iend=proc%lon_iend+hw)
-
   end subroutine decompose_domains
 
   subroutine setup_zonal_comm_for_reduce()
@@ -231,14 +225,59 @@ contains
 
   end subroutine setup_zonal_comm_for_reduce
 
-  subroutine process_create_blocks()
+  subroutine process_blocks_create()
 
-    integer i, j, dtype
+    call process_blocks_init_stage_1()
+    call process_blocks_init_stage_2()
+
+  end subroutine process_blocks_create
+
+  subroutine process_blocks_init_stage_1()
 
     if (.not. allocated(proc%blocks)) allocate(proc%blocks(1))
 
-    call proc%blocks(1)%init(proc%id, global_mesh%lon_halo_width, global_mesh%lat_halo_width, &
-                             proc%lon_ibeg, proc%lon_iend, proc%lat_ibeg, proc%lat_iend)
+    ! Use lon_halo_width in global_mesh.
+    call proc%blocks(1)%init_stage_1(proc%id, global_mesh%lon_halo_width, global_mesh%lat_halo_width, &
+                                     proc%lon_ibeg, proc%lon_iend, proc%lat_ibeg, proc%lat_iend)
+
+  end subroutine process_blocks_init_stage_1
+
+  subroutine process_blocks_init_stage_2()
+
+    integer hw, i, j, dtype
+    integer max_reduce_factor, lon_halo_width
+    integer ierr, status(MPI_STATUS_SIZE)
+
+    ! Each process calculate lon_halo_width from its reduced_mesh(:)%reduce_factor.
+    max_reduce_factor = 2
+    do j = proc%blocks(1)%mesh%full_lat_lb, proc%blocks(1)%mesh%full_lat_ub
+      max_reduce_factor = max(max_reduce_factor, proc%blocks(1)%reduced_mesh(j)%reduce_factor - 1)
+    end do
+    lon_halo_width = min(max_reduce_factor, proc%blocks(1)%mesh%lon_halo_width)
+    ! Get lon_halo_width from southern and northern neighbors.
+    if (proc%ngb(south)%id /= MPI_PROC_NULL) then
+      call MPI_SENDRECV(lon_halo_width, 1, MPI_INT, proc%ngb(south)%id, 100, &
+                        proc%ngb(south)%lon_halo_width, 1, MPI_INT, proc%ngb(south)%id, 100, &
+                        proc%comm, status, ierr)
+    else
+      proc%ngb(south)%lon_halo_width = 0
+    end if
+    if (proc%ngb(north)%id /= MPI_PROC_NULL) then
+      call MPI_SENDRECV(lon_halo_width, 1, MPI_INT, proc%ngb(north)%id, 100, &
+                        proc%ngb(north)%lon_halo_width, 1, MPI_INT, proc%ngb(north)%id, 100, &
+                        proc%comm, status, ierr)
+    else
+      proc%ngb(north)%lon_halo_width = 0
+    end if
+
+    call proc%blocks(1)%init_stage_2(max(lon_halo_width, proc%ngb(south)%lon_halo_width, proc%ngb(north)%lon_halo_width))
+
+    call proc%ngb(west )%init(west , lat_ibeg=proc%lat_ibeg, lat_iend=proc%lat_iend)
+    call proc%ngb(east )%init(east , lat_ibeg=proc%lat_ibeg, lat_iend=proc%lat_iend)
+    hw = max(lon_halo_width, proc%ngb(south)%lon_halo_width)
+    call proc%ngb(south)%init(south, lon_ibeg=proc%lon_ibeg-hw, lon_iend=proc%lon_iend+hw)
+    hw = max(lon_halo_width, proc%ngb(north)%lon_halo_width)
+    call proc%ngb(north)%init(north, lon_ibeg=proc%lon_ibeg-hw, lon_iend=proc%lon_iend+hw)
 
     select case (r8)
     case (4)
@@ -272,7 +311,7 @@ contains
       end do
     end do
 
-  end subroutine process_create_blocks
+  end subroutine process_blocks_init_stage_2
 
   subroutine process_neighbor_init(this, orient, lon_ibeg, lon_iend, lat_ibeg, lat_iend)
 

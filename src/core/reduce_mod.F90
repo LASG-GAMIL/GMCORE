@@ -38,7 +38,8 @@ module reduce_mod
 
   private
 
-  public reduce_init
+  public reduce_init_stage_1
+  public reduce_init_stage_2
   public reduce_run
   public reduce_append_array
   public reduced_mesh_type
@@ -63,11 +64,11 @@ module reduce_mod
 
 contains
 
-  subroutine reduce_init(blocks)
+  subroutine reduce_init_stage_1(blocks)
 
     type(block_type), intent(inout) :: blocks(:)
 
-    integer iblk, itime, j, full_j
+    integer iblk, j, full_j
 
     do iblk = 1, size(blocks)
       allocate(blocks(iblk)%reduced_mesh  (blocks(iblk)%mesh%full_lat_lb    :blocks(iblk)%mesh%full_lat_ub    ))
@@ -91,6 +92,17 @@ contains
           call reduce_mesh(reduce_factors(j), full_j, blocks(iblk)%mesh, blocks(iblk)%reduced_mesh(full_j))
         end if
       end do
+    end do
+
+  end subroutine reduce_init_stage_1
+
+  subroutine reduce_init_stage_2(blocks)
+
+    type(block_type), intent(inout) :: blocks(:)
+
+    integer iblk, j
+
+    do iblk = 1, size(blocks)
       do j = blocks(iblk)%mesh%full_lat_ibeg - 1, blocks(iblk)%mesh%full_lat_iend + 1
         if (blocks(iblk)%reduced_mesh(j)%reduce_factor > 0) then
           call allocate_reduced_static(blocks(iblk)%reduced_mesh(j), blocks(iblk)%reduced_static(j))
@@ -101,7 +113,7 @@ contains
       end do
     end do
 
-  end subroutine reduce_init
+  end subroutine reduce_init_stage_2
 
   subroutine reduce_run(block, state, dt, pass)
 

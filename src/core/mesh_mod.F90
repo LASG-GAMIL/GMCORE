@@ -110,6 +110,7 @@ module mesh_mod
   contains
     procedure :: init_global => mesh_init_global
     procedure :: init_from_parent => mesh_init_from_parent
+    procedure :: reinit => mesh_reinit
     procedure :: common_init => mesh_common_init
     procedure :: has_south_pole => mesh_has_south_pole
     procedure :: has_north_pole => mesh_has_north_pole
@@ -122,6 +123,7 @@ module mesh_mod
     procedure :: is_inside_with_halo_half_lat => mesh_is_inside_with_halo_half_lat
     procedure :: is_outside_pole_full_lat => mesh_is_outside_pole_full_lat
     procedure :: is_outside_pole_half_lat => mesh_is_outside_pole_half_lat
+    procedure :: clear => mesh_clear
     final :: mesh_final
   end type mesh_type
 
@@ -453,7 +455,7 @@ contains
                                    lon_ibeg, lon_iend, lat_ibeg, lat_iend)
 
     class(mesh_type), intent(inout) :: this
-    class(mesh_type), intent(in) :: parent
+    class(mesh_type), intent(in), target :: parent
     integer, intent(in) :: id
     integer, intent(in) :: lon_halo_width
     integer, intent(in) :: lat_halo_width
@@ -463,6 +465,8 @@ contains
     integer, intent(in) :: lat_iend
 
     integer i, j
+
+    this%parent => parent
 
     this%num_full_lon  = lon_iend - lon_ibeg + 1
     this%num_half_lon  = this%num_full_lon
@@ -555,6 +559,20 @@ contains
 
   end subroutine mesh_init_from_parent
 
+  subroutine mesh_reinit(this, lon_halo_width)
+
+    class(mesh_type), intent(inout) :: this
+    integer, intent(in) :: lon_halo_width
+
+    call this%clear()
+
+    ! Replace lon_halo_width with new value.
+    this%lon_halo_width = lon_halo_width
+    call this%init_from_parent(this%parent, this%id, this%lon_halo_width, this%lat_halo_width, &
+                               this%full_lon_ibeg, this%full_lon_iend, this%full_lat_ibeg, this%full_lat_iend)
+
+  end subroutine mesh_reinit
+
   subroutine mesh_common_init(this)
 
     class(mesh_type), intent(inout) :: this
@@ -566,6 +584,7 @@ contains
     this%half_lat_ibeg_no_pole = this%half_lat_ibeg
     this%half_lat_iend_no_pole = this%half_lat_iend
 
+    ! Use maximum lon_halo_width in this process and its south and north neighbors.
     this%full_lon_lb = this%full_lon_ibeg - this%lon_halo_width
     this%full_lon_ub = this%full_lon_iend + this%lon_halo_width
     this%full_lat_lb = this%full_lat_ibeg - this%lat_halo_width
@@ -724,9 +743,9 @@ contains
 
   end function mesh_is_outside_pole_half_lat
 
-  subroutine mesh_final(this)
+  subroutine mesh_clear(this)
 
-    type(mesh_type), intent(inout) :: this
+    class(mesh_type), intent(inout) :: this
 
 		if (allocated(this%dlat            )) deallocate(this%dlat            )
     if (allocated(this%full_dlev       )) deallocate(this%full_dlev       )
@@ -772,6 +791,14 @@ contains
     if (allocated(this%half_f          )) deallocate(this%half_f          )
     if (allocated(this%full_tangent_wgt)) deallocate(this%full_tangent_wgt)
     if (allocated(this%half_tangent_wgt)) deallocate(this%half_tangent_wgt)
+
+  end subroutine mesh_clear
+
+  subroutine mesh_final(this)
+
+    type(mesh_type), intent(inout) :: this
+
+    call this%clear()
 
   end subroutine mesh_final
 

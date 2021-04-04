@@ -48,13 +48,14 @@ module block_mod
     type(reduced_tend_type), allocatable :: reduced_tend(:)
     type(halo_type), allocatable :: halo(:)
   contains
-    procedure :: init => block_init
+    procedure :: init_stage_1 => block_init_stage_1
+    procedure :: init_stage_2 => block_init_stage_2
     final :: block_final
   end type block_type
 
 contains
 
-  subroutine block_init(this, id, lon_halo_width, lat_halo_width, lon_ibeg, lon_iend, lat_ibeg, lat_iend)
+  subroutine block_init_stage_1(this, id, lon_halo_width, lat_halo_width, lon_ibeg, lon_iend, lat_ibeg, lat_iend)
 
     class(block_type), intent(inout) :: this
     integer, intent(in) :: id
@@ -65,11 +66,20 @@ contains
     integer, intent(in) :: lat_ibeg
     integer, intent(in) :: lat_iend
 
-    integer i
-
     this%id = id
 
     call this%mesh%init_from_parent(global_mesh, this%id, lon_halo_width, lat_halo_width, lon_ibeg, lon_iend, lat_ibeg, lat_iend)
+
+  end subroutine block_init_stage_1
+
+  subroutine block_init_stage_2(this, lon_halo_width)
+
+    class(block_type), intent(inout) :: this
+    integer, intent(in) :: lon_halo_width
+
+    integer i
+
+    call this%mesh%reinit(lon_halo_width)
 
     if (.not. allocated(this%state)) then
       select case (trim(time_scheme))
@@ -88,7 +98,7 @@ contains
       case ('N/A')
         allocate(this%state(1))
       case default
-        if (id == 0) call log_error('Unknown time scheme ' // trim(time_scheme))
+        if (this%id == 0) call log_error('Unknown time scheme ' // trim(time_scheme))
       end select
       do i = 1, size(this%state)
         call this%state(i)%init(this%mesh)
@@ -99,7 +109,7 @@ contains
       call this%static%init(this%mesh)
     end if
 
-  end subroutine block_init
+  end subroutine block_init_stage_2
 
   subroutine block_final(this)
 
