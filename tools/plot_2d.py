@@ -59,6 +59,8 @@ if 'lev' in var.dims:
 	else:
 		print('[Error]: Please select a vertical level with -k option!')
 		exit(1)
+else:
+	args.level_idx = None
 
 if args.min_level != None and args.max_level != None:
 	var.plot(ax=ax, robust=True, transform=proj, cmap=args.colormap, cbar_kwargs=cbar_kwargs, levels=np.linspace(args.min_level, args.max_level, 21))
@@ -73,4 +75,7 @@ if args.with_coast_lines:
 if args.output:
 	plt.savefig(args.output)
 else:
-	plt.savefig(f'{os.path.basename(args.input[0]).replace(".nc", "")}.{args.var}.png')
+	idx_str = f't{str(args.time_step).zfill(3)}'
+	if args.level_idx:
+		idx_str = f'{idx_str}.k{str(args.level_idx).zfill(3)}'
+	plt.savefig(f'{os.path.basename(args.input[0]).replace(".nc", "")}.{args.var}.{idx_str}.png')
