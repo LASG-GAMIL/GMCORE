@@ -212,14 +212,14 @@ contains
             if (mesh%is_full_lat_next_to_pole(j)) then
               do i = mesh%half_lon_ibeg, mesh%half_lon_iend
                 vt = mf_lon_t(i,j,k) / m_lon(i,j,k)
-                b  = abs(vt) / sqrt(un(i,j,k)**2 + vt**2)
+                b  = abs(vt) / (sqrt(un(i,j,k)**2 + vt**2) + eps)
                 pv_lon(i,j,k) = b * upwind1(sign(1.0_r8, vt), upwind_wgt_pv, pv(i,j-1:j,k)) + &
                                 (1 - b) * 0.5_r8 * (pv(i,j-1,k) + pv(i,j,k))
               end do
             else
               do i = mesh%half_lon_ibeg, mesh%half_lon_iend
                 vt = mf_lon_t(i,j,k) / m_lon(i,j,k)
-                b  = abs(vt) / sqrt(un(i,j,k)**2 + vt**2)
+                b  = abs(vt) / (sqrt(un(i,j,k)**2 + vt**2) + eps)
                 pv_lon(i,j,k) = b * upwind3(sign(1.0_r8, vt), upwind_wgt_pv, pv(i,j-2:j+1,k)) + &
                                 (1 - b) * 0.5_r8 * (pv(i,j-1,k) + pv(i,j,k))
               end do
@@ -232,7 +232,7 @@ contains
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
               ut = mf_lat_t(i,j,k) / m_lat(i,j,k)
-              b  = abs(ut) / sqrt(ut**2 + vn(i,j,k)**2)
+              b  = abs(ut) / (sqrt(ut**2 + vn(i,j,k)**2) + eps)
               pv_lat(i,j,k) = b * upwind3(sign(1.0_r8, ut), upwind_wgt_pv, pv(i-2:i+1,j,k)) + &
                               (1 - b) * 0.5_r8 * (pv(i-1,j,k) + pv(i,j,k))
             end do
