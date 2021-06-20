@@ -11,6 +11,7 @@ parser.add_argument('-q', '--queue', help='Job queue')
 parser.add_argument('-n', '--np', help='Processes to use for running tests', type=int, default=2)
 parser.add_argument('-p', '--ntasks-per-node', type=int, default=20)
 parser.add_argument('-w', '--work-root', help='Where to run tests', required=True)
+parser.add_argument('-c', '--cases', help='Which cases to run', nargs='+')
 args = parser.parse_args()
 
 gmcore_root = os.path.dirname(os.path.realpath(__file__))
@@ -19,6 +20,7 @@ if not os.path.isdir(args.work_root):
 	os.makedirs(args.work_root)
 
 os.chdir(args.work_root)
+testbed_root = os.getcwd() + '/GMCORE-TESTBED/'
 
 def run(cmd):
 	print(f'==> {cmd}')
@@ -33,37 +35,21 @@ def mpiexec(exe, namelist, args):
 	else:
 		run(f'mpiexec -np {args.np} {gmcore_root}/build/{exe} {namelist}')
 
+def run_case(exe, case):
+	if len(args.cases) > 0 and case in args.cases:
+		os.chdir(testbed_root + case)
+		mpiexec(exe, 'namelist', args)
+
 if not os.path.isdir('GMCORE-TESTBED'):
 	run('git clone https://gitee.com/dongli85/GMCORE-TESTBED')
 
-testbed_root = os.getcwd() + '/GMCORE-TESTBED'
-
-os.chdir(testbed_root + '/swm.rh.180x90')
-mpiexec('gmcore_swm_driver.exe', 'namelist', args)
-
-os.chdir(testbed_root + '/swm.rh.360x180')
-mpiexec('gmcore_swm_driver.exe', 'namelist', args)
-
-os.chdir(testbed_root + '/swm.mz.180x90')
-mpiexec('gmcore_swm_driver.exe', 'namelist', args)
-
-os.chdir(testbed_root + '/swm.mz.360x180')
-mpiexec('gmcore_swm_driver.exe', 'namelist', args)
-
-os.chdir(testbed_root + '/rh.180x90')
-mpiexec('gmcore_driver.exe', 'namelist', args)
-
-os.chdir(testbed_root + '/rh.360x180')
-mpiexec('gmcore_driver.exe', 'namelist', args)
-
-os.chdir(testbed_root + '/mz.180x90')
-mpiexec('gmcore_driver.exe', 'namelist', args)
-
-os.chdir(testbed_root + '/mz.360x180')
-mpiexec('gmcore_driver.exe', 'namelist', args)
-
-os.chdir(testbed_root + '/bw.180x90')
-mpiexec('gmcore_driver.exe', 'namelist', args)
-
-os.chdir(testbed_root + '/bw.360x180')
-mpiexec('gmcore_driver.exe', 'namelist', args)
+run_case('gmcore_swm_driver.exe', 'swm.rh.180x90')
+run_case('gmcore_swm_driver.exe', 'swm.rh.360x180')
+run_case('gmcore_swm_driver.exe', 'swm.mz.180x90')
+run_case('gmcore_swm_driver.exe', 'swm.mz.360x180')
+run_case('gmcore_driver.exe', 'rh.180x90')
+run_case('gmcore_driver.exe', 'rh.360x180')
+run_case('gmcore_driver.exe', 'mz.180x90')
+run_case('gmcore_driver.exe', 'mz.360x180')
+run_case('gmcore_driver.exe', 'bw.180x90')
+run_case('gmcore_driver.exe', 'bw.360x180')
