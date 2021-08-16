@@ -51,12 +51,6 @@ module reduced_types_mod
     final :: reduced_mesh_final
   end type reduced_mesh_type
 
-  type reduced_static_type
-    real(r8), allocatable, dimension(:,:,:) :: gzs
-  contains
-    final :: reduced_static_final
-  end type reduced_static_type
-
   type reduced_state_type
     real(r8), allocatable, dimension(:,:,:,:) :: u
     real(r8), allocatable, dimension(:,:,:,:) :: v
@@ -126,14 +120,6 @@ contains
     if (allocated(this%weights)) deallocate(this%weights)
 
   end subroutine reduced_mesh_final
-
-  subroutine reduced_static_final(this)
-
-    type(reduced_static_type), intent(inout) :: this
-
-    if (allocated(this%gzs)) deallocate(this%gzs)
-
-  end subroutine reduced_static_final
 
   subroutine reduced_state_final(this)
 

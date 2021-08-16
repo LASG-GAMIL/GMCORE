@@ -44,7 +44,6 @@ module block_mod
     type(tend_type), allocatable :: tend(:)
     type(reduced_mesh_type), allocatable :: reduced_mesh(:)
     type(reduced_state_type), allocatable :: reduced_state(:)
-    type(reduced_static_type), allocatable :: reduced_static(:)
     type(reduced_tend_type), allocatable :: reduced_tend(:)
     type(halo_type), allocatable :: halo(:)
   contains
@@ -120,7 +119,6 @@ contains
     if (allocated(this%tend          )) deallocate(this%tend          )
     if (allocated(this%reduced_mesh  )) deallocate(this%reduced_mesh  )
     if (allocated(this%reduced_state )) deallocate(this%reduced_state )
-    if (allocated(this%reduced_static)) deallocate(this%reduced_static)
     if (allocated(this%reduced_tend  )) deallocate(this%reduced_tend  )
 
   end subroutine block_final

@@ -47,8 +47,8 @@ module reduce_mod
   public reduced_state_type
 
   interface
-    subroutine reduce_sub_interface(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
-      import block_type, mesh_type, state_type, reduced_mesh_type, reduced_static_type, reduced_state_type
+    subroutine reduce_sub_interface(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
+      import block_type, mesh_type, state_type, reduced_mesh_type, reduced_state_type
       integer, intent(in) :: j
       integer, intent(in) :: buf_j
       integer, intent(in) :: move
@@ -56,7 +56,6 @@ module reduce_mod
       type(mesh_type), intent(in) :: raw_mesh
       type(state_type), intent(inout) :: raw_state
       type(reduced_mesh_type), intent(in) :: reduced_mesh
-      type(reduced_static_type), intent(in) :: reduced_static
       type(reduced_state_type), intent(inout) :: reduced_state
       real(8), intent(in) :: dt
     end subroutine reduce_sub_interface
@@ -72,7 +71,6 @@ contains
 
     do iblk = 1, size(blocks)
       allocate(blocks(iblk)%reduced_mesh  (blocks(iblk)%mesh%full_lat_lb    :blocks(iblk)%mesh%full_lat_ub    ))
-      allocate(blocks(iblk)%reduced_static(blocks(iblk)%mesh%full_lat_ibeg-1:blocks(iblk)%mesh%full_lat_iend+1))
       allocate(blocks(iblk)%reduced_state (blocks(iblk)%mesh%full_lat_ibeg-1:blocks(iblk)%mesh%full_lat_iend+1))
       allocate(blocks(iblk)%reduced_tend  (blocks(iblk)%mesh%full_lat_ibeg-1:blocks(iblk)%mesh%full_lat_iend+1))
       do j = 1, size(reduce_factors)
@@ -105,8 +103,6 @@ contains
     do iblk = 1, size(blocks)
       do j = blocks(iblk)%mesh%full_lat_ibeg - 1, blocks(iblk)%mesh%full_lat_iend + 1
         if (blocks(iblk)%reduced_mesh(j)%reduce_factor > 0) then
-          call allocate_reduced_static(blocks(iblk)%reduced_mesh(j), blocks(iblk)%reduced_static(j))
-          call reduce_static(j, blocks(iblk), blocks(iblk)%mesh, blocks(iblk)%static, blocks(iblk)%reduced_mesh(j), blocks(iblk)%reduced_static(j))
           call allocate_reduced_state(blocks(iblk)%reduced_mesh(j), blocks(iblk)%reduced_state(j))
           call allocate_reduced_tend(blocks(iblk)%reduced_mesh(j), blocks(iblk)%reduced_tend(j))
         end if
@@ -128,20 +124,20 @@ contains
     case (nh_pass_1)
       do j = block%mesh%full_lat_ibeg, block%mesh%full_lat_iend
         if (block%reduced_mesh(j)%reduce_factor > 1) then
-          call reduce_nh_state_1(j, block, block%mesh, state, block%reduced_mesh(j), block%reduced_static(j), block%reduced_state(j), dt)
+          call reduce_nh_state_1(j, block, block%mesh, state, block%reduced_mesh(j), block%reduced_state(j), dt)
         end if
       end do
     case (nh_pass_2)
       do j = block%mesh%full_lat_ibeg, block%mesh%full_lat_iend
         if (block%reduced_mesh(j)%reduce_factor > 1) then
-          call reduce_nh_state_2(j, block, block%mesh, state, block%reduced_mesh(j), block%reduced_static(j), block%reduced_state(j), dt)
+          call reduce_nh_state_2(j, block, block%mesh, state, block%reduced_mesh(j), block%reduced_state(j), dt)
         end if
       end do
     case default
       ! Extend loop range by 1 is for Coriolis forces. FIXME: Revise it.
       do j = block%mesh%full_lat_ibeg - 1, block%mesh%full_lat_iend + 1
         if (block%reduced_mesh(j)%reduce_factor > 1) then
-          call reduce_state(j, block, block%mesh, state, block%reduced_mesh(j), block%reduced_static(j), block%reduced_state(j), dt, pass)
+          call reduce_state(j, block, block%mesh, state, block%reduced_mesh(j), block%reduced_state(j), dt, pass)
         end if
       end do
     end select
@@ -319,7 +315,7 @@ contains
         allocate(half_lev_half_lon_dims(mf_lev_lon_n,  0:0))
         allocate(half_lev_full_lon_dims(w_lev       ,  0:0))
         allocate(half_lev_half_lon_dims(w_lev_lon   ,  0:0))
-        allocate(half_lev_half_lon_dims(p_lev       ,  0:0))
+        allocate(half_lev_full_lon_dims(p_lev       ,  0:0))
         allocate(half_lev_half_lon_dims(p_lev_lon   ,  0:0))
         allocate(half_lev_half_lon_dims(gz_lev_lon  ,  0:0))
         allocate(full_lev_half_lon_dims(rhod_lon    ,  0:0))
@@ -370,19 +366,18 @@ contains
 
   end subroutine allocate_reduced_state
 
-  subroutine reduce_state(j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt, pass)
+  subroutine reduce_state(j, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt, pass)
 
     integer, intent(in) :: j
     type(block_type), intent(in) :: block
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
     integer, intent(in) :: pass
 
-#define reduce_args(x, sub) lbound(reduced_state%x, 3), ubound(reduced_state%x, 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, sub, dt
+#define reduce_args(x, sub) lbound(reduced_state%x, 3), ubound(reduced_state%x, 3), j, block, raw_mesh, raw_state, reduced_mesh, reduced_state, sub, dt
 
     if (.not. reduce_pv_directly .or. pv_scheme == 4 .or. pgf_scheme == 'sb81') then
       call apply_reduce(reduce_args(m, reduce_m))
@@ -459,14 +454,13 @@ contains
 
   end subroutine reduce_state
 
-  subroutine reduce_nh_state_1(j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_nh_state_1(j, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     type(block_type), intent(in) :: block
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -480,14 +474,13 @@ contains
 
   end subroutine reduce_nh_state_1
 
-  subroutine reduce_nh_state_2(j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_nh_state_2(j, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     type(block_type), intent(in) :: block
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -501,31 +494,7 @@ contains
 
   end subroutine reduce_nh_state_2
 
-  subroutine reduce_gzs(j, buf_j, move, block, raw_mesh, raw_static, reduced_mesh, reduced_static)
-
-    integer, intent(in) :: j
-    integer, intent(in) :: buf_j
-    integer, intent(in) :: move
-    type(block_type), intent(in) :: block
-    type(mesh_type), intent(in) :: raw_mesh
-    type(static_type), intent(in) :: raw_static
-    type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(inout) :: reduced_static
-
-    integer raw_i, i
-
-    if (raw_mesh%is_inside_with_halo_full_lat(j+buf_j)) then
-      raw_i = raw_mesh%full_lon_ibeg + move - 1
-      do i = reduced_mesh%full_lon_ibeg, reduced_mesh%full_lon_iend
-        reduced_static%gzs(i,buf_j,move) = sum(raw_static%gzs(raw_i:raw_i+reduced_mesh%reduce_factor-1,j+buf_j) * reduced_mesh%weights)
-        raw_i = raw_i + reduced_mesh%reduce_factor
-      end do
-      call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_static%gzs(:,buf_j,move))
-    end if
-
-  end subroutine reduce_gzs
-
-  subroutine apply_reduce(buf_lb, buf_ub, j, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, reduce_sub, dt)
+  subroutine apply_reduce(buf_lb, buf_ub, j, block, raw_mesh, raw_state, reduced_mesh, reduced_state, reduce_sub, dt)
 
     integer, intent(in) :: buf_lb
     integer, intent(in) :: buf_ub
@@ -534,7 +503,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     procedure(reduce_sub_interface) reduce_sub
     real(8), intent(in) :: dt
@@ -543,13 +511,13 @@ contains
 
     do move = 1, reduced_mesh%reduce_factor
       do buf_j = buf_lb, buf_ub
-        call reduce_sub(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+        call reduce_sub(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
       end do
     end do
 
   end subroutine apply_reduce
 
-  subroutine reduce_u(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_u(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -558,7 +526,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -574,7 +541,7 @@ contains
 
   end subroutine reduce_u
 
-  subroutine reduce_v(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_v(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -583,7 +550,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -599,7 +565,7 @@ contains
 
   end subroutine reduce_v
 
-  subroutine reduce_gz(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_gz(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -608,7 +574,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -627,7 +592,7 @@ contains
 
   end subroutine reduce_gz
 
-  subroutine reduce_gz_lev(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_gz_lev(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -636,7 +601,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -655,7 +619,7 @@ contains
 
   end subroutine reduce_gz_lev
 
-  subroutine reduce_gz_lev_lon(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_gz_lev_lon(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -664,7 +628,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -683,7 +646,7 @@ contains
 
   end subroutine reduce_gz_lev_lon
 
-  subroutine reduce_w_lev(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_w_lev(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -692,7 +655,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -710,7 +672,7 @@ contains
 
   end subroutine reduce_w_lev
 
-  subroutine reduce_w_lev_lon(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_w_lev_lon(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -719,7 +681,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -738,7 +699,7 @@ contains
 
   end subroutine reduce_w_lev_lon
 
-  subroutine reduce_p_lev(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_p_lev(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -747,7 +708,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -766,7 +726,7 @@ contains
 
   end subroutine reduce_p_lev
 
-  subroutine reduce_p_lev_lon(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_p_lev_lon(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -775,7 +735,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -793,7 +752,7 @@ contains
 
   end subroutine reduce_p_lev_lon
 
-  subroutine reduce_rhod_lon(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_rhod_lon(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -802,7 +761,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -820,7 +778,7 @@ contains
 
   end subroutine reduce_rhod_lon
 
-  subroutine reduce_m(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_m(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -829,7 +787,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -848,7 +805,7 @@ contains
 
   end subroutine reduce_m
 
-  subroutine reduce_m_lev(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_m_lev(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -857,7 +814,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -875,7 +831,7 @@ contains
 
   end subroutine reduce_m_lev
 
-  subroutine reduce_pv(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_pv(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -884,7 +840,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -937,7 +892,7 @@ contains
 
   end subroutine reduce_pv
 
-  subroutine reduce_m_lon(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_m_lon(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -946,7 +901,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -964,7 +918,7 @@ contains
 
   end subroutine reduce_m_lon
 
-  subroutine reduce_m_lat(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_m_lat(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -973,7 +927,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -991,7 +944,7 @@ contains
 
   end subroutine reduce_m_lat
 
-  subroutine reduce_mf_lon_n(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_mf_lon_n(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -1000,7 +953,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -1019,7 +971,7 @@ contains
 
   end subroutine reduce_mf_lon_n
 
-  subroutine reduce_mf_lev_lon_n(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_mf_lev_lon_n(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -1028,7 +980,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -1047,7 +998,7 @@ contains
 
   end subroutine reduce_mf_lev_lon_n
 
-  subroutine reduce_mf_lat_n(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_mf_lat_n(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -1056,7 +1007,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -1075,7 +1025,7 @@ contains
 
   end subroutine reduce_mf_lat_n
 
-  subroutine reduce_mf_lon_t(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_mf_lon_t(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -1084,7 +1034,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -1100,7 +1049,7 @@ contains
 
   end subroutine reduce_mf_lon_t
 
-  subroutine reduce_mf_lat_t(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_mf_lat_t(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -1109,7 +1058,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -1126,7 +1074,7 @@ contains
 
   end subroutine reduce_mf_lat_t
 
-  subroutine reduce_dpv_lon_t(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_dpv_lon_t(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -1135,7 +1083,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -1150,7 +1097,7 @@ contains
 
   end subroutine reduce_dpv_lon_t
 
-  subroutine reduce_dpv_lat_t(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_dpv_lat_t(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -1159,7 +1106,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -1174,7 +1120,7 @@ contains
 
   end subroutine reduce_dpv_lat_t
 
-  subroutine reduce_dpv_lon_n(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_dpv_lon_n(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -1183,7 +1129,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -1202,7 +1147,7 @@ contains
 
   end subroutine reduce_dpv_lon_n
 
-  subroutine reduce_dpv_lat_n(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_dpv_lat_n(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -1211,7 +1156,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -1230,7 +1174,7 @@ contains
 
   end subroutine reduce_dpv_lat_n
 
-  subroutine reduce_pv_lon(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_pv_lon(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -1239,7 +1183,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -1256,7 +1199,7 @@ contains
 
   end subroutine reduce_pv_lon
 
-  subroutine reduce_pv_lat(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_pv_lat(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -1265,7 +1208,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -1282,7 +1224,7 @@ contains
 
   end subroutine reduce_pv_lat
 
-  subroutine reduce_pv_lon_midpoint(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_pv_lon_midpoint(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -1291,7 +1233,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -1310,7 +1251,7 @@ contains
 
   end subroutine reduce_pv_lon_midpoint
 
-  subroutine reduce_pv_lon_upwind(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_pv_lon_upwind(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -1319,7 +1260,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -1359,7 +1299,7 @@ contains
 
   end subroutine reduce_pv_lon_upwind
 
-  subroutine reduce_pv_lon_weno(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_pv_lon_weno(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -1368,7 +1308,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -1397,7 +1336,7 @@ contains
 
   end subroutine reduce_pv_lon_weno
 
-  subroutine reduce_pv_lon_apvm(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_pv_lon_apvm(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -1406,7 +1345,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -1433,7 +1371,7 @@ contains
 
   end subroutine reduce_pv_lon_apvm
 
-  subroutine reduce_pv_lat_midpoint(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_pv_lat_midpoint(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -1442,7 +1380,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -1461,7 +1398,7 @@ contains
 
   end subroutine reduce_pv_lat_midpoint
 
-  subroutine reduce_pv_lat_upwind(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_pv_lat_upwind(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -1470,7 +1407,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -1507,7 +1443,7 @@ contains
 
   end subroutine reduce_pv_lat_upwind
 
-  subroutine reduce_pv_lat_weno(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_pv_lat_weno(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -1516,7 +1452,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -1537,7 +1472,7 @@ contains
 
   end subroutine reduce_pv_lat_weno
 
-  subroutine reduce_pv_lat_apvm(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_pv_lat_apvm(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -1546,7 +1481,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -1573,7 +1507,7 @@ contains
 
   end subroutine reduce_pv_lat_apvm
 
-  subroutine reduce_ke(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_ke(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -1582,7 +1516,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -1599,7 +1532,7 @@ contains
 
   end subroutine reduce_ke
 
-  subroutine reduce_pt(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_pt(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -1608,7 +1541,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -1626,7 +1558,7 @@ contains
   end subroutine reduce_pt
 
   ! FIXME: This variable is not necessary!
-  subroutine reduce_ptf_lon(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_ptf_lon(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -1635,7 +1567,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -1683,7 +1614,7 @@ contains
 
   end subroutine reduce_ptf_lon
 
-  subroutine reduce_t(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_t(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -1692,7 +1623,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -1707,7 +1637,7 @@ contains
 
   end subroutine reduce_t
 
-  subroutine reduce_t_lnpop_lon(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_t_lnpop_lon(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -1716,7 +1646,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -1737,7 +1666,7 @@ contains
 
   end subroutine reduce_t_lnpop_lon
 
-  subroutine reduce_ak_t_lon(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_ak_t_lon(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -1746,7 +1675,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -1776,7 +1704,7 @@ contains
 
   end subroutine reduce_ak_t_lon
 
-  subroutine reduce_ph_lev(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_static, reduced_state, dt)
+  subroutine reduce_ph_lev(j, buf_j, move, block, raw_mesh, raw_state, reduced_mesh, reduced_state, dt)
 
     integer, intent(in) :: j
     integer, intent(in) :: buf_j
@@ -1785,7 +1713,6 @@ contains
     type(mesh_type), intent(in) :: raw_mesh
     type(state_type), intent(inout) :: raw_state
     type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(in) :: reduced_static
     type(reduced_state_type), intent(inout) :: reduced_state
     real(8), intent(in) :: dt
 
@@ -1829,15 +1756,6 @@ contains
 
   end subroutine reduce_append_array
 
-  subroutine allocate_reduced_static(reduced_mesh, reduced_static)
-
-    type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(inout) :: reduced_static
-
-    allocate(reduced_static%gzs(reduced_mesh%full_lon_lb:reduced_mesh%full_lon_ub, -2:2,reduced_mesh%reduce_factor))
-
-  end subroutine allocate_reduced_static
-
   subroutine allocate_reduced_tend(reduced_mesh, reduced_tend)
 
     type(reduced_mesh_type), intent(in) :: reduced_mesh
@@ -1861,31 +1779,12 @@ contains
     allocate(reduced_tend%pgf_lon (is:ie,ks:ke))
     allocate(reduced_tend%dkedlon (is:ie,ks:ke))
 
-    is = reduced_mesh%half_lon_lb; ie = reduced_mesh%half_lon_ub
+    is = reduced_mesh%full_lon_lb; ie = reduced_mesh%full_lon_ub
     ks = reduced_mesh%half_lev_lb; ke = reduced_mesh%half_lev_ub
 
     allocate(reduced_tend%adv_gz_lon(is:ie,ks:ke))
     allocate(reduced_tend%adv_w_lon (is:ie,ks:ke))
 
   end subroutine allocate_reduced_tend
-
-  subroutine reduce_static(j, block, raw_mesh, raw_static, reduced_mesh, reduced_static)
-
-    integer, intent(in) :: j
-    type(block_type), intent(in) :: block
-    type(mesh_type), intent(in) :: raw_mesh
-    type(static_type), intent(in) :: raw_static
-    type(reduced_mesh_type), intent(in) :: reduced_mesh
-    type(reduced_static_type), intent(inout) :: reduced_static
-
-    integer buf_j, move
-
-    do move = 1, reduced_mesh%reduce_factor
-      do buf_j = lbound(reduced_static%gzs, 2), ubound(reduced_static%gzs, 2)
-        call reduce_gzs(j, buf_j, move, block, raw_mesh, raw_static, reduced_mesh, reduced_static)
-      end do
-    end do
-
-  end subroutine reduce_static
 
 end module reduce_mod
