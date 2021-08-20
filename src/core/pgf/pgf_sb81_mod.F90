@@ -132,7 +132,7 @@ contains
           if (block%reduced_mesh(j)%reduce_factor > 1) then
             call zero_halo(block, tend%pgf_lon(:,j,k), east_halo=.true.)
             do move = 1, block%reduced_mesh(j)%reduce_factor
-              do i = block%reduced_mesh(j)%full_lon_ibeg, block%reduced_mesh(j)%full_lon_iend
+              do i = block%reduced_mesh(j)%half_lon_ibeg, block%reduced_mesh(j)%half_lon_iend
                 block%reduced_tend(j)%pgf_lon(i,k) = (                                            &
                   block%reduced_state(j)%gz(k,i+1,0,move) - block%reduced_state(j)%gz(k,i,0,move) &
                 ) / block%reduced_mesh(j)%de_lon(0)

@@ -2,6 +2,7 @@
   num_lon             = 360
   num_lat             = 180
   num_lev             = 26
+  ! https://ngdc.noaa.gov/mgg/global/relief/ETOPO1/data/ice_surface/grid_registered/netcdf/ETOPO1_Ice_g_gmt4.grd.gz
   topo_file           = '/data/geog/ETOPO1_Ice_g_gmt4.grd'
   bkg_type            = 'era5'
   bkg_file            = './era5_2020121200.nc'

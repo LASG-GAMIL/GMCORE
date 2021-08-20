@@ -1195,7 +1195,7 @@ contains
       end do
       raw_i = raw_i + reduced_mesh%reduce_factor
     end do
-    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%pv_lon(:,:,buf_j,move))
+    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%pv_lon(:,:,buf_j,move), east_halo=.false.)
 
   end subroutine reduce_pv_lon
 
@@ -1220,7 +1220,7 @@ contains
       end do
       raw_i = raw_i + reduced_mesh%reduce_factor
     end do
-    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%pv_lat(:,:,buf_j,move))
+    call fill_zonal_halo(block, reduced_mesh%halo_width, reduced_state%pv_lat(:,:,buf_j,move), west_halo=.false.)
 
   end subroutine reduce_pv_lat
 
