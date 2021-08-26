@@ -41,7 +41,7 @@ module namelist_mod
   character(30)   :: refer_state_scheme   = 'wrf'
   real(r8)        :: ptop                 = 2.194e2_r8
 
-  integer         :: ke_scheme            = 1
+  integer         :: ke_scheme            = 2
   real(r8)        :: ke_cell_wgt          = 3.0_r8 / 8.0_r8
 
   integer         :: pv_scheme            = 1 ! 1: midpoint, 2: upwind, 3: weno, 4: apvm
