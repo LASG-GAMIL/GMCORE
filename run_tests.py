@@ -12,7 +12,7 @@ parser.add_argument('-n', '--np', help='Processes to use for running tests', typ
 parser.add_argument('-p', '--ntasks-per-node', type=int, default=20)
 parser.add_argument('-m', '--node-list')
 parser.add_argument('-w', '--work-root', help='Where to run tests', required=True)
-parser.add_argument('-c', '--cases', help='Which cases to run', nargs='+')
+parser.add_argument('-c', '--cases', help='Which cases to run', nargs='+', default=[])
 args = parser.parse_args()
 
 gmcore_root = os.path.dirname(os.path.realpath(__file__))
@@ -42,7 +42,7 @@ def mpiexec(exe, namelist, args):
 		run(f'mpiexec -np {args.np} {gmcore_root}/build/{exe} {namelist}')
 
 def run_case(exe, case):
-	if len(args.cases) > 0 and case in args.cases:
+	if len(args.cases) == 0 or case in args.cases:
 		os.chdir(testbed_root + case)
 		mpiexec(exe, 'namelist', args)
 
