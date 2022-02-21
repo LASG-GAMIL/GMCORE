@@ -33,7 +33,9 @@ module parallel_mod
   public fill_halo
   public zero_halo
   public zonal_sum
+  public zonal_max
   public global_sum
+  public global_max
   public overlay_inner_halo
   public barrier
   public gather_zonal_array
@@ -74,10 +76,21 @@ module parallel_mod
     module procedure zonal_sum_1d_r8
   end interface zonal_sum
 
+  interface zonal_max
+    module procedure zonal_max_r4
+    module procedure zonal_max_r8
+  end interface zonal_max
+
   interface global_sum
     module procedure global_sum_0d_r4
     module procedure global_sum_0d_r8
   end interface global_sum
+
+  interface global_max
+    module procedure global_max_0d_r4
+    module procedure global_max_0d_r8
+    module procedure global_max_0d_i4
+  end interface global_max
 
   interface gather_zonal_array
     module procedure gather_zonal_array_1d_r4
@@ -902,6 +915,32 @@ contains
 
   end subroutine zonal_sum_1d_r8
 
+  subroutine zonal_max_r4(zonal_circle, value)
+
+    type(zonal_circle_type), intent(in) :: zonal_circle
+    real(4), intent(inout) :: value
+
+    integer ierr
+    real(4) res
+
+    call MPI_ALLREDUCE(value, res, 1, MPI_REAL, MPI_MAX, zonal_circle%comm, ierr)
+    value = res
+
+  end subroutine zonal_max_r4
+
+  subroutine zonal_max_r8(zonal_circle, value)
+
+    type(zonal_circle_type), intent(in) :: zonal_circle
+    real(8), intent(inout) :: value
+
+    integer ierr
+    real(8) res
+
+    call MPI_ALLREDUCE(value, res, 1, MPI_DOUBLE, MPI_MAX, zonal_circle%comm, ierr)
+    value = res
+
+  end subroutine zonal_max_r8
+
   subroutine global_sum_0d_r4(comm, value)
 
     integer, intent(in) :: comm
@@ -927,6 +966,45 @@ contains
     value = res
 
   end subroutine global_sum_0d_r8
+
+  subroutine global_max_0d_r4(comm, value)
+
+    integer, intent(in) :: comm
+    real(4), intent(inout) :: value
+
+    integer ierr
+    real(4) res
+
+    call MPI_ALLREDUCE(value, res, 1, MPI_REAL, MPI_MAX, comm, ierr)
+    value = res
+
+  end subroutine global_max_0d_r4
+
+  subroutine global_max_0d_r8(comm, value)
+
+    integer, intent(in) :: comm
+    real(8), intent(inout) :: value
+
+    integer ierr
+    real(8) res
+
+    call MPI_ALLREDUCE(value, res, 1, MPI_DOUBLE, MPI_MAX, comm, ierr)
+    value = res
+
+  end subroutine global_max_0d_r8
+
+  subroutine global_max_0d_i4(comm, value)
+
+    integer, intent(in) :: comm
+    integer(4), intent(inout) :: value
+
+    integer ierr
+    integer(4) res
+
+    call MPI_ALLREDUCE(value, res, 1, MPI_INT, MPI_MAX, comm, ierr)
+    value = res
+
+  end subroutine global_max_0d_i4
 
   subroutine barrier()
 

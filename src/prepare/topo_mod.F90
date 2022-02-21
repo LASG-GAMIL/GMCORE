@@ -4,9 +4,12 @@ module topo_mod
   use flogger
   use string
   use const_mod
+  use namelist_mod
   use block_mod
   use process_mod
   use parallel_mod
+  use laplace_damp_mod
+  use filter_mod
 
   implicit none
 
@@ -14,8 +17,7 @@ module topo_mod
 
   public topo_read
   public topo_regrid
-  public topo_zero
-  public topo_smth
+  public topo_smooth
   public topo_final
 
   integer num_topo_lon
@@ -30,26 +32,59 @@ contains
 
     character(*), intent(in) :: topo_file
 
+    integer i
+    real(r8), allocatable :: tmp(:)
+
     call topo_final()
 
     if (is_root_proc()) call log_notice('Use ' // trim(topo_file) // ' as topography.')
 
-    call fiona_open_dataset('topo', file_path=topo_file)
-    call fiona_get_dim('topo', 'x', size=num_topo_lon)
-    call fiona_get_dim('topo', 'y', size=num_topo_lat)
+    select case (topo_type)
+    case ('etopo1')
+      if (planet /= 'earth') call log_error('Topography file ' // trim(topo_file) // ' is used for the Earth!')
+      call fiona_open_dataset('topo', file_path=topo_file)
+      call fiona_get_dim('topo', 'x', size=num_topo_lon)
+      call fiona_get_dim('topo', 'y', size=num_topo_lat)
 
-    if (is_root_proc()) call log_notice('num_topo_lon = ' // to_str(num_topo_lon) // ', num_topo_lat = ' // to_str(num_topo_lat))
+      allocate(topo_lon(num_topo_lon))
+      allocate(topo_lat(num_topo_lat))
+      allocate(topo_gzs(num_topo_lon,num_topo_lat))
 
-    allocate(topo_lon(num_topo_lon))
-    allocate(topo_lat(num_topo_lat))
-    allocate(topo_gzs(num_topo_lon,num_topo_lat))
+      call fiona_start_input('topo')
+      call fiona_input('topo', 'x', topo_lon)
+      call fiona_input('topo', 'y', topo_lat)
+      call fiona_input('topo', 'z', topo_gzs)
+      call fiona_end_input('topo')
+    case ('mola32')
+      if (planet /= 'mars') call log_error('Topography file ' // trim(topo_file) // ' is used for the Mars!')
+      call fiona_open_dataset('topo', file_path=topo_file)
+      call fiona_get_dim('topo', 'longitude', size=num_topo_lon)
+      call fiona_get_dim('topo', 'latitude' , size=num_topo_lat)
 
-    call fiona_start_input('topo')
-    call fiona_input('topo', 'x', topo_lon)
-    call fiona_input('topo', 'y', topo_lat)
-    call fiona_input('topo', 'z', topo_gzs)
-    call fiona_end_input('topo')
+      allocate(topo_lon(num_topo_lon))
+      allocate(topo_lat(num_topo_lat))
+      allocate(topo_gzs(num_topo_lon,num_topo_lat))
 
+      call fiona_start_input('topo')
+      call fiona_input('topo', 'longitude', topo_lon)
+      call fiona_input('topo', 'latitude' , topo_lat)
+      call fiona_input('topo', 'alt'      , topo_gzs)
+      call fiona_end_input('topo')
+
+      ! Reverse latitude dimension from the South Pole to the North Pole.
+      topo_lat = topo_lat(num_topo_lat:1:-1)
+      allocate(tmp(num_topo_lat))
+      do i = 1, num_topo_lon
+        tmp = topo_gzs(i,:)
+        topo_gzs(i,:) = tmp(num_topo_lat:1:-1)
+      end do
+      deallocate(tmp)
+    case default
+      call log_error('Unknown topo_type "' // trim(topo_type) // '"!', pid=proc%id)
+    end select
+
+    if (is_root_proc()) call log_notice('num_topo_lon = ' // to_str(num_topo_lon) // &
+                                      ', num_topo_lat = ' // to_str(num_topo_lat))
     topo_gzs = topo_gzs * g
 
   end subroutine topo_read
@@ -65,11 +100,14 @@ contains
 
     real(r8) lon1, lon2
     real(r8) lat1, lat2
-    real(r8) gzs0, landfrac0, sgh0, grid_count, grid_count0
+    real(r8) gzs0, landmask0, sgh0, grid_count, grid_count0
 
     integer i, j, k, l, i1, i2, j1, j2
 
-    associate (mesh => block%mesh, gzs => block%static%gzs)
+    associate (mesh     => block%mesh           , &
+               landmask => block%static%landmask, &
+               gzs      => block%static%gzs     , &
+               zs_std   => block%static%zs_std)
       ! To obtain the indices of east-west boundary for boxes of model grids
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         lon1 = mesh%half_lon_deg(i-1)
@@ -142,18 +180,26 @@ contains
             ! Split into two parts
             i1 = 1
             i2 = ix2(i)
-            call count_topo_grids(gzs0, sgh0, landfrac0, grid_count, i1, i2, j1, j2)
-            gzs(i,j) = gzs0
-            grid_count0 = grid_count
+            call count_topo_grids(gzs0, sgh0, landmask0, grid_count, i1, i2, j1, j2)
+            gzs(i,j)      = gzs0
+            zs_std(i,j)   = sgh0
+            landmask(i,j) = landmask0
+            grid_count0   = grid_count
             i1 = ix1(i)
             i2 = num_topo_lon
-            call count_topo_grids(gzs0, sgh0, landfrac0, grid_count, i1, i2, j1, j2)
-            gzs(i,j) = gzs(i,j) + gzs0
-            grid_count0 = grid_count + grid_count0
-            gzs(i,j) = gzs(i,j) / grid_count0
+            call count_topo_grids(gzs0, sgh0, landmask0, grid_count, i1, i2, j1, j2)
+            gzs(i,j)      = gzs(i,j) + gzs0
+            zs_std(i,j)   = zs_std(i,j) + sgh0
+            landmask(i,j) = landmask(i,j) + landmask0
+            grid_count0   = grid_count + grid_count0
+            gzs(i,j)      = gzs(i,j) / grid_count0
+            zs_std(i,j)   = zs_std(i,j) / grid_count0 / g**2
+            landmask(i,j) = landmask(i,j) / grid_count0
           else
-            call count_topo_grids(gzs0, sgh0, landfrac0, grid_count, i1, i2, j1, j2)
-            gzs(i,j) = gzs0 / grid_count
+            call count_topo_grids(gzs0, sgh0, landmask0, grid_count, i1, i2, j1, j2)
+            gzs(i,j)      = gzs0 / grid_count
+            zs_std(i,j)   = sgh0 / grid_count / g**2
+            landmask(i,j) = landmask0 / grid_count
           end if
         end do
       end do
@@ -165,27 +211,34 @@ contains
         j2 = jy2(j)
         i1 = 1
         i2 = num_topo_lon
-        call count_topo_grids(gzs0, sgh0, landfrac0, grid_count, i1, i2, j1, j2)
-        gzs0 = gzs0 / grid_count
-        sgh0 = sgh0 / grid_count
+        call count_topo_grids(gzs0, sgh0, landmask0, grid_count, i1, i2, j1, j2)
+        gzs0      = gzs0 / grid_count
+        sgh0      = sgh0 / grid_count
+        landmask0 = landmask0 / grid_count
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          gzs(i,j) = gzs0
+          gzs(i,j)      = gzs0
+          zs_std(i,j)   = sgh0 / g**2
+          landmask(i,j) = landmask0
         end do
       end if
       if (mesh%has_north_pole()) then
-        j = mesh%full_lat_iend
+        j  = mesh%full_lat_iend
         j1 = jy1(j)
         j2 = jy2(j)
         i1 = 1
         i2 = num_topo_lon
-        call count_topo_grids(gzs0, sgh0, landfrac0, grid_count, i1, i2, j1, j2)
-        gzs0 = gzs0 / grid_count
-        sgh0 = sgh0 / grid_count
+        call count_topo_grids(gzs0, sgh0, landmask0, grid_count, i1, i2, j1, j2)
+        gzs0      = gzs0 / grid_count
+        sgh0      = sgh0 / grid_count
+        landmask0 = landmask0 / grid_count
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          gzs(i,j) = gzs0
+          gzs(i,j)      = gzs0
+          zs_std(i,j)   = sgh0 / g**2
+          landmask(i,j) = landmask0
         end do
       end if
       ! Fill halo outside poles for later smoothing if used.
+      ! FIXME: Should we remove the following codes?
       if (mesh%has_south_pole()) then
         do j = 1, mesh%lat_halo_width
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -220,15 +273,26 @@ contains
     gzs        = 0.0d0
     landfrac   = 0.0d0
     grid_count = 0.0d0
-    do k = j1, j2
-      do l = i1, i2
-        if (topo_gzs(l,k) > 0.0d0) then
-          gzs      = gzs      + topo_gzs(l,k)
-          landfrac = landfrac + 1.0d0
-        end if
-        grid_count = grid_count + 1.0d0
+    select case (planet)
+    case ('earth')
+      do k = j1, j2
+        do l = i1, i2
+          if (topo_gzs(l,k) > 0.0d0) then
+            gzs      = gzs      + topo_gzs(l,k)
+            landfrac = landfrac + 1.0d0
+          end if
+          grid_count = grid_count + 1.0d0
+        end do
       end do
-    end do
+    case ('mars')
+      do k = j1, j2
+        do l = i1, i2
+          gzs        = gzs      + topo_gzs(l,k)
+          landfrac   = landfrac + 1.0d0
+          grid_count = grid_count + 1.0d0
+        end do
+      end do
+    end select
     osmm = gzs / grid_count
   
     sgh = 0.0d0
@@ -243,6 +307,34 @@ contains
   
   end subroutine count_topo_grids
 
+  subroutine topo_smooth(block)
+
+    type(block_type), intent(inout) :: block
+
+    real(r8), allocatable :: lat_coef(:)
+    integer i, j
+
+    associate (mesh => block%mesh, gzs => block%static%gzs, landmask => block%static%landmask)
+    call filter_on_cell(block, gzs)
+    call fill_halo(block, gzs, full_lon=.true., full_lat=.true.)
+    allocate(lat_coef(global_mesh%num_full_lat))
+    !do j = global_mesh%full_lat_ibeg, global_mesh%full_lat_iend
+    !  lat_coef(j) = exp((90 - abs(global_mesh%full_lat_deg(j)))**2 * log(0.1_r8) / (90 - topo_smooth_lat0)**2)
+    !end do
+    lat_coef = 1
+    do i = 1, topo_smooth_cycles
+      call laplace_damp_on_cell(block, 2, gzs, coef=topo_smooth_coef, lat_coef=lat_coef, fill=.true.)
+    end do
+    deallocate(lat_coef)
+    !do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+    !  do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+    !    if (landmask(i,j) == 0) gzs(i,j) = 0
+    !  end do
+    !end do
+    end associate
+
+  end subroutine topo_smooth
+
   subroutine topo_final()
 
     if (allocated(topo_lon)) deallocate(topo_lon)
@@ -250,112 +342,5 @@ contains
     if (allocated(topo_gzs)) deallocate(topo_gzs)
 
   end subroutine topo_final
-
-  subroutine topo_zero(block, min_lon, max_lon, min_lat, max_lat)
-
-    type(block_type), intent(inout) :: block
-    real(r8), intent(in) :: min_lon
-    real(r8), intent(in) :: max_lon
-    real(r8), intent(in) :: min_lat
-    real(r8), intent(in) :: max_lat
-
-    integer ibeg, iend, jbeg, jend, i, j
-    real(r8) ib, jb, zero_wgt
-
-    associate (mesh => block%mesh, gzs => block%static%gzs)
-      do ibeg = mesh%full_lon_ibeg, mesh%full_lon_iend
-        if (block%mesh%full_lon_deg(ibeg) >= min_lon) exit
-      end do
-      do iend = mesh%full_lon_ibeg, mesh%full_lon_iend
-        if (block%mesh%full_lon_deg(iend) >= max_lon) exit
-      end do
-      do jbeg = mesh%full_lat_ibeg, mesh%full_lat_iend
-        if (block%mesh%full_lat_deg(jbeg) >= min_lat) exit
-      end do
-      do jend = mesh%full_lat_ibeg, mesh%full_lat_iend
-        if (block%mesh%full_lat_deg(jend) >= max_lat) exit
-      end do
-      ibeg = max(1, ibeg); iend = min(mesh%full_lon_iend, iend)
-      if (ibeg > mesh%full_lon_iend .or. iend > mesh%full_lon_iend .or. &
-          jbeg > mesh%full_lat_iend .or. jend > mesh%full_lat_iend) then
-        call log_error('Invalid region parameters for topo_zero!', __FILE__, __LINE__)
-      end if
-      call log_notice('Zero topography in (' // to_str(ibeg) // '-' // to_str(iend) // ',' // &
-                                                to_str(jbeg) // '-' // to_str(jend) // ').')
-      do j = jbeg, jend
-        do i = ibeg, iend
-          ib = merge(i - ibeg, iend - i, i < (ibeg + iend) * 0.5)
-          jb = merge(j - jbeg, jend - j, j < (jbeg + jend) * 0.5)
-          zero_wgt = 1 - max(exp(ib**2 * log(0.1_r8) / ((iend - ibeg) * 0.1_r8)**2), &
-                             exp(jb**2 * log(0.1_r8) / ((jend - jbeg) * 0.1_r8)**2))
-          gzs(i,j) = (1 - zero_wgt) * gzs(i,j)
-        end do
-      end do
-    end associate
-
-  end subroutine topo_zero
-
-  subroutine topo_smth(block, min_lon, max_lon, min_lat, max_lat, steps)
-
-    type(block_type), intent(inout) :: block
-    real(r8), intent(in) :: min_lon
-    real(r8), intent(in) :: max_lon
-    real(r8), intent(in) :: min_lat
-    real(r8), intent(in) :: max_lat
-    integer, intent(in) :: steps
-
-    real(r8), allocatable :: smooth_kernel(:,:)
-    real(r8), allocatable :: smoothed_gzs(:,:)
-    integer ibeg, iend, jbeg, jend, i, j, step
-    real(r8) ib, jb, smooth_wgt
-
-    associate (mesh => block%mesh, gzs => block%static%gzs)
-      do ibeg = mesh%full_lon_ibeg, mesh%full_lon_iend
-        if (block%mesh%full_lon_deg(ibeg) >= min_lon) exit
-      end do
-      do iend = mesh%full_lon_ibeg, mesh%full_lon_iend
-        if (block%mesh%full_lon_deg(iend) >= max_lon) exit
-      end do
-      do jbeg = mesh%full_lat_ibeg, mesh%full_lat_iend
-        if (block%mesh%full_lat_deg(jbeg) >= min_lat) exit
-      end do
-      do jend = mesh%full_lat_ibeg, mesh%full_lat_iend
-        if (block%mesh%full_lat_deg(jend) >= max_lat) exit
-      end do
-      ibeg = max(1, ibeg); iend = min(mesh%full_lon_iend, iend)
-      if (ibeg > mesh%full_lon_iend .or. iend > mesh%full_lon_iend .or. &
-          jbeg > mesh%full_lat_iend .or. jend > mesh%full_lat_iend) then
-        call log_error('Invalid region parameters for topo_smooth!', __FILE__, __LINE__)
-      end if
-      call log_notice('Smooth topography in (' // to_str(ibeg) // '-' // to_str(iend) // ',' // &
-                                                  to_str(jbeg) // '-' // to_str(jend) // ').')
-      allocate(smooth_kernel(-5:5,-5:5))
-      do j = -5, 5
-        do i = -5, 5
-          smooth_kernel(i,j) = exp(-0.5_r8 * (i**2 + j**2))
-        end do
-      end do
-      smooth_kernel = smooth_kernel / sum(smooth_kernel)
-      allocate(smoothed_gzs(ibeg:iend,jbeg:jend))
-      do step = 1, steps
-        do j = jbeg, jend
-          do i = ibeg, iend
-            if (gzs(i,j) == 0) then
-              smoothed_gzs(i,j) = gzs(i,j)
-            else
-              ib = merge(i - ibeg, iend - i, i < (ibeg + iend) * 0.5)
-              jb = merge(j - jbeg, jend - j, j < (jbeg + jend) * 0.5)
-              smooth_wgt = 1 - max(exp(ib**2 * log(0.1_r8) / ((iend - ibeg) * 0.1_r8)**2), &
-                                   exp(jb**2 * log(0.1_r8) / ((jend - jbeg) * 0.1_r8)**2))
-              smoothed_gzs(i,j) = sum(smooth_kernel * gzs(i-5:i+5,j-5:j+5)) * smooth_wgt + (1 - smooth_wgt) * gzs(i,j)
-            end if
-          end do
-        end do
-        gzs(ibeg:iend,jbeg:jend) = smoothed_gzs(ibeg:iend,jbeg:jend)
-      end do
-      deallocate(smooth_kernel, smoothed_gzs)
-    end associate
-
-  end subroutine topo_smth
 
 end module topo_mod

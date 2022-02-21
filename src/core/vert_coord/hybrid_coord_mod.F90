@@ -5,6 +5,7 @@ module hybrid_coord_mod
   use const_mod
   use hybrid_coord_test_mod
   use hybrid_coord_ecmwf_mod
+  use hybrid_coord_mars_mod
   use mesh_mod
   use process_mod
 
@@ -80,6 +81,9 @@ contains
       case ('wrf_l32')
         call hybrid_coord_wrf_l32(p0, ptop, hyai, hybi)
         local_ptop = ptop
+      case ('wrf_l60')
+        call hybrid_coord_wrf_l60(p0, ptop, hyai, hybi)
+        local_ptop = ptop
       case ('wrf_l64')
         call hybrid_coord_wrf_l64(p0, ptop, hyai, hybi)
         local_ptop = ptop
@@ -89,6 +93,10 @@ contains
         call hybrid_coord_dcmip21_l60(p0, ptop, hyai, hybi)
       case ('dcmip31_l10')
         call hybrid_coord_dcmip31_l10(p0, ptop, hyai, hybi)
+      case ('waccm_l70')
+        call hybrid_coord_waccm_l70(p0, ptop, hyai, hybi)
+      case ('emars28')
+        call hybrid_coord_mars_emars28(p0, ptop, hyai, hybi)
       case default
         if (baroclinic .and. template == 'N/A' .and. is_root_proc()) then
           call log_error('Hybrid vertical coordinate template "' // trim(template) // '" is invalid!')
@@ -97,7 +105,7 @@ contains
     end if
 
     if (is_root_proc()) then
-      call log_notice('Model top pressure is ' // to_str(ptop, 4) // 'Pa.')
+      call log_notice('Model top pressure is ' // to_str(ptop, '(ES10.2)') // 'Pa.')
     end if
 
     if (baroclinic .and. all(hyai == 0) .and. is_root_proc()) then

@@ -108,22 +108,24 @@ module mesh_mod
     real(r8), allocatable, dimension(:,:) :: full_tangent_wgt
     real(r8), allocatable, dimension(:,:) :: half_tangent_wgt
   contains
-    procedure :: init_global => mesh_init_global
-    procedure :: init_from_parent => mesh_init_from_parent
-    procedure :: reinit => mesh_reinit
-    procedure :: common_init => mesh_common_init
-    procedure :: has_south_pole => mesh_has_south_pole
-    procedure :: has_north_pole => mesh_has_north_pole
-    procedure :: is_south_pole => mesh_is_south_pole
-    procedure :: is_north_pole => mesh_is_north_pole
-    procedure :: is_pole => mesh_is_pole
-    procedure :: is_full_lat_next_to_pole => mesh_is_full_lat_next_to_pole
-    procedure :: is_half_lat_next_to_pole => mesh_is_half_lat_next_to_pole
+    procedure :: init_global                  => mesh_init_global
+    procedure :: init_from_parent             => mesh_init_from_parent
+    procedure :: reinit                       => mesh_reinit
+    procedure :: common_init                  => mesh_common_init
+    procedure :: has_south_pole               => mesh_has_south_pole
+    procedure :: has_north_pole               => mesh_has_north_pole
+    procedure :: is_south_pole                => mesh_is_south_pole
+    procedure :: is_north_pole                => mesh_is_north_pole
+    procedure :: is_pole                      => mesh_is_pole
+    procedure :: is_full_lat_next_to_pole     => mesh_is_full_lat_next_to_pole
+    procedure :: is_half_lat_next_to_pole     => mesh_is_half_lat_next_to_pole
     procedure :: is_inside_with_halo_full_lat => mesh_is_inside_with_halo_full_lat
     procedure :: is_inside_with_halo_half_lat => mesh_is_inside_with_halo_half_lat
-    procedure :: is_outside_pole_full_lat => mesh_is_outside_pole_full_lat
-    procedure :: is_outside_pole_half_lat => mesh_is_outside_pole_half_lat
-    procedure :: clear => mesh_clear
+    procedure :: is_inside_pole_full_lat      => mesh_is_inside_pole_full_lat
+    procedure :: is_inside_pole_half_lat      => mesh_is_inside_pole_half_lat
+    procedure :: is_outside_pole_full_lat     => mesh_is_outside_pole_full_lat
+    procedure :: is_outside_pole_half_lat     => mesh_is_outside_pole_half_lat
+    procedure :: clear                        => mesh_clear
     final :: mesh_final
   end type mesh_type
 
@@ -564,12 +566,23 @@ contains
     class(mesh_type), intent(inout) :: this
     integer, intent(in) :: lon_halo_width
 
-    call this%clear()
+    integer num_lon, num_lat, num_lev, lat_halo_width
+
+    num_lon = global_mesh%num_full_lon
+    num_lat = global_mesh%num_full_lat
+    num_lev = global_mesh%num_full_lev
+    lat_halo_width = global_mesh%lat_halo_width
+
+    call this%clear(keep_lev=.true.)
 
     ! Replace lon_halo_width with new value.
     this%lon_halo_width = lon_halo_width
-    call this%init_from_parent(this%parent, this%id, this%lon_halo_width, this%lat_halo_width, &
-                               this%full_lon_ibeg, this%full_lon_iend, this%full_lat_ibeg, this%full_lat_iend)
+    if (associated(this%parent)) then
+      call this%init_from_parent(this%parent, this%id, this%lon_halo_width, this%lat_halo_width, &
+                                 this%full_lon_ibeg, this%full_lon_iend, this%full_lat_ibeg, this%full_lat_iend)
+    else
+      call this%init_global(num_lon, num_lat, num_lev, 0, lon_halo_width, lat_halo_width)
+    end if
 
   end subroutine mesh_reinit
 
@@ -598,17 +611,20 @@ contains
     this%half_lev_lb = this%half_lev_ibeg
     this%half_lev_ub = this%half_lev_iend
 
+    if (.not. allocated(this%full_lev)) then
+      allocate(this%full_dlev        (this%full_lev_lb:this%full_lev_ub)); this%full_dlev           = 0.0_r8
+      allocate(this%half_dlev        (this%half_lev_lb:this%half_lev_ub)); this%half_dlev           = 0.0_r8
+      allocate(this%half_dlev_upper  (this%half_lev_lb:this%half_lev_ub)); this%half_dlev_upper     = 0.0_r8
+      allocate(this%half_dlev_lower  (this%half_lev_lb:this%half_lev_ub)); this%half_dlev_lower     = 0.0_r8
+      allocate(this%full_lev         (this%full_lev_lb:this%full_lev_ub)); this%full_lev            = inf
+      allocate(this%half_lev         (this%half_lev_lb:this%half_lev_ub)); this%half_lev            = inf
+    end if
+
     allocate(this%dlat               (this%half_lat_lb:this%half_lat_ub)); this%dlat                = 0.0_r8
-    allocate(this%full_dlev          (this%full_lev_lb:this%full_lev_ub)); this%full_dlev           = 0.0_r8
-    allocate(this%half_dlev          (this%half_lev_lb:this%half_lev_ub)); this%half_dlev           = 0.0_r8
-    allocate(this%half_dlev_upper    (this%half_lev_lb:this%half_lev_ub)); this%half_dlev_upper     = 0.0_r8
-    allocate(this%half_dlev_lower    (this%half_lev_lb:this%half_lev_ub)); this%half_dlev_lower     = 0.0_r8
     allocate(this%full_lon           (this%full_lon_lb:this%full_lon_ub)); this%full_lon            = inf
     allocate(this%half_lon           (this%half_lon_lb:this%half_lon_ub)); this%half_lon            = inf
     allocate(this%full_lat           (this%full_lat_lb:this%full_lat_ub)); this%full_lat            = inf
     allocate(this%half_lat           (this%half_lat_lb:this%half_lat_ub)); this%half_lat            = inf
-    allocate(this%full_lev           (this%full_lev_lb:this%full_lev_ub)); this%full_lev            = inf
-    allocate(this%half_lev           (this%half_lev_lb:this%half_lev_ub)); this%half_lev            = inf
     allocate(this%full_cos_lon       (this%full_lon_lb:this%full_lon_ub)); this%full_cos_lon        = inf
     allocate(this%half_cos_lon       (this%half_lon_lb:this%half_lon_ub)); this%half_cos_lon        = inf
     allocate(this%full_sin_lon       (this%full_lon_lb:this%full_lon_ub)); this%full_sin_lon        = inf
@@ -645,7 +661,7 @@ contains
 
   end subroutine mesh_common_init
 
-  logical function mesh_has_south_pole(this) result(res)
+  pure logical function mesh_has_south_pole(this) result(res)
 
     class(mesh_type), intent(in) :: this
 
@@ -653,7 +669,7 @@ contains
 
   end function mesh_has_south_pole
 
-  logical function mesh_has_north_pole(this) result(res)
+  pure logical function mesh_has_north_pole(this) result(res)
 
     class(mesh_type), intent(in) :: this
 
@@ -661,7 +677,7 @@ contains
 
   end function mesh_has_north_pole
 
-  logical function mesh_is_south_pole(this, j) result(res)
+  pure logical function mesh_is_south_pole(this, j) result(res)
 
     class(mesh_type), intent(in) :: this
     integer, intent(in) :: j
@@ -671,7 +687,7 @@ contains
 
   end function mesh_is_south_pole
 
-  logical function mesh_is_north_pole(this, j) result(res)
+  pure logical function mesh_is_north_pole(this, j) result(res)
 
     class(mesh_type), intent(in) :: this
     integer, intent(in) :: j
@@ -680,7 +696,7 @@ contains
 
   end function mesh_is_north_pole
 
-  logical function mesh_is_pole(this, j) result(res)
+  pure logical function mesh_is_pole(this, j) result(res)
 
     class(mesh_type), intent(in) :: this
     integer, intent(in) :: j
@@ -689,7 +705,7 @@ contains
 
   end function mesh_is_pole
 
-  logical function mesh_is_full_lat_next_to_pole(this, j) result(res)
+  pure logical function mesh_is_full_lat_next_to_pole(this, j) result(res)
 
     class(mesh_type), intent(in) :: this
     integer, intent(in) :: j
@@ -698,7 +714,7 @@ contains
 
   end function mesh_is_full_lat_next_to_pole
 
-  logical function mesh_is_half_lat_next_to_pole(this, j) result(res)
+  pure logical function mesh_is_half_lat_next_to_pole(this, j) result(res)
 
     class(mesh_type), intent(in) :: this
     integer, intent(in) :: j
@@ -707,7 +723,7 @@ contains
 
   end function mesh_is_half_lat_next_to_pole
 
-  logical function mesh_is_inside_with_halo_full_lat(this, j) result(res)
+  pure logical function mesh_is_inside_with_halo_full_lat(this, j) result(res)
 
     class(mesh_type), intent(in) :: this
     integer, intent(in) :: j
@@ -716,7 +732,7 @@ contains
 
   end function mesh_is_inside_with_halo_full_lat
 
-  logical function mesh_is_inside_with_halo_half_lat(this, j) result(res)
+  pure logical function mesh_is_inside_with_halo_half_lat(this, j) result(res)
 
     class(mesh_type), intent(in) :: this
     integer, intent(in) :: j
@@ -725,7 +741,25 @@ contains
 
   end function mesh_is_inside_with_halo_half_lat
 
-  logical function mesh_is_outside_pole_full_lat(this, j) result(res)
+  pure logical function mesh_is_inside_pole_full_lat(this, j) result(res)
+
+    class(mesh_type), intent(in) :: this
+    integer, intent(in) :: j
+
+    res = j >= 2 .and. j <= this%num_full_lat - 1
+
+  end function mesh_is_inside_pole_full_lat
+
+  pure logical function mesh_is_inside_pole_half_lat(this, j) result(res)
+
+    class(mesh_type), intent(in) :: this
+    integer, intent(in) :: j
+
+    res = j >= 1 .and. j <= this%num_half_lat
+
+  end function mesh_is_inside_pole_half_lat
+
+  pure logical function mesh_is_outside_pole_full_lat(this, j) result(res)
 
     class(mesh_type), intent(in) :: this
     integer, intent(in) :: j
@@ -734,7 +768,7 @@ contains
 
   end function mesh_is_outside_pole_full_lat
 
-  logical function mesh_is_outside_pole_half_lat(this, j) result(res)
+  pure logical function mesh_is_outside_pole_half_lat(this, j) result(res)
 
     class(mesh_type), intent(in) :: this
     integer, intent(in) :: j
@@ -743,21 +777,25 @@ contains
 
   end function mesh_is_outside_pole_half_lat
 
-  subroutine mesh_clear(this)
+  subroutine mesh_clear(this, keep_lev)
 
     class(mesh_type), intent(inout) :: this
+    logical, intent(in), optional :: keep_lev
 
-		if (allocated(this%dlat            )) deallocate(this%dlat            )
-    if (allocated(this%full_dlev       )) deallocate(this%full_dlev       )
-    if (allocated(this%half_dlev       )) deallocate(this%half_dlev       )
-    if (allocated(this%half_dlev_upper )) deallocate(this%half_dlev_upper )
-    if (allocated(this%half_dlev_lower )) deallocate(this%half_dlev_lower )
+    if (.not. merge(keep_lev, .false., present(keep_lev))) then
+      if (allocated(this%full_dlev      )) deallocate(this%full_dlev      )
+      if (allocated(this%half_dlev      )) deallocate(this%half_dlev      )
+      if (allocated(this%half_dlev_upper)) deallocate(this%half_dlev_upper)
+      if (allocated(this%half_dlev_lower)) deallocate(this%half_dlev_lower)
+      if (allocated(this%full_lev       )) deallocate(this%full_lev       )
+      if (allocated(this%half_lev       )) deallocate(this%half_lev       )
+    end if
+
+    if (allocated(this%dlat            )) deallocate(this%dlat            )
     if (allocated(this%full_lon        )) deallocate(this%full_lon        )
     if (allocated(this%full_lat        )) deallocate(this%full_lat        )
-    if (allocated(this%full_lev        )) deallocate(this%full_lev        )
     if (allocated(this%half_lon        )) deallocate(this%half_lon        )
     if (allocated(this%half_lat        )) deallocate(this%half_lat        )
-    if (allocated(this%half_lev        )) deallocate(this%half_lev        )
     if (allocated(this%full_cos_lon    )) deallocate(this%full_cos_lon    )
     if (allocated(this%half_cos_lon    )) deallocate(this%half_cos_lon    )
     if (allocated(this%full_sin_lon    )) deallocate(this%full_sin_lon    )

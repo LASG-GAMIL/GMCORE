@@ -1,6 +1,7 @@
 module const_mod
 
   use, intrinsic :: ieee_arithmetic
+  use flogger
 
 #ifdef REAL_KIND
   integer, parameter :: r8 = REAL_KIND
@@ -13,20 +14,22 @@ module const_mod
   real(r8), parameter :: pi05   = pi * 0.5_r8
   real(r8), parameter :: deg    = 180.0_r8 / pi
   real(r8), parameter :: rad    = pi / 180.0_r8
-  real(r8)            :: omega  = 2.0_r8 * pi / 86400.0_r8  ! s-1
-  real(r8)            :: radius = 6.37122d6                 ! m
-  real(r8), parameter :: g      = 9.80616_r8                ! m2 s-2
   real(r8), parameter :: eps    = epsilon(1.0_r8)
   real(r8), parameter :: inf    = huge(1.0_r8)
 
-  real(r8), parameter :: Rd      = 287.04_r8                 ! J kg-1 K-1
-  real(r8), parameter :: Rv      = 461.497_r8                ! J kg-1 K-1
-  real(r8), parameter :: cp      = 1004.0_r8                 ! J kg-1 K-1
-  real(r8), parameter :: cv      = 717.0_r8                  ! J kg-1 K-1
-  real(r8), parameter :: Rd_o_cp = Rd / cp
-  real(r8), parameter :: cp_o_cv = cp / cv
-  real(r8), parameter :: cv_o_cp = cv / cp
-  
+  real(r8)            :: omega      ! s-1
+  real(r8)            :: radius     ! m
+  real(r8)            :: g          ! m2 s-2
+  real(r8)            :: Rd         ! J kg-1 K-1
+  real(r8)            :: Rv         ! J kg-1 K-1
+  real(r8)            :: cp         ! J kg-1 K-1
+  real(r8)            :: cv         ! J kg-1 K-1
+  real(r8)            :: Rd_o_cp
+  real(r8)            :: Rd_o_g
+  real(r8)            :: cp_o_cv
+  real(r8)            :: cv_o_cp
+  real(r8)            :: lapse_rate ! K m-1
+
   integer, parameter :: nest_ratio = 3
   integer, parameter :: inf_i4 = 10000000
 
@@ -48,6 +51,39 @@ module const_mod
   integer, parameter :: north = 4
 
 contains
+
+  subroutine const_init(planet)
+
+    character(*), intent(in) :: planet
+
+    select case (planet)
+    case ('earth')
+      omega      = 2 * pi / 86400.0d0
+      radius     = 6.37122d6
+      g          = 9.80616d0
+      Rd         = 287.04d0
+      Rv         = 461.497d0
+      cp         = 1004.0d0
+      cv         = 717.0d0
+      lapse_rate = 0.006d0
+    case ('mars')
+      omega      = 2 * pi / 88642.663d0
+      radius     = 3.38992d6
+      g          = 3.72d0
+      Rd         = 191.84d0
+      cp         = 735.0d0
+      cv         = 543.16d0
+      lapse_rate = 5.06d-3
+    case default
+      call log_error('Invalid planet!')
+    end select
+
+    Rd_o_g  = Rd / g
+    Rd_o_cp = Rd / cp
+    cp_o_cv = cp / cv
+    cv_o_cp = cv / cp
+
+  end subroutine const_init
 
   pure logical function is_inf(x) result(res)
 

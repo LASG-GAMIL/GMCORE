@@ -13,14 +13,14 @@ module baroclinic_wave_test_mod
   public baroclinic_wave_test_set_ic
 
   real(r8), parameter :: alpha = 0.0_r8
-  real(r8), parameter :: u0    = 35        ! m s-1
-  real(r8), parameter :: t0    = 288       ! K
-  real(r8), parameter :: gamma = 0.005     ! K m-1
-  real(r8), parameter :: dt    = 4.8e5     ! K
+  real(r8), parameter :: u0    = 35.0_r8   ! m s-1
+  real(r8), parameter :: t0    = 288.0_r8  ! K
+  real(r8), parameter :: gamma = 0.005_r8  ! K m-1
+  real(r8), parameter :: dt    = 4.8e5_r8  ! K
   real(r8), parameter :: eta0  = 0.252
   real(r8), parameter :: etat  = 0.2       ! Tropopause level
   real(r8), parameter :: lonc  = pi / 9.0
-  real(r8), parameter :: latc  = 2.0 * pi / 9.0
+  real(r8), parameter :: latc  = pi2 / 9.0
   real(r8), parameter :: up    = 1.0       ! m s-1 
 
 contains
@@ -62,7 +62,7 @@ contains
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       eta = mesh%full_lev(k)
-      etav = (eta - eta0) * pi / 2d0
+      etav = (eta - eta0) * pi05
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         sin_lat = mesh%full_sin_lat(j)
         cos_lat = mesh%full_cos_lat(j)
@@ -70,7 +70,7 @@ contains
           half_lon = mesh%half_lon(i)
           r = 10.0 * acos(sin(latc) * sin_lat + cos(latc) * cos_lat * cos(half_lon - lonc))
           state%u(i,j,k) = u0 * cos(etav)**(1.5d0) * sin(2 * mesh%full_lat(j))**2 + &
-                           up * merge(exp(-r**2), 0.0_r8, r**2 <= 50)
+                           up * merge(exp(-r**2), 0.0_r8, r**2 <= 50) ! FIXME: Why we set a limit on r?
         end do
       end do
     end do
@@ -88,9 +88,9 @@ contains
         sin_lat = mesh%full_sin_lat(j)
         cos_lat = mesh%full_cos_lat(j)
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          state%t(i,j,k) = tbar + 3d0 / 4d0 * eta * pi * u0 / Rd * sin(etav) * sqrt(cos(etav)) * (     &
-              (-2 * sin_lat**6 * (cos_lat**2 + 1d0 / 3d0) + 10d0 / 63d0) * 2 * u0 * cos(etav)**1.5d0 + &
-              (8d0 / 5d0 * cos_lat**3 * (sin_lat**2 + 2d0 / 3d0) - pi / 4d0) * radius * omega          &
+          state%t(i,j,k) = tbar + 3.0d0 / 4.0d0 * eta * pi * u0 / Rd * sin(etav) * sqrt(cos(etav)) * (         &
+              (-2 * sin_lat**6 * (cos_lat**2 + 1.0d0 / 3.0d0) + 10.0d0 / 63.0d0) * 2 * u0 * cos(etav)**1.5d0 + &
+              (8.0d0 / 5.0d0 * cos_lat**3 * (sin_lat**2 + 2.0d0 / 3.0d0) - pi / 4.0d0) * radius * omega        &
             )
           state%pt(i,j,k) = potential_temperature(state%t(i,j,k), state%ph(i,j,k))
         end do
@@ -100,24 +100,24 @@ contains
     call fill_halo(block, state%pt, full_lon=.true., full_lat=.true., full_lev=.true.)
 
     do k = mesh%half_lev_ibeg, mesh%half_lev_iend
-      eta = mesh%half_lev(k)
+      eta = merge(1.0e-12_r8, mesh%half_lev(k), mesh%half_lev(k) == 0)
       etav = (eta - eta0) * pi / 2d0
       if (etat <= eta .and. eta <= 1) then
         gzbar = t0 * g / gamma * (1 - eta**(Rd * gamma / g))
       else
-        gzbar = t0 * g / gamma * (1 - eta**(Rd * gamma / g)) - Rd * dt * (   &
-            (log(eta / etat) + 137d0 / 60d0) * etat**5 - 5 * etat**4 * eta + &
-            5 * etat**3 * eta**2 - 10d0 / 3d0 * etat**2 * eta**3 +           &
-            5d0 / 4d0 * etat * eta**4 - 1d0 / 5d0 * eta**5                   &
+        gzbar = t0 * g / gamma * (1 - eta**(Rd * gamma / g)) - Rd * dt * (       &
+            (log(eta / etat) + 137.0d0 / 60.0d0) * etat**5 - 5 * etat**4 * eta + &
+            5 * etat**3 * eta**2 - 10.0d0 / 3.0d0 * etat**2 * eta**3 +           &
+            5.0d0 / 4.0d0 * etat * eta**4 - 1.0d0 / 5.0d0 * eta**5               &
           )
       end if
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         sin_lat = mesh%full_sin_lat(j)
         cos_lat = mesh%full_cos_lat(j)
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          state%gz_lev(i,j,k) = gzbar + u0 * cos(etav)**1.5d0 * (                                &
-            (-2 * sin_lat**6 * (cos_lat**2 + 1d0 / 3d0) + 10d0 / 63d0) * u0 * cos(etav)**1.5d0 + &
-            (8d0 / 5d0 * cos_lat**3 * (sin_lat**2 + 2d0 / 3d0) - pi / 4d0) * radius * omega      &
+          state%gz_lev(i,j,k) = gzbar + u0 * cos(etav)**1.5d0 * (                                        &
+            (-2 * sin_lat**6 * (cos_lat**2 + 1.0d0 / 3.0d0) + 10.0d0 / 63.0d0) * u0 * cos(etav)**1.5d0 + &
+            (8.0d0 / 5.0d0 * cos_lat**3 * (sin_lat**2 + 2.0d0 / 3.0d0) - pi / 4.0d0) * radius * omega    &
           )
         end do
       end do

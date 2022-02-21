@@ -16,7 +16,7 @@ module latlon_interp_mod
 
 contains
 
-  subroutine latlon_interp_bilinear_cell(src_lon, src_lat, src_data, dst_mesh, dst_data, zero_pole, ierr)
+  subroutine latlon_interp_bilinear_cell(src_lon, src_lat, src_data, dst_mesh, dst_data, extrap, zero_pole, ierr)
 
     real(r8), intent(in) :: src_lon(:)
     real(r8), intent(in) :: src_lat(:)
@@ -24,6 +24,7 @@ contains
     type(mesh_type), intent(in) :: dst_mesh
     real(r8), intent(out) :: dst_data(dst_mesh%full_lon_lb:dst_mesh%full_lon_ub, &
                                       dst_mesh%full_lat_lb:dst_mesh%full_lat_ub)
+    logical, intent(in), optional :: extrap
     logical, intent(in), optional :: zero_pole
     integer, intent(out), optional :: ierr
 
@@ -86,8 +87,8 @@ contains
       do j = lb_y2, ub_y2
         is_found = .false.
         do jj = 1, ny1-1
-          if ((y2(j) >= y1(jj) .and. y2(j) < y1(jj+1)) .or. &
-            (jj == ny1 - 1 .and. (y2(j) <= y1(ny1) .or. abs(y2(j) - y1(ny1)) < 1.0e-6))) then
+          if (y2(j) < y1(jj)) exit
+          if (y2(j) >= y1(jj) .and. y2(j) < y1(jj+1)) then
             j1(j) = jj
             j2(j) = jj + 1
             is_found = .true.
@@ -95,18 +96,33 @@ contains
           end if
         end do
         if (.not. is_found) then
-          if (present(ierr)) then
+          if (merge(extrap, .true., present(extrap))) then
+            if (y2(j) < y1(jj)) then ! south
+              j1(j) = jj
+              j2(j) = jj + 1
+              tmp1 = y1(j1(j)) - y2(j)
+              tmp2 = y1(j2(j)) - y2(j)
+            else ! north
+              j1(j) = jj
+              j2(j) = jj - 1
+              tmp1 = y2(j) - y1(j1(j))
+              tmp2 = y2(j) - y1(j2(j))
+            end if
+            ywgt1(j) =  tmp2 / (tmp2 - tmp1)
+            ywgt2(j) = -tmp1 / (tmp2 - tmp1)
+          else if (present(ierr)) then
             ierr = -1
             deallocate(i1, i2, j1, j2, xwgt1, xwgt2, ywgt1, ywgt2)
             return
           else
             call log_error('latlon_interp_bilinear: Latitude mismatch!', __FILE__, __LINE__)
           end if
+        else
+          tmp1 = y1(j1(j))
+          tmp2 = y1(j2(j))
+          ywgt1(j) = (tmp2 - y2(j)) / (tmp2 - tmp1)
+          ywgt2(j) = (y2(j) - tmp1) / (tmp2 - tmp1)
         end if
-        tmp1 = y1(j1(j))
-        tmp2 = y1(j2(j))
-        ywgt1(j) = (tmp2 - y2(j)) / (tmp2 - tmp1)
-        ywgt2(j) = (y2(j) - tmp1) / (tmp2 - tmp1)
       end do
 
       do j = lb_y2, ub_y2
@@ -140,7 +156,7 @@ contains
 
   end subroutine latlon_interp_bilinear_cell
 
-  subroutine latlon_interp_bilinear_lon_edge(src_lon, src_lat, src_data, dst_mesh, dst_data, zero_pole, ierr)
+  subroutine latlon_interp_bilinear_lon_edge(src_lon, src_lat, src_data, dst_mesh, dst_data, extrap, zero_pole, ierr)
 
     real(r8), intent(in) :: src_lon(:)
     real(r8), intent(in) :: src_lat(:)
@@ -148,6 +164,7 @@ contains
     type(mesh_type), intent(in) :: dst_mesh
     real(r8), intent(out) :: dst_data(dst_mesh%half_lon_lb:dst_mesh%half_lon_ub, &
                                       dst_mesh%full_lat_lb:dst_mesh%full_lat_ub)
+    logical, intent(in), optional :: extrap
     logical, intent(in), optional :: zero_pole
     integer, intent(out), optional :: ierr
 
@@ -210,8 +227,8 @@ contains
       do j = lb_y2, ub_y2
         is_found = .false.
         do jj = 1, ny1-1
-          if ((y2(j) >= y1(jj) .and. y2(j) < y1(jj+1)) .or. &
-            (jj == ny1 - 1 .and. (y2(j) <= y1(ny1) .or. abs(y2(j) - y1(ny1)) < 1.0e-6))) then
+          if (y2(j) < y1(jj)) exit
+          if (y2(j) >= y1(jj) .and. y2(j) < y1(jj+1)) then
             j1(j) = jj
             j2(j) = jj + 1
             is_found = .true.
@@ -219,18 +236,33 @@ contains
           end if
         end do
         if (.not. is_found) then
-          if (present(ierr)) then
+          if (merge(extrap, .true., present(extrap))) then
+            if (y2(j) < y1(jj)) then ! south
+              j1(j) = jj
+              j2(j) = jj + 1
+              tmp1 = y1(j1(j)) - y2(j)
+              tmp2 = y1(j2(j)) - y2(j)
+            else ! north
+              j1(j) = jj
+              j2(j) = jj - 1
+              tmp1 = y2(j) - y1(j1(j))
+              tmp2 = y2(j) - y1(j2(j))
+            end if
+            ywgt1(j) =  tmp2 / (tmp2 - tmp1)
+            ywgt2(j) = -tmp1 / (tmp2 - tmp1)
+          else if (present(ierr)) then
             ierr = -1
             deallocate(i1, i2, j1, j2, xwgt1, xwgt2, ywgt1, ywgt2)
             return
           else
             call log_error('latlon_interp_bilinear: Latitude mismatch!')
           end if
+        else
+          tmp1 = y1(j1(j))
+          tmp2 = y1(j2(j))
+          ywgt1(j) = (tmp2 - y2(j)) / (tmp2 - tmp1)
+          ywgt2(j) = (y2(j) - tmp1) / (tmp2 - tmp1)
         end if
-        tmp1 = y1(j1(j))
-        tmp2 = y1(j2(j))
-        ywgt1(j) = (tmp2 - y2(j)) / (tmp2 - tmp1)
-        ywgt2(j) = (y2(j) - tmp1) / (tmp2 - tmp1)
       end do
 
       do j = lb_y2, ub_y2
@@ -274,7 +306,7 @@ contains
 
   end subroutine latlon_interp_bilinear_lon_edge
 
-  subroutine latlon_interp_bilinear_lat_edge(src_lon, src_lat, src_data, dst_mesh, dst_data, zero_pole, ierr)
+  subroutine latlon_interp_bilinear_lat_edge(src_lon, src_lat, src_data, dst_mesh, dst_data, extrap, zero_pole, ierr)
 
     real(r8), intent(in) :: src_lon(:)
     real(r8), intent(in) :: src_lat(:)
@@ -282,6 +314,7 @@ contains
     type(mesh_type), intent(in) :: dst_mesh
     real(r8), intent(out) :: dst_data(dst_mesh%full_lon_lb:dst_mesh%full_lon_ub, &
                                       dst_mesh%half_lat_lb:dst_mesh%half_lat_ub)
+    logical, intent(in), optional :: extrap
     logical, intent(in), optional :: zero_pole
     integer, intent(out), optional :: ierr
 
@@ -344,8 +377,8 @@ contains
       do j = lb_y2, ub_y2
         is_found = .false.
         do jj = 1, ny1-1
-          if ((y2(j) >= y1(jj) .and. y2(j) < y1(jj+1)) .or. &
-            (jj == ny1 - 1 .and. (y2(j) <= y1(ny1) .or. abs(y2(j) - y1(ny1)) < 1.0e-6))) then
+          if (y2(j) < y1(jj)) exit
+          if (y2(j) >= y1(jj) .and. y2(j) < y1(jj+1)) then
             j1(j) = jj
             j2(j) = jj + 1
             is_found = .true.
@@ -353,18 +386,33 @@ contains
           end if
         end do
         if (.not. is_found) then
-          if (present(ierr)) then
+          if (merge(extrap, .true., present(extrap))) then
+            if (y2(j) < y1(jj)) then ! south
+              j1(j) = jj
+              j2(j) = jj + 1
+              tmp1 = y1(j1(j)) - y2(j)
+              tmp2 = y1(j2(j)) - y2(j)
+            else ! north
+              j1(j) = jj
+              j2(j) = jj - 1
+              tmp1 = y2(j) - y1(j1(j))
+              tmp2 = y2(j) - y1(j2(j))
+            end if
+            ywgt1(j) =  tmp2 / (tmp2 - tmp1)
+            ywgt2(j) = -tmp1 / (tmp2 - tmp1)
+          else if (present(ierr)) then
             ierr = -1
             deallocate(i1, i2, j1, j2, xwgt1, xwgt2, ywgt1, ywgt2)
             return
           else
             call log_error('latlon_interp_bilinear: Latitude mismatch!')
           end if
+        else
+          tmp1 = y1(j1(j))
+          tmp2 = y1(j2(j))
+          ywgt1(j) = (tmp2 - y2(j)) / (tmp2 - tmp1)
+          ywgt2(j) = (y2(j) - tmp1) / (tmp2 - tmp1)
         end if
-        tmp1 = y1(j1(j))
-        tmp2 = y1(j2(j))
-        ywgt1(j) = (tmp2 - y2(j)) / (tmp2 - tmp1)
-        ywgt2(j) = (y2(j) - tmp1) / (tmp2 - tmp1)
       end do
 
       do j = lb_y2, ub_y2

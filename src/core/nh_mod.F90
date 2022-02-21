@@ -6,7 +6,6 @@ module nh_mod
   use parallel_mod
   use process_mod
   use interp_mod
-  use reduce_mod
   use math_mod
   use debug_mod
 
@@ -28,17 +27,9 @@ contains
     integer iblk
 
     do iblk = 1, size(proc%blocks)
-      associate (mesh      => blocks(iblk)%mesh              , &
-                 ph        => blocks(iblk)%state(1)%ph       , &
-                 ph_lev    => blocks(iblk)%state(1)%ph_lev   , &
-                 p         => blocks(iblk)%state(1)%p        , &
-                 p_lev     => blocks(iblk)%state(1)%p_lev    , &
-                 p_lev_lon => blocks(iblk)%state(1)%p_lev_lon, &
-                 p_lev_lat => blocks(iblk)%state(1)%p_lev_lat)
-        call diag_rhod(blocks(iblk), blocks(iblk)%state(1))
-        call diag_p   (blocks(iblk), blocks(iblk)%state(1))
-        call interp_p (blocks(iblk), blocks(iblk)%state(1))
-      end associate
+      call diag_rhod (blocks(iblk), blocks(iblk)%state(1))
+      call diag_p    (blocks(iblk), blocks(iblk)%state(1))
+      call interp_p  (blocks(iblk), blocks(iblk)%state(1))
       call diag_m_lev(blocks(iblk), blocks(iblk)%state(1))
     end do
 
@@ -57,16 +48,14 @@ contains
     call interp_gz            (block, star_state)
     call interp_w             (block, star_state)
     call interp_wedphdlev     (block, star_state)
-    call reduce_run           (block, star_state, dt, nh_pass_1)
 
     call calc_adv_gz          (block, star_state, tend)
     call calc_adv_w           (block, star_state, tend)
     call implicit_w_solver    (block, tend, old_state, star_state, new_state, dt)
 
     call diag_rhod            (block, new_state)
-    call diag_linearized_p    (block, old_state, new_state)
+    call diag_p               (block, new_state)
     call interp_p             (block, new_state)
-    call reduce_run           (block, new_state, dt, nh_pass_2)
 
   end subroutine nh_solve
 
@@ -77,11 +66,14 @@ contains
 
     integer i, j, k
 
-    associate (mesh => block%mesh)
+    associate (mesh   => block%mesh  , &
+               ph     => state%ph    , & ! in
+               ph_lev => state%ph_lev, & ! in
+               m_lev  => state%m_lev)    ! out
       do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            state%m_lev(i,j,k) = state%ph(i,j,k) - state%ph(i,j,k-1)
+            m_lev(i,j,k) = ph(i,j,k) - ph(i,j,k-1)
           end do
         end do
       end do
@@ -89,16 +81,17 @@ contains
       k = mesh%half_lev_ibeg
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          state%m_lev(i,j,k) = state%ph(i,j,k) - state%ph_lev(i,j,k)
+          m_lev(i,j,k) = ph(i,j,k) - ph_lev(i,j,k)
         end do
       end do
       ! Bottom boundary
       k = mesh%half_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          state%m_lev(i,j,k) = state%ph_lev(i,j,k) - state%ph(i,j,k-1)
+          m_lev(i,j,k) = ph_lev(i,j,k) - ph(i,j,k-1)
         end do
       end do
+      call fill_halo(block, m_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
     end associate
 
   end subroutine diag_m_lev
@@ -187,15 +180,12 @@ contains
     type(state_type), intent(in) :: state
     type(tend_type), intent(inout) :: tend
 
-    integer i, j, k, move
+    integer i, j, k
     real(r8) a, b, dwedphdlevgz, dwedphdlev
     real(r8) work(state%mesh%full_lon_ibeg:state%mesh%full_lon_iend,state%mesh%num_half_lev)
     real(r8) pole(state%mesh%num_half_lev)
 
     associate (mesh          => block%mesh         , &
-               reduced_mesh  => block%reduced_mesh , &
-               reduced_tend  => block%reduced_tend , &
-               reduced_state => block%reduced_state, &
                mf_lev_lon_n  => state%mf_lev_lon_n , & ! in
                mf_lev_lat_n  => state%mf_lev_lat_n , & ! in
                gz_lev_lon    => state%gz_lev_lon   , & ! in
@@ -210,32 +200,12 @@ contains
                adv_gz_lev    => tend%adv_gz_lev)       ! out
       do k = mesh%half_lev_ibeg, mesh%half_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-          if (reduced_mesh(j)%reduce_factor > 1) then
-            adv_gz_lon(:,j,k) = 0.0_r8
-            do move = 1, reduced_mesh(j)%reduce_factor
-              do i = reduced_mesh(j)%full_lon_ibeg, reduced_mesh(j)%full_lon_iend
-                reduced_tend(j)%adv_gz_lon(i,k) = (               &
-                  reduced_state(j)%mf_lev_lon_n(k,i  ,0,move) * ( &
-                    reduced_state(j)%gz_lev_lon(k,i  ,0,move) -   &
-                    reduced_state(j)%gz_lev    (k,i  ,0,move)     &
-                  ) -                                             &
-                  reduced_state(j)%mf_lev_lon_n(k,i-1,0,move) * ( &
-                    reduced_state(j)%gz_lev_lon(k,i-1,0,move) -   &
-                    reduced_state(j)%gz_lev    (k,i  ,0,move)     &
-                  )                                               &
-                ) / reduced_mesh(j)%de_lon(0) / reduced_state(j)%m_lev(k,i,0,move)
-              end do
-              call reduce_append_array(move, reduced_mesh(j), reduced_tend(j)%adv_gz_lon(:,k), mesh, adv_gz_lon(:,j,k))
-            end do
-            call overlay_inner_halo(block, adv_gz_lon(:,j,k), west_halo=.true.)
-          else
-            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              adv_gz_lon(i,j,k) = (                                             &
-                mf_lev_lon_n(i  ,j,k) * (gz_lev_lon(i  ,j,k) - gz_lev(i,j,k)) - &
-                mf_lev_lon_n(i-1,j,k) * (gz_lev_lon(i-1,j,k) - gz_lev(i,j,k))   &
-              ) / mesh%de_lon(j) / m_lev(i,j,k)
-            end do
-          end if
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            adv_gz_lon(i,j,k) = (                                             &
+              mf_lev_lon_n(i  ,j,k) * (gz_lev_lon(i  ,j,k) - gz_lev(i,j,k)) - &
+              mf_lev_lon_n(i-1,j,k) * (gz_lev_lon(i-1,j,k) - gz_lev(i,j,k))   &
+            ) / mesh%de_lon(j) / m_lev(i,j,k)
+          end do
         end do
       end do
 
@@ -316,15 +286,12 @@ contains
     type(state_type), intent(in) :: state
     type(tend_type), intent(inout) :: tend
 
-    integer i, j, k, move
+    integer i, j, k
     real(r8) a, b, dwedphdlevw, dwedphdlev
     real(r8) work(state%mesh%full_lon_ibeg:state%mesh%full_lon_iend,state%mesh%num_half_lev)
     real(r8) pole(state%mesh%num_half_lev)
 
     associate (mesh          => block%mesh         , &
-               reduced_mesh  => block%reduced_mesh , &
-               reduced_tend  => block%reduced_tend , &
-               reduced_state => block%reduced_state, &
                mf_lev_lon_n  => state%mf_lev_lon_n , &
                mf_lev_lat_n  => state%mf_lev_lat_n , &
                w_lev_lon     => state%w_lev_lon    , &
@@ -339,32 +306,12 @@ contains
                adv_w_lev     => tend%adv_w_lev)
       do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-          if (reduced_mesh(j)%reduce_factor > 1) then
-            adv_w_lon(:,j,k) = 0.0_r8
-            do move = 1, reduced_mesh(j)%reduce_factor
-              do i = reduced_mesh(j)%full_lon_ibeg, reduced_mesh(j)%full_lon_iend
-                reduced_tend(j)%adv_w_lon(i,k) = (                &
-                  reduced_state(j)%mf_lev_lon_n(k,i  ,0,move) * ( &
-                    reduced_state(j)%w_lev_lon (k,i  ,0,move) -   &
-                    reduced_state(j)%w_lev     (k,i  ,0,move)     &
-                  ) -                                             &
-                  reduced_state(j)%mf_lev_lon_n(k,i-1,0,move) * ( &
-                    reduced_state(j)%w_lev_lon (k,i-1,0,move) -   &
-                    reduced_state(j)%w_lev     (k,i  ,0,move)     &
-                  )                                               &
-                ) / reduced_mesh(j)%de_lon(0) / reduced_state(j)%m_lev(k,i,0,move)
-              end do
-              call reduce_append_array(move, reduced_mesh(j), reduced_tend(j)%adv_w_lon(:,k), mesh, adv_w_lon(:,j,k))
-            end do
-            call overlay_inner_halo(block, adv_w_lon(:,j,k), west_halo=.true.)
-          else
-            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              adv_w_lon(i,j,k) = (                                            &
-                mf_lev_lon_n(i  ,j,k) * (w_lev_lon(i  ,j,k) - w_lev(i,j,k)) - &
-                mf_lev_lon_n(i-1,j,k) * (w_lev_lon(i-1,j,k) - w_lev(i,j,k))   &
-              ) / mesh%de_lon(j) / m_lev(i,j,k)
-            end do
-          end if
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            adv_w_lon(i,j,k) = (                                            &
+              mf_lev_lon_n(i  ,j,k) * (w_lev_lon(i  ,j,k) - w_lev(i,j,k)) - &
+              mf_lev_lon_n(i-1,j,k) * (w_lev_lon(i-1,j,k) - w_lev(i,j,k))   &
+            ) / mesh%de_lon(j) / m_lev(i,j,k)
+          end do
         end do
       end do
 
@@ -447,11 +394,9 @@ contains
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             rhod(i,j,k) = - m(i,j,k) / (gz_lev(i,j,k+1) - gz_lev(i,j,k))
             if (rhod(i,j,k) <= 0) then
-              print *, i, j, k, rhod(i,j,k), m(i,j,k), gz_lev(i,j,k:k+1)
-              do kk = mesh%half_lev_iend, mesh%half_lev_ibeg, -1
-                print *, kk, gz_lev(i,j,kk)
-              end do
-              stop 'negative rhod!'
+              print *, mesh%full_lon_deg(i), '(', to_str(i), ')', mesh%full_lat_deg(j), '(', to_str(j), ')', k
+              print *, 'Model is instable!'
+              call process_stop(1)
             end if
           end do
         end do
@@ -545,39 +490,39 @@ contains
 
   subroutine apply_bc_w_lev(block, star_state, new_state)
 
-    type(block_type), intent(in) :: block
+    type(block_type), intent(inout) :: block
     type(state_type), intent(in) :: star_state
     type(state_type), intent(inout) :: new_state
 
     real(r8) us_dzsdlon, vs_dzsdlat
     integer i, j, k
 
-    associate (mesh      => block%mesh          , &
-               u_lev_lon => star_state%u_lev_lon, & ! in
-               v_lev_lat => star_state%v_lev_lat, & ! in
-               dzsdlon   => block%static%dzsdlon, & ! in
-               dzsdlat   => block%static%dzsdlat, & ! in
-               w_lev     => new_state%w_lev)        ! out
-      k = mesh%half_lev_iend
-      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          us_dzsdlon = (u_lev_lon(i-1,j,k) * dzsdlon(i-1,j) + &
-                        u_lev_lon(i  ,j,k) * dzsdlon(i  ,j)) * 0.5_r8
-          vs_dzsdlat = (v_lev_lat(i,j-1,k) * dzsdlat(i,j-1) + &
-                        v_lev_lat(i,j  ,k) * dzsdlat(i,j  )) * 0.5_r8
-          w_lev(i,j,k) = us_dzsdlon + vs_dzsdlat
-        end do
+    associate (mesh           => block%mesh          , &
+               u_lev_lon      => star_state%u_lev_lon, & ! in
+               v_lev_lat      => star_state%v_lev_lat, & ! in
+               dzsdlon        => block%static%dzsdlon, & ! in
+               dzsdlat        => block%static%dzsdlat, & ! in
+               w_lev          => new_state%w_lev)        ! out
+    k = mesh%half_lev_iend
+    do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+        us_dzsdlon = (u_lev_lon(i-1,j,k) * dzsdlon(i-1,j) + &
+                      u_lev_lon(i  ,j,k) * dzsdlon(i  ,j)) * 0.5_r8
+        vs_dzsdlat = (v_lev_lat(i,j-1,k) * dzsdlat(i,j-1) + &
+                      v_lev_lat(i,j  ,k) * dzsdlat(i,j  )) * 0.5_r8
+        w_lev(i,j,k) = us_dzsdlon + vs_dzsdlat
       end do
+    end do
     end associate
 
   end subroutine apply_bc_w_lev
 
   subroutine implicit_w_solver(block, tend, old_state, star_state, new_state, dt)
 
-    type(block_type), intent(in) :: block
-    type(tend_type), intent(in) :: tend
-    type(state_type), intent(in) :: old_state
-    type(state_type), intent(in) :: star_state
+    type(block_type), intent(inout) :: block
+    type(tend_type ), intent(in   ) :: tend
+    type(state_type), intent(in   ) :: old_state
+    type(state_type), intent(in   ) :: star_state
     type(state_type), intent(inout) :: new_state
     real(8), intent(in) :: dt
 
@@ -697,10 +642,10 @@ contains
     real(r8), intent(in   ) :: gz(:)
     real(r8), intent(inout) :: w (:)
 
-    real(r8), parameter :: gzd = 10.0e3_r8 * g
-    real(r8) c
+    real(r8) gzd, c
     integer k
 
+    gzd = rayleigh_damp_top * g
     do k = 2, size(w) - 1
       if (gz(k) > gz(1) - gzd) then
         c = rayleigh_damp_w_coef * sin(pi05 * (1 - (gz(1) - gz(k)) / gzd))**2

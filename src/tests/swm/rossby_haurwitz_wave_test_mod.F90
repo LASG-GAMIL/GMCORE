@@ -13,7 +13,7 @@ module rossby_haurwitz_wave_test_mod
 
   real(r8), parameter :: R = 4.0d0
   real(r8), parameter :: omg = 7.848d-6
-  real(r8), parameter :: gz0 = 8.0d3 * g
+  real(r8)            :: gz0
 
 contains
 
@@ -38,6 +38,8 @@ contains
     type(mesh_type), pointer :: mesh
 
     mesh => block%mesh
+
+    gz0 = 8.0d3 * g
 
     block%static%gzs(:,:) = 0.0
 

@@ -16,8 +16,8 @@ module jet_zonal_flow_test_mod
   real(r8), parameter :: lat0 = pi / 7.0_r8
   real(r8), parameter :: lat1 = pi / 2.0_r8 - lat0
   real(r8), parameter :: en = exp(-4.0_r8 / (lat1 - lat0)**2_r8)
-  real(r8), parameter :: gh0 = g * 1.0e4_r8
-  real(r8), parameter :: ghd = g * 120_r8
+  real(r8)            :: gh0
+  real(r8)            :: ghd
   real(r8), parameter :: lat2 = pi / 4.0_r8
   real(r8), parameter :: alpha = 1.0_r8 / 3.0_r8
   real(r8), parameter :: beta = 1.0_r8 / 15.0_r8
@@ -33,6 +33,9 @@ contains
     type(mesh_type), pointer :: mesh
 
     mesh => block%mesh
+
+    gh0 = g * 1.0d4
+    ghd = g * 120.0d0
 
     block%static%gzs = 0.0_r8
 

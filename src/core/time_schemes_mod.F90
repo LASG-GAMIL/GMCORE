@@ -8,6 +8,7 @@ module time_schemes_mod
   use operators_mod
   use parallel_mod
   use nh_mod
+  use filter_mod
 
   implicit none
 
@@ -80,11 +81,9 @@ contains
     real(8), intent(in) :: dt
     integer, intent(in) :: pass
 
-    type(mesh_type), pointer :: mesh
     integer i, j, k
 
-    mesh => old_state%mesh
-
+    associate (mesh => block%mesh)
     if (baroclinic) then
       if (tend%update_phs) then
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -93,6 +92,8 @@ contains
           end do
         end do
         call fill_halo(block, new_state%phs, full_lon=.true., full_lat=.true.)
+        call filter_on_cell(block, new_state%phs, new_state%phs_f)
+        call fill_halo(block, new_state%phs_f, full_lon=.true., full_lat=.true.)
 
         call diag_ph(block, new_state)
         call diag_m (block, new_state)
@@ -101,6 +102,7 @@ contains
         end if
       else if (tend%copy_phs) then
         new_state%phs    = old_state%phs
+        new_state%phs_f  = old_state%phs_f
         new_state%ph_lev = old_state%ph_lev
         new_state%ph     = old_state%ph
         new_state%m      = old_state%m
@@ -116,8 +118,12 @@ contains
           end do
         end do
         call fill_halo(block, new_state%pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+        ! NOTE: When we use FFSL to transport pt, it may be not needed to filter pt.
+        call filter_on_cell(block, new_state%pt, new_state%pt_f)
+        call fill_halo(block, new_state%pt_f, full_lon=.true., full_lat=.true., full_lev=.true.)
       else if (tend%copy_pt) then
-        new_state%pt = old_state%pt
+        new_state%pt   = old_state%pt
+        new_state%pt_f = old_state%pt_f
       end if
     else
       if (tend%update_gz) then
@@ -129,12 +135,15 @@ contains
           end do
         end do
         call fill_halo(block, new_state%gz, full_lon=.true., full_lat=.true.)
+        call filter_on_cell(block, new_state%gz, new_state%gz_f)
+        call fill_halo(block, new_state%gz_f, full_lon=.true., full_lat=.true.)
       else if (tend%copy_gz) then
-        new_state%gz = old_state%gz
+        new_state%gz   = old_state%gz
+        new_state%gz_f = old_state%gz_f
       end if
     end if
 
-    if (tend%update_u) then
+    if (tend%update_u .and. tend%update_v) then
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
@@ -142,10 +151,6 @@ contains
           end do
         end do
       end do
-      call fill_halo(block, new_state%u, full_lon=.false., full_lat=.true., full_lev=.true.)
-    end if
-
-    if (tend%update_v) then
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -153,18 +158,29 @@ contains
           end do
         end do
       end do
-      if (limit_pole_v) then
-        if (mesh%has_south_pole()) then
-          j = mesh%half_lat_ibeg
-          new_state%v(:,j,:) = (1 - limit_pole_v_wgt) * new_state%v(:,j,:) + limit_pole_v_wgt * new_state%v(:,j+1,:)
-        end if
-        if (mesh%has_north_pole()) then
-          j = mesh%half_lat_iend
-          new_state%v(:,j,:) = (1 - limit_pole_v_wgt) * new_state%v(:,j,:) + limit_pole_v_wgt * new_state%v(:,j-1,:)
-        end if
+      if (mesh%has_south_pole()) then
+        j = mesh%half_lat_ibeg
+        new_state%v(:,j,:) = 0.4_r8 * new_state%v(:,j,:) + 0.6_r8 * new_state%v(:,j+1,:)
       end if
+      if (mesh%has_north_pole()) then
+        j = mesh%half_lat_iend
+        new_state%v(:,j,:) = 0.4_r8 * new_state%v(:,j,:) + 0.6_r8 * new_state%v(:,j-1,:)
+      end if
+      call fill_halo(block, new_state%u, full_lon=.false., full_lat=.true., full_lev=.true.)
       call fill_halo(block, new_state%v, full_lon=.true., full_lat=.false., full_lev=.true.)
+      call filter_on_lon_edge(block, new_state%u, new_state%u_f)
+      call filter_on_lat_edge(block, new_state%v, new_state%v_f)
+      call fill_halo(block, new_state%u_f, full_lon=.false., full_lat=.true., full_lev=.true.)
+      call fill_halo(block, new_state%v_f, full_lon=.true., full_lat=.false., full_lev=.true.)
     end if
+
+    if (time_is_alerted('filter_reset')) then
+      if (tend%update_phs) new_state%phs = new_state%phs_f
+      if (tend%update_pt ) new_state%pt  = new_state%pt_f
+      if (tend%update_u  ) new_state%u   = new_state%u_f
+      if (tend%update_v  ) new_state%v   = new_state%v_f
+    end if
+    end associate
 
   end subroutine update_state
 
@@ -291,6 +307,7 @@ contains
     integer, intent(in) :: pass
 
     integer s1, s2, s3
+    real(r8), parameter :: c1 = 0.25_r8, c2 = 2.0_r8 / 3.0_r8
 
     s1 = 3
     s2 = 4
@@ -300,11 +317,11 @@ contains
     call update_state(block, block%tend(s1), block%state(old), block%state(s1), dt, pass)
 
     call space_operators(block, block%state(old), block%state(s1), block%state(s2), block%tend(s2), dt, pass)
-    block%tend(s3) = block%tend(s1) + block%tend(s2)
-    call update_state(block, block%tend(s3), block%state(old), block%state(s2), 0.25_r8 * dt, pass)
+    block%tend(s2) = c1 * (block%tend(s1) + block%tend(s2))
+    call update_state(block, block%tend(s2), block%state(old), block%state(s2), dt, pass)
 
-    call space_operators(block, block%state(old), block%state(s2), block%state(new), block%tend(s3), 0.5_r8 * dt, pass)
-    block%tend(old) = (block%tend(s1) + block%tend(s2) + 4.0_r8 * block%tend(s3)) / 6.0_r8
+    call space_operators(block, block%state(old), block%state(s2), block%state(new), block%tend(s3), dt, pass)
+    block%tend(old) = c2 * (block%tend(s2) + block%tend(s3))
     call update_state(block, block%tend(old), block%state(old), block%state(new), dt, pass)
 
   end subroutine ssp_runge_kutta_3rd

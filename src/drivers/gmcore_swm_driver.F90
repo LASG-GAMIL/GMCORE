@@ -12,6 +12,7 @@ program gmcore_swm_driver
   use steady_geostrophic_flow_test_mod
   use cross_pole_flow_test_mod
   use shallow_water_waves_test_mod
+  use vortex_erosion_test_mod
 
   implicit none
 
@@ -32,6 +33,9 @@ program gmcore_swm_driver
   end if
 
   call parse_namelist(namelist_path)
+
+  call const_init(planet)
+
   call gmcore_init(namelist_path)
 
   if (restart) then
@@ -50,6 +54,8 @@ program gmcore_swm_driver
       set_ic => cross_pole_flow_test_set_ic
     case ('shallow_water_waves')
       set_ic => shallow_water_waves_test_set_ic
+    case ('vortex_erosion')
+      set_ic => vortex_erosion_test_set_ic
     case default
       call log_error('Unknown test case ' // trim(test_case) // '!')
     end select

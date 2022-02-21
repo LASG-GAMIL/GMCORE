@@ -1,65 +1,73 @@
 module prepare_mod
 
   use const_mod
+  use namelist_mod
+  use parallel_mod
+  use process_mod
+  use block_mod
   use topo_mod
   use bkg_mod
-  use process_mod
+  use operators_mod
+
+  implicit none
 
 contains
 
-  subroutine prepare_run(topo_file, bkg_file, bkg_type, &
-                         zero_min_lon, zero_max_lon, zero_min_lat, zero_max_lat, &
-                         smth_min_lon, smth_max_lon, smth_min_lat, smth_max_lat, &
-                         smth_steps)
+  subroutine prepare_static(block)
 
-    character(*), intent(in) :: topo_file
-    character(*), intent(in) :: bkg_file
-    character(*), intent(in) :: bkg_type
-    real(r8), intent(in), optional :: zero_min_lon(:)
-    real(r8), intent(in), optional :: zero_max_lon(:)
-    real(r8), intent(in), optional :: zero_min_lat(:)
-    real(r8), intent(in), optional :: zero_max_lat(:)
-    real(r8), intent(in), optional :: smth_min_lon(:)
-    real(r8), intent(in), optional :: smth_max_lon(:)
-    real(r8), intent(in), optional :: smth_min_lat(:)
-    real(r8), intent(in), optional :: smth_max_lat(:)
-    integer , intent(in), optional :: smth_steps(:)
+    class(block_type), intent(inout) :: block
 
-    integer iblk
+    integer i, j
+
+    associate (mesh    => block%mesh          , &
+               gzs     => block%static%gzs    , & ! in
+               dzsdlon => block%static%dzsdlon, & ! out
+               dzsdlat => block%static%dzsdlat)   ! out
+      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+          dzsdlon(i,j) = (gzs(i+1,j) - gzs(i,j)) / g / mesh%de_lon(j)
+        end do
+      end do
+      do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          dzsdlat(i,j) = (gzs(i,j+1) - gzs(i,j)) / g / mesh%de_lat(j)
+        end do
+      end do
+      call fill_halo(block, dzsdlon, full_lon=.false., full_lat=.true.)
+      call fill_halo(block, dzsdlat, full_lon=.true., full_lat=.false.)
+    end associate
+
+  end subroutine prepare_static
+
+  subroutine prepare_run()
+
+    integer iblk, i
 
     call topo_read(topo_file)
     do iblk = 1, size(proc%blocks)
       call topo_regrid(proc%blocks(iblk))
     end do
-  
-    if (present(zero_min_lon) .and. present(zero_max_lon) .and. present(zero_min_lat) .and. present(zero_max_lat)) then
+    if (use_topo_smooth) then
       do iblk = 1, size(proc%blocks)
-        do i = 1, size(zero_min_lon)
-          if (zero_min_lon(i) /= -1.0e33 .and. zero_max_lon(i) /= -1.0e33 .and. &
-              zero_min_lat(i) /= -1.0e33 .and. zero_max_lat(i) /= -1.0e33) then
-            call topo_zero(proc%blocks(iblk), zero_min_lon(i), zero_max_lon(i), zero_min_lat(i), zero_max_lat(i))
-          end if
-        end do
+        call topo_smooth(proc%blocks(iblk))
       end do
     end if
-    if (present(smth_min_lon) .and. present(smth_max_lon) .and. present(smth_min_lat) .and. present(smth_max_lat) .and. present(smth_steps)) then
-      do iblk = 1, size(proc%blocks)
-        do i = 1, size(smth_min_lon)
-          if (smth_min_lon(i) /= -1.0e33 .and. smth_max_lon(i) /= -1.0e33 .and. &
-              smth_min_lat(i) /= -1.0e33 .and. smth_max_lat(i) /= -1.0e33) then
-            call topo_smth(proc%blocks(iblk), smth_min_lon(i), smth_max_lon(i), smth_min_lat(i), smth_max_lat(i), smth_steps(i))
-          end if
-        end do
-      end do
-    end if
-  
+
     call bkg_read(bkg_type, bkg_file)
-  
+
     call bkg_regrid_phs()
     call bkg_calc_ph()
     call bkg_regrid_pt()
     call bkg_regrid_u()
     call bkg_regrid_v()
+
+    if (nonhydrostatic) then
+      do iblk = 1, size(proc%blocks)
+        call diag_ph    (proc%blocks(iblk), proc%blocks(iblk)%state(1))
+        call diag_t     (proc%blocks(iblk), proc%blocks(iblk)%state(1))
+        call diag_gz_lev(proc%blocks(iblk), proc%blocks(iblk)%state(1))
+      end do
+    end if
 
   end subroutine prepare_run
 

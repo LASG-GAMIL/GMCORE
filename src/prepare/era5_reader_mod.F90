@@ -18,8 +18,10 @@ module era5_reader_mod
   real(r8), allocatable, dimension(:,:,:) :: era5_u
   real(r8), allocatable, dimension(:,:,:) :: era5_v
   real(r8), allocatable, dimension(:,:,:) :: era5_t
+  real(r8), allocatable, dimension(:,:,:) :: era5_q
   real(r8), allocatable, dimension(:,:  ) :: era5_ps
   real(r8), allocatable, dimension(:,:  ) :: era5_mslp
+  real(r8), allocatable, dimension(:,:  ) :: era5_psd  ! Dry surface pressure
 
 contains
 
@@ -45,8 +47,10 @@ contains
     allocate(era5_u   (num_era5_lon,num_era5_lat,num_era5_lev))
     allocate(era5_v   (num_era5_lon,num_era5_lat,num_era5_lev))
     allocate(era5_t   (num_era5_lon,num_era5_lat,num_era5_lev))
+    allocate(era5_q   (num_era5_lon,num_era5_lat,num_era5_lev))
     allocate(era5_ps  (num_era5_lon,num_era5_lat             ))
     allocate(era5_mslp(num_era5_lon,num_era5_lat             ))
+    allocate(era5_psd (num_era5_lon,num_era5_lat             ))
 
     call fiona_start_input('era5')
     call fiona_input('era5', 'longitude', era5_lon )
@@ -55,9 +59,8 @@ contains
     call fiona_input('era5', 'u'        , era5_u   )
     call fiona_input('era5', 'v'        , era5_v   )
     call fiona_input('era5', 't'        , era5_t   )
-    if (fiona_has_var('era5', 'sp')) then
-      call fiona_input('era5', 'sp'     , era5_ps  )
-    end if
+    !call fiona_input('era5', 'q'        , era5_q   )
+    !call fiona_input('era5', 'sp'       , era5_ps  )
     call fiona_input('era5', 'msl'      , era5_mslp)
     call fiona_end_input('era5')
 
@@ -68,6 +71,7 @@ contains
       tmp = era5_u(:,num_era5_lat:1:-1,k); era5_u(:,:,k) = tmp
       tmp = era5_v(:,num_era5_lat:1:-1,k); era5_v(:,:,k) = tmp
       tmp = era5_t(:,num_era5_lat:1:-1,k); era5_t(:,:,k) = tmp
+      tmp = era5_q(:,num_era5_lat:1:-1,k); era5_q(:,:,k) = tmp
     end do
     tmp = era5_ps  (:,num_era5_lat:1:-1); era5_ps   = tmp
     tmp = era5_mslp(:,num_era5_lat:1:-1); era5_mslp = tmp
@@ -86,8 +90,10 @@ contains
     if (allocated(era5_u   )) deallocate(era5_u   )
     if (allocated(era5_v   )) deallocate(era5_v   )
     if (allocated(era5_t   )) deallocate(era5_t   )
+    if (allocated(era5_q   )) deallocate(era5_q   )
     if (allocated(era5_ps  )) deallocate(era5_ps  )
     if (allocated(era5_mslp)) deallocate(era5_mslp)
+    if (allocated(era5_psd )) deallocate(era5_psd )
 
   end subroutine era5_reader_final
 

@@ -13,10 +13,10 @@ module mountain_zonal_flow_test_mod
 
   real(r8), parameter :: alpha = 0.0
   real(r8), parameter :: u0 = 20.0
-  real(r8), parameter :: gz0 = 5960.0 * g
+  real(r8)            :: gz0
   real(r8), parameter :: lon0 = pi * 1.5
   real(r8), parameter :: lat0 = pi / 6.0
-  real(r8), parameter :: gzs0 = 2000.0 * g
+  real(r8)            :: gzs0
   real(r8), parameter :: R = pi / 9.0
 
 contains
@@ -28,6 +28,9 @@ contains
     real(r8) cos_lat, sin_lat, cos_lon, sin_lon, cos_alpha, sin_alpha, dlon, d
     integer i, j, k
     type(mesh_type), pointer :: mesh
+
+    gz0  = 5960.0d0 * g
+    gzs0 = 2000.0d0 * g
 
     cos_alpha = cos(alpha)
     sin_alpha = sin(alpha)

@@ -12,9 +12,7 @@ module process_mod
   private
 
   public process_init
-  public process_blocks_create
-  public process_blocks_init_stage_1
-  public process_blocks_init_stage_2
+  public process_create_blocks
   public process_stop
   public process_final
   public proc
@@ -24,13 +22,7 @@ module process_mod
   integer, public, parameter :: decomp_1d_lat = 1
   integer, public, parameter :: decomp_2d_simple = 2
 
-  integer, public, parameter :: decomp_reduce_south_region   = 1
-  integer, public, parameter :: decomp_reduce_south_boundary = 2
-  integer, public, parameter :: decomp_reduce_north_region   = 3
-  integer, public, parameter :: decomp_reduce_north_boundary = 4
   integer, public, parameter :: decomp_normal_region         = 5
-  integer, public, parameter :: decomp_normal_south_boundary = 6
-  integer, public, parameter :: decomp_normal_north_boundary = 7
 
   type process_neighbor_type
     integer :: id       = MPI_PROC_NULL
@@ -106,7 +98,7 @@ contains
 
     call setup_mpi_simple()
     call decompose_domains()
-    call setup_zonal_comm_for_reduce()
+    call setup_zonal_comm()
 
   end subroutine process_init
 
@@ -150,7 +142,7 @@ contains
     if (num_proc_lon(1) * num_proc_lat(1) == proc%np) then
       ! Check if process topology in namelist is compatible with MPI runtime.
       np = 0
-      do i = 1, nest_max_dom
+      do i = 1, 1
         np = np + num_proc_lon(i) * num_proc_lat(i)
       end do
       if (proc%np /= np .and. is_root_proc()) then
@@ -159,7 +151,7 @@ contains
       end if
       ! Set the process topology into proc object.
       np = 0
-      do i = 1, nest_max_dom
+      do i = 1, 1
         np = np + num_proc_lon(i) * num_proc_lat(i)
         if (proc%id + 1 <= np) then
           proc%cart_dims(1) = num_proc_lon(i)
@@ -216,23 +208,19 @@ contains
 
   end subroutine decompose_domains
 
-  subroutine setup_zonal_comm_for_reduce()
+  subroutine setup_zonal_comm()
 
-    ! Create zonal communicator for reduce algorithm.
-    if (proc%idom == 1) then ! Only root domain has reduce region.
+    if (proc%idom == 1) then ! Only root domain has polar region.
       call proc%zonal_circle%init()
     end if
 
-  end subroutine setup_zonal_comm_for_reduce
+  end subroutine setup_zonal_comm
 
-  subroutine process_blocks_create()
+  subroutine process_create_blocks()
 
-    call process_blocks_init_stage_1()
-    call process_blocks_init_stage_2()
-
-  end subroutine process_blocks_create
-
-  subroutine process_blocks_init_stage_1()
+    integer hw, i, j, dtype
+    integer max_hw, lon_halo_width
+    integer ierr, status(MPI_STATUS_SIZE)
 
     if (.not. allocated(proc%blocks)) allocate(proc%blocks(1))
 
@@ -240,20 +228,13 @@ contains
     call proc%blocks(1)%init_stage_1(proc%id, global_mesh%lon_halo_width, global_mesh%lat_halo_width, &
                                      proc%lon_ibeg, proc%lon_iend, proc%lat_ibeg, proc%lat_iend)
 
-  end subroutine process_blocks_init_stage_1
-
-  subroutine process_blocks_init_stage_2()
-
-    integer hw, i, j, dtype
-    integer max_reduce_factor, lon_halo_width
-    integer ierr, status(MPI_STATUS_SIZE)
-
-    ! Each process calculate lon_halo_width from its reduced_mesh(:)%reduce_factor.
-    max_reduce_factor = 2
-    do j = proc%blocks(1)%mesh%full_lat_lb, proc%blocks(1)%mesh%full_lat_ub
-      max_reduce_factor = max(max_reduce_factor, proc%blocks(1)%reduced_mesh(j)%reduce_factor - 1)
+    ! Each process calculate lon_halo_width from its filter%ngrid_lat(:).
+    max_hw = 2
+    do j = proc%blocks(1)%mesh%half_lat_ibeg, proc%blocks(1)%mesh%half_lat_iend
+      max_hw = max(max_hw, (proc%blocks(1)%filter%ngrid_lat(j) - 1) / 2)
     end do
-    lon_halo_width = min(max_reduce_factor, proc%blocks(1)%mesh%lon_halo_width)
+    lon_halo_width = max(max_hw, global_mesh%lon_halo_width)
+
     ! Get lon_halo_width from southern and northern neighbors.
     if (proc%ngb(south)%id /= MPI_PROC_NULL) then
       call MPI_SENDRECV(lon_halo_width, 1, MPI_INT, proc%ngb(south)%id, 100, &
@@ -270,7 +251,8 @@ contains
       proc%ngb(north)%lon_halo_width = 0
     end if
 
-    call proc%blocks(1)%init_stage_2(max(lon_halo_width, proc%ngb(south)%lon_halo_width, proc%ngb(north)%lon_halo_width))
+    call global_mesh%reinit(max(lon_halo_width, proc%ngb(south)%lon_halo_width, proc%ngb(north)%lon_halo_width))
+    call proc%blocks(1)%init_stage_2(global_mesh%lon_halo_width)
 
     call proc%ngb(west )%init(west , lat_ibeg=proc%lat_ibeg, lat_iend=proc%lat_iend)
     call proc%ngb(east )%init(east , lat_ibeg=proc%lat_ibeg, lat_iend=proc%lat_iend)
@@ -311,7 +293,7 @@ contains
       end do
     end do
 
-  end subroutine process_blocks_init_stage_2
+  end subroutine process_create_blocks
 
   subroutine process_neighbor_init(this, orient, lon_ibeg, lon_iend, lat_ibeg, lat_iend)
 

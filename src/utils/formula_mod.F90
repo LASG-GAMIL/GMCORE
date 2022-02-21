@@ -12,9 +12,8 @@ contains
     real(r8), intent(in) :: p
 
     real(r8), parameter :: p0 = 1.0e5_r8
-    real(r8), parameter :: k  = Rd / cp
 
-    res = t * (p0 / p)**k
+    res = t * (p0 / p)**Rd_o_cp
 
   end function potential_temperature
 

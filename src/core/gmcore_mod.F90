@@ -15,7 +15,6 @@ module gmcore_mod
   use time_schemes_mod
   use operators_mod
   use interp_mod
-  use reduce_mod
   use debug_mod
   use pgf_mod
   use damp_mod
@@ -52,15 +51,11 @@ contains
 
     call log_init()
     call global_mesh%init_global(num_lon, num_lat, num_lev, &
-                                 lon_halo_width=max(2, maxval(reduce_factors) - 1), &
-                                 lat_halo_width=merge(2, 3, reduce_pv_directly))
-    !call debug_check_areas()
+                                 lon_halo_width=2, &
+                                 lat_halo_width=2)
     call process_init()
     call vert_coord_init(num_lev, namelist_path)
-    call process_blocks_init_stage_1()
-    call reduce_init_stage_1(proc%blocks)
-    call process_blocks_init_stage_2()
-    call reduce_init_stage_2(proc%blocks)
+    call process_create_blocks()
     call time_init()
     call diag_state_init(proc%blocks)
     call history_init()
@@ -97,6 +92,7 @@ contains
     end select
 
     call time_add_alert('print', seconds=seconds)
+    if (filter_reset_interval > 0) call time_add_alert('filter_reset', seconds=filter_reset_interval)
 
     if (is_root_proc()) call print_namelist()
 
@@ -104,14 +100,28 @@ contains
 
   subroutine gmcore_run()
 
-    integer iblk, itime
+    integer j, iblk, itime
 
     do iblk = 1, size(proc%blocks)
-      call prepare_static(proc%blocks(iblk))
-      ! Ensure bottom gz_lev is the same as gzs.
-      do itime = lbound(proc%blocks(iblk)%state, 1), ubound(proc%blocks(iblk)%state, 1)
-        proc%blocks(iblk)%state(itime)%gz_lev(:,:,global_mesh%half_lev_iend) = proc%blocks(iblk)%static%gzs
-      end do
+      associate (block => proc%blocks(iblk)     , &
+                 mesh  => proc%blocks(iblk)%mesh, &
+                 state => proc%blocks(iblk)%state(old))
+      if (baroclinic) then 
+        call prepare_static(block)
+        ! Ensure bottom gz_lev is the same as gzs.
+        do itime = lbound(block%state, 1), ubound(block%state, 1)
+          block%state(itime)%gz_lev(:,:,global_mesh%half_lev_iend) = block%static%gzs
+        end do
+      end if
+      block%state(old)%u_f = block%state(old)%u
+      block%state(old)%v_f = block%state(old)%v
+      if (baroclinic) then
+        block%state(old)%pt_f = block%state(old)%pt
+        block%state(old)%phs_f = block%state(old)%phs
+      else
+        block%state(old)%gz_f = block%state(old)%gz
+      end if
+      end associate
     end do
 
     call operators_prepare(proc%blocks, old, dt_in_seconds)
@@ -198,12 +208,13 @@ contains
     type(state_type), pointer :: state
     type(static_type), pointer :: static
     integer i, j, k, iblk
-    real(r8) tm, te, tav, tpe
+    real(r8) tm, te, tav, tpe, tpt, max_w
 
     tm = 0.0_r8
     te = 0.0_r8
     tav = 0.0_r8
     tpe = 0.0_r8
+    tpt = 0.0_r8
     do iblk = 1, size(blocks)
       mesh => blocks(iblk)%mesh
       state => blocks(iblk)%state(itime)
@@ -271,11 +282,22 @@ contains
           end do
         end do
       end do
+
+      if (baroclinic) then
+        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+          do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              tpt = tpt + state%m(i,j,k) * state%pt(i,j,k) * mesh%area_cell(j)
+            end do
+          end do
+        end do
+      end if
     end do
     call global_sum(proc%comm, tm)
     call global_sum(proc%comm, te)
     call global_sum(proc%comm, tav)
     call global_sum(proc%comm, tpe)
+    if (baroclinic) call global_sum(proc%comm, tpt)
 
     do iblk = 1, size(blocks)
       blocks(iblk)%state(itime)%tm  = tm
@@ -286,8 +308,18 @@ contains
     end do
 
     call log_add_diag('tm' , tm )
+    if (baroclinic) call log_add_diag('tpt', tpt)
     call log_add_diag('te' , te )
     call log_add_diag('tpe', tpe)
+
+    if (nonhydrostatic) then
+      max_w = 0
+      do iblk = 1, size(blocks)
+        max_w = max(max_w, maxval(abs(blocks(iblk)%state(itime)%w)))
+      end do
+      call global_max(proc%comm, max_w)
+      call log_add_diag('w', max_w)
+    end if
 
   end subroutine diagnose
 
@@ -558,20 +590,20 @@ contains
 
     do iblk = 1, size(blocks)
       call time_integrator(operators, blocks(iblk), old, t1, slow_dt, slow_pass)
-      call test_forcing_run(blocks(iblk), slow_dt, blocks(iblk)%state(t1))
+      call test_forcing_run(blocks(iblk), slow_dt, blocks(iblk)%static, blocks(iblk)%state(t1))
     end do
     call damp_run(slow_dt, t1, blocks)
     do subcycle = 1, fast_cycles
       do iblk = 1, size(blocks)
         call time_integrator(operators, blocks(iblk), t1, t2, fast_dt, fast_pass)
-        call test_forcing_run(blocks(iblk), fast_dt, blocks(iblk)%state(t2))
+        call test_forcing_run(blocks(iblk), fast_dt, blocks(iblk)%static, blocks(iblk)%state(t2))
       end do
       call damp_run(fast_dt, t2, blocks)
       call time_swap_indices(t1, t2)
     end do
     do iblk = 1, size(blocks)
       call time_integrator(operators, blocks(iblk), t1, new, slow_dt, slow_pass)
-      call test_forcing_run(blocks(iblk), slow_dt, blocks(iblk)%state(new))
+      call test_forcing_run(blocks(iblk), slow_dt, blocks(iblk)%static, blocks(iblk)%state(new))
     end do
     call damp_run(slow_dt, new, blocks)
 
@@ -586,7 +618,7 @@ contains
 
     do iblk = 1, size(blocks)
       call time_integrator(operators, blocks(iblk), old, new, dt, all_pass)
-      call test_forcing_run(blocks(iblk), dt, blocks(iblk)%state(new))
+      call test_forcing_run(blocks(iblk), dt, blocks(iblk)%static, blocks(iblk)%state(new))
     end do
     call damp_run(dt, new, blocks)
 

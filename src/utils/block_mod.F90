@@ -7,7 +7,7 @@ module block_mod
   use state_mod
   use static_mod
   use tend_mod
-  use reduced_types_mod
+  use filter_types_mod
   use halo_mod
   use allocator_mod
 
@@ -22,29 +22,13 @@ module block_mod
   public static_type
   public tend_type
 
-  !      |         |         |
-  !  ____|_________|_________|_____
-  !      |                   |
-  !      |                   |
-  !      |                   |
-  !      |                   |
-  !      |       BLOCK       |
-  !      |                   |
-  !      |                   |
-  !      |                   |
-  !  ____|___________________|_____
-  !      |                   |
-  !      |                   |
-
   type block_type
     integer id
     type(mesh_type) mesh
     type(state_type), allocatable :: state(:)
     type(static_type) static
     type(tend_type), allocatable :: tend(:)
-    type(reduced_mesh_type), allocatable :: reduced_mesh(:)
-    type(reduced_state_type), allocatable :: reduced_state(:)
-    type(reduced_tend_type), allocatable :: reduced_tend(:)
+    type(filter_type) filter
     type(halo_type), allocatable :: halo(:)
   contains
     procedure :: init_stage_1 => block_init_stage_1
@@ -68,6 +52,7 @@ contains
     this%id = id
 
     call this%mesh%init_from_parent(global_mesh, this%id, lon_halo_width, lat_halo_width, lon_ibeg, lon_iend, lat_ibeg, lat_iend)
+    call this%filter%init(this%mesh)
 
   end subroutine block_init_stage_1
 
@@ -102,9 +87,11 @@ contains
       do i = 1, size(this%state)
         call this%state(i)%init(this%mesh)
       end do
-      do i = 1, size(this%tend)
-        call this%tend(i)%init(this%mesh)
-      end do
+      if (allocated(this%tend)) then
+        do i = 1, size(this%tend)
+          call this%tend(i)%init(this%mesh)
+        end do
+      end if
       call this%static%init(this%mesh)
     end if
 
@@ -114,12 +101,10 @@ contains
 
     type(block_type), intent(inout) :: this
 
-    if (allocated(this%halo          )) deallocate(this%halo          )
-    if (allocated(this%state         )) deallocate(this%state         )
-    if (allocated(this%tend          )) deallocate(this%tend          )
-    if (allocated(this%reduced_mesh  )) deallocate(this%reduced_mesh  )
-    if (allocated(this%reduced_state )) deallocate(this%reduced_state )
-    if (allocated(this%reduced_tend  )) deallocate(this%reduced_tend  )
+    if (allocated(this%halo )) deallocate(this%halo )
+    if (allocated(this%state)) deallocate(this%state)
+    if (allocated(this%tend )) deallocate(this%tend )
+    if (allocated(this%halo )) deallocate(this%halo )
 
   end subroutine block_final
 

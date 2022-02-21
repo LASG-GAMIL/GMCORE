@@ -13,7 +13,9 @@ module static_mod
 
   type static_type
     type(mesh_type), pointer :: mesh => null()
+    real(r8), allocatable, dimension(:,:) :: landmask
     real(r8), allocatable, dimension(:,:) :: gzs
+    real(r8), allocatable, dimension(:,:) :: zs_std
     real(r8), allocatable, dimension(:,:) :: dzsdlon
     real(r8), allocatable, dimension(:,:) :: dzsdlat
   contains
@@ -33,9 +35,11 @@ contains
 
     this%mesh => mesh
 
-    call allocate_array(mesh, this%gzs    , full_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%dzsdlon, half_lon=.true., full_lat=.true.)
-    call allocate_array(mesh, this%dzsdlat, full_lon=.true., half_lat=.true.)
+    call allocate_array(mesh, this%landmask, full_lon=.true., full_lat=.true.)
+    call allocate_array(mesh, this%gzs     , full_lon=.true., full_lat=.true.)
+    call allocate_array(mesh, this%zs_std  , full_lon=.true., full_lat=.true.)
+    call allocate_array(mesh, this%dzsdlon , half_lon=.true., full_lat=.true.)
+    call allocate_array(mesh, this%dzsdlat , full_lon=.true., half_lat=.true.)
 
   end subroutine static_init
 
@@ -43,9 +47,11 @@ contains
 
     class(static_type), intent(inout) :: this
 
-    if (allocated(this%gzs    )) deallocate(this%gzs    )
-    if (allocated(this%dzsdlon)) deallocate(this%dzsdlon)
-    if (allocated(this%dzsdlat)) deallocate(this%dzsdlat)
+    if (allocated(this%landmask)) deallocate(this%landmask)
+    if (allocated(this%gzs     )) deallocate(this%gzs     )
+    if (allocated(this%zs_std  )) deallocate(this%zs_std  )
+    if (allocated(this%dzsdlon )) deallocate(this%dzsdlon )
+    if (allocated(this%dzsdlat )) deallocate(this%dzsdlat )
 
   end subroutine static_clear
 

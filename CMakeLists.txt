@@ -34,7 +34,7 @@ if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
   # set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fopenmp")
 elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
   if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -no-wrap-margin -O0 -check bounds -g -traceback -mkl=sequential")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -no-wrap-margin -O0 -check bounds -g -traceback -mkl=sequential -fpe-all=0")
   else ()
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -no-wrap-margin -O3 -align array64byte -mkl=sequential")
   endif ()
@@ -64,13 +64,6 @@ else ()
 endif ()
 set(EXTERNAL_LIBS netcdff netcdf)
 
-if (DEFINED ENV{HDF5})
-  include_directories("$ENV{HDF5}/include")
-  link_directories("$ENV{HDF5}/lib")
-  set(EXTERNAL_LIBS ${EXTERNAL_LIBS} hdf5 hdf5_hl z)
-  message(STATUS "Add HDF5 $ENV{HDF5} into compilation process.")
-endif ()
-
 if (DEFINED ENV{MKLROOT})
   add_definitions(-DHAS_MKL)
   include_directories("$ENV{MKLROOT}/include")
@@ -94,13 +87,6 @@ add_subdirectory(lib/datetime)
 add_subdirectory(lib/string)
 add_subdirectory(lib/fiona)
 add_subdirectory(lib/flogger)
-
-add_custom_command(
-  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/reduce_mod.F90
-  COMMAND cpp ${CPPFLAGS} -P -C ${PROJECT_SOURCE_DIR}/src/core/reduce_mod.F90 > ${CMAKE_CURRENT_BINARY_DIR}/reduce_mod.F90
-  MAIN_DEPENDENCY ${PROJECT_SOURCE_DIR}/src/core/reduce_mod.F90
-  VERBATIM
-)
 
 set(gmcore_files
   src/utils/const_mod.F90
@@ -127,35 +113,31 @@ set(gmcore_files
   src/core/time_schemes_mod.F90
   src/core/pgf/pgf_mod.F90
   src/core/pgf/pgf_swm_mod.F90
-  src/core/pgf/pgf_sb81_mod.F90
   src/core/pgf/pgf_lin97_mod.F90
   src/core/mesh_mod.F90
   src/core/vert_coord/sigma_coord_mod.F90
   src/core/vert_coord/hybrid_coord_test_mod.F90
   src/core/vert_coord/hybrid_coord_ecmwf_mod.F90
+  src/core/vert_coord/hybrid_coord_mars_mod.F90
   src/core/vert_coord/hybrid_coord_mod.F90
   src/core/vert_coord/vert_coord_mod.F90
-  src/core/refer_state/refer_state_types_mod.F90
-  src/core/refer_state/refer_state_mod.F90
-  src/core/refer_state/refer_state_wrf_mod.F90
   src/core/state_mod.F90
   src/core/static_mod.F90
   src/core/tend_mod.F90
-  src/core/pv_mod.F90
-  src/core/ke_mod.F90
   src/core/nh_mod.F90
   src/core/interp_mod.F90
   src/core/upwind_mod.F90
   src/core/weno_mod.F90
   src/core/operators_mod.F90
-  src/core/reduced_types_mod.F90
-  ${CMAKE_CURRENT_BINARY_DIR}/reduce_mod.F90
-  src/core/nest_mod.F90
-  src/core/damp/zonal_damp_mod.F90
+  src/core/filter_types_mod.F90
+  src/core/filter_mod.F90
   src/core/damp/div_damp_mod.F90
   src/core/damp/vor_damp_mod.F90
+  src/core/damp/laplace_damp_mod.F90
   src/core/damp/smag_damp_mod.F90
   src/core/damp/damp_mod.F90
+  src/core/transport/tracer_mod.F90
+  src/core/transport/ffsl_mod.F90
   src/core/gmcore_mod.F90
   src/prepare/prepare_mod.F90
   src/prepare/topo_mod.F90
@@ -163,6 +145,8 @@ set(gmcore_files
   src/prepare/vert_interp_mod.F90
   src/prepare/era5_reader_mod.F90
   src/prepare/mpas_reader_mod.F90
+  src/prepare/waccm_reader_mod.F90
+  src/prepare/openmars_reader_mod.F90
   src/prepare/bkg_mod.F90
   src/physics/test_forcing_mod.F90
   src/tests/swm/rossby_haurwitz_wave_test_mod.F90
@@ -171,6 +155,7 @@ set(gmcore_files
   src/tests/swm/steady_geostrophic_flow_test_mod.F90
   src/tests/swm/cross_pole_flow_test_mod.F90
   src/tests/swm/shallow_water_waves_test_mod.F90
+  src/tests/swm/vortex_erosion_test_mod.F90
   src/tests/steady_state_test_mod.F90
   src/tests/rossby_haurwitz_wave_3d_test_mod.F90
   src/tests/mountain_wave_test_mod.F90
@@ -179,6 +164,7 @@ set(gmcore_files
   src/tests/steady_state_pgf_test_mod.F90
   src/tests/ksp15_test_mod.F90
   src/tests/dcmip31_test_mod.F90
+  src/tests/mars_cold_run_mod.F90
   lib/quadpack.f90
 )
 

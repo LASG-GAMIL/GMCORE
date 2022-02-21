@@ -1,7 +1,8 @@
 program gmcore_driver
 
-  use log_mod
+  use flogger
   use namelist_mod
+  use const_mod
   use block_mod
   use diag_state_mod
   use parallel_mod
@@ -16,6 +17,7 @@ program gmcore_driver
   use steady_state_pgf_test_mod
   use ksp15_test_mod
   use dcmip31_test_mod
+  use mars_cold_run_mod
   use prepare_mod
 
   implicit none
@@ -38,6 +40,8 @@ program gmcore_driver
 
   call parse_namelist(namelist_path)
 
+  call const_init(planet)
+
   if (initial_file == 'N/A' .and. .not. restart) then
     select case (test_case)
     case ('pgf_test')
@@ -51,12 +55,12 @@ program gmcore_driver
 
   call gmcore_init(namelist_path)
 
-  if (initial_file /= 'N/A') then
+  if (restart) then
+    call restart_read()
+  else if (initial_file /= 'N/A') then
     call initial_read()
   else if (topo_file /= 'N/A' .and. bkg_file /= 'N/A') then
-    call prepare_run(topo_file, bkg_file, bkg_type)
-  else if (restart) then
-    call restart_read()
+    call prepare_run()
   else
     select case (test_case)
     case ('steady_state')
@@ -77,8 +81,10 @@ program gmcore_driver
       set_ic => ksp15_02_test_set_ic
     case ('dcmip31')
       set_ic => dcmip31_test_set_ic
+    case ('mars_cold_run')
+      set_ic => mars_cold_run_set_ic
     case default
-      call log_error('Unknown test case ' // trim(test_case) // '!')
+      call log_error('Unknown test case ' // trim(test_case) // '!', pid=proc%id)
     end select
 
     do iblk = 1, size(proc%blocks)

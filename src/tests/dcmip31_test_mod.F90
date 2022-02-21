@@ -22,14 +22,13 @@ module dcmip31_test_mod
   real(r8), parameter :: teq  = 300.0_r8     ! K
   real(r8), parameter :: peq  = 1.0e5_r8     ! Pa
   real(r8), parameter :: d    = 5000.0_r8    ! m
-  real(r8), parameter :: d2   = d**2
   real(r8), parameter :: lonc = 2 * pi / 3
   real(r8), parameter :: latc = 0.0_r8
   real(r8), parameter :: dpt  = 1.0_r8       ! K
   real(r8), parameter :: lz   = 20000.0_r8   ! m
   real(r8), parameter :: N    = 0.01_r8      ! s-1
   real(r8), parameter :: N2   = N**2
-  real(r8), parameter :: t0   = g**2 / N2 / cp
+  real(r8)            :: t0
   real(r8), parameter :: p0   = 1.0e5_r8     ! Pa
 
 contains
@@ -38,6 +37,7 @@ contains
 
     omega = 0.0_r8
     radius = radius / X
+    t0 = g**2 / N2 / cp
 
   end subroutine dcmip31_test_set_params
 
@@ -131,7 +131,7 @@ contains
             local_z = 0.5_r8 * (gz_lev(i,j,k+1) + gz_lev(i,j,k)) / g
             local_ztop = gz_lev(i,j,mesh%half_lev_ibeg) / g 
             r = radius * acos(sin(latc) * mesh%full_sin_lat(j) + cos(latc) * mesh%full_cos_lat(j) * cos(mesh%full_lon(i) - lonc))
-            pt(i,j,k) = pt(i,j,k) + dpt * d2 / (d2 + r**2) * sin(pi * local_z / local_ztop)
+            pt(i,j,k) = pt(i,j,k) + dpt * d**2 / (d**2 + r**2) * sin(pi * local_z / local_ztop)
           end do
         end do
       end do

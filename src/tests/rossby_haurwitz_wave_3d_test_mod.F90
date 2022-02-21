@@ -14,8 +14,8 @@ module rossby_haurwitz_wave_3d_test_mod
   public rossby_haurwitz_wave_3d_test_set_ic
 
   integer , parameter :: n     = 4
-  real(r8), parameter :: gz0   = 8d3 * g
   real(r8), parameter :: u0    = 50d0               ! m s-1
+  real(r8)            :: gz0
   real(r8)            :: M
   real(r8), parameter :: t0    = 288d0              ! K
   real(r8), parameter :: gamma = 0.0065d0           ! K m-1
@@ -33,7 +33,8 @@ contains
     type(mesh_type), pointer :: mesh
     type(state_type), pointer :: state
 
-    M = u0 / (n * radius)
+    gz0 = 8.0d3 * g
+    M   = u0 / (n * radius)
 
     mesh => block%mesh
     state => block%state(1)

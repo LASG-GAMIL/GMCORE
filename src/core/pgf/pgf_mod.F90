@@ -2,7 +2,6 @@ module pgf_mod
 
   use flogger
   use pgf_swm_mod
-  use pgf_sb81_mod
   use pgf_lin97_mod
 
   implicit none
@@ -37,9 +36,6 @@ contains
 
     if (baroclinic) then
       select case (pgf_scheme)
-      case ('sb81')
-        pgf_prepare => pgf_sb81_prepare
-        pgf_run => pgf_sb81_run
       case ('lin97')
         pgf_prepare => pgf_lin97_prepare
         pgf_run => pgf_lin97_run

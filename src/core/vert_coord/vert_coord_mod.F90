@@ -64,8 +64,8 @@ contains
         call log_notice('Change vert_coord_template to ' // trim(template) // '.')
       end if
       vert_coord_template = template
-    else if (baroclinic .and. vert_coord_template == 'N/A' .and. is_root_proc()) then
-      call log_error('Parameter vert_coord_template is not set!')
+    else if (baroclinic .and. (vert_coord_scheme == 'hybrid' .and. vert_coord_template == 'N/A')) then
+      call log_error('Parameter vert_coord_template is not set!', pid=proc%id)
     end if
 
     select case (vert_coord_scheme)
