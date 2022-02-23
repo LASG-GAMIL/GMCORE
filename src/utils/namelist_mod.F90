@@ -72,8 +72,6 @@ module namelist_mod
   integer         :: vert_upwind_order    = 3  ! -1, 1, 3
   real(r8)        :: vert_upwind_wgt      = 1.0_r8
 
-  integer         :: fast_cycles          = 1
-  character(30)   :: split_scheme         = ''
   character(30)   :: time_scheme          = 'wrfrk3'
 
   real(r8)        :: coarse_pole_mul      = 0
@@ -177,7 +175,6 @@ module namelist_mod
     vert_weno_order           , &
     vert_upwind_order         , &
     vert_upwind_wgt           , &
-    split_scheme              , &
     time_scheme               , &
     max_wave_speed            , &
     max_cfl                   , &
@@ -185,7 +182,6 @@ module namelist_mod
     filter_coef_b             , &
     filter_coef_c             , &
     filter_reset_interval     , &
-    fast_cycles               , &
     coarse_pole_mul           , &
     coarse_pole_decay         , &
     use_topo_smooth           , &
@@ -233,9 +229,6 @@ contains
     hydrostatic = .not. nonhydrostatic
 
     ! Validate parameters.
-    if (split_scheme /= '' .and. mod(fast_cycles, 2) == 0) then
-      call log_error('Parameter fast_cycles should be odd!')
-    end if
 
   end subroutine parse_namelist
 

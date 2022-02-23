@@ -29,15 +29,6 @@ module gmcore_mod
   public gmcore_run
   public gmcore_final
 
-  interface
-    subroutine splitter_interface(dt, blocks)
-      import block_type
-      real(8), intent(in) :: dt
-      type(block_type), intent(inout) :: blocks(:)
-    end subroutine splitter_interface
-  end interface
-
-  procedure(splitter_interface), pointer :: splitter
   procedure(space_operators_interface), pointer :: operators
 
 contains
@@ -64,14 +55,6 @@ contains
     call pgf_init()
     call interp_init()
     call damp_init(proc%blocks)
-
-    select case (split_scheme)
-    case ('csp2')
-      splitter => csp2_splitting
-    case default
-      splitter => no_splitting
-      if (is_root_proc()) call log_notice('No fast-slow split.')
-    end select
 
     operators => space_operators
 
@@ -323,246 +306,241 @@ contains
 
   end subroutine diagnose
 
-  subroutine space_operators(block, old_state, star_state, new_state, tend, dt, pass)
+  subroutine space_operators(block, old_state, star_state, new_state, tend1, tend2, dt, pass)
 
     type(block_type), intent(inout) :: block
-    type(state_type), intent(in) :: old_state
+    type(state_type), intent(in   ) :: old_state
     type(state_type), intent(inout) :: star_state
     type(state_type), intent(inout) :: new_state
-    type(tend_type), intent(inout) :: tend
+    type(tend_type ), intent(inout) :: tend1
+    type(tend_type ), intent(in   ) :: tend2
     real(8), intent(in) :: dt
     integer, intent(in) :: pass
 
     type(mesh_type), pointer :: mesh
     integer i, j, k
 
-    call operators_prepare(block, star_state, dt, pass)
-
     mesh => star_state%mesh
 
-    call tend%reset_flags()
+    call tend1%reset_flags()
 
     select case (pass)
     case (all_pass)
+      call operators_prepare(block, star_state, dt, pass)
       if (hydrostatic) then
-        call calc_dmfdlon_dmfdlat  (block, star_state, tend, dt)
-        call calc_dphs             (block, star_state, tend, dt)
-        call calc_wedphdlev_lev    (block, star_state, tend, dt)
-        call calc_wedudlev_wedvdlev(block, star_state, tend, dt)
-        call calc_dptfdlon_dptfdlat(block, star_state, tend, dt)
-        call calc_dptfdlev         (block, star_state, tend, dt)
-        call calc_qhu_qhv          (block, star_state, tend, dt)
-        call calc_dkedlon_dkedlat  (block, star_state, tend, dt)
-        call pgf_run               (block, star_state, tend)
+        call calc_dmfdlon_dmfdlat  (block, star_state, tend1, dt)
+        call calc_dphs             (block, star_state, tend1, dt)
+        call calc_wedphdlev_lev    (block, star_state, tend1, dt)
+        call calc_wedudlev_wedvdlev(block, star_state, tend1, dt)
+        call calc_dptfdlon_dptfdlat(block, star_state, tend1, dt)
+        call calc_dptfdlev         (block, star_state, tend1, dt)
+        call calc_qhu_qhv          (block, star_state, tend1, dt)
+        call calc_dkedlon_dkedlat  (block, star_state, tend1, dt)
+        call pgf_run               (block, star_state, tend1)
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              tend%du(i,j,k) =   tend%qhv(i,j,k) - tend%pgf_lon(i,j,k) - tend%dkedlon(i,j,k) - tend%wedudlev(i,j,k)
+              tend1%du(i,j,k) =   tend1%qhv(i,j,k) - tend1%pgf_lon(i,j,k) - tend1%dkedlon(i,j,k) - tend1%wedudlev(i,j,k)
             end do
           end do
 
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              tend%dv(i,j,k) = - tend%qhu(i,j,k) - tend%pgf_lat(i,j,k) - tend%dkedlat(i,j,k) - tend%wedvdlev(i,j,k)
+              tend1%dv(i,j,k) = - tend1%qhu(i,j,k) - tend1%pgf_lat(i,j,k) - tend1%dkedlat(i,j,k) - tend1%wedvdlev(i,j,k)
             end do
           end do
 
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              tend%dpt(i,j,k) = - tend%dptfdlon(i,j,k) - tend%dptfdlat(i,j,k) - tend%dptfdlev(i,j,k)
+              tend1%dpt(i,j,k) = - tend1%dptfdlon(i,j,k) - tend1%dptfdlat(i,j,k) - tend1%dptfdlev(i,j,k)
             end do
           end do
         end do
 
-        tend%update_u   = .true.
-        tend%update_v   = .true.
-        tend%update_phs = .true.
-        tend%update_pt  = .true.
+        tend1%update_u   = .true.
+        tend1%update_v   = .true.
+        tend1%update_phs = .true.
+        tend1%update_pt  = .true.
       else if (nonhydrostatic) then
-        call calc_dmfdlon_dmfdlat  (block, star_state, tend, dt)
-        call calc_dphs             (block, star_state, tend, dt)
-        call calc_wedphdlev_lev    (block, star_state, tend, dt)
-        call calc_dptfdlon_dptfdlat(block, star_state, tend, dt)
-        call calc_dptfdlev         (block, star_state, tend, dt)
+        call calc_dmfdlon_dmfdlat  (block, star_state, tend1, dt)
+        call calc_dphs             (block, star_state, tend1, dt)
+        call calc_wedphdlev_lev    (block, star_state, tend1, dt)
+        call calc_dptfdlon_dptfdlat(block, star_state, tend1, dt)
+        call calc_dptfdlev         (block, star_state, tend1, dt)
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              tend%dpt(i,j,k) = - tend%dptfdlon(i,j,k) - tend%dptfdlat(i,j,k) - tend%dptfdlev(i,j,k)
+              tend1%dpt(i,j,k) = - tend1%dptfdlon(i,j,k) - tend1%dptfdlat(i,j,k) - tend1%dptfdlev(i,j,k)
             end do
           end do
         end do
 
-        tend%update_phs = .true.
-        tend%update_pt  = .true.
-        call update_state(block, tend, old_state, new_state, dt, no_wind_pass)
+        tend1%update_phs = .true.
+        tend1%update_pt  = .true.
+        call update_state(block, tend1, old_state, new_state, dt)
 
-        call nh_solve(block, tend, old_state, star_state, new_state, dt)
+        call nh_solve(block, tend1, old_state, star_state, new_state, dt)
 
-        call calc_qhu_qhv          (block, star_state, tend, dt)
-        call calc_dkedlon_dkedlat  (block, star_state, tend, dt)
-        call calc_wedudlev_wedvdlev(block, star_state, tend, dt)
-        call pgf_run               (block, new_state, tend)
+        call calc_qhu_qhv          (block, star_state, tend1, dt)
+        call calc_dkedlon_dkedlat  (block, star_state, tend1, dt)
+        call calc_wedudlev_wedvdlev(block, star_state, tend1, dt)
+        call pgf_run               (block, new_state, tend1)
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              tend%du(i,j,k) =   tend%qhv(i,j,k) - tend%pgf_lon(i,j,k) - tend%dkedlon(i,j,k) - tend%wedudlev(i,j,k)
+              tend1%du(i,j,k) =   tend1%qhv(i,j,k) - tend1%pgf_lon(i,j,k) - tend1%dkedlon(i,j,k) - tend1%wedudlev(i,j,k)
             end do
           end do
 
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              tend%dv(i,j,k) = - tend%qhu(i,j,k) - tend%pgf_lat(i,j,k) - tend%dkedlat(i,j,k) - tend%wedvdlev(i,j,k)
+              tend1%dv(i,j,k) = - tend1%qhu(i,j,k) - tend1%pgf_lat(i,j,k) - tend1%dkedlat(i,j,k) - tend1%wedvdlev(i,j,k)
             end do
           end do
         end do
 
-        tend%update_u   = .true.
-        tend%update_v   = .true.
-        tend%update_phs = .false.
-        tend%update_pt  = .false.
+        tend1%update_u   = .true.
+        tend1%update_v   = .true.
       else
-        call calc_dmfdlon_dmfdlat(block, star_state, tend, dt)
-        call calc_qhu_qhv        (block, star_state, tend, dt)
-        call calc_dkedlon_dkedlat(block, star_state, tend, dt)
-        call pgf_run             (block, star_state, tend    )
+        call calc_dmfdlon_dmfdlat(block, star_state, tend1, dt)
+        call calc_qhu_qhv        (block, star_state, tend1, dt)
+        call calc_dkedlon_dkedlat(block, star_state, tend1, dt)
+        call pgf_run             (block, star_state, tend1    )
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              tend%du(i,j,k) =   tend%qhv(i,j,k) - tend%pgf_lon(i,j,k) - tend%dkedlon(i,j,k)
+              tend1%du(i,j,k) =   tend1%qhv(i,j,k) - tend1%pgf_lon(i,j,k) - tend1%dkedlon(i,j,k)
             end do
           end do
 
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              tend%dv(i,j,k) = - tend%qhu(i,j,k) - tend%pgf_lat(i,j,k) - tend%dkedlat(i,j,k)
+              tend1%dv(i,j,k) = - tend1%qhu(i,j,k) - tend1%pgf_lat(i,j,k) - tend1%dkedlat(i,j,k)
             end do
           end do
 
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              tend%dgz(i,j,k) = - (tend%dmfdlon(i,j,k) + tend%dmfdlat(i,j,k)) * g
+              tend1%dgz(i,j,k) = - (tend1%dmfdlon(i,j,k) + tend1%dmfdlat(i,j,k)) * g
             end do
           end do
         end do
 
-        tend%update_u  = .true.
-        tend%update_v  = .true.
-        tend%update_gz = .true.
+        tend1%update_u  = .true.
+        tend1%update_v  = .true.
+        tend1%update_gz = .true.
       end if
-    case (slow_pass)
-      if (baroclinic .and. hydrostatic) then
-        call calc_qhu_qhv(block, star_state, tend, dt)
+    case (forward_pass)
+      call operators_prepare(block, star_state, dt, pass)
+      if (hydrostatic) then
+        call calc_dmfdlon_dmfdlat  (block, star_state, tend1, dt)
+        call calc_dphs             (block, star_state, tend1, dt)
+        call calc_wedphdlev_lev    (block, star_state, tend1, dt)
+        call calc_wedudlev_wedvdlev(block, star_state, tend1, dt)
+        call calc_dptfdlon_dptfdlat(block, star_state, tend1, dt)
+        call calc_dptfdlev         (block, star_state, tend1, dt)
+        call calc_qhu_qhv          (block, star_state, tend1, dt)
+        call calc_dkedlon_dkedlat  (block, star_state, tend1, dt)
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              tend%du(i,j,k) =   tend%qhv(i,j,k)
+              tend1%du(i,j,k) =   tend1%qhv(i,j,k) - tend1%dkedlon(i,j,k) - tend1%wedudlev(i,j,k)
             end do
           end do
 
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              tend%dv(i,j,k) = - tend%qhu(i,j,k)
+              tend1%dv(i,j,k) = - tend1%qhu(i,j,k) - tend1%dkedlat(i,j,k) - tend1%wedvdlev(i,j,k)
+            end do
+          end do
+
+          do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              tend1%dpt(i,j,k) = - tend1%dptfdlon(i,j,k) - tend1%dptfdlat(i,j,k) - tend1%dptfdlev(i,j,k)
             end do
           end do
         end do
 
-        tend%update_u = .true.
-        tend%update_v = .true.
-        tend%copy_pt  = .true.
-        tend%copy_phs = .true.
+        tend1%update_phs = .true.
+        tend1%update_pt  = .true.
+      else if (nonhydrostatic) then
+
       else
-        call calc_qhu_qhv(block, star_state, tend, dt)
+        call calc_dmfdlon_dmfdlat(block, star_state, tend1, dt)
+        call calc_qhu_qhv        (block, star_state, tend1, dt)
+        call calc_dkedlon_dkedlat(block, star_state, tend1, dt)
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              tend%du(i,j,k) =   tend%qhv(i,j,k)
+              tend1%du(i,j,k) =   tend1%qhv(i,j,k) - tend1%dkedlon(i,j,k)
             end do
           end do
 
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              tend%dv(i,j,k) = - tend%qhu(i,j,k)
+              tend1%dv(i,j,k) = - tend1%qhu(i,j,k) - tend1%dkedlat(i,j,k)
+            end do
+          end do
+
+          do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              tend1%dgz(i,j,k) = - (tend1%dmfdlon(i,j,k) + tend1%dmfdlat(i,j,k)) * g
             end do
           end do
         end do
 
-        tend%update_u = .true.
-        tend%update_v = .true.
-        tend%copy_gz  = .true.
+        tend1%update_gz = .true.
       end if
-    case (fast_pass)
-      if (baroclinic .and. hydrostatic) then
-        call calc_dmfdlon_dmfdlat  (block, star_state, tend, dt)
-        call calc_dphs             (block, star_state, tend, dt)
-        call calc_wedphdlev_lev    (block, star_state, tend, dt)
-        call calc_wedudlev_wedvdlev(block, star_state, tend, dt)
-        call calc_dptfdlev         (block, star_state, tend, dt)
-        call calc_dptfdlon_dptfdlat(block, star_state, tend, dt)
-        call calc_dkedlon_dkedlat  (block, star_state, tend, dt)
-        call pgf_run               (block, star_state, tend    )
+    case (backward_pass)
+      call operators_prepare(block, new_state, dt, no_wind_pass)
+      if (hydrostatic) then
+        call pgf_run(block, new_state, tend1)
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              tend%du(i,j,k) = - tend%wedudlev(i,j,k) - tend%dkedlon(i,j,k) - tend%pgf_lon(i,j,k)
+              tend1%du(i,j,k) = tend2%du(i,j,k) - tend1%pgf_lon(i,j,k)
             end do
           end do
 
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              tend%dv(i,j,k) = - tend%wedvdlev(i,j,k) - tend%dkedlat(i,j,k) - tend%pgf_lat(i,j,k)
-            end do
-          end do
-
-          do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              tend%dpt(i,j,k) = - tend%dptfdlon(i,j,k) - tend%dptfdlat(i,j,k) - tend%dptfdlev(i,j,k)
+              tend1%dv(i,j,k) = tend2%dv(i,j,k) - tend1%pgf_lat(i,j,k)
             end do
           end do
         end do
 
-        tend%update_u   = .true.
-        tend%update_v   = .true.
-        tend%update_pt  = .true.
-        tend%update_phs = .true.
+        tend1%update_u   = .true.
+        tend1%update_v   = .true.
+      else if (nonhydrostatic) then
+
       else
-        call calc_dkedlon_dkedlat(block, star_state, tend, dt)
-        call pgf_run             (block, star_state, tend    )
-        call calc_dmfdlon_dmfdlat(block, star_state, tend, dt)
+        call pgf_run(block, new_state, tend1)
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              tend%du(i,j,k) = - tend%pgf_lon(i,j,k) - tend%dkedlon(i,j,k)
+              tend1%du(i,j,k) = tend2%du(i,j,k) - tend1%pgf_lon(i,j,k)
             end do
           end do
 
           do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              tend%dv(i,j,k) = - tend%pgf_lat(i,j,k) - tend%dkedlat(i,j,k)
-            end do
-          end do
-
-          do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              tend%dgz(i,j,k) = - (tend%dmfdlon(i,j,k) + tend%dmfdlat(i,j,k)) * g
+              tend1%dv(i,j,k) = tend2%dv(i,j,k) - tend1%pgf_lat(i,j,k)
             end do
           end do
         end do
 
-        tend%update_u  = .true.
-        tend%update_v  = .true.
-        tend%update_gz = .true.
+        tend1%update_u  = .true.
+        tend1%update_v  = .true.
       end if
     end select
-
-    ! call debug_check_space_operators(block, state, tend)
 
   end subroutine space_operators
 
@@ -571,57 +549,14 @@ contains
     real(8), intent(in) :: dt
     type(block_type), intent(inout) :: blocks(:)
 
-    call splitter(dt, blocks)
-
-  end subroutine time_integrate
-
-  subroutine csp2_splitting(dt, blocks)
-
-    real(8), intent(in) :: dt
-    type(block_type), intent(inout) :: blocks(:)
-
-    real(8) fast_dt, slow_dt
-    integer iblk, subcycle, t1, t2
-
-    fast_dt = dt / fast_cycles
-    slow_dt = dt * 0.5_r8
-    t1 = new
-    t2 = old
-
-    do iblk = 1, size(blocks)
-      call time_integrator(operators, blocks(iblk), old, t1, slow_dt, slow_pass)
-      call test_forcing_run(blocks(iblk), slow_dt, blocks(iblk)%static, blocks(iblk)%state(t1))
-    end do
-    call damp_run(slow_dt, t1, blocks)
-    do subcycle = 1, fast_cycles
-      do iblk = 1, size(blocks)
-        call time_integrator(operators, blocks(iblk), t1, t2, fast_dt, fast_pass)
-        call test_forcing_run(blocks(iblk), fast_dt, blocks(iblk)%static, blocks(iblk)%state(t2))
-      end do
-      call damp_run(fast_dt, t2, blocks)
-      call time_swap_indices(t1, t2)
-    end do
-    do iblk = 1, size(blocks)
-      call time_integrator(operators, blocks(iblk), t1, new, slow_dt, slow_pass)
-      call test_forcing_run(blocks(iblk), slow_dt, blocks(iblk)%static, blocks(iblk)%state(new))
-    end do
-    call damp_run(slow_dt, new, blocks)
-
-  end subroutine csp2_splitting
-
-  subroutine no_splitting(dt, blocks)
-
-    real(8), intent(in) :: dt
-    type(block_type), intent(inout) :: blocks(:)
-
     integer iblk
 
     do iblk = 1, size(blocks)
-      call time_integrator(operators, blocks(iblk), old, new, dt, all_pass)
+      call time_integrator(operators, blocks(iblk), old, new, dt)
       call test_forcing_run(blocks(iblk), dt, blocks(iblk)%static, blocks(iblk)%state(new))
     end do
     call damp_run(dt, new, blocks)
 
-  end subroutine no_splitting
+  end subroutine time_integrate
 
 end module gmcore_mod

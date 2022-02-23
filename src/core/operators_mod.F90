@@ -81,33 +81,27 @@ contains
     real(8), intent(in) :: dt
     integer, intent(in) :: pass
 
-    if (pass == div_damp_pass) then
-      call calc_div                   (block, state)
-    else
-      if (baroclinic) then
-        call diag_ph                  (block, state)
-        call interp_pt                (block, state)
-        call diag_t                   (block, state)
-      end if
-      call diag_m                     (block, state)
-      if (nonhydrostatic) then
-        call diag_m_lev               (block, state)
-      end if
-      if (pass /= no_wind_pass) then
-        call calc_mf                  (block, state)
-        call calc_ke                  (block, state)
-        call calc_div                 (block, state)
-        if (pass == all_pass .or. pass == slow_pass) then
-          call interp_m_vtx           (block, state)
-          call diag_pv                (block, state)
-          call interp_pv              (block, state)
-        end if
-      end if
-      if (hydrostatic) then
-        call diag_gz_lev              (block, state)
-      end if
-      call pgf_prepare                (block, state)
+    if (baroclinic) then
+      call diag_ph                    (block, state)
+      call interp_pt                  (block, state)
+      call diag_t                     (block, state)
     end if
+    call diag_m                       (block, state)
+    if (nonhydrostatic) then
+      call diag_m_lev                 (block, state)
+    end if
+    if (pass /= no_wind_pass) then
+      call calc_mf                    (block, state)
+      call calc_ke                    (block, state)
+      call calc_div                   (block, state)
+      call interp_m_vtx               (block, state)
+      call diag_pv                    (block, state)
+      call interp_pv                  (block, state)
+    end if
+    if (hydrostatic) then
+      call diag_gz_lev                (block, state)
+    end if
+    call pgf_prepare                  (block, state)
 
   end subroutine operators_prepare_2
 

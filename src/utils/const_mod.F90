@@ -33,17 +33,12 @@ module const_mod
   integer, parameter :: nest_ratio = 3
   integer, parameter :: inf_i4 = 10000000
 
-  ! Split schemes
-  integer, parameter :: csp2          = 1
-
   integer, parameter :: no_wind_pass  = -1
   integer, parameter :: all_pass      = 0
-  integer, parameter :: slow_pass     = 1
-  integer, parameter :: fast_pass     = 2
-  integer, parameter :: div_damp_pass = 3
-  integer, parameter :: vor_damp_pass = 4
-  integer, parameter :: nh_pass_1     = 5
-  integer, parameter :: nh_pass_2     = 6
+  integer, parameter :: forward_pass  = 1
+  integer, parameter :: backward_pass = 2
+  integer, parameter :: nh_pass_1     = 3
+  integer, parameter :: nh_pass_2     = 4
 
   integer, parameter :: west  = 1
   integer, parameter :: east  = 2

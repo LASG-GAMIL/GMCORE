@@ -31,10 +31,12 @@ contains
     class(filter_type), intent(inout) :: this
     type(mesh_type), intent(in) :: mesh
 
-    real(r8) dx, dy, cfl, w, s, x
+    real(r8) dx, dy, dt, cfl, w, s, x
     integer j, l, n
 
     call this%clear()
+
+    dt = dt_in_seconds
 
     allocate(this%width_lon(mesh%full_lat_lb:mesh%full_lat_ub)); this%width_lon = 0
     allocate(this%ngrid_lon(mesh%full_lat_lb:mesh%full_lat_ub)); this%ngrid_lon = 0
@@ -42,8 +44,8 @@ contains
       do j = global_mesh%full_lat_ibeg, global_mesh%full_lat_iend
         dx = global_mesh%de_lon(j)
         dy = global_mesh%le_lon(j)
-        if (dx /= 0 .and. dx / dy <= 1) then
-          cfl = max_wave_speed * dt_in_seconds / dx
+        if (dx /= 0) then
+          cfl = max_wave_speed * dt / dx
           w = filter_coef_a * cfl / max_cfl * (filter_coef_c * (tanh(90 - abs(global_mesh%full_lat_deg(j))) - 1) + 1)
           n = ceiling(w) + 2; if (mod(n, 2) == 0) n = n + 1
           if (mesh%full_lat_lb <= j .and. j <= mesh%full_lat_ub) then
@@ -79,8 +81,8 @@ contains
       do j = global_mesh%half_lat_ibeg, global_mesh%half_lat_iend
         dx = global_mesh%le_lat(j)
         dy = global_mesh%de_lat(j)
-        if (dx /= 0 .and. dx / dy <= 1) then
-          cfl = max_wave_speed * dt_in_seconds / dx
+        if (dx /= 0) then
+          cfl = max_wave_speed * dt / dx
           w = filter_coef_a * cfl / max_cfl * (filter_coef_c * (tanh(90 - abs(global_mesh%half_lat_deg(j))) - 1) + 1)
           n = ceiling(w) + 2; if (mod(n, 2) == 0) n = n + 1
           if (mesh%half_lat_lb <= j .and. j <= mesh%half_lat_ub) then
