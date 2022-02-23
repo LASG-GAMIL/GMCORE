@@ -81,27 +81,62 @@ contains
     real(8), intent(in) :: dt
     integer, intent(in) :: pass
 
-    if (baroclinic) then
-      call diag_ph                    (block, state)
-      call interp_pt                  (block, state)
-      call diag_t                     (block, state)
-    end if
-    call diag_m                       (block, state)
-    if (nonhydrostatic) then
-      call diag_m_lev                 (block, state)
-    end if
-    if (pass /= no_wind_pass) then
+    select case (pass)
+    ! --------------------------------------------------------------------------
+    case (all_pass)
+      if (baroclinic) then
+        call diag_ph                  (block, state)
+        call interp_pt                (block, state)
+        call diag_t                   (block, state)
+      end if
+      call diag_m                     (block, state)
+      if (nonhydrostatic) then
+        call diag_m_lev               (block, state)
+      end if
       call calc_mf                    (block, state)
       call calc_ke                    (block, state)
       call calc_div                   (block, state)
       call interp_m_vtx               (block, state)
       call diag_pv                    (block, state)
       call interp_pv                  (block, state)
-    end if
-    if (hydrostatic) then
-      call diag_gz_lev                (block, state)
-    end if
-    call pgf_prepare                  (block, state)
+      if (hydrostatic) then
+        call diag_gz_lev              (block, state)
+      end if
+      call pgf_prepare                (block, state)
+    ! --------------------------------------------------------------------------
+    case (forward_pass)
+      if (baroclinic) then
+        call interp_pt                (block, state)
+      end if
+      call calc_mf                    (block, state)
+      call calc_ke                    (block, state)
+      call calc_div                   (block, state)
+      call interp_m_vtx               (block, state)
+      call diag_pv                    (block, state)
+      call interp_pv                  (block, state)
+    ! --------------------------------------------------------------------------
+    case (backward_pass)
+      if (hydrostatic) then
+        call diag_ph                  (block, state)
+        call diag_t                   (block, state)
+        call diag_gz_lev              (block, state)
+      end if
+      call diag_m                     (block, state)
+      call pgf_prepare                (block, state)
+    ! --------------------------------------------------------------------------
+    case (no_wind_pass)
+      if (baroclinic) then
+        call diag_ph                  (block, state)
+        call interp_pt                (block, state)
+        call diag_t                   (block, state)
+        call diag_gz_lev              (block, state)
+      end if
+      call diag_m                     (block, state)
+      if (nonhydrostatic) then
+        call diag_m_lev               (block, state)
+      end if
+      call pgf_prepare                (block, state)
+    end select
 
   end subroutine operators_prepare_2
 

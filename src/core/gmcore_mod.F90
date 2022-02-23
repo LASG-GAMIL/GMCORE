@@ -498,7 +498,7 @@ contains
         tend1%update_gz = .true.
       end if
     case (backward_pass)
-      call operators_prepare(block, new_state, dt, no_wind_pass)
+      call operators_prepare(block, new_state, dt, pass)
       if (hydrostatic) then
         call pgf_run(block, new_state, tend1)
 
