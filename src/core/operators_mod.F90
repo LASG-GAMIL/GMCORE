@@ -604,8 +604,10 @@ contains
     real(r8) work(state%mesh%half_lon_ibeg:state%mesh%half_lon_iend,state%mesh%num_full_lev)
     real(r8) pole(state%mesh%num_full_lev)
 
-    associate (mesh  => block%mesh, &
-               vor   => state%vor)    ! out
+    associate (mesh     => block%mesh    , &
+               mf_lat_t => state%mf_lat_t, & ! in
+               m_lat    => state%m_lat   , & ! in
+               vor      => state%vor)        ! out
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%half_lat_ibeg_no_pole - merge(0, 1, mesh%has_south_pole()), mesh%half_lat_iend_no_pole
         do i = mesh%half_lon_ibeg - 1, mesh%half_lon_iend
@@ -622,14 +624,14 @@ contains
         j = mesh%half_lat_ibeg
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            work(i,k) = -u(i,j+1,k) * mesh%de_lon(j+1)
+            work(i,k) = -mf_lat_t(i,j,k) / m_lat(i,j,k) * mesh%le_lat(j)
           end do
         end do
         call zonal_sum(proc%zonal_circle, work, pole)
-        pole = pole / global_mesh%num_half_lon / mesh%area_vtx(j)
+        pole = pole / global_mesh%num_full_lon / mesh%area_cell(j)
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            vor(i,j,k) = pole(k)
+            vor(i,j,k) = vor(i,j+1,k) / 3.0_r8 + pole(k) * 2.0_r8 / 3.0_r8
           end do
         end do
       end if
@@ -637,14 +639,14 @@ contains
         j = mesh%half_lat_iend
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            work(i,k) = u(i,j,k) * mesh%de_lon(j)
+            work(i,k) = mf_lat_t(i,j,k) / m_lat(i,j,k) * mesh%le_lat(j)
           end do
         end do
         call zonal_sum(proc%zonal_circle, work, pole)
-        pole = pole / global_mesh%num_half_lon / mesh%area_vtx(j)
+        pole = pole / global_mesh%num_full_lon / mesh%area_cell(j+1)
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            vor(i,j,k) = pole(k)
+            vor(i,j,k) = vor(i,j-1,k) / 3.0_r8 + pole(k) * 2.0_r8 / 3.0_r8
           end do
         end do
       end if
