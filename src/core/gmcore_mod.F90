@@ -417,7 +417,7 @@ contains
             end do
           end do
 
-          do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+          do j = mesh%half_lat_ibeg, mesh%half_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
               tend1%dv(i,j,k) = - tend1%qhu(i,j,k) - tend1%pgf_lat(i,j,k) - tend1%dkedlat(i,j,k)
             end do

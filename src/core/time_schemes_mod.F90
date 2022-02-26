@@ -195,6 +195,8 @@ contains
           end do
         end do
       end do
+      call fill_halo(block, new_state%u, full_lon=.false., full_lat=.true., full_lev=.true.)
+      call fill_halo(block, new_state%v, full_lon=.true., full_lat=.false., full_lev=.true.)
       if (mesh%has_south_pole()) then
         j = mesh%half_lat_ibeg
         new_state%v(:,j,:) = 0.4_r8 * new_state%v(:,j,:) + 0.6_r8 * new_state%v(:,j+1,:)
@@ -203,8 +205,6 @@ contains
         j = mesh%half_lat_iend
         new_state%v(:,j,:) = 0.4_r8 * new_state%v(:,j,:) + 0.6_r8 * new_state%v(:,j-1,:)
       end if
-      call fill_halo(block, new_state%u, full_lon=.false., full_lat=.true., full_lev=.true.)
-      call fill_halo(block, new_state%v, full_lon=.true., full_lat=.false., full_lev=.true.)
       call filter_on_lon_edge(block, new_state%u, new_state%u_f)
       call filter_on_lat_edge(block, new_state%v, new_state%v_f)
       call fill_halo(block, new_state%u_f, full_lon=.false., full_lat=.true., full_lev=.true.)
