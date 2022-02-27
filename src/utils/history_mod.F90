@@ -361,7 +361,9 @@ contains
 
       if (.not. diag_state(1)%is_init()) then
         call fiona_output('h0', 'vor', state%vor(is:ie,js:je,ks:ke), start=start, count=count)
-        call fiona_output('h0', 'pv' , state%pv (is:ie,js:je,ks:ke), start=start, count=count)
+        if (.not. baroclinic) then
+          call fiona_output('h0', 'pv' , state%pv (is:ie,js:je,ks:ke), start=start, count=count)
+        end if
       end if
 
       is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
