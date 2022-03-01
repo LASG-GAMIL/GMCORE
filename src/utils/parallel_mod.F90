@@ -116,8 +116,7 @@ contains
     logical, intent(in), optional :: west_halo
     logical, intent(in), optional :: east_halo
 
-    integer status(MPI_STATUS_SIZE), ierr
-    integer i1, i2, i3, i4
+    integer i1, i2, i3, i4, ierr
 
     if (merge(west_halo, .true., present(west_halo))) then
       !   west halo |                                   | east_halo
@@ -133,7 +132,7 @@ contains
       i4 = i3 + halo_width - 1
       call MPI_SENDRECV(array(i1:i2), halo_width, block%halo(east)%dtype, block%halo(east)%proc_id, 1, &
                         array(i3:i4), halo_width, block%halo(west)%dtype, block%halo(west)%proc_id, 1, &
-                        proc%comm, status, ierr)
+                        proc%comm, MPI_STATUS_IGNORE, ierr)
     end if
     if (merge(east_halo, .true., present(east_halo))) then
       !   west halo |                                   | east_halo
@@ -149,7 +148,7 @@ contains
       i4 = i3 + halo_width - 1
       call MPI_SENDRECV(array(i1:i2), halo_width, block%halo(west)%dtype, block%halo(west)%proc_id, 2, &
                         array(i3:i4), halo_width, block%halo(east)%dtype, block%halo(east)%proc_id, 2, &
-                        proc%comm, status, ierr)
+                        proc%comm, MPI_STATUS_IGNORE, ierr)
     end if
 
   end subroutine fill_zonal_halo_1d_r4
@@ -162,8 +161,7 @@ contains
     logical, intent(in), optional :: west_halo
     logical, intent(in), optional :: east_halo
 
-    integer status(MPI_STATUS_SIZE), ierr
-    integer i1, i2, i3, i4
+    integer i1, i2, i3, i4, ierr
 
     if (merge(west_halo, .true., present(west_halo))) then
       !   west halo |                                   | east_halo
@@ -179,7 +177,7 @@ contains
       i4 = i3 + halo_width - 1
       call MPI_SENDRECV(array(i1:i2), halo_width, block%halo(east)%dtype, block%halo(east)%proc_id, 1, &
                         array(i3:i4), halo_width, block%halo(west)%dtype, block%halo(west)%proc_id, 1, &
-                        proc%comm, status, ierr)
+                        proc%comm, MPI_STATUS_IGNORE, ierr)
     end if
     if (merge(east_halo, .true., present(east_halo))) then
       !   west halo |                                   | east_halo
@@ -195,7 +193,7 @@ contains
       i4 = i3 + halo_width - 1
       call MPI_SENDRECV(array(i1:i2), halo_width, block%halo(west)%dtype, block%halo(west)%proc_id, 2, &
                         array(i3:i4), halo_width, block%halo(east)%dtype, block%halo(east)%proc_id, 2, &
-                        proc%comm, status, ierr)
+                        proc%comm, MPI_STATUS_IGNORE, ierr)
     end if
 
   end subroutine fill_zonal_halo_1d_r8
@@ -260,8 +258,7 @@ contains
     logical, intent(in), optional :: west_halo
     logical, intent(in), optional :: east_halo
 
-    integer status(MPI_STATUS_SIZE), ierr
-    integer nx, nz, i1, i2, i3, i4
+    integer nx, nz, i1, i2, i3, i4, ierr
 
     nz = size(array, 1)
     nx = size(array, 2)
@@ -280,7 +277,7 @@ contains
       i4 = i3 + halo_width - 1
       call MPI_SENDRECV(array(:,i1:i2), halo_width * nz, block%halo(east)%dtype, block%halo(east)%proc_id, 1, &
                         array(:,i3:i4), halo_width * nz, block%halo(west)%dtype, block%halo(west)%proc_id, 1, &
-                        proc%comm, status, ierr)
+                        proc%comm, MPI_STATUS_IGNORE, ierr)
     end if
     if (merge(east_halo, .true., present(east_halo))) then
       !   west halo |                                   | east_halo
@@ -296,7 +293,7 @@ contains
       i4 = i3 + halo_width - 1
       call MPI_SENDRECV(array(:,i1:i2), halo_width * nz, block%halo(west)%dtype, block%halo(west)%proc_id, 2, &
                         array(:,i3:i4), halo_width * nz, block%halo(east)%dtype, block%halo(east)%proc_id, 2, &
-                        proc%comm, status, ierr)
+                        proc%comm, MPI_STATUS_IGNORE, ierr)
     end if
 
   end subroutine fill_zonal_halo_2d_r4
@@ -309,8 +306,7 @@ contains
     logical, intent(in), optional :: west_halo
     logical, intent(in), optional :: east_halo
 
-    integer status(MPI_STATUS_SIZE), ierr
-    integer nx, nz, i1, i2, i3, i4
+    integer nx, nz, i1, i2, i3, i4, ierr
 
     nz = size(array, 1)
     nx = size(array, 2)
@@ -329,7 +325,7 @@ contains
       i4 = i3 + halo_width - 1
       call MPI_SENDRECV(array(:,i1:i2), halo_width * nz, block%halo(east)%dtype, block%halo(east)%proc_id, 1, &
                         array(:,i3:i4), halo_width * nz, block%halo(west)%dtype, block%halo(west)%proc_id, 1, &
-                        proc%comm, status, ierr)
+                        proc%comm, MPI_STATUS_IGNORE, ierr)
     end if
     if (merge(east_halo, .true., present(east_halo))) then
       !   west halo |                                   | east_halo
@@ -345,7 +341,7 @@ contains
       i4 = i3 + halo_width - 1
       call MPI_SENDRECV(array(:,i1:i2), halo_width * nz, block%halo(west)%dtype, block%halo(west)%proc_id, 2, &
                         array(:,i3:i4), halo_width * nz, block%halo(east)%dtype, block%halo(east)%proc_id, 2, &
-                        proc%comm, status, ierr)
+                        proc%comm, MPI_STATUS_IGNORE, ierr)
     end if
 
   end subroutine fill_zonal_halo_2d_r8
@@ -416,7 +412,7 @@ contains
     logical, intent(in), optional :: south_halo
     logical, intent(in), optional :: north_halo
 
-    integer status(MPI_STATUS_SIZE), i, j, ierr
+    integer i, j, ierr
 
     i = merge(1, 2, full_lon)
     j = merge(1, 2, full_lat)
@@ -424,25 +420,25 @@ contains
     if (merge(west_halo, .true., present(west_halo))) then
       call MPI_SENDRECV(array, 1, block%halo(east)%send_type_2d(i,j), block%halo(east)%proc_id, 3, &
                         array, 1, block%halo(west)%recv_type_2d(i,j), block%halo(west)%proc_id, 3, &
-                        proc%comm, status, ierr)
+                        proc%comm, MPI_STATUS_IGNORE, ierr)
     end if
 
     if (merge(east_halo, .true., present(east_halo))) then
       call MPI_SENDRECV(array, 1, block%halo(west)%send_type_2d(i,j), block%halo(west)%proc_id, 7, &
                         array, 1, block%halo(east)%recv_type_2d(i,j), block%halo(east)%proc_id, 7, &
-                        proc%comm, status, ierr)
+                        proc%comm, MPI_STATUS_IGNORE, ierr)
     end if
 
     if (merge(south_halo, .true., present(south_halo))) then
       call MPI_SENDRECV(array, 1, block%halo(north)%send_type_2d(i,j), block%halo(north)%proc_id, 11, &
                         array, 1, block%halo(south)%recv_type_2d(i,j), block%halo(south)%proc_id, 11, &
-                        proc%comm, status, ierr)
+                        proc%comm, MPI_STATUS_IGNORE, ierr)
     end if
 
     if (merge(north_halo, .true., present(north_halo))) then
       call MPI_SENDRECV(array, 1, block%halo(south)%send_type_2d(i,j), block%halo(south)%proc_id, 15, &
                         array, 1, block%halo(north)%recv_type_2d(i,j), block%halo(north)%proc_id, 15, &
-                        proc%comm, status, ierr)
+                        proc%comm, MPI_STATUS_IGNORE, ierr)
     end if
 
   end subroutine fill_halo_2d_r4
@@ -458,7 +454,9 @@ contains
     logical, intent(in), optional :: south_halo
     logical, intent(in), optional :: north_halo
 
-    integer status(MPI_STATUS_SIZE), i, j, ierr
+    integer i, j, ierr
+    integer send_req1, send_req2, recv_req
+    real(8) tmp(size(array,1),block%mesh%lat_halo_width)
 
     i = merge(1, 2, full_lon)
     j = merge(1, 2, full_lat)
@@ -466,25 +464,53 @@ contains
     if (merge(west_halo, .true., present(west_halo))) then
       call MPI_SENDRECV(array, 1, block%halo(east)%send_type_2d(i,j), block%halo(east)%proc_id, 3, &
                         array, 1, block%halo(west)%recv_type_2d(i,j), block%halo(west)%proc_id, 3, &
-                        proc%comm, status, ierr)
+                        proc%comm, MPI_STATUS_IGNORE, ierr)
     end if
 
     if (merge(east_halo, .true., present(east_halo))) then
       call MPI_SENDRECV(array, 1, block%halo(west)%send_type_2d(i,j), block%halo(west)%proc_id, 7, &
                         array, 1, block%halo(east)%recv_type_2d(i,j), block%halo(east)%proc_id, 7, &
-                        proc%comm, status, ierr)
+                        proc%comm, MPI_STATUS_IGNORE, ierr)
     end if
 
     if (merge(south_halo, .true., present(south_halo))) then
-      call MPI_SENDRECV(array, 1, block%halo(north)%send_type_2d(i,j), block%halo(north)%proc_id, 11, &
-                        array, 1, block%halo(south)%recv_type_2d(i,j), block%halo(south)%proc_id, 11, &
-                        proc%comm, status, ierr)
+      send_req1 = MPI_REQUEST_NULL; send_req2 = MPI_REQUEST_NULL; recv_req  = MPI_REQUEST_NULL
+      call MPI_ISEND(array, 1, block%halo(north)%send_type_2d(i,j), block%halo(north)%proc_id, 11, proc%comm, send_req1, ierr)
+      if (proc%at_south_pole) then
+        call MPI_ISEND(array, 1, block%halo(south)%send_type_2d(i,j), block%halo(south)%proc_id, 11, proc%comm, send_req2, ierr)
+      end if
+      call MPI_IRECV(array, 1, block%halo(south)%recv_type_2d(i,j), block%halo(south)%proc_id, 11, proc%comm, recv_req, ierr)
+      call MPI_WAIT(send_req1, MPI_STATUS_IGNORE, ierr)
+      if (proc%at_south_pole) then
+        call MPI_WAIT(send_req2, MPI_STATUS_IGNORE, ierr)
+      end if
+      call MPI_WAIT(recv_req, MPI_STATUS_IGNORE, ierr)
+      if (proc%at_south_pole) then
+        tmp = array(:,1:block%mesh%lat_halo_width)
+        do j = 1, block%mesh%lat_halo_width
+          array(:, block%mesh%lat_halo_width-j+1) = tmp(:,j)
+        end do
+      end if
     end if
 
     if (merge(north_halo, .true., present(north_halo))) then
-      call MPI_SENDRECV(array, 1, block%halo(south)%send_type_2d(i,j), block%halo(south)%proc_id, 15, &
-                        array, 1, block%halo(north)%recv_type_2d(i,j), block%halo(north)%proc_id, 15, &
-                        proc%comm, status, ierr)
+      send_req1 = MPI_REQUEST_NULL; send_req2 = MPI_REQUEST_NULL; recv_req  = MPI_REQUEST_NULL
+      call MPI_ISEND(array, 1, block%halo(south)%send_type_2d(i,j), block%halo(south)%proc_id, 15, proc%comm, send_req1, ierr)
+      if (proc%at_north_pole) then
+        call MPI_ISEND(array, 1, block%halo(north)%send_type_2d(i,j), block%halo(north)%proc_id, 15, proc%comm, send_req2, ierr)
+      end if
+      call MPI_IRECV(array, 1, block%halo(north)%recv_type_2d(i,j), block%halo(north)%proc_id, 15, proc%comm, recv_req, ierr)
+      call MPI_WAIT(send_req1, MPI_STATUS_IGNORE, ierr)
+      if (proc%at_south_pole) then
+        call MPI_WAIT(send_req2, MPI_STATUS_IGNORE, ierr)
+      end if
+      call MPI_WAIT(recv_req, MPI_STATUS_IGNORE, ierr)
+      if (proc%at_north_pole) then
+        tmp = array(:,size(array,2)-block%mesh%lat_halo_width+1:size(array,2))
+        do j = 1, block%mesh%lat_halo_width
+          array(:,size(array,2)-block%mesh%lat_halo_width+j) = tmp(:,block%mesh%lat_halo_width-j+1)
+        end do
+      end if
     end if
 
   end subroutine fill_halo_2d_r8
@@ -551,7 +577,7 @@ contains
     logical, intent(in), optional :: south_halo
     logical, intent(in), optional :: north_halo
 
-    integer status(MPI_STATUS_SIZE), i, j, k, ierr
+    integer i, j, k, ierr
 
     i = merge(1, 2, full_lon)
     j = merge(1, 2, full_lat)
@@ -560,25 +586,25 @@ contains
     if (merge(west_halo, .true., present(west_halo))) then
       call MPI_SENDRECV(array, 1, block%halo(east)%send_type_3d(i,j,k), block%halo(east)%proc_id, 3, &
                         array, 1, block%halo(west)%recv_type_3d(i,j,k), block%halo(west)%proc_id, 3, &
-                        proc%comm, status, ierr)
+                        proc%comm, MPI_STATUS_IGNORE, ierr)
     end if
 
     if (merge(east_halo, .true., present(east_halo))) then
       call MPI_SENDRECV(array, 1, block%halo(west)%send_type_3d(i,j,k), block%halo(west)%proc_id, 7, &
                         array, 1, block%halo(east)%recv_type_3d(i,j,k), block%halo(east)%proc_id, 7, &
-                        proc%comm, status, ierr)
+                        proc%comm, MPI_STATUS_IGNORE, ierr)
     end if
 
     if (merge(south_halo, .true., present(south_halo))) then
       call MPI_SENDRECV(array, 1, block%halo(north)%send_type_3d(i,j,k), block%halo(north)%proc_id, 11, &
                         array, 1, block%halo(south)%recv_type_3d(i,j,k), block%halo(south)%proc_id, 11, &
-                        proc%comm, status, ierr)
+                        proc%comm, MPI_STATUS_IGNORE, ierr)
     end if
 
     if (merge(north_halo, .true., present(north_halo))) then
       call MPI_SENDRECV(array, 1, block%halo(south)%send_type_3d(i,j,k), block%halo(south)%proc_id, 15, &
                         array, 1, block%halo(north)%recv_type_3d(i,j,k), block%halo(north)%proc_id, 15, &
-                        proc%comm, status, ierr)
+                        proc%comm, MPI_STATUS_IGNORE, ierr)
     end if
 
   end subroutine fill_halo_3d_r4
@@ -595,7 +621,9 @@ contains
     logical, intent(in), optional :: south_halo
     logical, intent(in), optional :: north_halo
 
-    integer status(MPI_STATUS_SIZE), i, j, k, ierr
+    integer i, j, k, ierr
+    integer send_req1, send_req2, recv_req
+    real(8) tmp(size(array,1),block%mesh%lat_halo_width,size(array,3))
 
     i = merge(1, 2, full_lon)
     j = merge(1, 2, full_lat)
@@ -604,25 +632,57 @@ contains
     if (merge(west_halo, .true., present(west_halo))) then
       call MPI_SENDRECV(array, 1, block%halo(east)%send_type_3d(i,j,k), block%halo(east)%proc_id, 3, &
                         array, 1, block%halo(west)%recv_type_3d(i,j,k), block%halo(west)%proc_id, 3, &
-                        proc%comm, status, ierr)
+                        proc%comm, MPI_STATUS_IGNORE, ierr)
     end if
 
     if (merge(east_halo, .true., present(east_halo))) then
       call MPI_SENDRECV(array, 1, block%halo(west)%send_type_3d(i,j,k), block%halo(west)%proc_id, 7, &
                         array, 1, block%halo(east)%recv_type_3d(i,j,k), block%halo(east)%proc_id, 7, &
-                        proc%comm, status, ierr)
+                        proc%comm, MPI_STATUS_IGNORE, ierr)
     end if
 
     if (merge(south_halo, .true., present(south_halo))) then
-      call MPI_SENDRECV(array, 1, block%halo(north)%send_type_3d(i,j,k), block%halo(north)%proc_id, 11, &
-                        array, 1, block%halo(south)%recv_type_3d(i,j,k), block%halo(south)%proc_id, 11, &
-                        proc%comm, status, ierr)
+      send_req1 = MPI_REQUEST_NULL; send_req2 = MPI_REQUEST_NULL; recv_req  = MPI_REQUEST_NULL
+      if (.not. proc%at_north_pole) then
+        call MPI_ISEND(array, 1, block%halo(north)%send_type_3d(i,j,k), block%halo(north)%proc_id, 11, proc%comm, send_req1, ierr)
+      end if
+      if (proc%at_south_pole) then
+        call MPI_ISEND(array, 1, block%halo(south)%send_type_3d(i,j,k), block%halo(south)%proc_id, 11, proc%comm, send_req2, ierr)
+      end if
+      call MPI_IRECV(array, 1, block%halo(south)%recv_type_3d(i,j,k), block%halo(south)%proc_id, 11, proc%comm, recv_req, ierr)
+      call MPI_WAIT(send_req1, MPI_STATUS_IGNORE, ierr)
+      if (proc%at_south_pole) then
+        call MPI_WAIT(send_req2, MPI_STATUS_IGNORE, ierr)
+      end if
+      call MPI_WAIT(recv_req, MPI_STATUS_IGNORE, ierr)
+      if (proc%at_south_pole) then
+        tmp = array(:,1:block%mesh%lat_halo_width,:)
+        do j = 1, block%mesh%lat_halo_width
+          array(:,block%mesh%lat_halo_width-j+1,:) = tmp(:,j,:)
+        end do
+      end if
     end if
 
     if (merge(north_halo, .true., present(north_halo))) then
-      call MPI_SENDRECV(array, 1, block%halo(south)%send_type_3d(i,j,k), block%halo(south)%proc_id, 15, &
-                        array, 1, block%halo(north)%recv_type_3d(i,j,k), block%halo(north)%proc_id, 15, &
-                        proc%comm, status, ierr)
+      send_req1 = MPI_REQUEST_NULL; send_req2 = MPI_REQUEST_NULL; recv_req  = MPI_REQUEST_NULL
+      if (.not. proc%at_south_pole) then
+        call MPI_ISEND(array, 1, block%halo(south)%send_type_3d(i,j,k), block%halo(south)%proc_id, 15, proc%comm, send_req1, ierr)
+      end if
+      if (proc%at_north_pole) then
+        call MPI_ISEND(array, 1, block%halo(north)%send_type_3d(i,j,k), block%halo(north)%proc_id, 15, proc%comm, send_req2, ierr)
+      end if
+      call MPI_IRECV(array, 1, block%halo(north)%recv_type_3d(i,j,k), block%halo(north)%proc_id, 15, proc%comm, recv_req, ierr)
+      call MPI_WAIT(send_req1, MPI_STATUS_IGNORE, ierr)
+      if (proc%at_north_pole) then
+        call MPI_WAIT(send_req2, MPI_STATUS_IGNORE, ierr)
+      end if
+      call MPI_WAIT(recv_req, MPI_STATUS_IGNORE, ierr)
+      if (proc%at_north_pole) then
+        tmp = array(:,size(array,2)-block%mesh%lat_halo_width+1:size(array,2),:)
+        do j = 1, block%mesh%lat_halo_width
+          array(:,size(array,2)-block%mesh%lat_halo_width+j,:) = tmp(:,block%mesh%lat_halo_width-j+1,:)
+        end do
+      end if
     end if
 
   end subroutine fill_halo_3d_r8
@@ -760,8 +820,7 @@ contains
     logical, intent(in), optional :: west_halo
     logical, intent(in), optional :: east_halo
 
-    integer i1, i2, i3, i4
-    integer status(MPI_STATUS_SIZE), ierr
+    integer i1, i2, i3, i4, ierr
     real(4) buffer(block%mesh%lon_halo_width)
 
     if (merge(west_halo, .false., present(west_halo))) then
@@ -778,7 +837,7 @@ contains
       i4 = i3 + block%mesh%lon_halo_width - 1
       call MPI_SENDRECV(array(i1:i2), block%mesh%lon_halo_width, block%halo(east)%dtype, block%halo(east)%proc_id, 19, &
                         buffer      , block%mesh%lon_halo_width, block%halo(west)%dtype, block%halo(west)%proc_id, 19, &
-                        proc%comm, status, ierr)
+                        proc%comm, MPI_STATUS_IGNORE, ierr)
       array(i3:i4) = array(i3:i4) + buffer
     end if
 
@@ -791,8 +850,7 @@ contains
     logical, intent(in), optional :: west_halo
     logical, intent(in), optional :: east_halo
 
-    integer i1, i2, i3, i4
-    integer status(MPI_STATUS_SIZE), ierr
+    integer i1, i2, i3, i4, ierr
     real(8) buffer(block%mesh%lon_halo_width)
 
     if (merge(west_halo, .false., present(west_halo))) then
@@ -809,7 +867,7 @@ contains
       i4 = i3 + block%mesh%lon_halo_width - 1
       call MPI_SENDRECV(array(i1:i2), block%mesh%lon_halo_width, block%halo(east)%dtype, block%halo(east)%proc_id, 19, &
                         buffer      , block%mesh%lon_halo_width, block%halo(west)%dtype, block%halo(west)%proc_id, 19, &
-                        proc%comm, status, ierr)
+                        proc%comm, MPI_STATUS_IGNORE, ierr)
       array(i3:i4) = array(i3:i4) + buffer
     end if
 
@@ -1020,12 +1078,12 @@ contains
     real(4), intent(in) :: local_array(:)
     real(4), intent(out) :: array(:)
 
-    integer status(MPI_STATUS_SIZE), ierr, i
+    integer ierr, i
 
     if (zonal_circle%id == 0) then
       array(1:size(local_array)) = local_array
       do i = 2, zonal_circle%np
-        call MPI_RECV(array, 1, zonal_circle%recv_type_r4(i,0), i - 1, 30, zonal_circle%comm, status, ierr)
+        call MPI_RECV(array, 1, zonal_circle%recv_type_r4(i,0), i - 1, 30, zonal_circle%comm, MPI_STATUS_IGNORE, ierr)
       end do
     else
       call MPI_SEND(local_array, size(local_array), MPI_REAL, 0, 30, zonal_circle%comm, ierr)
@@ -1039,12 +1097,12 @@ contains
     real(8), intent(in) :: local_array(:)
     real(8), intent(out) :: array(:)
 
-    integer status(MPI_STATUS_SIZE), ierr, i
+    integer ierr, i
 
     if (zonal_circle%id == 0) then
       array(1:size(local_array)) = local_array
       do i = 2, zonal_circle%np
-        call MPI_RECV(array, 1, zonal_circle%recv_type_r8(i,0), i - 1, 30, zonal_circle%comm, status, ierr)
+        call MPI_RECV(array, 1, zonal_circle%recv_type_r8(i,0), i - 1, 30, zonal_circle%comm, MPI_STATUS_IGNORE, ierr)
       end do
     else
       call MPI_SEND(local_array, size(local_array), MPI_DOUBLE, 0, 30, zonal_circle%comm, ierr)
@@ -1058,13 +1116,13 @@ contains
     real(4), intent(in) :: local_array(:,:)
     real(4), intent(inout) :: array(:,:)
 
-    integer status(MPI_STATUS_SIZE), ierr, i, k
+    integer ierr, i, k
 
     if (zonal_circle%id == 0) then
       k = merge(1, 2, size(local_array, 2) == global_mesh%num_full_lev)
       array(1:size(local_array, 1),:) = local_array
       do i = 2, zonal_circle%np
-        call MPI_RECV(array, 1, zonal_circle%recv_type_r4(i,k), i - 1, 31, zonal_circle%comm, status, ierr)
+        call MPI_RECV(array, 1, zonal_circle%recv_type_r4(i,k), i - 1, 31, zonal_circle%comm, MPI_STATUS_IGNORE, ierr)
       end do
     else
       call MPI_SEND(local_array, size(local_array), MPI_REAL, 0, 31, zonal_circle%comm, ierr)
@@ -1078,13 +1136,13 @@ contains
     real(8), intent(in) :: local_array(:,:)
     real(8), intent(inout) :: array(:,:)
 
-    integer status(MPI_STATUS_SIZE), ierr, i, k
+    integer ierr, i, k
 
     if (zonal_circle%id == 0) then
       k = merge(1, 2, size(local_array, 2) == global_mesh%num_full_lev)
       array(1:size(local_array, 1),:) = local_array
       do i = 2, zonal_circle%np
-        call MPI_RECV(array, 1, zonal_circle%recv_type_r8(i,k), i - 1, 31, zonal_circle%comm, status, ierr)
+        call MPI_RECV(array, 1, zonal_circle%recv_type_r8(i,k), i - 1, 31, zonal_circle%comm, MPI_STATUS_IGNORE, ierr)
       end do
     else
       call MPI_SEND(local_array, size(local_array), MPI_DOUBLE, 0, 31, zonal_circle%comm, ierr)
@@ -1098,7 +1156,7 @@ contains
     real(4), intent(in) :: array(:)
     real(4), intent(out) :: local_array(:)
 
-    integer status(MPI_STATUS_SIZE), ierr, i
+    integer ierr, i
 
     if (zonal_circle%id == 0) then
       local_array = array(1:size(local_array))
@@ -1106,7 +1164,7 @@ contains
         call MPI_SEND(array, 1, zonal_circle%recv_type_r4(i,0), i - 1, 32, zonal_circle%comm, ierr)
       end do
     else
-      call MPI_RECV(local_array, size(local_array), MPI_REAL, 0, 32, zonal_circle%comm, status, ierr)
+      call MPI_RECV(local_array, size(local_array), MPI_REAL, 0, 32, zonal_circle%comm, MPI_STATUS_IGNORE, ierr)
     end if
 
   end subroutine scatter_zonal_array_1d_r4
@@ -1117,7 +1175,7 @@ contains
     real(8), intent(in) :: array(:)
     real(8), intent(out) :: local_array(:)
 
-    integer status(MPI_STATUS_SIZE), ierr, i
+    integer ierr, i
 
     if (zonal_circle%id == 0) then
       local_array = array(1:size(local_array))
@@ -1125,7 +1183,7 @@ contains
         call MPI_SEND(array, 1, zonal_circle%recv_type_r8(i,0), i - 1, 32, zonal_circle%comm, ierr)
       end do
     else
-      call MPI_RECV(local_array, size(local_array), MPI_DOUBLE, 0, 32, zonal_circle%comm, status, ierr)
+      call MPI_RECV(local_array, size(local_array), MPI_DOUBLE, 0, 32, zonal_circle%comm, MPI_STATUS_IGNORE, ierr)
     end if
 
   end subroutine scatter_zonal_array_1d_r8
@@ -1136,7 +1194,7 @@ contains
     real(4), intent(in) :: array(:,:)
     real(4), intent(out) :: local_array(:,:)
 
-    integer status(MPI_STATUS_SIZE), ierr, i, k
+    integer ierr, i, k
 
     if (zonal_circle%id == 0) then
       k = merge(1, 2, size(local_array, 2) == global_mesh%num_full_lev)
@@ -1145,7 +1203,7 @@ contains
         call MPI_SEND(array, 1, zonal_circle%recv_type_r4(i,k), i - 1, 33, zonal_circle%comm, ierr)
       end do
     else
-      call MPI_RECV(local_array, size(local_array), MPI_REAL, 0, 33, zonal_circle%comm, status, ierr)
+      call MPI_RECV(local_array, size(local_array), MPI_REAL, 0, 33, zonal_circle%comm, MPI_STATUS_IGNORE, ierr)
     end if
 
   end subroutine scatter_zonal_array_2d_r4
@@ -1156,7 +1214,7 @@ contains
     real(8), intent(in) :: array(:,:)
     real(8), intent(out) :: local_array(:,:)
 
-    integer status(MPI_STATUS_SIZE), ierr, i, k
+    integer ierr, i, k
 
     if (zonal_circle%id == 0) then
       k = merge(1, 2, size(local_array, 2) == global_mesh%num_full_lev)
@@ -1165,7 +1223,7 @@ contains
         call MPI_SEND(array, 1, zonal_circle%recv_type_r8(i,k), i - 1, 33, zonal_circle%comm, ierr)
       end do
     else
-      call MPI_RECV(local_array, size(local_array), MPI_DOUBLE, 0, 33, zonal_circle%comm, status, ierr)
+      call MPI_RECV(local_array, size(local_array), MPI_DOUBLE, 0, 33, zonal_circle%comm, MPI_STATUS_IGNORE, ierr)
     end if
 
   end subroutine scatter_zonal_array_2d_r8

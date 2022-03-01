@@ -19,10 +19,10 @@ module process_mod
   public is_root_proc
   public zonal_circle_type
 
-  integer, public, parameter :: decomp_1d_lat = 1
-  integer, public, parameter :: decomp_2d_simple = 2
+  integer, public, parameter :: decomp_1d_lat        = 1
+  integer, public, parameter :: decomp_2d_simple     = 2
 
-  integer, public, parameter :: decomp_normal_region         = 5
+  integer, public, parameter :: decomp_normal_region = 5
 
   type process_neighbor_type
     integer :: id       = MPI_PROC_NULL
@@ -68,6 +68,8 @@ module process_mod
     integer lon_iend
     integer lat_ibeg
     integer lat_iend
+    logical :: at_south_pole = .false.
+    logical :: at_north_pole = .false.
     type(zonal_circle_type) zonal_circle
     type(process_neighbor_type), allocatable :: ngb(:) ! Neighbor processes
     type(block_type), allocatable :: blocks(:)
@@ -195,6 +197,20 @@ contains
         proc%ngb(i)%id = tmp_id(1)
       end if
     end do
+
+    ! Handle processes at poles.
+    if (proc%ngb(south)%id == MPI_PROC_NULL) then
+      i = proc%id + proc%cart_dims(1) / 2 * proc%cart_dims(2)
+      if (i >= proc%np) i = i - proc%np
+      proc%ngb(south)%id = i
+      proc%at_south_pole = .true.
+    end if
+    if (proc%ngb(north)%id == MPI_PROC_NULL) then
+      i = proc%id + proc%cart_dims(1) / 2 * proc%cart_dims(2)
+      if (i >= proc%np) i = i - proc%np
+      proc%ngb(north)%id = i
+      proc%at_north_pole = .true.
+    end if
 
     ! Set initial values for num_lon, num_lat, lon_ibeg, lat_ibeg.
     proc%num_lon = global_mesh%num_full_lon
