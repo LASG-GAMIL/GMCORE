@@ -475,7 +475,7 @@ contains
 
     if (merge(south_halo, .true., present(south_halo))) then
       send_req1 = MPI_REQUEST_NULL; send_req2 = MPI_REQUEST_NULL; recv_req  = MPI_REQUEST_NULL
-      if (block%halo(north)%proc_id == proc%id) then  ! 1D decompostion, also reverse in lon
+      if (block%halo(north)%proc_id /= proc%id) then ! Skip sending to self.
         call MPI_ISEND(array, 1, block%halo(north)%send_type_2d(i,j), block%halo(north)%proc_id, 11, &
                        proc%comm, send_req1, ierr)
       end if
