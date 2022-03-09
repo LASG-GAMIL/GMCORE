@@ -73,6 +73,7 @@ contains
     if (is_root_proc()) call log_notice('Regrid mean sea level pressure and calculate surface pressure based on pressure-height formula.')
 
     lapse_kappa = lapse_rate * Rd_o_g
+    do_drymass_correct = .false.
     do iblk = 1, size(proc%blocks)
       associate (block => proc%blocks(iblk)             , &
                  mesh  => proc%blocks(iblk)%mesh        , &
@@ -90,7 +91,6 @@ contains
           t0_p = era5_lev(num_era5_lev)
           z0 = 0.0_r8
           do_hydrostatic_correct = .true.
-          do_drymass_correct = .false.
         case ('mpas')
           call latlon_interp_bilinear_cell(mpas_lon, mpas_lat, mpas_ps, mesh, p0)
           call latlon_interp_bilinear_cell(mpas_lon, mpas_lat, mpas_zs, mesh, z0)
