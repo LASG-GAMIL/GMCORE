@@ -64,6 +64,20 @@ else ()
 endif ()
 set(EXTERNAL_LIBS netcdff netcdf)
 
+if (DEFINED ENV{ECCODES} AND (NOT DEFINED ENV{ECCODES_ROOT}))
+  set(ENV{ECCODES_ROOT} $ENV{ECCODES})
+endif ()
+if (DEFINED ENV{ECCODES_ROOT})
+  message(STATUS "Found EcCodes in $ENV{ECCODES_ROOT}.")
+  add_definitions(-DHAS_ECCODES)
+  include_directories("$ENV{ECCODES_ROOT}/include")
+  link_directories("$ENV{ECCODES_ROOT}/lib")
+  link_directories("$ENV{ECCODES_ROOT}/lib64")
+  list(APPEND EXTERNAL_LIBS eccodes_f90)
+else ()
+  message(WARNING "Unable to find EcCodes!")
+endif ()
+
 if (DEFINED ENV{MKLROOT})
   add_definitions(-DHAS_MKL)
   include_directories("$ENV{MKLROOT}/include")
@@ -73,12 +87,12 @@ elseif (DEFINED ENV{MKL_INC} AND DEFINED ENV{MKL_LIB})
   include_directories("$ENV{MKL_INC}")
   link_directories("$ENV{MKL_LIB}")
 else ()
-  message (WARNING "Unable to find MKL library!")
+  message(WARNING "Unable to find MKL library!")
 endif ()
 
 if (HAS_MKL)
   if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
-    set(EXTERNAL_LIBS ${EXTERNAL_LIBS} lapack64)
+    list(APPEND EXTERNAL_LIBS lapack64)
   endif ()
 endif ()
 
@@ -144,6 +158,7 @@ set(gmcore_files
   src/prepare/latlon_interp_mod.F90
   src/prepare/vert_interp_mod.F90
   src/prepare/era5_reader_mod.F90
+  src/prepare/fnl_reader_mod.F90
   src/prepare/mpas_reader_mod.F90
   src/prepare/waccm_reader_mod.F90
   src/prepare/openmars_reader_mod.F90

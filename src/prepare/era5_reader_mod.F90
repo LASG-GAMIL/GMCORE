@@ -3,7 +3,6 @@ module era5_reader_mod
   use fiona
   use flogger
   use const_mod
-  use block_mod
   use process_mod
 
   implicit none
@@ -96,6 +95,5 @@ contains
     if (allocated(era5_psd )) deallocate(era5_psd )
 
   end subroutine era5_reader_final
-
 
 end module era5_reader_mod

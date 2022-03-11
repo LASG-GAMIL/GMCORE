@@ -10,6 +10,9 @@ module bkg_mod
   use process_mod
   use parallel_mod
   use era5_reader_mod
+#ifdef HAS_ECCODES
+  use fnl_reader_mod
+#endif
   use mpas_reader_mod
   use waccm_reader_mod
   use openmars_reader_mod
@@ -41,6 +44,10 @@ contains
     select case (bkg_type)
     case ('era5')
       call era5_reader_run(bkg_file)
+#ifdef HAS_ECCODES
+    case ('fnl')
+      call fnl_reader_run(bkg_file)
+#endif
     case ('mpas')
       call mpas_reader_run(bkg_file)
     case ('waccm')
@@ -56,6 +63,9 @@ contains
   subroutine bkg_final()
 
     call era5_reader_final()
+#ifdef HAS_ECCODES
+    call fnl_reader_final()
+#endif
     call mpas_reader_final()
     call waccm_reader_final()
     call openmars_reader_final()
@@ -91,12 +101,14 @@ contains
           t0_p = era5_lev(num_era5_lev)
           z0 = 0.0_r8
           do_hydrostatic_correct = .true.
+#ifdef HAS_ECCODES
+        case ('fnl')
+          call latlon_interp_bilinear_cell(fnl_lon, fnl_lat, fnl_ps, mesh, phs)
+          do_hydrostatic_correct = .false.
+#endif
         case ('mpas')
-          call latlon_interp_bilinear_cell(mpas_lon, mpas_lat, mpas_ps, mesh, p0)
-          call latlon_interp_bilinear_cell(mpas_lon, mpas_lat, mpas_zs, mesh, z0)
-          call latlon_interp_bilinear_cell(mpas_lon, mpas_lat, mpas_p(:,:,num_mpas_lev), mesh, t0_p)
-          call latlon_interp_bilinear_cell(mpas_lon, mpas_lat, mpas_t(:,:,num_mpas_lev), mesh, t0  )
-          do_hydrostatic_correct = .true.
+          call latlon_interp_bilinear_cell(mpas_lon, mpas_lat, mpas_ps, mesh, phs)
+          do_hydrostatic_correct = .false.
         case ('waccm')
           call latlon_interp_bilinear_cell(waccm_lon, waccm_lat, waccm_ps, mesh, p0)
           call latlon_interp_bilinear_cell(waccm_lon, waccm_lat, waccm_zs, mesh, z0)
@@ -222,6 +234,20 @@ contains
             end do
           end do
           deallocate(t1)
+#ifdef HAS_ECCODES
+        case ('fnl')
+          allocate(t1(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,num_fnl_lev))
+          do k = 1, num_fnl_lev
+            call latlon_interp_bilinear_cell(fnl_lon, fnl_lat, fnl_t(:,:,k), mesh, t1(:,:,k))
+          end do
+          do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              call vert_interp_log_linear(fnl_lev, t1(i,j,:), ph(i,j,:), t(i,j,:), allow_extrap=.true.)
+              pt(i,j,:) = potential_temperature(t(i,j,:), ph(i,j,:))
+            end do
+          end do
+          deallocate(t1)
+#endif
         case ('mpas')
           allocate(pt1(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,num_mpas_lev))
           allocate(p1 (mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,num_mpas_lev))
@@ -231,7 +257,7 @@ contains
           end do
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              call vert_interp_log_linear(p1(i,j,:), pt1(i,j,:), ph(i,j,:), pt(i,j,:), allow_extrap=.true.)
+              call vert_interp_log_linear(p1(i,j,:), pt1(i,j,:), ph(i,j,:), pt(i,j,:), allow_extrap=.false.)
             end do
           end do
           deallocate(pt1, p1)
@@ -294,6 +320,19 @@ contains
             end do
           end do
           deallocate(u1)
+#ifdef HAS_ECCODES
+        case ('fnl')
+          allocate(u1(mesh%half_lon_lb:mesh%half_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,num_fnl_lev))
+          do k = 1, num_fnl_lev
+            call latlon_interp_bilinear_lon_edge(fnl_lon, fnl_lat, fnl_u(:,:,k), mesh, u1(:,:,k), zero_pole=.true.)
+          end do
+          do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+            do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+              call vert_interp_linear(fnl_lev, u1(i,j,:), ph(i,j,:), u(i,j,:), allow_extrap=.true.)
+            end do
+          end do
+          deallocate(u1)
+#endif
         case ('mpas')
           allocate(u1(mesh%half_lon_lb:mesh%half_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,num_mpas_lev))
           allocate(p1(mesh%half_lon_lb:mesh%half_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,num_mpas_lev))
@@ -303,7 +342,7 @@ contains
           end do
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              call vert_interp_linear(p1(i,j,:), u1(i,j,:), ph(i,j,:), u(i,j,:), allow_extrap=.true.)
+              call vert_interp_linear(p1(i,j,:), u1(i,j,:), ph(i,j,:), u(i,j,:), allow_extrap=.false.)
             end do
           end do
           deallocate(u1, p1)
@@ -364,6 +403,19 @@ contains
             end do
           end do
           deallocate(v1)
+#ifdef HAS_ECCODES
+        case ('fnl')
+          allocate(v1(mesh%full_lon_lb:mesh%full_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,num_fnl_lev))
+          do k = 1, num_fnl_lev
+            call latlon_interp_bilinear_lat_edge(fnl_lon, fnl_lat, fnl_v(:,:,k), mesh, v1(:,:,k))
+          end do
+          do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              call vert_interp_linear(fnl_lev, v1(i,j,:), ph(i,j,:), v(i,j,:), allow_extrap=.true.)
+            end do
+          end do
+          deallocate(v1)
+#endif
         case ('mpas')
           allocate(v1(mesh%full_lon_lb:mesh%full_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,num_mpas_lev))
           allocate(p1(mesh%full_lon_lb:mesh%full_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,num_mpas_lev))
@@ -373,7 +425,7 @@ contains
           end do
           do j = mesh%half_lat_ibeg, mesh%half_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              call vert_interp_linear(p1(i,j,:), v1(i,j,:), ph(i,j,:), v(i,j,:), allow_extrap=.true.)
+              call vert_interp_linear(p1(i,j,:), v1(i,j,:), ph(i,j,:), v(i,j,:), allow_extrap=.false.)
             end do
           end do
           deallocate(v1, p1)
