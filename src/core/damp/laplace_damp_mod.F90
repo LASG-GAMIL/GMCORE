@@ -115,7 +115,7 @@ contains
         fx(i,j) = cj(j) * sum(f(i+1-ns:i+ns,j) * w(:2*ns))
       end do
     end do
-    do j = mesh%half_lat_ibeg - 1, mesh%half_lat_iend
+    do j = mesh%half_lat_ibeg - merge(0, 1, mesh%has_south_pole()), mesh%half_lat_iend
       cj_half = merge(cj(j), cj(j+1), mesh%half_lat(j) < 0)
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         fy(i,j) = cj_half * sum(f(i,j+1-ns:j+ns) * w(:2*ns))

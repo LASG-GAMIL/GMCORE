@@ -119,7 +119,7 @@ contains
         call fiona_add_var('h0', 'u'    , long_name='u wind component'      , units='m s-1'  , dim_names=diag_dims)
         call fiona_add_var('h0', 'v'    , long_name='v wind component'      , units='m s-1'  , dim_names=diag_dims)
         call fiona_add_var('h0', 'pt'   , long_name='potential temperature' , units='K'      , dim_names=diag_dims)
-        !call fiona_add_var('h0', 't'    , long_name='temperature'           , units='K'      , dim_names=diag_dims)
+        call fiona_add_var('h0', 't'    , long_name='temperature'           , units='K'      , dim_names=diag_dims)
         if (nonhydrostatic) then
           call fiona_add_var('h0', 'w'  , long_name='vertical speed'        , units='m s-1'  , dim_names=diag_dims)
         end if
@@ -130,8 +130,8 @@ contains
         call fiona_add_var('h0', 'v'    , long_name='v wind component'      , units='m s-1'  , dim_names=lat_dims , dtype='r8')
         call fiona_add_var('h0', 'pt'   , long_name='potential temperature' , units='K'      , dim_names=cell_dims, dtype='r8')
         call fiona_add_var('h0', 't'    , long_name='temperature'           , units='K'      , dim_names=cell_dims, dtype='r8')
-        call fiona_add_var('h0', 'z'    , long_name='height'                , units='m'      , dim_names=lev_dims , dtype='r8')
-        call fiona_add_var('h0', 'ph'   , long_name='hydrostatic pressure'  , units='Pa'     , dim_names=lev_dims , dtype='r8')
+        call fiona_add_var('h0', 'z'    , long_name='height'                , units='m'      , dim_names=cell_dims, dtype='r8')
+        call fiona_add_var('h0', 'ph'   , long_name='hydrostatic pressure'  , units='Pa'     , dim_names=cell_dims, dtype='r8')
         call fiona_add_var('h0', 'vor'  , long_name='relative vorticity'    , units='s-1'    , dim_names=vtx_dims , dtype='r8')
         call fiona_add_var('h0', 'div'  , long_name='divergence'            , units='s-1'    , dim_names=cell_dims, dtype='r8')
         if (nonhydrostatic) then
@@ -304,13 +304,13 @@ contains
       call fiona_output('h0', 'dzsdlat', static%dzsdlat(is:ie,js:je)    , start=start, count=count)
 
       if (baroclinic) then
-        call fiona_output('h0', 'phs', state%phs_f(is:ie,js:je), start=start, count=count)
+        call fiona_output('h0', 'phs', state%phs(is:ie,js:je), start=start, count=count)
         if (diag_state(1)%is_init()) then
           count(3) = size(diag_state(iblk)%levels)
           call fiona_output('h0', 'u'  , diag_state(iblk)%u (is:ie,js:je,:), start=start, count=count)
           call fiona_output('h0', 'v'  , diag_state(iblk)%v (is:ie,js:je,:), start=start, count=count)
           call fiona_output('h0', 'pt' , diag_state(iblk)%pt(is:ie,js:je,:), start=start, count=count)
-          !call fiona_output('h0', 't'  , diag_state(iblk)%t (is:ie,js:je,:), start=start, count=count)
+          call fiona_output('h0', 't'  , diag_state(iblk)%t (is:ie,js:je,:), start=start, count=count)
           if (nonhydrostatic) then
             call fiona_output('h0', 'w', diag_state(iblk)%w (is:ie,js:je,:), start=start, count=count)
           end if
@@ -321,9 +321,11 @@ contains
             call fiona_output('h0', 'z', diag_state(iblk)%z (is:ie,js:je,:), start=start, count=count)
           end select
         else
-          call fiona_output('h0', 'pt' , state%pt_f(is:ie,js:je,ks:ke), start=start, count=count)
+          call fiona_output('h0', 'pt' , state%pt  (is:ie,js:je,ks:ke), start=start, count=count)
           call fiona_output('h0', 't'  , state%t   (is:ie,js:je,ks:ke), start=start, count=count)
           call fiona_output('h0', 'div', state%div (is:ie,js:je,ks:ke), start=start, count=count)
+          call fiona_output('h0', 'z'  , state%gz  (is:ie,js:je,ks:ke) / g, start=start, count=count)
+          call fiona_output('h0', 'ph' , state%ph  (is:ie,js:je,ks:ke)    , start=start, count=count)
           if (nonhydrostatic) then
             call fiona_output('h0', 'rhod', state%rhod(is:ie,js:je,ks:ke), start=start, count=count)
           end if
@@ -340,7 +342,7 @@ contains
       count = [mesh%num_half_lon,mesh%num_full_lat,mesh%num_full_lev]
 
       if (.not. diag_state(1)%is_init()) then
-        call fiona_output('h0', 'u', state%u_f(is:ie,js:je,ks:ke), start=start, count=count)
+        call fiona_output('h0', 'u', state%u(is:ie,js:je,ks:ke), start=start, count=count)
       end if
 
       is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
@@ -350,7 +352,7 @@ contains
       count = [mesh%num_full_lon,mesh%num_half_lat,mesh%num_full_lev]
 
       if (.not. diag_state(1)%is_init()) then
-        call fiona_output('h0', 'v', state%v_f(is:ie,js:je,ks:ke), start=start, count=count)
+        call fiona_output('h0', 'v', state%v(is:ie,js:je,ks:ke), start=start, count=count)
       end if
 
       is = mesh%half_lon_ibeg; ie = mesh%half_lon_iend
@@ -373,8 +375,6 @@ contains
       count = [mesh%num_full_lon,mesh%num_full_lat,mesh%num_half_lev]
 
       if (baroclinic .and. .not. diag_state(1)%is_init()) then
-        call fiona_output('h0', 'z' , state%gz_lev(is:ie,js:je,ks:ke) / g, start=start, count=count)
-        call fiona_output('h0', 'ph', state%ph_lev(is:ie,js:je,ks:ke)    , start=start, count=count)
         if (nonhydrostatic) then
           call fiona_output('h0', 'w', state%w_lev(is:ie,js:je,ks:ke), start=start, count=count)
           call fiona_output('h0', 'p', state%p_lev(is:ie,js:je,ks:ke), start=start, count=count)

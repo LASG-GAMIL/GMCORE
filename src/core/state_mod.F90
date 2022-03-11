@@ -67,7 +67,7 @@ module state_mod
     real(r8), allocatable, dimension(:,:,:) :: rhod              ! Dry air density
     real(r8), allocatable, dimension(:,:,:) :: rhod_lon          ! Dry air density
     real(r8), allocatable, dimension(:,:,:) :: rhod_lat          ! Dry air density
-    real(r8), allocatable, dimension(:,:,:) :: p                 ! Pressure on full levels
+    real(r8), pointer    , dimension(:,:,:) :: p                 ! Pressure on full levels
     real(r8), pointer    , dimension(:,:,:) :: p_lev             ! Pressure on half levels
     real(r8), allocatable, dimension(:,:,:) :: p_lev_lon         ! Pressure on half levels
     real(r8), allocatable, dimension(:,:,:) :: p_lev_lat         ! Pressure on half levels
@@ -160,6 +160,7 @@ contains
       call allocate_array(mesh, this%mf_lev_lon_n   , half_lon=.true., full_lat=.true., half_lev=.true.)
       call allocate_array(mesh, this%mf_lev_lat_n   , full_lon=.true., half_lat=.true., half_lev=.true.)
     else
+      this%p     => this%ph
       this%p_lev => this%ph_lev
     end if
 
@@ -231,7 +232,6 @@ contains
     if (allocated(this%rhod             )) deallocate(this%rhod             )
     if (allocated(this%rhod_lon         )) deallocate(this%rhod_lon         )
     if (allocated(this%rhod_lat         )) deallocate(this%rhod_lat         )
-    if (allocated(this%p                )) deallocate(this%p                )
     if (allocated(this%p_lev_lon        )) deallocate(this%p_lev_lon        )
     if (allocated(this%p_lev_lat        )) deallocate(this%p_lev_lat        )
     if (allocated(this%u_lev_lon        )) deallocate(this%u_lev_lon        )
@@ -240,6 +240,7 @@ contains
     if (allocated(this%mf_lev_lat_n     )) deallocate(this%mf_lev_lat_n     )
 
     if (nonhydrostatic) then
+      if (associated(this%p             )) deallocate(this%p                )
       if (associated(this%p_lev         )) deallocate(this%p_lev            )
     end if
 
