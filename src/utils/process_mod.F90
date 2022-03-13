@@ -3,6 +3,7 @@ module process_mod
   use mpi
   use flogger
   use string
+  use const_mod
   use namelist_mod
   use mesh_mod
   use block_mod

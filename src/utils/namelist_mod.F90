@@ -2,7 +2,7 @@ module namelist_mod
 
   use string
   use flogger
-  use const_mod
+  use const_mod, only: r8
   use time_mod, start_time => start_time_array, end_time => end_time_array
 
   implicit none

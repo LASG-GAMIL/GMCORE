@@ -1,6 +1,7 @@
 program gmcore_swm_driver
 
-  use log_mod
+  use flogger
+  use const_mod
   use namelist_mod
   use block_mod
   use parallel_mod
