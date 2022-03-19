@@ -49,13 +49,22 @@ def run_case(exe, case):
 if not os.path.isdir('GMCORE-TESTBED'):
 	run('git clone https://gitee.com/dongli85/GMCORE-TESTBED')
 
-run_case('gmcore_swm_driver.exe', 'swm.rh.180x90')
-run_case('gmcore_swm_driver.exe', 'swm.rh.360x180')
-run_case('gmcore_swm_driver.exe', 'swm.mz.180x90')
-run_case('gmcore_swm_driver.exe', 'swm.mz.360x180')
-run_case('gmcore_driver.exe', 'rh.180x90')
-run_case('gmcore_driver.exe', 'rh.360x180')
-run_case('gmcore_driver.exe', 'mz.180x90')
-run_case('gmcore_driver.exe', 'mz.360x180')
-run_case('gmcore_driver.exe', 'bw.180x90')
-run_case('gmcore_driver.exe', 'bw.360x180')
+if len(args.cases) > 0:
+	for case in args.cases:
+		if 'swm' in case:
+			run_case('gmcore_swm_driver.exe', case)
+		else:
+			run_case('gmcore_driver.exe', case)
+else:
+	run_case('gmcore_swm_driver.exe', 'swm.rh.180x90')
+	run_case('gmcore_swm_driver.exe', 'swm.rh.360x180')
+	run_case('gmcore_swm_driver.exe', 'swm.mz.180x90')
+	run_case('gmcore_swm_driver.exe', 'swm.mz.360x180')
+	run_case('gmcore_swm_driver.exe', 'swm.jz.180x90')
+	run_case('gmcore_swm_driver.exe', 'swm.jz.360x180')
+	run_case('gmcore_driver.exe', 'rh.180x90')
+	run_case('gmcore_driver.exe', 'rh.360x180')
+	run_case('gmcore_driver.exe', 'mz.180x90')
+	run_case('gmcore_driver.exe', 'mz.360x180')
+	run_case('gmcore_driver.exe', 'bw.180x90')
+	run_case('gmcore_driver.exe', 'bw.360x180')
