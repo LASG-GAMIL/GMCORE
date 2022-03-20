@@ -117,7 +117,11 @@ contains
 
   subroutine process_final()
 
-    integer ierr
+    integer i, ierr
+
+    do i = 1, size(proc%blocks)
+      call proc%blocks(i)%clear()
+    end do
 
     if (allocated(proc%ngb   )) deallocate(proc%ngb   )
     if (allocated(proc%blocks)) deallocate(proc%blocks)

@@ -37,6 +37,7 @@ module halo_mod
   contains
     procedure :: init => halo_init
     procedure :: init_nest => halo_init_nest
+    procedure :: clear => halo_clear
     final :: halo_final
   end type halo_type
 
@@ -241,9 +242,9 @@ contains
 
   end subroutine halo_init_nest
 
-  subroutine halo_final(this)
+  subroutine halo_clear(this)
 
-    type(halo_type), intent(inout) :: this
+    class(halo_type), intent(inout) :: this
 
     integer i, j, k
     integer ierr
@@ -263,6 +264,14 @@ contains
         if (this%recv_type_2d(i,j) /= MPI_DATATYPE_NULL) call MPI_TYPE_FREE(this%recv_type_2d(i,j), ierr)
       end do
     end do
+
+  end subroutine halo_clear
+
+  subroutine halo_final(this)
+
+    type(halo_type), intent(inout) :: this
+
+    call this%clear()
 
   end subroutine halo_final
 

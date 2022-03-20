@@ -33,6 +33,7 @@ module block_mod
   contains
     procedure :: init_stage_1 => block_init_stage_1
     procedure :: init_stage_2 => block_init_stage_2
+    procedure :: clear => block_clear
     final :: block_final
   end type block_type
 
@@ -97,14 +98,34 @@ contains
 
   end subroutine block_init_stage_2
 
-  subroutine block_final(this)
+  subroutine block_clear(this)
 
-    type(block_type), intent(inout) :: this
+    class(block_type), intent(inout) :: this
+
+    integer i
+
+    do i = 1, size(this%state)
+      call this%state(i)%clear()
+    end do
+    do i = 1, size(this%tend)
+      call this%tend(i)%clear()
+    end do
+    do i = 1, size(this%halo)
+      call this%halo(i)%clear()
+    end do
 
     if (allocated(this%halo )) deallocate(this%halo )
     if (allocated(this%state)) deallocate(this%state)
     if (allocated(this%tend )) deallocate(this%tend )
     if (allocated(this%halo )) deallocate(this%halo )
+
+  end subroutine block_clear
+
+  subroutine block_final(this)
+
+    type(block_type), intent(inout) :: this
+
+    call this%clear()
 
   end subroutine block_final
 
