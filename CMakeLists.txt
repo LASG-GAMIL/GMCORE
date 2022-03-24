@@ -91,8 +91,6 @@ elseif (DEFINED ENV{MKL_INC} AND DEFINED ENV{MKL_LIB})
   add_definitions(-DHAS_MKL)
   include_directories("$ENV{MKL_INC}")
   link_directories("$ENV{MKL_LIB}")
-else ()
-  message(WARNING "Unable to find MKL library!")
 endif ()
 
 if (HAS_MKL)

@@ -56,12 +56,12 @@ if len(args.cases) > 0:
 		else:
 			run_case('gmcore_driver.exe', case)
 else:
-	run_case('gmcore_swm_driver.exe', 'swm.rh.180x90')
-	run_case('gmcore_swm_driver.exe', 'swm.rh.360x180')
-	run_case('gmcore_swm_driver.exe', 'swm.mz.180x90')
-	run_case('gmcore_swm_driver.exe', 'swm.mz.360x180')
-	run_case('gmcore_swm_driver.exe', 'swm.jz.180x90')
-	run_case('gmcore_swm_driver.exe', 'swm.jz.360x180')
+	run_case('gmcore_swm_driver.exe', 'swm_rh.180x90')
+	run_case('gmcore_swm_driver.exe', 'swm_rh.360x180')
+	run_case('gmcore_swm_driver.exe', 'swm_mz.180x90')
+	run_case('gmcore_swm_driver.exe', 'swm_mz.360x180')
+	run_case('gmcore_swm_driver.exe', 'swm_jz.180x90')
+	run_case('gmcore_swm_driver.exe', 'swm_jz.360x180')
 	run_case('gmcore_driver.exe', 'rh.180x90')
 	run_case('gmcore_driver.exe', 'rh.360x180')
 	run_case('gmcore_driver.exe', 'mz.180x90')
