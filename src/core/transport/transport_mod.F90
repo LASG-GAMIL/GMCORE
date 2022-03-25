@@ -5,10 +5,11 @@ module transport_mod
 
   implicit none
 
+  ! Different tracers can be combined into one batch, and transported in different frequency.
   type transport_batch_type
     integer :: nsteps = 0 ! Number of dynamic steps for one transport step
     integer :: step   = 0 ! Dynamic step counter
-    real(r8) :: dt
+    real(r8) :: dt        ! Transport time step size in seconds
     real(r8), allocatable, dimension(:,:,:) :: mfx
     real(r8), allocatable, dimension(:,:,:) :: mfy
     real(r8), allocatable, dimension(:,:,:) :: u
@@ -32,8 +33,9 @@ contains
     call this%clear()
 
     this%alert_key = alert_key
-    this%dt = dt
-    this%nsteps = dt / dt_in_seconds
+    this%dt        = dt
+    this%nsteps    = dt / dt_in_seconds
+    this%step      = 0
 
     call allocate_array(mesh, this%mfx, half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%mfy, full_lon=.true., half_lat=.true., full_lev=.true.)
@@ -46,6 +48,10 @@ contains
 
     class(transport_batch_type), intent(inout) :: this
 
+    this%alert_key = ''
+    this%dt        = 0
+    this%nsteps    = 0
+    this%step      = 0
     if (allocated(this%mfx)) deallocate(this%mfx)
     if (allocated(this%mfy)) deallocate(this%mfy)
     if (allocated(this%u  )) deallocate(this%u  )

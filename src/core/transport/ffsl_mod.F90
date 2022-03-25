@@ -13,7 +13,7 @@ module ffsl_mod
   public ffsl_init
 
   interface
-    subroutine ffsl_interface(block, tracer, dt, mfx, mfy, u, v, qx, qy, qfx, qfy)
+    subroutine flux_interface(block, tracer, dt, mfx, mfy, u, v, qx, qy, qfx, qfy)
       import block_type, tracer_type, r8
       type(block_type ), intent(in   ) :: block
       type(tracer_type), intent(inout) :: tracer
@@ -42,14 +42,14 @@ module ffsl_mod
       real(r8), intent(out) :: qfy(block%mesh%full_lon_lb:block%mesh%full_lon_ub, & ! Tracer mass flux along y-axis
                                    block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
                                    block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-    end subroutine ffsl_interface
+    end subroutine flux_interface
     pure real(r8) function slope_interface(f)
       import r8
       real(r8), intent(in) :: f(-1:1)
     end function slope_interface
   end interface
 
-  procedure(ffsl_interface), pointer :: ffsl => null()
+  procedure(flux_interface), pointer :: flux => null()
   procedure(slope_interface), pointer :: slope => null()
 
 contains
@@ -58,9 +58,9 @@ contains
 
     select case (ffsl_flux_type)
     case ('van_leer')
-      ffsl => ffsl_van_leer
+      flux => flux_van_leer
     case ('ppm')
-      ffsl => ffsl_ppm
+      flux => flux_ppm
     end select
 
     select case (limiter_type)
@@ -102,15 +102,15 @@ contains
                qfy  => tracer%qfy)
     ! --------------------------------------------------------------------------
     ! Run inner operators.
-    call ffsl(block, tracer, dt, mfx, mfy, u, v, q , q , qfx, qfy)
+    call flux(block, tracer, dt, mfx, mfy, u, v, q , q , qfx, qfy)
     ! --------------------------------------------------------------------------
     ! Run outer operators.
-    call ffsl(block, tracer, dt, mfx, mfy, u, v, qy, qx, qfx, qfy)
+    call flux(block, tracer, dt, mfx, mfy, u, v, qy, qx, qfx, qfy)
     end associate
 
   end subroutine ffsl_run
 
-  subroutine ffsl_van_leer(block, tracer, dt, mfx, mfy, u, v, qx, qy, qfx, qfy)
+  subroutine flux_van_leer(block, tracer, dt, mfx, mfy, u, v, qx, qy, qfx, qfy)
 
     type(block_type ), intent(in   ) :: block
     type(tracer_type), intent(inout) :: tracer
@@ -141,15 +141,24 @@ contains
                                  block%mesh%full_lev_lb:block%mesh%full_lev_ub)
 
     real(r8) c, dq
-    integer i, j, k, iu, ju
+    integer i, j, k, iu, ju, ic
 
     associate (mesh => block%mesh)
     ! Along x-axis
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          iu = merge(i - 1, i, u(i,j,k) > 0)
-          c  = u(i,j,k) * dt / mesh%de_lon(j)
+          iu = merge(i - 1, i, u(i,j,k) > 0)  ! Upwind grid index
+          c  = u(i,j,k) * dt / mesh%de_lon(j) ! CFL number
+          ic = int(c)                         ! Integer part of CFL number
+          c  = c - ic                         ! Fractional part of CFL number
+          ! Calculate integer part of flux.
+          if (ic > 0) then
+            !qfx(i,j,k) = sign(1, ic) * sum(
+          else
+
+          end if
+          ! Calculate fractional part of flux.
           dq = slope(qx(iu-1:iu+1,j,k))
           qfx(i,j,k) = mfx(i,j,k) * (qx(iu,j,k) + dq * 0.5_r8 * (sign(1.0_r8, c) - c))
         end do
@@ -168,9 +177,9 @@ contains
     call fill_halo(block, qfy, full_lon=.true., full_lat=.false., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
     end associate
 
-  end subroutine ffsl_van_leer
+  end subroutine flux_van_leer
 
-  subroutine ffsl_ppm(block, tracer, dt, mfx, mfy, u, v, qx, qy, qfx, qfy)
+  subroutine flux_ppm(block, tracer, dt, mfx, mfy, u, v, qx, qy, qfx, qfy)
 
     type(block_type ), intent(in   ) :: block
     type(tracer_type), intent(inout) :: tracer
@@ -254,7 +263,7 @@ contains
     call fill_halo(block, qfy, full_lon=.true., full_lat=.false., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
     end associate
 
-  end subroutine ffsl_ppm
+  end subroutine flux_ppm
 
   subroutine ppm(f, fl, df, f6)
 

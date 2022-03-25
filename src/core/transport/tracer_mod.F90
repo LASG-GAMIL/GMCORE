@@ -46,14 +46,16 @@ contains
     call allocate_array(mesh, this%qfy, full_lon=.true., half_lat=.true., full_lev=.true.)
     select case (transport_scheme)
     case ('ffsl')
-      call allocate_array(mesh, this%qx  , full_lon=.true., full_lat=.true.)
-      call allocate_array(mesh, this%qy  , full_lon=.true., full_lat=.true.)
-      call allocate_array(mesh, this%qxl , half_lon=.true., full_lat=.true.)
-      call allocate_array(mesh, this%qyl , full_lon=.true., half_lat=.true.)
-      call allocate_array(mesh, this%dqx , full_lon=.true., full_lat=.true.)
-      call allocate_array(mesh, this%dqy , full_lon=.true., full_lat=.true.)
-      call allocate_array(mesh, this%qx6 , full_lon=.true., full_lat=.true.)
-      call allocate_array(mesh, this%qy6 , full_lon=.true., full_lat=.true.)
+      call allocate_array(mesh, this%qx , full_lon=.true., full_lat=.true.)
+      call allocate_array(mesh, this%qy , full_lon=.true., full_lat=.true.)
+      call allocate_array(mesh, this%qxl, half_lon=.true., full_lat=.true.)
+      call allocate_array(mesh, this%qyl, full_lon=.true., half_lat=.true.)
+      call allocate_array(mesh, this%dqx, full_lon=.true., full_lat=.true.)
+      call allocate_array(mesh, this%dqy, full_lon=.true., full_lat=.true.)
+      if (ffsl_flux_type == 'ppm') then
+        call allocate_array(mesh, this%qx6, full_lon=.true., full_lat=.true.)
+        call allocate_array(mesh, this%qy6, full_lon=.true., full_lat=.true.)
+      end if
     end select
 
   end subroutine tracer_init
