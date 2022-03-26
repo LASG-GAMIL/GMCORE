@@ -37,7 +37,7 @@ contains
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       u(:,j,1) = u_function(mesh%full_lat(j))
-    end do	
+    end do
     call fill_halo(block, u, full_lon=.false., full_lat=.true.)
     
     v = 0.0_r8 
@@ -88,7 +88,7 @@ contains
     gzs = 0.0_r8
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       if (mesh%full_lat(j) > 0.0_r8) then
-        y = (dcotan(mesh%full_lat(j)) / dcotan(pi * 0.25_r8))**2
+        y = (tan(pi * 0.25_r8) / tan(mesh%full_lat(j)))**2
         b_lat = y * exp(1.0_r8 - y)
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           gzs(i,j) = hs * at * b_lat * mesh%full_sin_lon(i) * g

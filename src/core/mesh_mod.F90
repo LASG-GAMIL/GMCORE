@@ -147,6 +147,8 @@ contains
     real(16) x(3), y(3), z(3)
     integer i, j, j0, jj
 
+    call this%clear()
+
     this%num_full_lon  = num_lon
     this%num_half_lon  = num_lon
     this%full_lon_ibeg = 1
@@ -467,6 +469,8 @@ contains
     integer, intent(in) :: lat_iend
 
     integer i, j
+
+    call this%clear()
 
     this%parent => parent
 

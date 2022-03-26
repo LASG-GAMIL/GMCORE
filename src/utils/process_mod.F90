@@ -48,7 +48,8 @@ module process_mod
     integer, allocatable :: recv_type_r4(:,:) ! 0: one level, 1: full_lev, 2: half_lev
     integer, allocatable :: recv_type_r8(:,:) ! 0: one level, 1: full_lev, 2: half_lev
   contains
-    procedure :: init => zonal_circle_init
+    procedure :: init  => zonal_circle_init
+    procedure :: clear => zonal_circle_clear
     final :: zonal_circle_final
   end type zonal_circle_type
 
@@ -112,6 +113,7 @@ contains
     integer ierr
 
     call MPI_ABORT(proc%comm, code, ierr)
+    call proc%zonal_circle%clear()
 
   end subroutine process_stop
 
@@ -408,9 +410,9 @@ contains
 
   end subroutine zonal_circle_init
 
-  subroutine zonal_circle_final(this)
+  subroutine zonal_circle_clear(this)
 
-    type(zonal_circle_type), intent(inout) :: this
+    class(zonal_circle_type), intent(inout) :: this
 
     integer i, k, ierr
 
@@ -433,6 +435,14 @@ contains
     end if
 
     if (this%group /= MPI_GROUP_NULL) call MPI_GROUP_FREE(this%group, ierr)
+
+  end subroutine zonal_circle_clear
+
+  subroutine zonal_circle_final(this)
+
+    type(zonal_circle_type), intent(inout) :: this
+
+    call this%clear()
 
   end subroutine zonal_circle_final
 

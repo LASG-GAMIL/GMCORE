@@ -34,9 +34,10 @@ module gmcore_mod
 
 contains
 
-  subroutine gmcore_init(namelist_path)
+  subroutine gmcore_init(namelist_path, comm)
 
     character(*), intent(in) :: namelist_path
+    integer, intent(in), optional :: comm
 
     character(10) time_value, time_units
     real(8) seconds
@@ -45,7 +46,7 @@ contains
     call global_mesh%init_global(num_lon, num_lat, num_lev, &
                                  lon_halo_width=2, &
                                  lat_halo_width=2)
-    call process_init()
+    call process_init(comm)
     call vert_coord_init(num_lev, namelist_path)
     call process_create_blocks()
     call time_init()
@@ -132,6 +133,8 @@ contains
 
   subroutine gmcore_final()
 
+    call log_final()
+    call time_final()
     call interp_final()
     call damp_final()
     call diag_state_final()

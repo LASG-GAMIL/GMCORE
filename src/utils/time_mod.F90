@@ -11,6 +11,7 @@ module time_mod
   private
 
   public time_init
+  public time_final
   public time_reset_start_time
   public time_swap_indices
   public time_advance
@@ -92,6 +93,12 @@ contains
     call alerts%init()
 
   end subroutine time_init
+
+  subroutine time_final()
+
+    call alerts%clear()
+
+  end subroutine time_final
 
   subroutine time_reset_start_time(time)
 

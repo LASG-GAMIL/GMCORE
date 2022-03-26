@@ -241,6 +241,8 @@ contains
 
   subroutine history_final()
 
+    call fiona_final()
+
   end subroutine history_final
 
   subroutine history_write_state(blocks, itime)
