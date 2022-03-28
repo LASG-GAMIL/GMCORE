@@ -12,22 +12,24 @@ module tracer_mod
   public tracer_type
 
   type tracer_type
-    character(30) :: name
-    real(r8), allocatable, dimension(:,:,:) :: q   ! Tracer mixing ratio (kg kg-1)
-    real(r8), allocatable, dimension(:,:,:) :: qfx ! Tracer density flux along x axis
-    real(r8), allocatable, dimension(:,:,:) :: qfy ! Tracer density flux along y axis
-    ! FFSL arrays for one layer
-    real(r8), allocatable, dimension(:,:) :: qx    ! Tracer mixing ratio due to advective operator along x axis
-    real(r8), allocatable, dimension(:,:) :: qy    ! Tracer mixing ratio due to advective operator along y axis
-    real(r8), allocatable, dimension(:,:) :: qxl   ! Tracer mixing ratio at left cell edge along x axis
-    real(r8), allocatable, dimension(:,:) :: qyl   ! Tracer mixing ratio at left cell edge along y axis
-    real(r8), allocatable, dimension(:,:) :: dqx   ! Tracer mixing ratio mismatch (or slope) at cell center along x axis
-    real(r8), allocatable, dimension(:,:) :: dqy   ! Tracer mixing ratio mismatch (or slope) at cell center along y axis
-    real(r8), allocatable, dimension(:,:) :: qx6   ! PPM mismatch at cell center along x axis
-    real(r8), allocatable, dimension(:,:) :: qy6   ! PPM mismatch at cell center along y axis
+    type(mesh_type), pointer :: mesh => null()
+    character(30) :: name = ''
+    real(r8), allocatable, dimension(:,:,:) :: q   ! Tracer density or mixing ratio or any other quantity
+    real(r8), allocatable, dimension(:,:,:) :: mfx ! Tracer mass flux along x axis
+    real(r8), allocatable, dimension(:,:,:) :: mfy ! Tracer mass flux along y axis
+    ! Work arrays
+    real(r8), allocatable, dimension(:,:,:) :: qx    ! Tracer mixing ratio due to advective operator along x axis
+    real(r8), allocatable, dimension(:,:,:) :: qy    ! Tracer mixing ratio due to advective operator along y axis
+    real(r8), allocatable, dimension(:,:,:) :: qxl   ! Tracer mixing ratio at left cell edge along x axis
+    real(r8), allocatable, dimension(:,:,:) :: qyl   ! Tracer mixing ratio at left cell edge along y axis
+    real(r8), allocatable, dimension(:,:,:) :: dqx   ! Tracer mixing ratio mismatch (or slope) at cell center along x axis
+    real(r8), allocatable, dimension(:,:,:) :: dqy   ! Tracer mixing ratio mismatch (or slope) at cell center along y axis
+    real(r8), allocatable, dimension(:,:,:) :: qx6   ! PPM mismatch at cell center along x axis
+    real(r8), allocatable, dimension(:,:,:) :: qy6   ! PPM mismatch at cell center along y axis
   contains
-    procedure :: init  => tracer_init
-    procedure :: clear => tracer_clear
+    procedure :: init            => tracer_init
+    procedure :: allocate_arrays => tracer_allocate_arrays
+    procedure :: clear           => tracer_clear
     final :: tracer_final
   end type tracer_type
 
@@ -36,36 +38,48 @@ contains
   subroutine tracer_init(this, mesh, name)
 
     class(tracer_type), intent(inout) :: this
-    type(mesh_type), intent(in) :: mesh
+    type(mesh_type), intent(in), target :: mesh
     character(*), intent(in) :: name
 
     call this%clear()
 
-    call allocate_array(mesh, this%q  , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%qfx, half_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%qfy, full_lon=.true., half_lat=.true., full_lev=.true.)
+    this%mesh => mesh
+    this%name =  name
+
+  end subroutine tracer_init
+
+  subroutine tracer_allocate_arrays(this)
+
+    class(tracer_type), intent(inout) :: this
+
+    call allocate_array(this%mesh, this%q  , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(this%mesh, this%mfx, half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(this%mesh, this%mfy, full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(this%mesh, this%qx , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(this%mesh, this%qy , full_lon=.true., full_lat=.true., full_lev=.true.)
     select case (transport_scheme)
     case ('ffsl')
-      call allocate_array(mesh, this%qx , full_lon=.true., full_lat=.true.)
-      call allocate_array(mesh, this%qy , full_lon=.true., full_lat=.true.)
-      call allocate_array(mesh, this%qxl, half_lon=.true., full_lat=.true.)
-      call allocate_array(mesh, this%qyl, full_lon=.true., half_lat=.true.)
-      call allocate_array(mesh, this%dqx, full_lon=.true., full_lat=.true.)
-      call allocate_array(mesh, this%dqy, full_lon=.true., full_lat=.true.)
+      call allocate_array(this%mesh, this%qxl, half_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(this%mesh, this%qyl, full_lon=.true., half_lat=.true., full_lev=.true.)
+      call allocate_array(this%mesh, this%dqx, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(this%mesh, this%dqy, full_lon=.true., full_lat=.true., full_lev=.true.)
       if (ffsl_flux_type == 'ppm') then
-        call allocate_array(mesh, this%qx6, full_lon=.true., full_lat=.true.)
-        call allocate_array(mesh, this%qy6, full_lon=.true., full_lat=.true.)
+        call allocate_array(this%mesh, this%qx6, full_lon=.true., full_lat=.true., full_lev=.true.)
+        call allocate_array(this%mesh, this%qy6, full_lon=.true., full_lat=.true., full_lev=.true.)
       end if
     end select
 
-  end subroutine tracer_init
+  end subroutine tracer_allocate_arrays
 
   subroutine tracer_clear(this)
 
     class(tracer_type), intent(inout) :: this
 
+    nullify(this%mesh)
+    this%name = ''
     if (allocated(this%q   )) deallocate(this%q   )
-    if (allocated(this%qfx )) deallocate(this%qfx )
+    if (allocated(this%mfx )) deallocate(this%mfx )
+    if (allocated(this%mfy )) deallocate(this%mfy )
     if (allocated(this%qx  )) deallocate(this%qx  )
     if (allocated(this%qy  )) deallocate(this%qy  )
     if (allocated(this%qxl )) deallocate(this%qxl )

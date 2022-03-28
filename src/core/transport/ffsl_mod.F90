@@ -5,6 +5,7 @@ module ffsl_mod
   use block_mod
   use parallel_mod
   use tracer_mod
+  use transport_batch_mod
 
   implicit none
 
@@ -13,35 +14,11 @@ module ffsl_mod
   public ffsl_init
 
   interface
-    subroutine flux_interface(block, tracer, dt, mfx, mfy, u, v, qx, qy, qfx, qfy)
-      import block_type, tracer_type, r8
-      type(block_type ), intent(in   ) :: block
-      type(tracer_type), intent(inout) :: tracer
-      real(r8), intent(in ) :: dt
-      real(r8), intent(in ) :: mfx(block%mesh%half_lon_lb:block%mesh%half_lon_ub, & ! Mass flux along x-axis
-                                   block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
-                                   block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-      real(r8), intent(in ) :: mfy(block%mesh%full_lon_lb:block%mesh%full_lon_ub, & ! Mass flux along y-axis
-                                   block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
-                                   block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-      real(r8), intent(in ) :: u  (block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
-                                   block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
-                                   block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-      real(r8), intent(in ) :: v  (block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
-                                   block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
-                                   block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-      real(r8), intent(in ) :: qx (block%mesh%full_lon_lb:block%mesh%full_lon_ub, & ! Tracer mixing ratio transported along x-axis
-                                   block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
-                                   block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-      real(r8), intent(in ) :: qy (block%mesh%full_lon_lb:block%mesh%full_lon_ub, & ! Tracer mixing ratio transported along y-axis
-                                   block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
-                                   block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-      real(r8), intent(out) :: qfx(block%mesh%half_lon_lb:block%mesh%half_lon_ub, & ! Tracer mass flux along x-axis
-                                   block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
-                                   block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-      real(r8), intent(out) :: qfy(block%mesh%full_lon_lb:block%mesh%full_lon_ub, & ! Tracer mass flux along y-axis
-                                   block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
-                                   block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+    subroutine flux_interface(block, batch, tracer)
+      import block_type, transport_batch_type, tracer_type
+      type(block_type          ), intent(in   ) :: block
+      type(transport_batch_type), intent(in   ) :: batch
+      type(tracer_type         ), intent(inout) :: tracer
     end subroutine flux_interface
     pure real(r8) function slope_interface(f)
       import r8
@@ -49,8 +26,9 @@ module ffsl_mod
     end function slope_interface
   end interface
 
-  procedure(flux_interface), pointer :: flux => null()
-  procedure(slope_interface), pointer :: slope => null()
+  procedure(flux_interface ), pointer :: mass_flux   => null()
+  procedure(flux_interface ), pointer :: tracer_flux => null()
+  procedure(slope_interface), pointer :: slope       => null()
 
 contains
 
@@ -58,9 +36,11 @@ contains
 
     select case (ffsl_flux_type)
     case ('van_leer')
-      flux => flux_van_leer
+      mass_flux   => mass_flux_van_leer
+      tracer_flux => tracer_flux_van_leer
     case ('ppm')
-      flux => flux_ppm
+      mass_flux   => mass_flux_ppm
+      tracer_flux => tracer_flux_ppm
     end select
 
     select case (limiter_type)
@@ -74,196 +54,222 @@ contains
 
   end subroutine ffsl_init
 
-  subroutine ffsl_run(block, tracer, dt, mfx, mfy, u, v)
+  subroutine ffsl_calc_mass_flux(block, state, batch)
 
-    type(block_type ), intent(in   ) :: block
-    type(tracer_type), intent(inout) :: tracer
-    real(r8), intent(in) :: dt
-    real(r8), intent(in) :: mfx(block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
-                                block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
-                                block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-    real(r8), intent(in) :: mfy(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
-                                block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
-                                block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-    real(r8), intent(in) :: u  (block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
-                                block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
-                                block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-    real(r8), intent(in) :: v  (block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
-                                block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
-                                block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+    type(block_type          ), intent(in) :: block
+    type(state_type          ), intent(in) :: state
+    type(transport_batch_type), intent(in) :: batch
 
-    integer i, j, k
-
-    associate (mesh => block%mesh, &
-               q    => tracer%q  , &
-               qx   => tracer%qx , &
-               qy   => tracer%qy , &
-               qfx  => tracer%qfx, &
-               qfy  => tracer%qfy)
-    ! --------------------------------------------------------------------------
-    ! Run inner operators.
-    call flux(block, tracer, dt, mfx, mfy, u, v, q , q , qfx, qfy)
-    ! --------------------------------------------------------------------------
-    ! Run outer operators.
-    call flux(block, tracer, dt, mfx, mfy, u, v, qy, qx, qfx, qfy)
+    associate (mfx => batch%mfx, mfy => batch%mfy)
     end associate
 
-  end subroutine ffsl_run
+  end subroutine ffsl_calc_mass_flux
 
-  subroutine flux_van_leer(block, tracer, dt, mfx, mfy, u, v, qx, qy, qfx, qfy)
+  subroutine mass_flux_van_leer(block, batch, tracer)
 
-    type(block_type ), intent(in   ) :: block
-    type(tracer_type), intent(inout) :: tracer
-    real(r8), intent(in ) :: dt
-    real(r8), intent(in ) :: mfx(block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
-                                 block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
-                                 block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-    real(r8), intent(in ) :: mfy(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
-                                 block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
-                                 block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-    real(r8), intent(in ) :: u  (block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
-                                 block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
-                                 block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-    real(r8), intent(in ) :: v  (block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
-                                 block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
-                                 block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-    real(r8), intent(in ) :: qx (block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
-                                 block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
-                                 block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-    real(r8), intent(in ) :: qy (block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
-                                 block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
-                                 block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-    real(r8), intent(out) :: qfx(block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
-                                 block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
-                                 block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-    real(r8), intent(out) :: qfy(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
-                                 block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
-                                 block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+    type(block_type          ), intent(in   ) :: block
+    type(transport_batch_type), intent(in   ) :: batch
+    type(tracer_type         ), intent(inout) :: tracer
 
-    real(r8) c, dq
-    integer i, j, k, iu, ju, ic
-
-    associate (mesh => block%mesh)
-    ! Along x-axis
-    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          iu = merge(i - 1, i, u(i,j,k) > 0)  ! Upwind grid index
-          c  = u(i,j,k) * dt / mesh%de_lon(j) ! CFL number
-          ic = int(c)                         ! Integer part of CFL number
-          c  = c - ic                         ! Fractional part of CFL number
-          ! Calculate integer part of flux.
-          if (ic > 0) then
-            !qfx(i,j,k) = sign(1, ic) * sum(
-          else
-
-          end if
-          ! Calculate fractional part of flux.
-          dq = slope(qx(iu-1:iu+1,j,k))
-          qfx(i,j,k) = mfx(i,j,k) * (qx(iu,j,k) + dq * 0.5_r8 * (sign(1.0_r8, c) - c))
-        end do
-      end do
-      ! Along y-axis
-      do j = mesh%half_lat_ibeg, mesh%half_lat_iend
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          ju = merge(j - 1, j, v(i,j,k) > 0)
-          c  = v(i,j,k) * dt / mesh%de_lat(ju)
-          dq = slope(qy(i,ju-1:ju+1,k))
-          qfy(i,j,k) = mfy(i,j,k) * (qy(i,ju,k) + dq * 0.5_r8 * (sign(1.0_r8, c) - c))
-        end do
-      end do
-    end do
-    call fill_halo(block, qfx, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
-    call fill_halo(block, qfy, full_lon=.true., full_lat=.false., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
-    end associate
-
-  end subroutine flux_van_leer
-
-  subroutine flux_ppm(block, tracer, dt, mfx, mfy, u, v, qx, qy, qfx, qfy)
-
-    type(block_type ), intent(in   ) :: block
-    type(tracer_type), intent(inout) :: tracer
-    real(r8), intent(in ) :: dt
-    real(r8), intent(in ) :: mfx(block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
-                                 block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
-                                 block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-    real(r8), intent(in ) :: mfy(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
-                                 block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
-                                 block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-    real(r8), intent(in ) :: u  (block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
-                                 block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
-                                 block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-    real(r8), intent(in ) :: v  (block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
-                                 block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
-                                 block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-    real(r8), intent(in ) :: qx (block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
-                                 block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
-                                 block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-    real(r8), intent(in ) :: qy (block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
-                                 block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
-                                 block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-    real(r8), intent(out) :: qfx(block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
-                                 block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
-                                 block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-    real(r8), intent(out) :: qfy(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
-                                 block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
-                                 block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-
-    real(r8) c, s1, s2, ds1, ds2, ds3
-    integer i, j, k, iu, ju
+    integer i, j, k, iu, ju, ci, i1, i2
+    real(r8) cf, dm
 
     associate (mesh => block%mesh, &
-               qxl  => tracer%qxl, &
-               qyl  => tracer%qyl, &
-               dqx  => tracer%dqx, &
-               dqy  => tracer%dqy, &
-               qx6  => tracer%qx6, &
-               qy6  => tracer%qy6)
+               cx   => batch%cx  , & ! in
+               cy   => batch%cy  , & ! in
+               u    => batch%u   , & ! in
+               v    => batch%v   , & ! in
+               mx   => tracer%qx , & ! in
+               my   => tracer%qy , & ! in
+               mfx  => tracer%mfx, & ! out
+               mfy  => tracer%mfy)   ! out
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          call ppm(qx(i-2:i+2,j,k), qxl(i,j), dqx(i,j), qx6(i,j))
-          call ppm(qy(i,j-2:j+2,k), qyl(i,j), dqy(i,j), qy6(i,j))
-        end do
-      end do
-      call fill_halo(block, qxl, full_lon=.true., full_lat=.true., south_halo=.false., north_halo=.false.)
-      call fill_halo(block, dqx, full_lon=.true., full_lat=.true., south_halo=.false., north_halo=.false.)
-      call fill_halo(block, qx6, full_lon=.true., full_lat=.true., south_halo=.false., north_halo=.false.)
-      call fill_halo(block, qyl, full_lon=.true., full_lat=.true.,  west_halo=.false.,  east_halo=.false.)
-      call fill_halo(block, dqy, full_lon=.true., full_lat=.true.,  west_halo=.false.,  east_halo=.false.)
-      call fill_halo(block, qy6, full_lon=.true., full_lat=.true.,  west_halo=.false.,  east_halo=.false.)
       ! Along x-axis
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          c = u(i,j,k) * dt / mesh%de_lon(j)
-          iu = merge(i - 1, i, c > 0)
-          s1 = merge(1 - abs(c), 0.0_r8, c >= 0)
-          s2 = merge(1.0_r8, abs(c), c >= 0)
-          ds1 = s2    - s1
-          ds2 = s2**2 - s1**2
-          ds3 = s2**3 - s1**3
-          qfx(i,j,k) = sign(qxl(iu,j) * ds1 + 0.5_r8 * dqx(iu,j) * ds2 + qx6(iu,j) * (0.5_r8 * ds2 - ds3 / 3.0_r8), c)
+          ci = int(cx(i,j,k))
+          cf = cx(i,j,k) - ci
+          i1 = i - merge(0, ci, ci > 0) + 1
+          i2 = i + merge(ci, 0, ci > 0)
+          mfx(i,j,k) = u(i,j,k) * sum(mx(i1:i2,j,k))
+          iu = merge(i - ci, i + 1 + ci, cf > 0)
+          dm = slope(mx(iu-1:iu+1,j,k))
+          mfx(i,j,k) = mfx(i,j,k) + u(i,j,k) * (mx(iu,j,k) + dm * 0.5_r8 * (sign(1.0_r8, cf) - cf))
         end do
       end do
       ! Along y-axis
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          c = v(i,j,k) * dt / mesh%de_lat(j)
-          ju = merge(j - 1, j, c > 0)
-          s1 = merge(1 - abs(c), 0.0_r8, c >= 0)
-          s2 = merge(1.0_r8, abs(c), c >= 0)
-          ds1 = s2    - s1
-          ds2 = s2**2 - s1**2
-          ds3 = s2**3 - s1**3
-          qfy(i,j,k) = sign(qyl(i,ju) * ds1 + 0.5_r8 * dqy(i,ju) * ds2 + qy6(i,ju) * (0.5_r8 * ds2 - ds3 / 3.0_r8), c)
+          cf = cy(i,j,k)
+          ju = merge(j, j + 1, cf > 0)
+          dm = slope(my(i,ju-1:ju+1,k))
+          mfx(i,j,k) = v(i,j,k) * (my(i,ju,k) + dm * 0.5_r8 * (sign(1.0_r8, cf) - cf))
         end do
       end do
     end do
-    call fill_halo(block, qfx, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
-    call fill_halo(block, qfy, full_lon=.true., full_lat=.false., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
+    call fill_halo(block, mfx, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
+    call fill_halo(block, mfy, full_lon=.true., full_lat=.false., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
     end associate
 
-  end subroutine flux_ppm
+  end subroutine mass_flux_van_leer
+
+  subroutine tracer_flux_van_leer(block, batch, tracer)
+
+    type(block_type          ), intent(in   ) :: block
+    type(transport_batch_type), intent(in   ) :: batch
+    type(tracer_type         ), intent(inout) :: tracer
+
+    integer i, j, k, iu, ju, ci, i1, i2
+    real(r8) cf, dq
+
+    associate (mesh => block%mesh, &
+               cx   => batch%cx  , & ! in
+               cy   => batch%cy  , & ! in
+               mfx  => batch%mfx , & ! in
+               mfy  => batch%mfy , & ! in
+               qx   => tracer%qx , & ! in
+               qy   => tracer%qy , & ! in
+               qmfx => tracer%mfx, & ! out
+               qmfy => tracer%mfy)   ! out
+    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      ! Along x-axis
+      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+          ci = int(cx(i,j,k))
+          cf = cx(i,j,k) - ci
+          i1 = i - merge(0, ci, ci > 0) + 1
+          i2 = i + merge(ci, 0, ci > 0)
+          qmfx(i,j,k) = sum(qx(i1:i2,j,k))
+          iu = merge(i - ci, i + 1 + ci, cf > 0)
+          dq = slope(qx(iu-1:iu+1,j,k))
+          qmfx(i,j,k) = mfx(i,j,k) * (qx(iu,j,k) + dq * 0.5_r8 * (sign(1.0_r8, cf) - cf))
+        end do
+      end do
+      ! Along y-axis
+      do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          cf = cy(i,j,k)
+          ju = merge(j, j + 1, cf > 0)
+          dq = slope(qy(i,ju-1:ju+1,k))
+          qmfy(i,j,k) = mfy(i,j,k) * (qy(i,ju,k) + dq * 0.5_r8 * (sign(1.0_r8, cf) - cf))
+        end do
+      end do
+    end do
+    call fill_halo(block, qmfx, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
+    call fill_halo(block, qmfy, full_lon=.true., full_lat=.false., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
+    end associate
+
+  end subroutine tracer_flux_van_leer
+
+  subroutine mass_flux_ppm(block, batch, tracer)
+
+    type(block_type          ), intent(in   ) :: block
+    type(transport_batch_type), intent(in   ) :: batch
+    type(tracer_type         ), intent(inout) :: tracer
+
+    integer i, j, k, iu, ju, ci, i1, i2
+    real(r8) cf, s1, s2, ds1, ds2, ds3
+
+    associate (mesh => block%mesh, &
+               cx   => batch%cx  , & ! in
+               cy   => batch%cy  , & ! in
+               u    => batch%u   , & ! in
+               v    => batch%v   , & ! in
+               mx   => tracer%qx , & ! in
+               my   => tracer%qy , & ! in
+               mxl  => tracer%qxl, & ! out
+               myl  => tracer%qyl, & ! out
+               dmx  => tracer%dqx, & ! out
+               dmy  => tracer%dqy, & ! out
+               mx6  => tracer%qx6, & ! out
+               my6  => tracer%qy6, & ! out
+               mfx  => tracer%mfx, & ! out
+               mfy  => tracer%mfy)   ! out
+    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+          call ppm(mx(i-2:i+2,j,k), mxl(i,j,k), dmx(i,j,k), mx6(i,j,k))
+          call ppm(my(i,j-2:j+2,k), myl(i,j,k), dmy(i,j,k), my6(i,j,k))
+        end do
+      end do
+    end do
+    call fill_halo(block, mxl, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
+    call fill_halo(block, dmx, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
+    call fill_halo(block, mx6, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
+    call fill_halo(block, myl, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
+    call fill_halo(block, dmy, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
+    call fill_halo(block, my6, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
+    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      ! Along x-axis
+      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+        end do
+      end do
+      ! Along y-axis
+      do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+
+        end do
+      end do
+    end do
+    end associate
+  end subroutine mass_flux_ppm
+
+  subroutine tracer_flux_ppm(block, batch, tracer)
+
+    type(block_type          ), intent(in   ) :: block
+    type(transport_batch_type), intent(in   ) :: batch
+    type(tracer_type         ), intent(inout) :: tracer
+
+    integer i, j, k, iu, ju, ci, i1, i2
+    real(r8) cf, s1, s2, ds1, ds2, ds3
+
+    associate (mesh => block%mesh, &
+               cx   => batch%cx  , & ! in
+               cy   => batch%cy  , & ! in
+               mfx  => tracer%mfx, & ! in
+               mfy  => tracer%mfy, & ! in
+               qx   => tracer%qx , & ! in
+               qy   => tracer%qy , & ! in
+               qxl  => tracer%qxl, & ! out
+               qyl  => tracer%qyl, & ! out
+               dqx  => tracer%dqx, & ! out
+               dqy  => tracer%dqy, & ! out
+               qx6  => tracer%qx6, & ! out
+               qy6  => tracer%qy6, & ! out
+               qmfx => tracer%mfx, & ! out
+               qmfy => tracer%mfy)   ! out
+    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          call ppm(qx(i-2:i+2,j,k), qxl(i,j,k), dqx(i,j,k), qx6(i,j,k))
+          call ppm(qy(i,j-2:j+2,k), qyl(i,j,k), dqy(i,j,k), qy6(i,j,k))
+        end do
+      end do
+    end do
+    call fill_halo(block, qxl, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
+    call fill_halo(block, dqx, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
+    call fill_halo(block, qx6, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
+    call fill_halo(block, qyl, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
+    call fill_halo(block, dqy, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
+    call fill_halo(block, qy6, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
+    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      ! Along x-axis
+      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+        end do
+      end do
+      ! Along y-axis
+      do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+        end do
+      end do
+    end do
+    call fill_halo(block, mfx, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
+    call fill_halo(block, mfy, full_lon=.true., full_lat=.false., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
+    end associate
+
+  end subroutine tracer_flux_ppm
 
   subroutine ppm(f, fl, df, f6)
 

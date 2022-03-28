@@ -154,6 +154,8 @@ set(gmcore_files
   src/core/damp/smag_damp_mod.F90
   src/core/damp/damp_mod.F90
   src/core/transport/tracer_mod.F90
+  src/core/transport/transport_batch_mod.F90
+  src/core/transport/transport_mod.F90
   src/core/transport/ffsl_mod.F90
   src/core/gmcore_mod.F90
   src/prepare/prepare_mod.F90
