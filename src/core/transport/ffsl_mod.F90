@@ -72,7 +72,7 @@ contains
     type(tracer_type         ), intent(inout) :: tracer
 
     integer i, j, k, iu, ju, ci, i1, i2
-    real(r8) cf, dm
+    real(r8) cf, sm, dm
 
     associate (mesh => block%mesh, &
                cx   => batch%cx  , & ! in
@@ -91,10 +91,10 @@ contains
           cf = cx(i,j,k) - ci
           i1 = i - merge(0, ci, ci > 0) + 1
           i2 = i + merge(ci, 0, ci > 0)
-          mfx(i,j,k) = u(i,j,k) * sum(mx(i1:i2,j,k))
-          iu = merge(i - ci, i + 1 + ci, cf > 0)
+          sm = u(i,j,k) * sum(mx(i1:i2,j,k))
+          iu = merge(i - ci, i - ci + 1, cf > 0)
           dm = slope(mx(iu-1:iu+1,j,k))
-          mfx(i,j,k) = mfx(i,j,k) + u(i,j,k) * (mx(iu,j,k) + dm * 0.5_r8 * (sign(1.0_r8, cf) - cf))
+          mfx(i,j,k) = u(i,j,k) * (mx(iu,j,k) + dm * 0.5_r8 * (sign(1.0_r8, cf) - cf) + sm)
         end do
       end do
       ! Along y-axis
@@ -103,7 +103,7 @@ contains
           cf = cy(i,j,k)
           ju = merge(j, j + 1, cf > 0)
           dm = slope(my(i,ju-1:ju+1,k))
-          mfx(i,j,k) = v(i,j,k) * (my(i,ju,k) + dm * 0.5_r8 * (sign(1.0_r8, cf) - cf))
+          mfy(i,j,k) = v(i,j,k) * (my(i,ju,k) + dm * 0.5_r8 * (sign(1.0_r8, cf) - cf))
         end do
       end do
     end do
@@ -120,7 +120,7 @@ contains
     type(tracer_type         ), intent(inout) :: tracer
 
     integer i, j, k, iu, ju, ci, i1, i2
-    real(r8) cf, dq
+    real(r8) cf, sq, dq
 
     associate (mesh => block%mesh, &
                cx   => batch%cx  , & ! in
@@ -139,10 +139,10 @@ contains
           cf = cx(i,j,k) - ci
           i1 = i - merge(0, ci, ci > 0) + 1
           i2 = i + merge(ci, 0, ci > 0)
-          qmfx(i,j,k) = sum(qx(i1:i2,j,k))
-          iu = merge(i - ci, i + 1 + ci, cf > 0)
+          sq = sum(qx(i1:i2,j,k))
+          iu = merge(i - ci, i - ci + 1, cf > 0)
           dq = slope(qx(iu-1:iu+1,j,k))
-          qmfx(i,j,k) = mfx(i,j,k) * (qx(iu,j,k) + dq * 0.5_r8 * (sign(1.0_r8, cf) - cf))
+          qmfx(i,j,k) = mfx(i,j,k) * (qx(iu,j,k) + dq * 0.5_r8 * (sign(1.0_r8, cf) - cf) + sq)
         end do
       end do
       ! Along y-axis
@@ -168,7 +168,7 @@ contains
     type(tracer_type         ), intent(inout) :: tracer
 
     integer i, j, k, iu, ju, ci, i1, i2
-    real(r8) cf, s1, s2, ds1, ds2, ds3
+    real(r8) cf, s1, s2, ds1, ds2, ds3, sm
 
     associate (mesh => block%mesh, &
                cx   => batch%cx  , & ! in
@@ -187,7 +187,7 @@ contains
                mfy  => tracer%mfy)   ! out
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           call ppm(mx(i-2:i+2,j,k), mxl(i,j,k), dmx(i,j,k), mx6(i,j,k))
           call ppm(my(i,j-2:j+2,k), myl(i,j,k), dmy(i,j,k), my6(i,j,k))
         end do
@@ -203,15 +203,36 @@ contains
       ! Along x-axis
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+          ci = int(cx(i,j,k))
+          cf = cx(i,j,k) - ci
+          i1 = i - merge(0, ci, ci > 0) + 1
+          i2 = i + merge(ci, 0, ci > 0)
+          sm = sum(mx(i1:i2,j,k))
+          iu = merge(i - ci, i - ci + 1, cf > 0)
+          s1 = merge(1 - abs(cf), 0.0_r8, cf >= 0)
+          s2 = merge(1.0_r8, abs(cf), cf >= 0)
+          ds1 = s2    - s1
+          ds2 = s2**2 - s1**2
+          ds3 = s2**3 - s1**3
+          mfx(i,j,k) = u(i,j,k) * (mxl(i,j,k) * ds1 + 0.5_r8 * dmx(i,j,k) * ds2 + mx6(i,j,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8) + sm)
         end do
       end do
       ! Along y-axis
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-
+          cf = cy(i,j,k)
+          ju = merge(j, j + 1, cf > 0)
+          s1 = merge(1 - abs(cf), 0.0_r8, cf >= 0)
+          s2 = merge(1.0_r8, abs(cf), cf >= 0)
+          ds1 = s2    - s1
+          ds2 = s2**2 - s1**2
+          ds3 = s2**3 - s1**3
+          mfy(i,j,k) = v(i,j,k) * (myl(i,j,k) * ds1 + 0.5_r8 * dmy(i,j,k) * ds2 + my6(i,j,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8))
         end do
       end do
     end do
+    call fill_halo(block, mfx, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
+    call fill_halo(block, mfy, full_lon=.true., full_lat=.false., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
     end associate
   end subroutine mass_flux_ppm
 
@@ -222,7 +243,7 @@ contains
     type(tracer_type         ), intent(inout) :: tracer
 
     integer i, j, k, iu, ju, ci, i1, i2
-    real(r8) cf, s1, s2, ds1, ds2, ds3
+    real(r8) cf, s1, s2, ds1, ds2, ds3, sq
 
     associate (mesh => block%mesh, &
                cx   => batch%cx  , & ! in
@@ -257,16 +278,36 @@ contains
       ! Along x-axis
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+          ci = int(cx(i,j,k))
+          cf = cx(i,j,k) - ci
+          i1 = i - merge(0, ci, ci > 0) + 1
+          i2 = i + merge(ci, 0, ci > 0)
+          sq = sum(qx(i1:i2,j,k))
+          iu = merge(i - ci, i - ci + 1, cf > 0)
+          s1 = merge(1 - abs(cf), 0.0_r8, cf >= 0)
+          s2 = merge(1.0_r8, abs(cf), cf >= 0)
+          ds1 = s2    - s1
+          ds2 = s2**2 - s1**2
+          ds3 = s2**3 - s1**3
+          qmfx(i,j,k) = mfx(i,j,k) * (qxl(i,j,k) * ds1 + 0.5_r8 * dqx(i,j,k) * ds2 + qx6(i,j,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8) + sq)
         end do
       end do
       ! Along y-axis
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          cf = cy(i,j,k)
+          ju = merge(j, j + 1, cf > 0)
+          s1 = merge(1 - abs(cf), 0.0_r8, cf >= 0)
+          s2 = merge(1.0_r8, abs(cf), cf >= 0)
+          ds1 = s2    - s1
+          ds2 = s2**2 - s1**2
+          ds3 = s2**3 - s1**3
+          qmfy(i,j,k) = mfy(i,j,k) * (qyl(i,j,k) * ds1 + 0.5_r8 * dqy(i,j,k) * ds2 + qy6(i,j,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8))
         end do
       end do
     end do
-    call fill_halo(block, mfx, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
-    call fill_halo(block, mfy, full_lon=.true., full_lat=.false., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
+    call fill_halo(block, qmfx, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
+    call fill_halo(block, qmfy, full_lon=.true., full_lat=.false., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
     end associate
 
   end subroutine tracer_flux_ppm

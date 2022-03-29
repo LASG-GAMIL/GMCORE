@@ -59,11 +59,11 @@ contains
     call allocate_array(this%mesh, this%qy , full_lon=.true., full_lat=.true., full_lev=.true.)
     select case (transport_scheme)
     case ('ffsl')
-      call allocate_array(this%mesh, this%qxl, half_lon=.true., full_lat=.true., full_lev=.true.)
-      call allocate_array(this%mesh, this%qyl, full_lon=.true., half_lat=.true., full_lev=.true.)
-      call allocate_array(this%mesh, this%dqx, full_lon=.true., full_lat=.true., full_lev=.true.)
-      call allocate_array(this%mesh, this%dqy, full_lon=.true., full_lat=.true., full_lev=.true.)
       if (ffsl_flux_type == 'ppm') then
+        call allocate_array(this%mesh, this%qxl, full_lon=.true., full_lat=.true., full_lev=.true.)
+        call allocate_array(this%mesh, this%qyl, full_lon=.true., full_lat=.true., full_lev=.true.)
+        call allocate_array(this%mesh, this%dqx, full_lon=.true., full_lat=.true., full_lev=.true.)
+        call allocate_array(this%mesh, this%dqy, full_lon=.true., full_lat=.true., full_lev=.true.)
         call allocate_array(this%mesh, this%qx6, full_lon=.true., full_lat=.true., full_lev=.true.)
         call allocate_array(this%mesh, this%qy6, full_lon=.true., full_lat=.true., full_lev=.true.)
       end if
