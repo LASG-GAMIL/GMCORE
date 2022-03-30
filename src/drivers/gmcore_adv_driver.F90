@@ -1,7 +1,7 @@
 program gmcore_adv_driver
 
   use namelist_mod
-  use transport_mod
+  use adv_mod
   use gmcore_mod
 
   implicit none
@@ -17,13 +17,13 @@ program gmcore_adv_driver
 
   call gmcore_init(namelist_path)
 
-  call transport_add_tracer('test1', 'q1', dt_dynamics)
-  call transport_add_tracer('test2', 'q2', dt_dynamics)
-  call transport_add_tracer('test1', 'q3', dt_dynamics)
-  call transport_add_tracer('test3', 'q4', dt_dynamics)
-  call transport_add_tracer('test2', 'q5', dt_dynamics)
+  call adv_add_tracer('test1', 'q1', dt_dynamics)
+  call adv_add_tracer('test2', 'q2', dt_dynamics)
+  call adv_add_tracer('test1', 'q3', dt_dynamics)
+  call adv_add_tracer('test3', 'q4', dt_dynamics)
+  call adv_add_tracer('test2', 'q5', dt_dynamics)
 
-  call transport_allocate_tracers(proc%blocks(1))
+  call adv_allocate_tracers(proc%blocks(1))
 
   call gmcore_final()
 

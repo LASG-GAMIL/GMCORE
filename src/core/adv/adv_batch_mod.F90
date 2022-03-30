@@ -1,4 +1,4 @@
-module transport_batch_mod
+module adv_batch_mod
 
   use container
   use const_mod
@@ -9,15 +9,15 @@ module transport_batch_mod
 
   private
 
-  public transport_batch_type
+  public adv_batch_type
 
-  ! Different tracers can be combined into one batch, and transported in different frequency.
-  type transport_batch_type
+  ! Different tracers can be combined into one batch, and adved in different frequency.
+  type adv_batch_type
     type(mesh_type), pointer :: mesh => null()
     character(30) :: alert_key = ''
-    integer :: nstep  = 0 ! Number of dynamic steps for one transport step
+    integer :: nstep  = 0 ! Number of dynamic steps for one adv step
     integer :: step   = 0 ! Dynamic step counter
-    real(r8) :: dt        ! Transport time step size in seconds
+    real(r8) :: dt        ! adv time step size in seconds
     real(r8), allocatable, dimension(:,:,:) :: mfx
     real(r8), allocatable, dimension(:,:,:) :: mfy
     real(r8), allocatable, dimension(:,:,:) :: u
@@ -26,19 +26,19 @@ module transport_batch_mod
     real(r8), allocatable, dimension(:,:,:) :: cy ! Fractional CFL number along y-axis
     type(hash_table_type) tracers
   contains
-    procedure :: init       => transport_batch_init
-    procedure :: clear      => transport_batch_clear
-    procedure :: accum_wind => transport_batch_accum_wind
-    procedure :: add_tracer => transport_add_tracer
-    procedure :: allocate_tracers => transport_allocate_tracers
-    final :: transport_batch_final
-  end type transport_batch_type
+    procedure :: init       => adv_batch_init
+    procedure :: clear      => adv_batch_clear
+    procedure :: accum_wind => adv_batch_accum_wind
+    procedure :: add_tracer => adv_add_tracer
+    procedure :: allocate_tracers => adv_allocate_tracers
+    final :: adv_batch_final
+  end type adv_batch_type
 
 contains
 
-  subroutine transport_batch_init(this, mesh, alert_key, dt)
+  subroutine adv_batch_init(this, mesh, alert_key, dt)
 
-    class(transport_batch_type), intent(inout) :: this
+    class(adv_batch_type), intent(inout) :: this
     type(mesh_type), intent(in), target :: mesh
     character(*), intent(in) :: alert_key
     real(r8), intent(in) :: dt
@@ -60,11 +60,11 @@ contains
 
     call this%tracers%init()
 
-  end subroutine transport_batch_init
+  end subroutine adv_batch_init
 
-  subroutine transport_batch_clear(this)
+  subroutine adv_batch_clear(this)
 
-    class(transport_batch_type), intent(inout) :: this
+    class(adv_batch_type), intent(inout) :: this
 
     type(hash_table_iterator_type) it
 
@@ -89,11 +89,11 @@ contains
     end do
     call this%tracers%clear()
 
-  end subroutine transport_batch_clear
+  end subroutine adv_batch_clear
 
-  subroutine transport_batch_accum_wind(this, mfx, mfy, u, v)
+  subroutine adv_batch_accum_wind(this, mfx, mfy, u, v)
 
-    class(transport_batch_type), intent(inout) :: this
+    class(adv_batch_type), intent(inout) :: this
     real(r8), intent(in) :: mfx(:,:,:)
     real(r8), intent(in) :: mfy(:,:,:)
     real(r8), intent(in) :: u  (:,:,:)
@@ -117,11 +117,11 @@ contains
       this%step = this%step + 1
     end if
 
-  end subroutine transport_batch_accum_wind
+  end subroutine adv_batch_accum_wind
 
-  subroutine transport_add_tracer(this, name)
+  subroutine adv_add_tracer(this, name)
 
-    class(transport_batch_type), intent(inout) :: this
+    class(adv_batch_type), intent(inout) :: this
     character(*), intent(in) :: name
 
     type(tracer_type) tracer
@@ -129,11 +129,11 @@ contains
     call tracer%init(this%mesh, name)
     call this%tracers%insert(name, tracer)
 
-  end subroutine transport_add_tracer
+  end subroutine adv_add_tracer
 
-  subroutine transport_allocate_tracers(this)
+  subroutine adv_allocate_tracers(this)
 
-    class(transport_batch_type), intent(inout) :: this
+    class(adv_batch_type), intent(inout) :: this
 
     type(hash_table_iterator_type) it
 
@@ -146,14 +146,14 @@ contains
       call it%next()
     end do
 
-  end subroutine transport_allocate_tracers
+  end subroutine adv_allocate_tracers
 
-  subroutine transport_batch_final(this)
+  subroutine adv_batch_final(this)
 
-    type(transport_batch_type), intent(inout) :: this
+    type(adv_batch_type), intent(inout) :: this
 
     call this%clear()
 
-  end subroutine transport_batch_final
+  end subroutine adv_batch_final
 
-end module transport_batch_mod
+end module adv_batch_mod

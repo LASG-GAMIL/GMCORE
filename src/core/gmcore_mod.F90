@@ -16,7 +16,7 @@ module gmcore_mod
   use operators_mod
   use interp_mod
   use debug_mod
-  use transport_mod
+  use adv_mod
   use pgf_mod
   use damp_mod
   use diag_state_mod
@@ -55,7 +55,7 @@ contains
     call history_init()
     call restart_init()
     call time_scheme_init()
-    call transport_init()
+    call adv_init()
     call pgf_init()
     call interp_init()
     call damp_init(proc%blocks)
@@ -138,7 +138,7 @@ contains
     call log_final()
     call time_final()
     call interp_final()
-    call transport_final()
+    call adv_final()
     call damp_final()
     call diag_state_final()
     call history_final()

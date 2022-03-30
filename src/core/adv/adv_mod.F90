@@ -1,4 +1,4 @@
-module transport_mod
+module adv_mod
 
   use flogger
   use string
@@ -11,22 +11,22 @@ module transport_mod
   integer ntracer
   character(30), allocatable :: batch_names(:)
   character(30), allocatable :: tracer_names(:)
-  real(r8), allocatable :: dt_transport(:)
+  real(r8), allocatable :: dt_adv(:)
 
 contains
 
-  subroutine transport_init()
+  subroutine adv_init()
 
-    call transport_final()
+    call adv_final()
 
     ntracer = 0
     allocate(batch_names (1000))
     allocate(tracer_names(1000))
-    allocate(dt_transport(1000))
+    allocate(dt_adv(1000))
 
-  end subroutine transport_init
+  end subroutine adv_init
 
-  subroutine transport_add_tracer(batch_name, tracer_name, dt)
+  subroutine adv_add_tracer(batch_name, tracer_name, dt)
 
     character(*), intent(in) :: batch_name
     character(*), intent(in) :: tracer_name
@@ -38,18 +38,18 @@ contains
     end if
     batch_names (ntracer) = batch_name
     tracer_names(ntracer) = tracer_name
-    dt_transport(ntracer) = dt
+    dt_adv(ntracer) = dt
 
-  end subroutine transport_add_tracer
+  end subroutine adv_add_tracer
 
-  subroutine transport_allocate_tracers(block)
+  subroutine adv_allocate_tracers(block)
 
     type(block_type), intent(inout) :: block
 
     integer nbatch, i, j, k
     logical found
     character(30) unique_batch_names(100)
-    real(r8) unique_dt_transport(100)
+    real(r8) unique_dt_adv(100)
 
     nbatch = 0
     do i = 1, ntracer
@@ -64,41 +64,41 @@ contains
       if (.not. found) then
         nbatch = nbatch + 1
         unique_batch_names(nbatch ) = batch_names (i)
-        unique_dt_transport(nbatch) = dt_transport(i)
+        unique_dt_adv(nbatch) = dt_adv(i)
       end if
     end do
-    call log_notice('There are ' // to_str(nbatch) // ' transport batches.')
+    call log_notice('There are ' // to_str(nbatch) // ' adv batches.')
     if (is_root_proc()) then
       do i = 1, nbatch
-        write(*, *) '- ', trim(unique_batch_names(i)), real(unique_dt_transport(i))
+        write(*, *) '- ', trim(unique_batch_names(i)), real(unique_dt_adv(i))
       end do
     end if
 
     do i = 1, size(block%state)
-      allocate(block%state(i)%transport_batches(nbatch))
+      allocate(block%state(i)%adv_batches(nbatch))
       do j = 1, nbatch
-        call block%state(i)%transport_batches(j)%init(block%mesh, unique_batch_names(j), unique_dt_transport(j))
+        call block%state(i)%adv_batches(j)%init(block%mesh, unique_batch_names(j), unique_dt_adv(j))
       end do
     end do
 
     do i = 1, size(block%state)
       do j = 1, nbatch
         do k = 1, ntracer
-          if (batch_names(k) == block%state(i)%transport_batches(j)%alert_key) then
-            call block%state(i)%transport_batches(j)%add_tracer(tracer_names(k))
+          if (batch_names(k) == block%state(i)%adv_batches(j)%alert_key) then
+            call block%state(i)%adv_batches(j)%add_tracer(tracer_names(k))
           end if
         end do
       end do
     end do
 
-  end subroutine transport_allocate_tracers
+  end subroutine adv_allocate_tracers
 
-  subroutine transport_final()
+  subroutine adv_final()
 
     if (allocated(batch_names )) deallocate(batch_names )
     if (allocated(tracer_names)) deallocate(tracer_names)
-    if (allocated(dt_transport)) deallocate(dt_transport)
+    if (allocated(dt_adv)) deallocate(dt_adv)
 
-  end subroutine transport_final
+  end subroutine adv_final
 
-end module transport_mod
+end module adv_mod
