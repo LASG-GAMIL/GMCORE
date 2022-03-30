@@ -59,17 +59,17 @@ contains
               c_lon(j,k) = div_damp_coef2 * &
                 (1.0_r8 + div_damp_top * exp((k-1)**2 * log(0.2_r8) / (div_damp_k0-1)**2)) * &
                 global_mesh%full_cos_lat(j)**r * &
-                radius**2 * global_mesh%dlat(j) * global_mesh%dlon / dt_in_seconds
+                radius**2 * global_mesh%dlat(j) * global_mesh%dlon / dt_dynamics
             else
               c_lon(j,k) = div_damp_coef2 * &
                 (1.0_r8 + div_damp_top * exp((k-1)**2 * log(0.2_r8) / (div_damp_k0-1)**2)) * &
                 (global_mesh%full_cos_lat(j)**r + div_damp_pole * exp(jr**2 * log(0.01_r8) / j0**2)) * &
-                radius**2 * global_mesh%dlat(j) * global_mesh%dlon / dt_in_seconds
+                radius**2 * global_mesh%dlat(j) * global_mesh%dlon / dt_dynamics
             end if
           else
             c_lon(j,k) = div_damp_coef2 * &
               global_mesh%full_cos_lat(j)**r * &
-              radius**2 * global_mesh%dlat(j) * global_mesh%dlon / dt_in_seconds
+              radius**2 * global_mesh%dlat(j) * global_mesh%dlon / dt_dynamics
           end if
         end do
       end do
@@ -82,17 +82,17 @@ contains
               c_lat(j,k) = div_damp_coef2 * &
                 (1.0_r8 + div_damp_top * exp((k-1)**2 * log(0.2_r8) / (div_damp_k0-1)**2)) * &
                 global_mesh%half_cos_lat(j)**r * &
-                radius**2 * global_mesh%dlat(j) * global_mesh%dlon / dt_in_seconds
+                radius**2 * global_mesh%dlat(j) * global_mesh%dlon / dt_dynamics
             else
               c_lat(j,k) = div_damp_coef2 * &
                 (1.0_r8 + div_damp_top * exp((k-1)**2 * log(0.2_r8) / (div_damp_k0-1)**2)) * &
                 (global_mesh%half_cos_lat(j)**r + div_damp_pole * exp(jr**2 * log(0.01_r8) / j0**2)) * &
-                radius**2 * global_mesh%dlat(j) * global_mesh%dlon / dt_in_seconds
+                radius**2 * global_mesh%dlat(j) * global_mesh%dlon / dt_dynamics
             end if
           else
             c_lat(j,k) = div_damp_coef2 * &
               global_mesh%half_cos_lat(j)**r * &
-              radius**2 * global_mesh%dlat(j) * global_mesh%dlon / dt_in_seconds
+              radius**2 * global_mesh%dlat(j) * global_mesh%dlon / dt_dynamics
           end if
         end do
       end do
@@ -121,7 +121,7 @@ contains
               cycle
             end if
           end if
-          b = -c_lon(j,k) * (1 - beta) * dt_in_seconds / global_mesh%de_lon(j)**2
+          b = -c_lon(j,k) * (1 - beta) * dt_dynamics / global_mesh%de_lon(j)**2
           a = 2 * (-b) + 1
           call zonal_solver(j,k)%init_sym_const(blocks(1)%mesh%num_half_lon, a, b, zonal_tridiag_solver)
         end if

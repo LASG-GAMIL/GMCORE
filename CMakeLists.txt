@@ -169,6 +169,7 @@ set(gmcore_files
   src/prepare/openmars_reader_mod.F90
   src/prepare/bkg_mod.F90
   src/physics/test_forcing_mod.F90
+  src/tests/adv/deform_case4_mod.F90
   src/tests/swm/rossby_haurwitz_wave_test_mod.F90
   src/tests/swm/mountain_zonal_flow_test_mod.F90
   src/tests/swm/jet_zonal_flow_test_mod.F90
@@ -199,3 +200,6 @@ target_link_libraries(gmcore_swm_driver.exe gmcore)
 
 add_executable(gmcore_driver.exe src/drivers/gmcore_driver.F90)
 target_link_libraries(gmcore_driver.exe gmcore)
+
+add_executable(gmcore_adv_driver.exe src/drivers/gmcore_adv_driver.F90)
+target_link_libraries(gmcore_adv_driver.exe gmcore)

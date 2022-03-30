@@ -42,7 +42,7 @@ module time_mod
   integer, public :: end_time_array(5) = 0
   real(8), public :: run_hours = 0
   real(8), public :: run_days = 0
-  real(8), public :: dt_in_seconds = 0.0
+  real(8), public :: dt_dynamics = 0.0
 
   type(datetime_type) start_time
   type(datetime_type) end_time
@@ -83,7 +83,7 @@ contains
     elapsed_seconds = 0
     old_time_idx = 1
     new_time_idx = 2
-    dt = create_timedelta(seconds=dt_in_seconds)
+    dt = create_timedelta(seconds=dt_dynamics)
 
     curr_time = start_time
 
@@ -122,9 +122,9 @@ contains
 
   end subroutine time_swap_indices
 
-  subroutine time_advance(dt_in_seconds)
+  subroutine time_advance(dt_dynamics)
 
-    real(8), intent(in), optional :: dt_in_seconds
+    real(8), intent(in), optional :: dt_dynamics
 
     type(hash_table_iterator_type) iter
 
@@ -144,9 +144,9 @@ contains
     call time_swap_indices(old_time_idx, new_time_idx)
 
     time_step = time_step + 1
-    if (present(dt_in_seconds)) then
-      elapsed_seconds = elapsed_seconds + dt_in_seconds
-      curr_time = curr_time + create_timedelta(seconds=dt_in_seconds)
+    if (present(dt_dynamics)) then
+      elapsed_seconds = elapsed_seconds + dt_dynamics
+      curr_time = curr_time + create_timedelta(seconds=dt_dynamics)
     else
       elapsed_seconds = elapsed_seconds + dt%total_seconds()
       curr_time = curr_time + dt

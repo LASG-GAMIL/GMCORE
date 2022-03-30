@@ -40,8 +40,6 @@ program gmcore_driver
 
   call parse_namelist(namelist_path)
 
-  call const_init(planet)
-
   if (initial_file == 'N/A' .and. .not. restart) then
     select case (test_case)
     case ('pgf_test')

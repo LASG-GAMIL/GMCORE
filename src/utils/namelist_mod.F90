@@ -2,7 +2,7 @@ module namelist_mod
 
   use string
   use flogger
-  use const_mod, only: r8
+  use const_mod, only: r8, const_init
   use time_mod, start_time => start_time_array, end_time => end_time_array
 
   implicit none
@@ -135,7 +135,7 @@ module namelist_mod
     initial_time              , &
     start_time                , &
     end_time                  , &
-    dt_in_seconds             , &
+    dt_dynamics               , &
     run_hours                 , &
     run_days                  , &
     history_interval          , &
@@ -228,7 +228,7 @@ contains
 
     hydrostatic = .not. nonhydrostatic
 
-    ! Validate parameters.
+    call const_init(planet)
 
   end subroutine parse_namelist
 
@@ -248,7 +248,7 @@ contains
       write(*, *) 'vert_coord_scheme   = ', trim(vert_coord_scheme)
       write(*, *) 'vert_coord_template = ', trim(vert_coord_template)
       write(*, *) 'ptop                = ', to_str(ptop, 4)
-      write(*, *) 'dt_in_seconds       = ', to_str(dt_in_seconds, 2)
+      write(*, *) 'dt_dynamics         = ', to_str(dt_dynamics, 2)
       write(*, *) 'max_wave_speed      = ', max_wave_speed
       write(*, *) 'max_cfl             = ', max_cfl
       write(*, *) 'filter_coef_a       = ', filter_coef_a

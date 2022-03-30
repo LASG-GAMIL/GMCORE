@@ -74,25 +74,15 @@ contains
       case ('pc2', 'wrfrk3')
         allocate(this%state(3))
         allocate(this%tend (3))
-      case ('rk3', 'ssprk3')
-        allocate(this%state(4))
-        allocate(this%tend (4))
-      case ('rk4')
-        allocate(this%state(5))
-        allocate(this%tend (5))
-      case ('N/A')
-        allocate(this%state(1))
       case default
         if (this%id == 0) call log_error('Unknown time scheme ' // trim(time_scheme))
       end select
       do i = 1, size(this%state)
         call this%state(i)%init(this%mesh)
       end do
-      if (allocated(this%tend)) then
-        do i = 1, size(this%tend)
-          call this%tend(i)%init(this%mesh)
-        end do
-      end if
+      do i = 1, size(this%tend)
+        call this%tend(i)%init(this%mesh)
+      end do
       call this%static%init(this%mesh)
     end if
 
@@ -114,7 +104,6 @@ contains
       call this%halo(i)%clear()
     end do
 
-    if (allocated(this%halo )) deallocate(this%halo )
     if (allocated(this%state)) deallocate(this%state)
     if (allocated(this%tend )) deallocate(this%tend )
     if (allocated(this%halo )) deallocate(this%halo )

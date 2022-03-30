@@ -15,7 +15,7 @@ module transport_batch_mod
   type transport_batch_type
     type(mesh_type), pointer :: mesh => null()
     character(30) :: alert_key = ''
-    integer :: nsteps = 0 ! Number of dynamic steps for one transport step
+    integer :: nstep  = 0 ! Number of dynamic steps for one transport step
     integer :: step   = 0 ! Dynamic step counter
     real(r8) :: dt        ! Transport time step size in seconds
     real(r8), allocatable, dimension(:,:,:) :: mfx
@@ -30,6 +30,7 @@ module transport_batch_mod
     procedure :: clear      => transport_batch_clear
     procedure :: accum_wind => transport_batch_accum_wind
     procedure :: add_tracer => transport_add_tracer
+    procedure :: allocate_tracers => transport_allocate_tracers
     final :: transport_batch_final
   end type transport_batch_type
 
@@ -47,7 +48,7 @@ contains
     this%mesh => mesh
     this%alert_key = alert_key
     this%dt        = dt
-    this%nsteps    = dt / dt_in_seconds
+    this%nstep     = dt / dt_dynamics
     this%step      = 0
 
     call allocate_array(mesh, this%mfx, half_lon=.true., full_lat=.true., full_lev=.true.)
@@ -65,9 +66,11 @@ contains
 
     class(transport_batch_type), intent(inout) :: this
 
+    type(hash_table_iterator_type) it
+
     this%alert_key = ''
     this%dt        = 0
-    this%nsteps    = 0
+    this%nstep     = 0
     this%step      = 0
     if (allocated(this%mfx)) deallocate(this%mfx)
     if (allocated(this%mfy)) deallocate(this%mfy)
@@ -75,6 +78,15 @@ contains
     if (allocated(this%v  )) deallocate(this%v  )
     if (allocated(this%cx )) deallocate(this%cx )
     if (allocated(this%cy )) deallocate(this%cy )
+
+    it = hash_table_iterator(this%tracers)
+    do while (.not. it%ended())
+      select type (tracer => it%value)
+      type is (tracer_type)
+        call tracer%clear()
+      end select
+      call it%next()
+    end do
     call this%tracers%clear()
 
   end subroutine transport_batch_clear
@@ -93,9 +105,9 @@ contains
       this%u    = u
       this%v    = v
       this%step = this%step + 1
-    else if (this%step == this%nsteps) then
-      this%u    = this%u / this%nsteps
-      this%v    = this%v / this%nsteps
+    else if (this%step == this%nstep) then
+      this%u    = this%u / this%nstep
+      this%v    = this%v / this%nstep
       this%step = 0
     else
       this%mfx  = this%mfx + mfx
@@ -118,6 +130,23 @@ contains
     call this%tracers%insert(name, tracer)
 
   end subroutine transport_add_tracer
+
+  subroutine transport_allocate_tracers(this)
+
+    class(transport_batch_type), intent(inout) :: this
+
+    type(hash_table_iterator_type) it
+
+    it = hash_table_iterator(this%tracers)
+    do while (.not. it%ended())
+      select type (tracer => it%value)
+      type is (tracer_type)
+        call tracer%allocate_arrays()
+      end select
+      call it%next()
+    end do
+
+  end subroutine transport_allocate_tracers
 
   subroutine transport_batch_final(this)
 

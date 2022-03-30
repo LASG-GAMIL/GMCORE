@@ -16,6 +16,7 @@ module gmcore_mod
   use operators_mod
   use interp_mod
   use debug_mod
+  use transport_mod
   use pgf_mod
   use damp_mod
   use diag_state_mod
@@ -54,6 +55,7 @@ contains
     call history_init()
     call restart_init()
     call time_scheme_init()
+    call transport_init()
     call pgf_init()
     call interp_init()
     call damp_init(proc%blocks)
@@ -115,16 +117,16 @@ contains
       end associate
     end do
 
-    call operators_prepare(proc%blocks, old, dt_in_seconds)
+    call operators_prepare(proc%blocks, old, dt_dynamics)
     if (nonhydrostatic) call nh_prepare(proc%blocks)
     call diagnose(proc%blocks, old)
     call output(old)
 
     do while (.not. time_is_finished())
-      call time_integrate(dt_in_seconds, proc%blocks)
+      call time_integrate(dt_dynamics, proc%blocks)
       if (is_root_proc() .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
-      call time_advance(dt_in_seconds)
-      call operators_prepare(proc%blocks, old, dt_in_seconds)
+      call time_advance(dt_dynamics)
+      call operators_prepare(proc%blocks, old, dt_dynamics)
       call diagnose(proc%blocks, old)
       call output(old)
     end do
@@ -136,6 +138,7 @@ contains
     call log_final()
     call time_final()
     call interp_final()
+    call transport_final()
     call damp_final()
     call diag_state_final()
     call history_final()
