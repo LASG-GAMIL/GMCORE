@@ -4,10 +4,9 @@ module history_mod
   use flogger
   use string
   use const_mod
-  use namelist_mod
+  use namelist_mod, dt => dt_dyn
   use parallel_mod
   use allocator_mod
-  use time_mod, dt => dt_dynamics
   use mesh_mod
   use state_mod
   use static_mod

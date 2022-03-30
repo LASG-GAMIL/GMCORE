@@ -30,6 +30,7 @@ module adv_batch_mod
     procedure :: clear      => adv_batch_clear
     procedure :: accum_wind => adv_batch_accum_wind
     procedure :: add_tracer => adv_add_tracer
+    procedure :: get_tracer => adv_get_tracer
     procedure :: allocate_tracers => adv_allocate_tracers
     final :: adv_batch_final
   end type adv_batch_type
@@ -48,7 +49,7 @@ contains
     this%mesh => mesh
     this%alert_key = alert_key
     this%dt        = dt
-    this%nstep     = dt / dt_dynamics
+    this%nstep     = dt / dt_dyn
     this%step      = 0
 
     call allocate_array(mesh, this%mfx, half_lon=.true., full_lat=.true., full_lev=.true.)
@@ -130,6 +131,20 @@ contains
     call this%tracers%insert(name, tracer)
 
   end subroutine adv_add_tracer
+
+  function adv_get_tracer(this, name) result(res)
+
+    class(adv_batch_type), intent(in) :: this
+    character(*), intent(in) :: name
+
+    type(tracer_type), pointer :: res
+
+    select type (value => this%tracers%value(name))
+    type is (tracer_type)
+      res => value
+    end select
+
+  end function adv_get_tracer
 
   subroutine adv_allocate_tracers(this)
 

@@ -69,7 +69,7 @@ contains
     cell_dims_2d(1) =  'lon'; cell_dims_2d(2) =  'lat'; cell_dims_2d(3) = 'time'
 
     call fiona_create_dataset('r0', desc=case_desc, file_prefix=trim(case_name) // '.' // trim(curr_time_str), mpi_comm=proc%comm)
-    call fiona_add_att('r0', 'time_step_size', dt_dynamics)
+    call fiona_add_att('r0', 'time_step_size', dt_dyn)
     call fiona_add_att('r0', 'restart_interval', restart_interval)
     call fiona_add_dim('r0', 'time', add_var=.true.)
     call fiona_add_dim('r0', 'lon' , size=global_mesh%num_full_lon, add_var=.true., decomp=.true.)

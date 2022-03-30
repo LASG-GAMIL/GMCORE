@@ -9,6 +9,10 @@ module namelist_mod
 
   character(30)   :: planet               = 'earth'
 
+  real(8)         :: dt_dyn               = 0
+  real(8)         :: dt_phys              = 0
+  real(8)         :: dt_adv               = 0
+
   character(256)  :: case_desc            = 'N/A'
   character(256)  :: case_name            = 'N/A'
   character(30 )  :: test_case            = 'N/A'
@@ -57,7 +61,7 @@ module namelist_mod
   character(8)    :: pgf_scheme           = 'lin97'
   integer         :: coriolis_scheme      = 1
 
-  character(8)    :: transport_scheme     = 'ffsl'
+  character(8)    :: adv_scheme           = 'ffsl'
   character(8)    :: limiter_type         = 'pd'
   character(8)    :: ffsl_flux_type       = 'ppm'
 
@@ -135,7 +139,9 @@ module namelist_mod
     initial_time              , &
     start_time                , &
     end_time                  , &
-    dt_dynamics               , &
+    dt_dyn                    , &
+    dt_phys                   , &
+    dt_adv                    , &
     run_hours                 , &
     run_days                  , &
     history_interval          , &
@@ -164,7 +170,7 @@ module namelist_mod
     upwind_wgt_pv             , &
     pgf_scheme                , &
     coriolis_scheme           , &
-    transport_scheme          , &
+    adv_scheme                , &
     limiter_type              , &
     ffsl_flux_type            , &
     zonal_tridiag_solver      , &
@@ -248,16 +254,17 @@ contains
       write(*, *) 'vert_coord_scheme   = ', trim(vert_coord_scheme)
       write(*, *) 'vert_coord_template = ', trim(vert_coord_template)
       write(*, *) 'ptop                = ', to_str(ptop, 4)
-      write(*, *) 'dt_dynamics         = ', to_str(dt_dynamics, 2)
+      write(*, *) 'dt_dyn              = ', to_str(dt_dyn, 2)
+      write(*, *) 'dt_adv              = ', to_str(dt_adv, 2)
       write(*, *) 'max_wave_speed      = ', max_wave_speed
       write(*, *) 'max_cfl             = ', max_cfl
       write(*, *) 'filter_coef_a       = ', filter_coef_a
       write(*, *) 'filter_coef_b       = ', filter_coef_b
       write(*, *) 'filter_coef_c       = ', filter_coef_c
       write(*, *) 'pgf_scheme          = ', trim(pgf_scheme)
-      write(*, *) 'transport_scheme    = ', trim(transport_scheme)
+      write(*, *) 'adv_scheme          = ', trim(adv_scheme)
       write(*, *) 'limiter_type        = ', trim(limiter_type)
-    if (transport_scheme == 'ffsl') then
+    if (adv_scheme == 'ffsl') then
       write(*, *) 'ffsl_flux_type      = ', trim(ffsl_flux_type)
     end if
       write(*, *) 'ke_scheme           = ', to_str(ke_scheme)

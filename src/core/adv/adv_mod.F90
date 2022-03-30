@@ -5,6 +5,7 @@ module adv_mod
   use const_mod
   use block_mod
   use process_mod
+  use tracer_mod
 
   implicit none
 

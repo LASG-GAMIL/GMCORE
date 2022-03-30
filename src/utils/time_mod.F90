@@ -38,11 +38,10 @@ module time_mod
   end type alert_type
 
   ! Namelist parameters
-  integer, public :: start_time_array(5) = 0
-  integer, public :: end_time_array(5) = 0
-  real(8), public :: run_hours = 0
-  real(8), public :: run_days = 0
-  real(8), public :: dt_dynamics = 0.0
+  integer, public :: start_time_array(5)  = 0
+  integer, public :: end_time_array(5)    = 0
+  real(8), public :: run_hours            = 0
+  real(8), public :: run_days             = 0
 
   type(datetime_type) start_time
   type(datetime_type) end_time
@@ -58,7 +57,9 @@ module time_mod
 
 contains
 
-  subroutine time_init()
+  subroutine time_init(dt_dyn)
+
+    real(8), intent(in) :: dt_dyn
 
     if (sum(start_time_array) > 0) then
       start_time = create_datetime(year=start_time_array(1),  &
@@ -83,7 +84,7 @@ contains
     elapsed_seconds = 0
     old_time_idx = 1
     new_time_idx = 2
-    dt = create_timedelta(seconds=dt_dynamics)
+    dt = create_timedelta(seconds=dt_dyn)
 
     curr_time = start_time
 
@@ -122,9 +123,9 @@ contains
 
   end subroutine time_swap_indices
 
-  subroutine time_advance(dt_dynamics)
+  subroutine time_advance(dt_dyn)
 
-    real(8), intent(in), optional :: dt_dynamics
+    real(8), intent(in), optional :: dt_dyn
 
     type(hash_table_iterator_type) iter
 
@@ -144,9 +145,9 @@ contains
     call time_swap_indices(old_time_idx, new_time_idx)
 
     time_step = time_step + 1
-    if (present(dt_dynamics)) then
-      elapsed_seconds = elapsed_seconds + dt_dynamics
-      curr_time = curr_time + create_timedelta(seconds=dt_dynamics)
+    if (present(dt_dyn)) then
+      elapsed_seconds = elapsed_seconds + dt_dyn
+      curr_time = curr_time + create_timedelta(seconds=dt_dyn)
     else
       elapsed_seconds = elapsed_seconds + dt%total_seconds()
       curr_time = curr_time + dt

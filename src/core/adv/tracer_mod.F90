@@ -57,7 +57,7 @@ contains
     call allocate_array(this%mesh, this%mfy, full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(this%mesh, this%qx , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(this%mesh, this%qy , full_lon=.true., full_lat=.true., full_lev=.true.)
-    select case (transport_scheme)
+    select case (adv_scheme)
     case ('ffsl')
       if (ffsl_flux_type == 'ppm') then
         call allocate_array(this%mesh, this%qxl, full_lon=.true., full_lat=.true., full_lev=.true.)

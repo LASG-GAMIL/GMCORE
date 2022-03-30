@@ -5,7 +5,7 @@ module ffsl_mod
   use block_mod
   use parallel_mod
   use tracer_mod
-  use transport_batch_mod
+  use adv_batch_mod
 
   implicit none
 
@@ -15,10 +15,10 @@ module ffsl_mod
 
   interface
     subroutine flux_interface(block, batch, tracer)
-      import block_type, transport_batch_type, tracer_type
-      type(block_type          ), intent(in   ) :: block
-      type(transport_batch_type), intent(in   ) :: batch
-      type(tracer_type         ), intent(inout) :: tracer
+      import block_type, adv_batch_type, tracer_type
+      type(block_type    ), intent(in   ) :: block
+      type(adv_batch_type), intent(in   ) :: batch
+      type(tracer_type   ), intent(inout) :: tracer
     end subroutine flux_interface
     pure real(r8) function slope_interface(f)
       import r8
@@ -58,7 +58,7 @@ contains
 
     type(block_type          ), intent(in) :: block
     type(state_type          ), intent(in) :: state
-    type(transport_batch_type), intent(in) :: batch
+    type(adv_batch_type), intent(in) :: batch
 
     associate (mfx => batch%mfx, mfy => batch%mfy)
     end associate
@@ -67,9 +67,9 @@ contains
 
   subroutine mass_flux_van_leer(block, batch, tracer)
 
-    type(block_type          ), intent(in   ) :: block
-    type(transport_batch_type), intent(in   ) :: batch
-    type(tracer_type         ), intent(inout) :: tracer
+    type(block_type    ), intent(in   ) :: block
+    type(adv_batch_type), intent(in   ) :: batch
+    type(tracer_type   ), intent(inout) :: tracer
 
     integer i, j, k, iu, ju, ci, i1, i2
     real(r8) cf, sm, dm
@@ -115,9 +115,9 @@ contains
 
   subroutine tracer_flux_van_leer(block, batch, tracer)
 
-    type(block_type          ), intent(in   ) :: block
-    type(transport_batch_type), intent(in   ) :: batch
-    type(tracer_type         ), intent(inout) :: tracer
+    type(block_type    ), intent(in   ) :: block
+    type(adv_batch_type), intent(in   ) :: batch
+    type(tracer_type   ), intent(inout) :: tracer
 
     integer i, j, k, iu, ju, ci, i1, i2
     real(r8) cf, sq, dq
@@ -163,9 +163,9 @@ contains
 
   subroutine mass_flux_ppm(block, batch, tracer)
 
-    type(block_type          ), intent(in   ) :: block
-    type(transport_batch_type), intent(in   ) :: batch
-    type(tracer_type         ), intent(inout) :: tracer
+    type(block_type    ), intent(in   ) :: block
+    type(adv_batch_type), intent(in   ) :: batch
+    type(tracer_type   ), intent(inout) :: tracer
 
     integer i, j, k, iu, ju, ci, i1, i2
     real(r8) cf, s1, s2, ds1, ds2, ds3, sm
@@ -238,9 +238,9 @@ contains
 
   subroutine tracer_flux_ppm(block, batch, tracer)
 
-    type(block_type          ), intent(in   ) :: block
-    type(transport_batch_type), intent(in   ) :: batch
-    type(tracer_type         ), intent(inout) :: tracer
+    type(block_type    ), intent(in   ) :: block
+    type(adv_batch_type), intent(in   ) :: batch
+    type(tracer_type   ), intent(inout) :: tracer
 
     integer i, j, k, iu, ju, ci, i1, i2
     real(r8) cf, s1, s2, ds1, ds2, ds3, sq

@@ -36,7 +36,7 @@ contains
 
     call this%clear()
 
-    dt = dt_dynamics
+    dt = dt_dyn
 
     allocate(this%width_lon(mesh%full_lat_lb:mesh%full_lat_ub)); this%width_lon = 0
     allocate(this%ngrid_lon(mesh%full_lat_lb:mesh%full_lat_ub)); this%ngrid_lon = 0

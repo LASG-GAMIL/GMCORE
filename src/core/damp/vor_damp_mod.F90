@@ -54,11 +54,11 @@ contains
           jr = merge(j - global_mesh%full_lat_ibeg_no_pole + 1, global_mesh%full_lat_iend_no_pole - j + 1, global_mesh%full_lat(j) < 0)
           if (j0 == 0) then
             c_lon(j,k) = vor_damp_coef2 * &
-              radius**2 * global_mesh%dlat(j) * global_mesh%dlon / dt_dynamics
+              radius**2 * global_mesh%dlat(j) * global_mesh%dlon / dt_dyn
           else
             c_lon(j,k) = vor_damp_coef2 * &
               exp(jr**2 * log(1.0e-10) / j0**2) * &
-              radius**2 * global_mesh%dlat(j) * global_mesh%dlon / dt_dynamics
+              radius**2 * global_mesh%dlat(j) * global_mesh%dlon / dt_dyn
           end if
         end do
       end do
@@ -68,11 +68,11 @@ contains
           jr = merge(j - global_mesh%half_lat_ibeg + 1, global_mesh%half_lat_iend - j + 1, global_mesh%half_lat(j) < 0)
           if (j0 == 0) then
             c_lat(j,k) = vor_damp_coef2 * &
-              radius**2 * global_mesh%dlat(j) * global_mesh%dlon / dt_dynamics
+              radius**2 * global_mesh%dlat(j) * global_mesh%dlon / dt_dyn
           else
             c_lat(j,k) = vor_damp_coef2 * &
               exp(jr**2 * log(1.0e-10) / j0**2) * &
-              radius**2 * global_mesh%dlat(j) * global_mesh%dlon / dt_dynamics
+              radius**2 * global_mesh%dlat(j) * global_mesh%dlon / dt_dyn
           end if
         end do
       end do
@@ -101,7 +101,7 @@ contains
               cycle
             end if
           end if
-          b = -c_lat(j,k) * (1 - beta) * dt_dynamics / global_mesh%le_lat(j)**2
+          b = -c_lat(j,k) * (1 - beta) * dt_dyn / global_mesh%le_lat(j)**2
           a = 2 * (-b) + 1
           call zonal_solver(j,k)%init_sym_const(blocks(1)%mesh%num_full_lon, a, b, zonal_tridiag_solver)
         end if

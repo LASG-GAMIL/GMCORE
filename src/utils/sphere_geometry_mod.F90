@@ -43,6 +43,11 @@ module sphere_geometry_mod
     module procedure inverse_cartesian_transform_2
   end interface inverse_cartesian_transform
 
+  interface calc_distance
+    module procedure calc_distance_r8
+    module procedure calc_distance_r16
+  end interface
+
   interface calc_sphere_angle
     module procedure calc_sphere_angle_1
     module procedure calc_sphere_angle_2
@@ -191,7 +196,18 @@ contains
 
   end subroutine inverse_rotation_transform
 
-  real(16) function calc_distance(lon1, lat1, lon2, lat2) result(res)
+  pure real(8) function calc_distance_r8(lon1, lat1, lon2, lat2) result(res)
+
+    real(8), intent(in) :: lon1
+    real(8), intent(in) :: lat1
+    real(8), intent(in) :: lon2
+    real(8), intent(in) :: lat2
+
+    res = radius * acos(min(1.0d0, max(-1.0d0, sin(lat1) * sin(lat2) + cos(lat1) * cos(lat2) * cos(lon1 - lon2))))
+
+  end function calc_distance_r8
+
+  pure real(16) function calc_distance_r16(lon1, lat1, lon2, lat2) result(res)
 
     real(16), intent(in) :: lon1
     real(16), intent(in) :: lat1
@@ -200,7 +216,7 @@ contains
 
     res = radius * acos(min(1.0d0, max(-1.0d0, sin(lat1) * sin(lat2) + cos(lat1) * cos(lat2) * cos(lon1 - lon2))))
 
-  end function calc_distance
+  end function calc_distance_r16
 
   real(16) function calc_area(x, y, z) result(res)
 

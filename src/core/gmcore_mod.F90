@@ -31,6 +31,9 @@ module gmcore_mod
   public gmcore_run
   public gmcore_final
 
+  public block_type
+  public proc
+
   procedure(space_operators_interface), pointer :: operators
 
 contains
@@ -50,7 +53,7 @@ contains
     call process_init(comm)
     call vert_coord_init(num_lev, namelist_path)
     call process_create_blocks()
-    call time_init()
+    call time_init(dt_dyn)
     call diag_state_init(proc%blocks)
     call history_init()
     call restart_init()
@@ -117,16 +120,16 @@ contains
       end associate
     end do
 
-    call operators_prepare(proc%blocks, old, dt_dynamics)
+    call operators_prepare(proc%blocks, old, dt_dyn)
     if (nonhydrostatic) call nh_prepare(proc%blocks)
     call diagnose(proc%blocks, old)
     call output(old)
 
     do while (.not. time_is_finished())
-      call time_integrate(dt_dynamics, proc%blocks)
+      call time_integrate(dt_dyn, proc%blocks)
       if (is_root_proc() .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
-      call time_advance(dt_dynamics)
-      call operators_prepare(proc%blocks, old, dt_dynamics)
+      call time_advance(dt_dyn)
+      call operators_prepare(proc%blocks, old, dt_dyn)
       call diagnose(proc%blocks, old)
       call output(old)
     end do
