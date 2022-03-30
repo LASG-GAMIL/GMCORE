@@ -34,7 +34,8 @@ module sphere_geometry_mod
   end type point_type
 
   interface cartesian_transform
-    module procedure cartesian_transform_1
+    module procedure cartesian_transform_1_r8
+    module procedure cartesian_transform_1_r16
     module procedure cartesian_transform_2
   end interface cartesian_transform
 
@@ -82,9 +83,23 @@ contains
 
   end function euler_formula
 
-  subroutine cartesian_transform_1(lon, lat, x, y, z)
+  subroutine cartesian_transform_1_r8(lon, lat, x, y, z)
 
-    real(r8), intent(in)  :: lon, lat
+    real(8), intent(in ) :: lon, lat
+    real(8), intent(out) :: x, y, z
+
+    real(8) cos_lat
+
+    cos_lat = cos(lat)
+    x = radius * cos_lat * cos(lon)
+    y = radius * cos_lat * sin(lon)
+    z = radius * sin(lat)
+
+  end subroutine cartesian_transform_1_r8
+
+  subroutine cartesian_transform_1_r16(lon, lat, x, y, z)
+
+    real(8 ), intent(in)  :: lon, lat
     real(16), intent(out) :: x, y, z
 
     real(16) cos_lat
@@ -94,7 +109,7 @@ contains
     y = radius * cos_lat * sin(lon)
     z = radius * sin(lat)
 
-  end subroutine cartesian_transform_1
+  end subroutine cartesian_transform_1_r16
 
   subroutine cartesian_transform_2(point)
 

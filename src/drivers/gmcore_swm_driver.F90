@@ -58,7 +58,7 @@ program gmcore_swm_driver
     case ('vortex_erosion')
       set_ic => vortex_erosion_test_set_ic
     case default
-      call log_error('Unknown test case ' // trim(test_case) // '!')
+      call log_error('Unknown test case ' // trim(test_case) // '!', pid=proc%id)
     end select
 
     do iblk = 1, size(proc%blocks)
