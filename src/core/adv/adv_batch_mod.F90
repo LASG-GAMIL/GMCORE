@@ -1,6 +1,7 @@
 module adv_batch_mod
 
   use container
+  use flogger
   use const_mod
   use namelist_mod
   use mesh_mod
@@ -10,6 +11,7 @@ module adv_batch_mod
   private
 
   public adv_batch_type
+  public tracer_type
 
   ! Different tracers can be combined into one batch, and adved in different frequency.
   type adv_batch_type
@@ -120,14 +122,16 @@ contains
 
   end subroutine adv_batch_accum_wind
 
-  subroutine adv_add_tracer(this, name)
+  subroutine adv_add_tracer(this, name, long_name, units)
 
     class(adv_batch_type), intent(inout) :: this
     character(*), intent(in) :: name
+    character(*), intent(in), optional :: long_name
+    character(*), intent(in), optional :: units
 
     type(tracer_type) tracer
 
-    call tracer%init(this%mesh, name)
+    call tracer%init(this%mesh, name, long_name, units)
     call this%tracers%insert(name, tracer)
 
   end subroutine adv_add_tracer
@@ -142,6 +146,8 @@ contains
     select type (value => this%tracers%value(name))
     type is (tracer_type)
       res => value
+    class default
+      call log_error('Unknown tracer name ' // trim(name) // '!')
     end select
 
   end function adv_get_tracer

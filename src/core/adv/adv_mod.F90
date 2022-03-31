@@ -12,6 +12,8 @@ module adv_mod
   integer ntracer
   character(30), allocatable :: batch_names(:)
   character(30), allocatable :: tracer_names(:)
+  character(30), allocatable :: tracer_long_names(:)
+  character(30), allocatable :: tracer_units(:)
   real(r8), allocatable :: dt_adv(:)
 
 contains
@@ -21,25 +23,31 @@ contains
     call adv_final()
 
     ntracer = 0
-    allocate(batch_names (1000))
-    allocate(tracer_names(1000))
-    allocate(dt_adv(1000))
+    allocate(batch_names      (1000))
+    allocate(tracer_names     (1000))
+    allocate(tracer_long_names(1000))
+    allocate(tracer_units     (1000))
+    allocate(dt_adv           (1000))
 
   end subroutine adv_init
 
-  subroutine adv_add_tracer(batch_name, tracer_name, dt)
+  subroutine adv_add_tracer(batch_name, dt, name, long_name, units)
 
     character(*), intent(in) :: batch_name
-    character(*), intent(in) :: tracer_name
     real(r8), intent(in) :: dt
+    character(*), intent(in) :: name
+    character(*), intent(in), optional :: long_name
+    character(*), intent(in), optional :: units
 
     ntracer = ntracer + 1
     if (ntracer > size(batch_names)) then
       call log_error('Insufficient character array!', __FILE__, __LINE__, pid=proc%id)
     end if
     batch_names (ntracer) = batch_name
-    tracer_names(ntracer) = tracer_name
     dt_adv(ntracer) = dt
+    tracer_names(ntracer) = name
+    if (present(long_name)) tracer_long_names(ntracer) = long_name
+    if (present(units)) tracer_units(ntracer) = units
 
   end subroutine adv_add_tracer
 
@@ -61,7 +69,6 @@ contains
           exit
         end if
       end do
-      print *, i, j, found, nbatch
       if (.not. found) then
         nbatch = nbatch + 1
         unique_batch_names(nbatch ) = batch_names (i)
@@ -86,9 +93,10 @@ contains
       do j = 1, nbatch
         do k = 1, ntracer
           if (batch_names(k) == block%state(i)%adv_batches(j)%alert_key) then
-            call block%state(i)%adv_batches(j)%add_tracer(tracer_names(k))
+            call block%state(i)%adv_batches(j)%add_tracer(tracer_names(k), tracer_long_names(k), tracer_units(k))
           end if
         end do
+        call block%state(i)%adv_batches(j)%allocate_tracers()
       end do
     end do
 
@@ -96,9 +104,11 @@ contains
 
   subroutine adv_final()
 
-    if (allocated(batch_names )) deallocate(batch_names )
-    if (allocated(tracer_names)) deallocate(tracer_names)
-    if (allocated(dt_adv)) deallocate(dt_adv)
+    if (allocated(batch_names      )) deallocate(batch_names      )
+    if (allocated(tracer_names     )) deallocate(tracer_names     )
+    if (allocated(tracer_long_names)) deallocate(tracer_long_names)
+    if (allocated(tracer_units     )) deallocate(tracer_units     )
+    if (allocated(dt_adv           )) deallocate(dt_adv           )
 
   end subroutine adv_final
 

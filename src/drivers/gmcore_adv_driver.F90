@@ -2,6 +2,7 @@ program gmcore_adv_driver
 
   use namelist_mod
   use gmcore_mod
+  use history_mod
   use deform_case4_mod
 
   implicit none
@@ -36,6 +37,10 @@ program gmcore_adv_driver
   do iblk = 1, size(proc%blocks)
     call set_ic(proc%blocks(iblk))
   end do
+
+  call history_setup_h0_adv(proc%blocks)
+
+  call history_write_h0(proc%blocks, 1)
 
   call gmcore_final()
 

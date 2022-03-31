@@ -36,6 +36,7 @@ module namelist_mod
   logical         :: baroclinic           = .false.
   logical         :: hydrostatic          = .true.
   logical         :: nonhydrostatic       = .false.
+  logical         :: advection            = .false.
 
   integer         :: num_proc_lon(20)     = 0
   integer         :: num_proc_lat(20)     = 0
@@ -134,6 +135,7 @@ module namelist_mod
     num_lat                   , &
     num_lev                   , &
     nonhydrostatic            , &
+    advection                 , &
     num_proc_lon              , &
     num_proc_lat              , &
     initial_time              , &
@@ -235,6 +237,8 @@ contains
     hydrostatic = .not. nonhydrostatic
 
     call const_init(planet)
+
+    if (dt_dyn == 0) dt_dyn = dt_adv
 
   end subroutine parse_namelist
 

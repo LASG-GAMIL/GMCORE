@@ -13,7 +13,9 @@ module tracer_mod
 
   type tracer_type
     type(mesh_type), pointer :: mesh => null()
-    character(30) :: name = ''
+    character(10) :: name      = ''
+    character(30) :: long_name = ''
+    character(10) :: units     = ''
     real(r8), allocatable, dimension(:,:,:) :: q   ! Tracer density or mixing ratio or any other quantity
     real(r8), allocatable, dimension(:,:,:) :: mfx ! Tracer mass flux along x axis
     real(r8), allocatable, dimension(:,:,:) :: mfy ! Tracer mass flux along y axis
@@ -35,16 +37,20 @@ module tracer_mod
 
 contains
 
-  subroutine tracer_init(this, mesh, name)
+  subroutine tracer_init(this, mesh, name, long_name, units)
 
     class(tracer_type), intent(inout) :: this
     type(mesh_type), intent(in), target :: mesh
     character(*), intent(in) :: name
+    character(*), intent(in), optional :: long_name
+    character(*), intent(in), optional :: units
 
     call this%clear()
 
     this%mesh => mesh
     this%name =  name
+    if (present(long_name)) this%long_name = long_name
+    if (present(units)) this%units = units
 
   end subroutine tracer_init
 

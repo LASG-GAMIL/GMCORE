@@ -1,5 +1,6 @@
 module history_mod
 
+  use container
   use fiona
   use flogger
   use string
@@ -13,6 +14,7 @@ module history_mod
   use tend_mod
   use block_mod
   use diag_state_mod
+  use adv_batch_mod
 
   implicit none
 
@@ -20,6 +22,7 @@ module history_mod
 
   public history_init
   public history_final
+  public history_setup_h0_adv
   public history_write_h0
   public history_write_h1
 
@@ -106,7 +109,7 @@ contains
     else if (nonhydrostatic) then
       call history_setup_h0_nonhydrostatic()
       call history_setup_h1_nonhydrostatic()
-    else
+    else if (.not. advection) then
       call history_setup_h0_swm()
       call history_setup_h1_swm()
     end if
@@ -146,11 +149,12 @@ contains
 
   end subroutine history_setup_h0_swm
 
-  subroutine history_setup_h0_adv_2d(ntracer)
+  subroutine history_setup_h0_adv(blocks)
 
-    integer, intent(in) :: ntracer
+    type(block_type), intent(in) :: blocks(:)
 
     integer i
+    type(hash_table_iterator_type) it
 
     call fiona_create_dataset('h0', desc=case_desc, file_prefix=trim(case_name), mpi_comm=proc%comm, group_size=output_group_size, split_file=split_h0)
     ! Dimensions
@@ -159,11 +163,20 @@ contains
     call fiona_add_dim('h0', 'lon'  , size=global_mesh%num_full_lon, add_var=.true., decomp=.true.)
     call fiona_add_dim('h0', 'lat'  , size=global_mesh%num_full_lat, add_var=.true., decomp=.true.)
     ! Variables
-    do i = 1, ntracer
-      call fiona_add_var('h0', 'q'//to_str(i), long_name='tracer #'//to_str(i), units='1', dim_names=cell_dims_2d, dtype='r8')
+    associate (adv_batches => blocks(1)%state(1)%adv_batches)
+    do i = 1, size(adv_batches)
+      it = hash_table_iterator(adv_batches(i)%tracers)
+      do while (.not. it%ended())
+        select type (tracer => it%value)
+        type is (tracer_type)
+          call fiona_add_var('h0', tracer%name, long_name=tracer%long_name, units=tracer%units, dim_names=cell_dims_2d, dtype='r8')
+        end select
+        call it%next()
+      end do
     end do
+    end associate
 
-  end subroutine history_setup_h0_adv_2d
+  end subroutine history_setup_h0_adv
 
   subroutine history_setup_h0_hydrostatic()
 
@@ -353,20 +366,6 @@ contains
 
     integer iblk, is, ie, js, je
     integer start(2), count(2)
-    real(8) time1, time2
-
-    if (is_root_proc()) then
-      call log_notice('Write state.')
-      call cpu_time(time1)
-    end if
-
-    if (.not. time_has_alert('h0_new_file')) then
-      call fiona_start_output('h0', elapsed_seconds, new_file=time_step==0)
-    else if (time_is_alerted('h0_new_file')) then
-      call fiona_start_output('h0', elapsed_seconds, new_file=.true., tag=curr_time%format('%Y-%m-%d_%H_%M'))
-    else
-      call fiona_start_output('h0', elapsed_seconds, new_file=.false.)
-    end if
 
     call fiona_output('h0', 'lon' , global_mesh%full_lon_deg(1:global_mesh%num_full_lon))
     call fiona_output('h0', 'lat' , global_mesh%full_lat_deg(1:global_mesh%num_full_lat))
@@ -406,14 +405,41 @@ contains
       end associate
     end do
 
-    call fiona_end_output('h0')
-
-    if (is_root_proc()) then
-      call cpu_time(time2)
-      call log_notice('Done write state cost ' // to_str(time2 - time1, 5) // ' seconds.')
-    end if
-
   end subroutine history_write_h0_swm
+
+  subroutine history_write_h0_adv(blocks, itime)
+
+    type(block_type), intent(in), target :: blocks(:)
+    integer, intent(in) :: itime 
+
+    integer iblk, is, ie, js, je, i
+    integer start(2), count(2)
+    type(hash_table_iterator_type) it
+
+    call fiona_output('h0', 'lon' , global_mesh%full_lon_deg(1:global_mesh%num_full_lon))
+    call fiona_output('h0', 'lat' , global_mesh%full_lat_deg(1:global_mesh%num_full_lat))
+
+    do iblk = 1, size(blocks)
+      associate (mesh   => blocks(iblk)%mesh        , &
+                 state  => blocks(iblk)%state(itime))
+      is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
+      js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
+      start = [is,js]
+      count = [mesh%num_full_lon,mesh%num_full_lat]
+      do i = 1, size(state%adv_batches)
+        it = hash_table_iterator(state%adv_batches(i)%tracers)
+        do while (.not. it%ended())
+          select type (tracer => it%value)
+          type is (tracer_type)
+            call fiona_output('h0', tracer%name, tracer%q(is:ie,js:je,1), start=start, count=count)
+          end select
+          call it%next()
+        end do
+      end do
+      end associate
+    end do
+
+  end subroutine history_write_h0_adv
 
   subroutine history_write_h0_hydrostatic(blocks, itime)
 
@@ -422,20 +448,6 @@ contains
 
     integer iblk, is, ie, js, je, ks, ke
     integer start(3), count(3)
-    real(8) time1, time2
-
-    if (is_root_proc()) then
-      call log_notice('Write state.')
-      call cpu_time(time1)
-    end if
-
-    if (.not. time_has_alert('h0_new_file')) then
-      call fiona_start_output('h0', elapsed_seconds, new_file=time_step==0)
-    else if (time_is_alerted('h0_new_file')) then
-      call fiona_start_output('h0', elapsed_seconds, new_file=.true., tag=curr_time%format('%Y-%m-%d_%H_%M'))
-    else
-      call fiona_start_output('h0', elapsed_seconds, new_file=.false.)
-    end if
 
     call fiona_output('h0', 'lon' , global_mesh%full_lon_deg(1:global_mesh%num_full_lon))
     call fiona_output('h0', 'lat' , global_mesh%full_lat_deg(1:global_mesh%num_full_lat))
@@ -487,13 +499,6 @@ contains
       end associate
     end do
 
-    call fiona_end_output('h0')
-
-    if (is_root_proc()) then
-      call cpu_time(time2)
-      call log_notice('Done write state cost ' // to_str(time2 - time1, 5) // ' seconds.')
-    end if
-
   end subroutine history_write_h0_hydrostatic
 
   subroutine history_write_h0_nonhydrostatic(blocks, itime)
@@ -503,20 +508,6 @@ contains
 
     integer iblk, is, ie, js, je, ks, ke
     integer start(3), count(3)
-    real(8) time1, time2
-
-    if (is_root_proc()) then
-      call log_notice('Write state.')
-      call cpu_time(time1)
-    end if
-
-    if (.not. time_has_alert('h0_new_file')) then
-      call fiona_start_output('h0', elapsed_seconds, new_file=time_step==0)
-    else if (time_is_alerted('h0_new_file')) then
-      call fiona_start_output('h0', elapsed_seconds, new_file=.true., tag=curr_time%format('%Y-%m-%d_%H_%M'))
-    else
-      call fiona_start_output('h0', elapsed_seconds, new_file=.false.)
-    end if
 
     call fiona_output('h0', 'lon' , global_mesh%full_lon_deg(1:global_mesh%num_full_lon))
     call fiona_output('h0', 'lat' , global_mesh%full_lat_deg(1:global_mesh%num_full_lat))
@@ -576,13 +567,6 @@ contains
       end associate
     end do
 
-    call fiona_end_output('h0')
-
-    if (is_root_proc()) then
-      call cpu_time(time2)
-      call log_notice('Done write state cost ' // to_str(time2 - time1, 5) // ' seconds.')
-    end if
-
   end subroutine history_write_h0_nonhydrostatic
 
   subroutine history_write_h0(blocks, itime)
@@ -590,12 +574,36 @@ contains
     type(block_type), intent(in), target :: blocks(:)
     integer, intent(in) :: itime
 
+    real(8) time1, time2
+
+    if (is_root_proc()) then
+      call log_notice('Write state.')
+      call cpu_time(time1)
+    end if
+
+    if (.not. time_has_alert('h0_new_file')) then
+      call fiona_start_output('h0', elapsed_seconds, new_file=time_step==0)
+    else if (time_is_alerted('h0_new_file')) then
+      call fiona_start_output('h0', elapsed_seconds, new_file=.true., tag=curr_time%format('%Y-%m-%d_%H_%M'))
+    else
+      call fiona_start_output('h0', elapsed_seconds, new_file=.false.)
+    end if
+
     if (hydrostatic) then
       call history_write_h0_hydrostatic(blocks, itime)
     else if (nonhydrostatic) then
       call history_write_h0_nonhydrostatic(blocks, itime)
+    else if (advection) then
+      call history_write_h0_adv(blocks, itime)
     else
       call history_write_h0_swm(blocks, itime)
+    end if
+
+    call fiona_end_output('h0')
+
+    if (is_root_proc()) then
+      call cpu_time(time2)
+      call log_notice('Done write state cost ' // to_str(time2 - time1, 5) // ' seconds.')
     end if
 
   end subroutine history_write_h0
