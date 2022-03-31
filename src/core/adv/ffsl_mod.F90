@@ -12,6 +12,8 @@ module ffsl_mod
   private
 
   public ffsl_init
+  public ffsl_calc_mass_flux
+  public ffsl_calc_tracer_flux
 
   interface
     subroutine flux_interface(block, batch, tracer)
