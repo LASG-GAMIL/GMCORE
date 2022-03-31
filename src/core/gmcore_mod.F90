@@ -31,7 +31,9 @@ module gmcore_mod
   public gmcore_run
   public gmcore_final
 
+  public adv_accum_wind
   public block_type
+  public state_type
   public proc
 
   procedure(space_operators_interface), pointer :: operators

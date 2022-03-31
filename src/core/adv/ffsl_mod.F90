@@ -54,16 +54,75 @@ contains
 
   end subroutine ffsl_init
 
-  subroutine ffsl_calc_mass_flux(block, state, batch)
+  subroutine ffsl_calc_mass_flux(block, state, batch, tracer)
 
-    type(block_type          ), intent(in) :: block
-    type(state_type          ), intent(in) :: state
-    type(adv_batch_type), intent(in) :: batch
+    type(block_type    ), intent(in   ) :: block
+    type(state_type    ), intent(in   ) :: state
+    type(adv_batch_type), intent(in   ) :: batch
+    type(tracer_type   ), intent(inout) :: tracer
 
-    associate (mfx => batch%mfx, mfy => batch%mfy)
+    integer i, j, k
+
+    associate (mesh => block%mesh, &
+               divx => batch%divx, &
+               divy => batch%divy, &
+               m    => tracer%q  , &
+               mx   => tracer%qx , &
+               my   => tracer%qy , &
+               mfx  => tracer%mfx, &
+               mfy  => tracer%mfy)
+    ! Run inner advective operators.
+    mx = m; my = m
+    call mass_flux(block, batch, tracer)
+    ! Subtract divergence terms from flux to form advective operators.
+    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+        do i = mesh%half_lon_ibeg - 1, mesh%half_lon_iend
+          mfx(i,j,k) = mfx(i,j,k) - 0.5_r8 * (divx(i,j,k) * m(i,j,k) + divx(i+1,j,k) * m(i+1,j,k))
+        end do
+      end do
+      do j = mesh%half_lat_ibeg - 1, mesh%half_lat_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          mfy(i,j,k) = mfy(i,j,k) - 0.5_r8 * (divy(i,j,k) * m(i,j,k) + divy(i,j+1,k) * m(i,j+1,k))
+        end do
+      end do
+    end do
+    ! Calculate intermediate tracer density due to advective operators.
+    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          my(i,j,k) = m(i,j,k) - 0.5_r8 * (mfx(i,j,k) - mfx(i-1,j,k))
+          mx(i,j,k) = m(i,j,k) - 0.5_r8 * (mfy(i,j,k) - mfy(i,j-1,k))
+        end do
+      end do
+    end do
+    call fill_halo(block, mx, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block, my, full_lon=.true., full_lat=.true., full_lev=.true.)
+    ! Run outer flux form operators.
+    call mass_flux(block, batch, tracer)
     end associate
 
   end subroutine ffsl_calc_mass_flux
+
+  subroutine ffsl_calc_tracer_flux(block, state, batch, tracer)
+
+    type(block_type    ), intent(in   ) :: block
+    type(state_type    ), intent(in   ) :: state
+    type(adv_batch_type), intent(in   ) :: batch
+    type(tracer_type   ), intent(inout) :: tracer
+
+    integer i, j, k
+
+    associate (mesh => block%mesh)
+    ! Run inner advective operators.
+    call tracer_flux(block, batch, tracer)
+
+    ! Run outer flux form operators.
+    call tracer_flux(block, batch, tracer)
+
+    end associate
+
+  end subroutine ffsl_calc_tracer_flux
 
   subroutine mass_flux_van_leer(block, batch, tracer)
 
@@ -75,8 +134,8 @@ contains
     real(r8) cf, sm, dm
 
     associate (mesh => block%mesh, &
-               cx   => batch%cx  , & ! in
-               cy   => batch%cy  , & ! in
+               cflx => batch%cflx, & ! in
+               cfly => batch%cfly, & ! in
                u    => batch%u   , & ! in
                v    => batch%v   , & ! in
                mx   => tracer%qx , & ! in
@@ -87,8 +146,8 @@ contains
       ! Along x-axis
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          ci = int(cx(i,j,k))
-          cf = cx(i,j,k) - ci
+          ci = int(cflx(i,j,k))
+          cf = cflx(i,j,k) - ci
           i1 = i - merge(0, ci, ci > 0) + 1
           i2 = i + merge(ci, 0, ci > 0)
           sm = u(i,j,k) * sum(mx(i1:i2,j,k))
@@ -100,7 +159,7 @@ contains
       ! Along y-axis
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          cf = cy(i,j,k)
+          cf = cfly(i,j,k)
           ju = merge(j, j + 1, cf > 0)
           dm = slope(my(i,ju-1:ju+1,k))
           mfy(i,j,k) = v(i,j,k) * (my(i,ju,k) + dm * 0.5_r8 * (sign(1.0_r8, cf) - cf))
@@ -123,8 +182,8 @@ contains
     real(r8) cf, sq, dq
 
     associate (mesh => block%mesh, &
-               cx   => batch%cx  , & ! in
-               cy   => batch%cy  , & ! in
+               cflx => batch%cflx, & ! in
+               cfly => batch%cfly, & ! in
                mfx  => batch%mfx , & ! in
                mfy  => batch%mfy , & ! in
                qx   => tracer%qx , & ! in
@@ -135,8 +194,8 @@ contains
       ! Along x-axis
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          ci = int(cx(i,j,k))
-          cf = cx(i,j,k) - ci
+          ci = int(cflx(i,j,k))
+          cf = cflx(i,j,k) - ci
           i1 = i - merge(0, ci, ci > 0) + 1
           i2 = i + merge(ci, 0, ci > 0)
           sq = sum(qx(i1:i2,j,k))
@@ -148,7 +207,7 @@ contains
       ! Along y-axis
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          cf = cy(i,j,k)
+          cf = cfly(i,j,k)
           ju = merge(j, j + 1, cf > 0)
           dq = slope(qy(i,ju-1:ju+1,k))
           qmfy(i,j,k) = mfy(i,j,k) * (qy(i,ju,k) + dq * 0.5_r8 * (sign(1.0_r8, cf) - cf))
@@ -171,8 +230,8 @@ contains
     real(r8) cf, s1, s2, ds1, ds2, ds3, sm
 
     associate (mesh => block%mesh, &
-               cx   => batch%cx  , & ! in
-               cy   => batch%cy  , & ! in
+               cflx   => batch%cflx  , & ! in
+               cfly   => batch%cfly  , & ! in
                u    => batch%u   , & ! in
                v    => batch%v   , & ! in
                mx   => tracer%qx , & ! in
@@ -203,8 +262,8 @@ contains
       ! Along x-axis
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          ci = int(cx(i,j,k))
-          cf = cx(i,j,k) - ci
+          ci = int(cflx(i,j,k))
+          cf = cflx(i,j,k) - ci
           i1 = i - merge(0, ci, ci > 0) + 1
           i2 = i + merge(ci, 0, ci > 0)
           sm = sum(mx(i1:i2,j,k))
@@ -220,7 +279,7 @@ contains
       ! Along y-axis
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          cf = cy(i,j,k)
+          cf = cfly(i,j,k)
           ju = merge(j, j + 1, cf > 0)
           s1 = merge(1 - abs(cf), 0.0_r8, cf >= 0)
           s2 = merge(1.0_r8, abs(cf), cf >= 0)
@@ -246,8 +305,8 @@ contains
     real(r8) cf, s1, s2, ds1, ds2, ds3, sq
 
     associate (mesh => block%mesh, &
-               cx   => batch%cx  , & ! in
-               cy   => batch%cy  , & ! in
+               cflx   => batch%cflx  , & ! in
+               cfly   => batch%cfly  , & ! in
                mfx  => tracer%mfx, & ! in
                mfy  => tracer%mfy, & ! in
                qx   => tracer%qx , & ! in
@@ -278,8 +337,8 @@ contains
       ! Along x-axis
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          ci = int(cx(i,j,k))
-          cf = cx(i,j,k) - ci
+          ci = int(cflx(i,j,k))
+          cf = cflx(i,j,k) - ci
           i1 = i - merge(0, ci, ci > 0) + 1
           i2 = i + merge(ci, 0, ci > 0)
           sq = sum(qx(i1:i2,j,k))
@@ -295,7 +354,7 @@ contains
       ! Along y-axis
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          cf = cy(i,j,k)
+          cf = cfly(i,j,k)
           ju = merge(j, j + 1, cf > 0)
           s1 = merge(1 - abs(cf), 0.0_r8, cf >= 0)
           s2 = merge(1.0_r8, abs(cf), cf >= 0)

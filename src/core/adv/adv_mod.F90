@@ -75,7 +75,7 @@ contains
         unique_dt_adv(nbatch) = dt_adv(i)
       end if
     end do
-    call log_notice('There are ' // to_str(nbatch) // ' adv batches.')
+    call log_notice('There are ' // to_str(nbatch) // ' advection batches.')
     if (is_root_proc()) then
       do i = 1, nbatch
         write(*, *) '- ', trim(unique_batch_names(i)), real(unique_dt_adv(i))
@@ -101,6 +101,21 @@ contains
     end do
 
   end subroutine adv_allocate_tracers
+
+  subroutine adv_accum_wind(block, itime)
+
+    type(block_type), intent(inout) :: block
+    integer, intent(in) :: itime
+
+    integer i
+
+    associate (state => block%state(itime))
+    do i = 1, size(state%adv_batches)
+      call state%adv_batches(i)%accum_wind(state%u, state%v)
+    end do
+    end associate
+
+  end subroutine adv_accum_wind
 
   subroutine adv_final()
 
