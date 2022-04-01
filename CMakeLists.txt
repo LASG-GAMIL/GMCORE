@@ -153,7 +153,6 @@ set(gmcore_files
   src/core/damp/laplace_damp_mod.F90
   src/core/damp/smag_damp_mod.F90
   src/core/damp/damp_mod.F90
-  src/core/adv/tracer_mod.F90
   src/core/adv/adv_batch_mod.F90
   src/core/adv/adv_mod.F90
   src/core/adv/ffsl_mod.F90

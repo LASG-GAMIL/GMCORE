@@ -7,7 +7,6 @@ module adv_mod
   use block_mod
   use process_mod
   use adv_batch_mod
-  use tracer_mod
   use ffsl_mod
 
   implicit none
@@ -21,19 +20,25 @@ module adv_mod
   public adv_accum_wind
   public adv_calc_mass_flux
   public adv_calc_tracer_flux
-  public tracer_type
 
   interface
-    subroutine calc_flux_interface(block, state, batch, tracer)
-      import block_type, state_type, adv_batch_type, tracer_type
+    subroutine calc_flux_interface(block, batch, m, mfx, mfy)
+      import block_type, adv_batch_type, r8
       type(block_type    ), intent(in   ) :: block
-      type(state_type    ), intent(in   ) :: state
-      type(adv_batch_type), intent(in   ) :: batch
-      type(tracer_type   ), intent(inout) :: tracer
+      type(adv_batch_type), intent(inout) :: batch
+      real(r8), intent(in ) :: m  (block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
+                                   block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
+                                   block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+      real(r8), intent(out) :: mfx(block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
+                                   block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
+                                   block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+      real(r8), intent(out) :: mfy(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
+                                   block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
+                                   block%mesh%full_lev_lb:block%mesh%full_lev_ub)
     end subroutine calc_flux_interface
   end interface
 
-  procedure(calc_flux_interface), pointer :: adv_calc_mass_flux => null()
+  procedure(calc_flux_interface), pointer :: adv_calc_mass_flux   => null()
   procedure(calc_flux_interface), pointer :: adv_calc_tracer_flux => null()
 
   integer ntracer
@@ -88,7 +93,7 @@ contains
 
     type(block_type), intent(inout) :: block
 
-    integer nbatch, i, j, k
+    integer nbatch, nbatch_tracer, i, j, k, l, is, ie, js, je, ks, ke
     logical found
     character(30) unique_batch_names(100)
     real(r8) unique_tracer_dt(100)
@@ -115,21 +120,40 @@ contains
       end do
     end if
 
+    ! Initialize advection batches.
+    is = block%mesh%full_lon_lb; ie = block%mesh%full_lon_ub
+    js = block%mesh%full_lat_lb; je = block%mesh%full_lat_ub
+    ks = block%mesh%full_lev_lb; ke = block%mesh%full_lev_ub
     do i = 1, size(block%state)
       allocate(block%state(i)%adv_batches(nbatch))
       do j = 1, nbatch
         call block%state(i)%adv_batches(j)%init(block%mesh, unique_batch_names(j), unique_tracer_dt(j))
       end do
+      allocate(block%state(i)%q      (is:ie,js:je,ks:ke,ntracer))
+      allocate(block%state(i)%qmf_lon(is:ie,js:je,ks:ke,ntracer))
+      allocate(block%state(i)%qmf_lat(is:ie,js:je,ks:ke,ntracer))
+      allocate(block%state(i)%qmf_lev(is:ie,js:je,ks:ke,ntracer))
     end do
 
     do i = 1, size(block%state)
       do j = 1, nbatch
+        nbatch_tracer = 0
         do k = 1, ntracer
           if (batch_names(k) == block%state(i)%adv_batches(j)%alert_key) then
-            call block%state(i)%adv_batches(j)%add_tracer(tracer_names(k), tracer_long_names(k), tracer_units(k))
+            nbatch_tracer = nbatch_tracer + 1
           end if
         end do
-        call block%state(i)%adv_batches(j)%allocate_tracers()
+        call block%state(i)%adv_batches(j)%allocate_tracers(nbatch_tracer)
+        l = 0
+        do k = 1, ntracer
+          if (batch_names(k) == block%state(i)%adv_batches(j)%alert_key) then
+            l = l + 1
+            block%state(i)%adv_batches(j)%tracer_idx       (l) =                   k
+            block%state(i)%adv_batches(j)%tracer_names     (l) = tracer_names     (k)
+            block%state(i)%adv_batches(j)%tracer_long_names(l) = tracer_long_names(k)
+            block%state(i)%adv_batches(j)%tracer_units     (l) = tracer_units     (k)
+          end if
+        end do
       end do
     end do
 

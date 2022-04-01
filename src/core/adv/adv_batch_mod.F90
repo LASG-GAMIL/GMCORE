@@ -1,25 +1,26 @@
 module adv_batch_mod
 
-  use container
   use flogger
   use const_mod
   use namelist_mod
   use mesh_mod
   use allocator_mod
-  use tracer_mod
 
   private
 
   public adv_batch_type
-  public tracer_type
 
   ! Different tracers can be combined into one batch, and adved in different frequencfly.
   type adv_batch_type
     type(mesh_type), pointer :: mesh => null()
     character(30) :: alert_key = ''
-    integer :: nstep  = 0 ! Number of dynamic steps for one adv step
-    integer :: step   = 0 ! Dynamic step counter
-    real(r8) :: dt        ! adv time step size in seconds
+    integer  :: nstep  = 0 ! Number of dynamic steps for one adv step
+    integer  :: step   = 0 ! Dynamic step counter
+    real(r8) :: dt         ! Advection time step size in seconds
+    integer      , allocatable, dimension(:) :: tracer_idx
+    character(10), allocatable, dimension(:) :: tracer_names
+    character(10), allocatable, dimension(:) :: tracer_long_names
+    character(10), allocatable, dimension(:) :: tracer_units
     real(r8), allocatable, dimension(:,:,:) :: mfx
     real(r8), allocatable, dimension(:,:,:) :: mfy
     real(r8), allocatable, dimension(:,:,:) :: u
@@ -28,13 +29,18 @@ module adv_batch_mod
     real(r8), allocatable, dimension(:,:,:) :: cfly ! Fractional CFL number along y-axis
     real(r8), allocatable, dimension(:,:,:) :: divx ! Divergence along x-axis
     real(r8), allocatable, dimension(:,:,:) :: divy ! Divergence along y-axis
-    type(hash_table_type) tracers
+    real(r8), allocatable, dimension(:,:,:) :: qx   ! Tracer mixing ratio due to advective operator along x axis
+    real(r8), allocatable, dimension(:,:,:) :: qy   ! Tracer mixing ratio due to advective operator along y axis
+    real(r8), allocatable, dimension(:,:,:) :: qxl  ! Tracer mixing ratio at left cell edge along x axis
+    real(r8), allocatable, dimension(:,:,:) :: qyl  ! Tracer mixing ratio at left cell edge along y axis
+    real(r8), allocatable, dimension(:,:,:) :: dqx  ! Tracer mixing ratio mismatch (or slope) at cell center along x axis
+    real(r8), allocatable, dimension(:,:,:) :: dqy  ! Tracer mixing ratio mismatch (or slope) at cell center along y axis
+    real(r8), allocatable, dimension(:,:,:) :: qx6  ! PPM mismatch at cell center along x axis
+    real(r8), allocatable, dimension(:,:,:) :: qy6  ! PPM mismatch at cell center along y axis
   contains
     procedure :: init       => adv_batch_init
     procedure :: clear      => adv_batch_clear
     procedure :: accum_wind => adv_batch_accum_wind
-    procedure :: add_tracer => adv_add_tracer
-    procedure :: get_tracer => adv_get_tracer
     procedure :: allocate_tracers => adv_allocate_tracers
     final :: adv_batch_final
   end type adv_batch_type
@@ -56,14 +62,27 @@ contains
     this%nstep     = dt / dt_dyn
     this%step      = 0
 
-    call allocate_array(mesh, this%mfx, half_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%mfy, full_lon=.true., half_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%u  , half_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%v  , full_lon=.true., half_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%cflx , half_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%cfly , full_lon=.true., half_lat=.true., full_lev=.true.)
-
-    call this%tracers%init()
+    call allocate_array(mesh, this%mfx , half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%mfy , full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%u   , half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%v   , full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%cflx, half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%cfly, full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%divx, half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%divy, full_lon=.true., half_lat=.true., full_lev=.true.)
+    select case (adv_scheme)
+    case ('ffsl')
+      call allocate_array(mesh, this%qx  , full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%qy  , full_lon=.true., full_lat=.true., full_lev=.true.)
+      if (ffsl_flux_type == 'ppm') then
+        call allocate_array(mesh, this%qxl, full_lon=.true., full_lat=.true., full_lev=.true.)
+        call allocate_array(mesh, this%qyl, full_lon=.true., full_lat=.true., full_lev=.true.)
+        call allocate_array(mesh, this%dqx, full_lon=.true., full_lat=.true., full_lev=.true.)
+        call allocate_array(mesh, this%dqy, full_lon=.true., full_lat=.true., full_lev=.true.)
+        call allocate_array(mesh, this%qx6, full_lon=.true., full_lat=.true., full_lev=.true.)
+        call allocate_array(mesh, this%qy6, full_lon=.true., full_lat=.true., full_lev=.true.)
+      end if
+    end select
 
   end subroutine adv_batch_init
 
@@ -71,12 +90,16 @@ contains
 
     class(adv_batch_type), intent(inout) :: this
 
-    type(hash_table_iterator_type) it
-
     this%alert_key = ''
     this%dt        = 0
     this%nstep     = 0
     this%step      = 0
+
+    if (allocated(this%tracer_idx       )) deallocate(this%tracer_idx       )
+    if (allocated(this%tracer_names     )) deallocate(this%tracer_names     )
+    if (allocated(this%tracer_long_names)) deallocate(this%tracer_long_names)
+    if (allocated(this%tracer_units     )) deallocate(this%tracer_units     )
+
     if (allocated(this%mfx )) deallocate(this%mfx )
     if (allocated(this%mfy )) deallocate(this%mfy )
     if (allocated(this%u   )) deallocate(this%u   )
@@ -85,16 +108,14 @@ contains
     if (allocated(this%cfly)) deallocate(this%cfly)
     if (allocated(this%divx)) deallocate(this%divx)
     if (allocated(this%divy)) deallocate(this%divy)
-
-    it = hash_table_iterator(this%tracers)
-    do while (.not. it%ended())
-      select type (tracer => it%value)
-      type is (tracer_type)
-        call tracer%clear()
-      end select
-      call it%next()
-    end do
-    call this%tracers%clear()
+    if (allocated(this%qx  )) deallocate(this%qx  )
+    if (allocated(this%qy  )) deallocate(this%qy  )
+    if (allocated(this%qxl )) deallocate(this%qxl )
+    if (allocated(this%qyl )) deallocate(this%qyl )
+    if (allocated(this%dqx )) deallocate(this%dqx )
+    if (allocated(this%dqy )) deallocate(this%dqy )
+    if (allocated(this%qx6 )) deallocate(this%qx6 )
+    if (allocated(this%qy6 )) deallocate(this%qy6 )
 
   end subroutine adv_batch_clear
 
@@ -149,50 +170,15 @@ contains
 
   end subroutine adv_batch_accum_wind
 
-  subroutine adv_add_tracer(this, name, long_name, units)
+  subroutine adv_allocate_tracers(this, ntracer)
 
     class(adv_batch_type), intent(inout) :: this
-    character(*), intent(in) :: name
-    character(*), intent(in), optional :: long_name
-    character(*), intent(in), optional :: units
+    integer, intent(in) :: ntracer
 
-    type(tracer_type) tracer
-
-    call tracer%init(this%mesh, name, long_name, units)
-    call this%tracers%insert(name, tracer)
-
-  end subroutine adv_add_tracer
-
-  function adv_get_tracer(this, name) result(res)
-
-    class(adv_batch_type), intent(in) :: this
-    character(*), intent(in) :: name
-
-    type(tracer_type), pointer :: res
-
-    select type (value => this%tracers%value(name))
-    type is (tracer_type)
-      res => value
-    class default
-      call log_error('Unknown tracer name ' // trim(name) // '!')
-    end select
-
-  end function adv_get_tracer
-
-  subroutine adv_allocate_tracers(this)
-
-    class(adv_batch_type), intent(inout) :: this
-
-    type(hash_table_iterator_type) it
-
-    it = hash_table_iterator(this%tracers)
-    do while (.not. it%ended())
-      select type (tracer => it%value)
-      type is (tracer_type)
-        call tracer%allocate_arrays()
-      end select
-      call it%next()
-    end do
+    allocate(this%tracer_idx       (ntracer))
+    allocate(this%tracer_names     (ntracer))
+    allocate(this%tracer_long_names(ntracer))
+    allocate(this%tracer_units     (ntracer))
 
   end subroutine adv_allocate_tracers
 

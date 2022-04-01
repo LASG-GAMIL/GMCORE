@@ -153,8 +153,7 @@ contains
 
     type(block_type), intent(in) :: blocks(:)
 
-    integer i
-    type(hash_table_iterator_type) it
+    integer i, j
 
     call fiona_create_dataset('h0', desc=case_desc, file_prefix=trim(case_name), mpi_comm=proc%comm, group_size=output_group_size, split_file=split_h0)
     ! Dimensions
@@ -165,13 +164,11 @@ contains
     ! Variables
     associate (adv_batches => blocks(1)%state(1)%adv_batches)
     do i = 1, size(adv_batches)
-      it = hash_table_iterator(adv_batches(i)%tracers)
-      do while (.not. it%ended())
-        select type (tracer => it%value)
-        type is (tracer_type)
-          call fiona_add_var('h0', tracer%name, long_name=tracer%long_name, units=tracer%units, dim_names=cell_dims_2d, dtype='r8')
-        end select
-        call it%next()
+      do j = 1, size(adv_batches(i)%tracer_names)
+        call fiona_add_var('h0', adv_batches(i)%tracer_names(j), &
+                           long_name=adv_batches(i)%tracer_long_names(j), &
+                           units=adv_batches(i)%tracer_units(j), &
+                           dim_names=cell_dims_2d, dtype='r8')
       end do
     end do
     end associate
@@ -412,9 +409,8 @@ contains
     type(block_type), intent(in), target :: blocks(:)
     integer, intent(in) :: itime 
 
-    integer iblk, is, ie, js, je, i
+    integer iblk, is, ie, js, je, i, j
     integer start(2), count(2)
-    type(hash_table_iterator_type) it
 
     call fiona_output('h0', 'lon' , global_mesh%full_lon_deg(1:global_mesh%num_full_lon))
     call fiona_output('h0', 'lat' , global_mesh%full_lat_deg(1:global_mesh%num_full_lat))
@@ -427,13 +423,10 @@ contains
       start = [is,js]
       count = [mesh%num_full_lon,mesh%num_full_lat]
       do i = 1, size(state%adv_batches)
-        it = hash_table_iterator(state%adv_batches(i)%tracers)
-        do while (.not. it%ended())
-          select type (tracer => it%value)
-          type is (tracer_type)
-            call fiona_output('h0', tracer%name, tracer%q(is:ie,js:je,1), start=start, count=count)
-          end select
-          call it%next()
+        do j = 1, size(state%adv_batches(i)%tracer_names)
+          call fiona_output('h0', state%adv_batches(i)%tracer_names(j), &
+                            state%q(is:ie,js:je,1,state%adv_batches(i)%tracer_idx(j)), &
+                            start=start, count=count)
         end do
       end do
       end associate
