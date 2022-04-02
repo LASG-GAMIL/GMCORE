@@ -168,8 +168,8 @@ contains
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          qy(i,j,k) = q(i,j,k) - 0.5_r8 * (qmfx(i,j,k) - qmfx(i-1,j,k))
-          qx(i,j,k) = q(i,j,k) - 0.5_r8 * (qmfy(i,j,k) - qmfy(i,j-1,k))
+          qx(i,j,k) = q(i,j,k) - 0.5_r8 * (qmfx(i,j,k) - qmfx(i-1,j,k))
+          qy(i,j,k) = q(i,j,k) - 0.5_r8 * (qmfy(i,j,k) - qmfy(i,j-1,k))
         end do
       end do
     end do
@@ -218,10 +218,10 @@ contains
           cf = cflx(i,j,k) - ci
           i1 = i - merge(0, ci, ci > 0) + 1
           i2 = i + merge(ci, 0, ci > 0)
-          sm = u(i,j,k) * sum(mx(i1:i2,j,k))
+          sm = sum(mx(i1:i2,j,k))
           iu = merge(i - ci, i - ci + 1, cf > 0)
           dm = slope(mx(iu-1:iu+1,j,k))
-          mfx(i,j,k) = u(i,j,k) * (mx(iu,j,k) + dm * 0.5_r8 * (sign(1.0_r8, cf) - cf) + sm)
+          mfx(i,j,k) = cf * (mx(iu,j,k) + dm * 0.5_r8 * (sign(1.0_r8, cf) - cf)) + sm
         end do
       end do
       ! Along y-axis
@@ -230,7 +230,7 @@ contains
           cf = cfly(i,j,k)
           ju = merge(j, j + 1, cf > 0)
           dm = slope(my(i,ju-1:ju+1,k))
-          mfy(i,j,k) = v(i,j,k) * (my(i,ju,k) + dm * 0.5_r8 * (sign(1.0_r8, cf) - cf))
+          mfy(i,j,k) = cf * (my(i,ju,k) + dm * 0.5_r8 * (sign(1.0_r8, cf) - cf))
         end do
       end do
     end do
