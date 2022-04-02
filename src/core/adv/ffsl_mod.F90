@@ -304,7 +304,7 @@ contains
           ds1 = s2    - s1
           ds2 = s2**2 - s1**2
           ds3 = s2**3 - s1**3
-          mfx(i,j,k) = u(i,j,k) * (mxl(iu,j,k) * ds1 + 0.5_r8 * dmx(iu,j,k) * ds2 + mx6(iu,j,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8) + sm)
+          mfx(i,j,k) = sign(mxl(iu,j,k) * ds1 + 0.5_r8 * dmx(iu,j,k) * ds2 + mx6(iu,j,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8), cf) + sm
         end do
       end do
       ! Along y-axis
@@ -317,7 +317,7 @@ contains
           ds1 = s2    - s1
           ds2 = s2**2 - s1**2
           ds3 = s2**3 - s1**3
-          mfy(i,j,k) = v(i,j,k) * (myl(i,ju,k) * ds1 + 0.5_r8 * dmy(i,ju,k) * ds2 + my6(i,ju,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8))
+          mfy(i,j,k) = sign(myl(i,ju,k) * ds1 + 0.5_r8 * dmy(i,ju,k) * ds2 + my6(i,ju,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8), cf)
         end do
       end do
     end do
