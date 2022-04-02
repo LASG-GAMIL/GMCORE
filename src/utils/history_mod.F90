@@ -161,8 +161,10 @@ contains
     call fiona_add_dim('h0', 'time' , add_var=.true.)
     call fiona_add_dim('h0', 'lon'  , size=global_mesh%num_full_lon, add_var=.true., decomp=.true.)
     call fiona_add_dim('h0', 'lat'  , size=global_mesh%num_full_lat, add_var=.true., decomp=.true.)
+    call fiona_add_dim('h0', 'ilon' , size=global_mesh%num_half_lon, add_var=.true., decomp=.true.)
+    call fiona_add_dim('h0', 'ilat' , size=global_mesh%num_half_lat, add_var=.true., decomp=.true.)
     ! Variables
-    associate (adv_batches => blocks(1)%state(1)%adv_batches)
+    associate (adv_batches => blocks(1)%adv_batches)
     do i = 1, size(adv_batches)
       do j = 1, size(adv_batches(i)%tracer_names)
         call fiona_add_var('h0', adv_batches(i)%tracer_names(j), &
@@ -170,6 +172,12 @@ contains
                            units=adv_batches(i)%tracer_units(j), &
                            dim_names=cell_dims_2d, dtype='r8')
       end do
+      call fiona_add_var('h0', 'u'   , long_name='', units='', dim_names= lon_dims_2d)
+      call fiona_add_var('h0', 'v'   , long_name='', units='', dim_names= lat_dims_2d)
+      call fiona_add_var('h0', 'cflx', long_name='', units='', dim_names= lon_dims_2d)
+      call fiona_add_var('h0', 'cfly', long_name='', units='', dim_names= lat_dims_2d)
+      call fiona_add_var('h0', 'divx', long_name='', units='', dim_names=cell_dims_2d)
+      call fiona_add_var('h0', 'divy', long_name='', units='', dim_names=cell_dims_2d)
     end do
     end associate
 
@@ -414,20 +422,37 @@ contains
 
     call fiona_output('h0', 'lon' , global_mesh%full_lon_deg(1:global_mesh%num_full_lon))
     call fiona_output('h0', 'lat' , global_mesh%full_lat_deg(1:global_mesh%num_full_lat))
+    call fiona_output('h0', 'ilon', global_mesh%half_lon_deg(1:global_mesh%num_half_lon))
+    call fiona_output('h0', 'ilat', global_mesh%half_lat_deg(1:global_mesh%num_half_lat))
 
     do iblk = 1, size(blocks)
-      associate (mesh   => blocks(iblk)%mesh        , &
-                 state  => blocks(iblk)%state(itime))
-      is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
-      js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
-      start = [is,js]
-      count = [mesh%num_full_lon,mesh%num_full_lat]
-      do i = 1, size(state%adv_batches)
-        do j = 1, size(state%adv_batches(i)%tracer_names)
-          call fiona_output('h0', state%adv_batches(i)%tracer_names(j), &
-                            state%q(is:ie,js:je,1,state%adv_batches(i)%tracer_idx(j)), &
+      associate (mesh        => blocks(iblk)%mesh       , &
+                 adv_batches => blocks(iblk)%adv_batches, &
+                 state       => blocks(iblk)%state(itime))
+      do i = 1, size(adv_batches)
+        is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
+        js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
+        start = [is,js]
+        count = [mesh%num_full_lon,mesh%num_full_lat]
+        do j = 1, size(adv_batches(i)%tracer_names)
+          call fiona_output('h0', adv_batches(i)%tracer_names(j), &
+                            state%q(is:ie,js:je,1,adv_batches(i)%tracer_idx(j)), &
                             start=start, count=count)
         end do
+        call fiona_output('h0', 'divx', adv_batches(i)%divx(is:ie,js:je,1), start=start, count=count)
+        call fiona_output('h0', 'divy', adv_batches(i)%divy(is:ie,js:je,1), start=start, count=count)
+        is = mesh%half_lon_ibeg; ie = mesh%half_lon_iend
+        js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
+        start = [is,js]
+        count = [mesh%num_half_lon,mesh%num_full_lat]
+        call fiona_output('h0', 'u'   , adv_batches(i)%u   (is:ie,js:je,1), start=start, count=count)
+        call fiona_output('h0', 'cflx', adv_batches(i)%cflx(is:ie,js:je,1), start=start, count=count)
+        is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
+        js = mesh%half_lat_ibeg; je = mesh%half_lat_iend
+        start = [is,js]
+        count = [mesh%num_full_lon,mesh%num_half_lat]
+        call fiona_output('h0', 'v'   , adv_batches(i)%v   (is:ie,js:je,1), start=start, count=count)
+        call fiona_output('h0', 'cfly', adv_batches(i)%cfly(is:ie,js:je,1), start=start, count=count)
       end do
       end associate
     end do

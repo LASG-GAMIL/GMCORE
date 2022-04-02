@@ -7,6 +7,7 @@ module block_mod
   use state_mod
   use static_mod
   use tend_mod
+  use adv_batch_mod
   use filter_types_mod
   use halo_mod
   use allocator_mod
@@ -28,6 +29,7 @@ module block_mod
     type(state_type), allocatable :: state(:)
     type(static_type) static
     type(tend_type), allocatable :: tend(:)
+    type(adv_batch_type), allocatable :: adv_batches(:)
     type(filter_type) filter
     type(halo_type), allocatable :: halo(:)
   contains
@@ -100,12 +102,16 @@ contains
     do i = 1, size(this%tend)
       call this%tend(i)%clear()
     end do
+    do i = 1, size(this%adv_batches)
+      call this%adv_batches(i)%clear()
+    end do
     do i = 1, size(this%halo)
       call this%halo(i)%clear()
     end do
 
     if (allocated(this%state)) deallocate(this%state)
     if (allocated(this%tend )) deallocate(this%tend )
+    if (allocated(this%adv_batches)) deallocate(this%adv_batches)
     if (allocated(this%halo )) deallocate(this%halo )
 
   end subroutine block_clear

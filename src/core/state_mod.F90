@@ -3,7 +3,6 @@ module state_mod
   use const_mod
   use namelist_mod
   use mesh_mod
-  use adv_batch_mod
   use allocator_mod
   use parallel_types_mod
 
@@ -93,7 +92,6 @@ module state_mod
     real(r8) te
     real(r8) tpe
     real(r8) tav
-    type(adv_batch_type), allocatable :: adv_batches(:)
     type(async_type), allocatable :: async(:)
   contains
     procedure :: init => state_init

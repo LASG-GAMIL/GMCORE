@@ -57,9 +57,9 @@ module time_mod
 
 contains
 
-  subroutine time_init(dt_dyn)
+  subroutine time_init(dt_in_seconds)
 
-    real(8), intent(in) :: dt_dyn
+    real(8), intent(in) :: dt_in_seconds
 
     if (sum(start_time_array) > 0) then
       start_time = create_datetime(year=start_time_array(1),  &
@@ -84,7 +84,7 @@ contains
     elapsed_seconds = 0
     old_time_idx = 1
     new_time_idx = 2
-    dt = create_timedelta(seconds=dt_dyn)
+    dt = create_timedelta(seconds=dt_in_seconds)
 
     curr_time = start_time
 
@@ -123,9 +123,9 @@ contains
 
   end subroutine time_swap_indices
 
-  subroutine time_advance(dt_dyn)
+  subroutine time_advance(dt_in_seconds)
 
-    real(8), intent(in), optional :: dt_dyn
+    real(8), intent(in), optional :: dt_in_seconds
 
     type(hash_table_iterator_type) iter
 
@@ -145,9 +145,9 @@ contains
     call time_swap_indices(old_time_idx, new_time_idx)
 
     time_step = time_step + 1
-    if (present(dt_dyn)) then
-      elapsed_seconds = elapsed_seconds + dt_dyn
-      curr_time = curr_time + create_timedelta(seconds=dt_dyn)
+    if (present(dt_in_seconds)) then
+      elapsed_seconds = elapsed_seconds + dt_in_seconds
+      curr_time = curr_time + create_timedelta(seconds=dt_in_seconds)
     else
       elapsed_seconds = elapsed_seconds + dt%total_seconds()
       curr_time = curr_time + dt

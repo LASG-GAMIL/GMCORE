@@ -40,7 +40,6 @@ module adv_batch_mod
   contains
     procedure :: init       => adv_batch_init
     procedure :: clear      => adv_batch_clear
-    procedure :: accum_wind => adv_batch_accum_wind
     procedure :: allocate_tracers => adv_allocate_tracers
     final :: adv_batch_final
   end type adv_batch_type
@@ -68,8 +67,8 @@ contains
     call allocate_array(mesh, this%v   , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%cflx, half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%cfly, full_lon=.true., half_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%divx, half_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%divy, full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%divx, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%divy, full_lon=.true., full_lat=.true., full_lev=.true.)
     select case (adv_scheme)
     case ('ffsl')
       call allocate_array(mesh, this%qx  , full_lon=.true., full_lat=.true., full_lev=.true.)
@@ -118,57 +117,6 @@ contains
     if (allocated(this%qy6 )) deallocate(this%qy6 )
 
   end subroutine adv_batch_clear
-
-  subroutine adv_batch_accum_wind(this, u, v, mfx, mfy)
-
-    class(adv_batch_type), intent(inout) :: this
-    real(r8), intent(in)           :: u  (:,:,:)
-    real(r8), intent(in)           :: v  (:,:,:)
-    real(r8), intent(in), optional :: mfx(:,:,:)
-    real(r8), intent(in), optional :: mfy(:,:,:)
-
-    integer i, j, k
-
-    if (this%step == 0) then
-      this%u      = u
-      this%v      = v
-      if (present(mfx)) then
-        this%mfx  = mfx
-        this%mfy  = mfy
-      end if
-      this%step   = this%step + 1
-    else if (this%step == this%nstep) then
-      this%u      = this%u / this%nstep
-      this%v      = this%v / this%nstep
-      this%step   = 0
-      ! Calculate CFL numbers and divergence along each axis.
-      do k = this%mesh%full_lev_ibeg, this%mesh%full_lev_iend
-        do j = this%mesh%full_lat_ibeg_no_pole, this%mesh%full_lat_iend_no_pole
-          do i = this%mesh%half_lon_ibeg, this%mesh%half_lon_iend
-            this%cflx(i,j,k) = this%dt * this%u(i,j,k) / this%mesh%de_lon(j)
-            this%divx(i,j,k) = (this%u(i+1,j,k) - this%u(i,j,k)) / this%mesh%de_lon(j)
-          end do
-        end do
-        do j = this%mesh%half_lat_ibeg, this%mesh%half_lat_iend
-          do i = this%mesh%full_lon_ibeg, this%mesh%full_lon_iend
-            this%cfly(i,j,k) = this%dt * this%v(i,j,k) / this%mesh%de_lat(j)
-            this%divy(i,j,k) = (this%v(i,j+1,k) * this%mesh%half_cos_lat(j+1) - &
-                                this%v(i,j  ,k) * this%mesh%half_cos_lat(j  )) / &
-                               this%mesh%le_lon(j) / this%mesh%full_cos_lat(j)
-          end do
-        end do
-      end do
-    else
-      this%u      = this%u   + u
-      this%v      = this%v   + v
-      if (present(mfx)) then
-        this%mfx  = this%mfx + mfx
-        this%mfy  = this%mfy + mfy
-      end if
-      this%step   = this%step + 1
-    end if
-
-  end subroutine adv_batch_accum_wind
 
   subroutine adv_allocate_tracers(this, ntracer)
 

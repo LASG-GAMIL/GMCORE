@@ -8,6 +8,7 @@ module operators_mod
   use namelist_mod
   use log_mod
   use pgf_mod
+  use adv_mod
   use nh_mod
   use interp_mod
   use upwind_mod
@@ -31,6 +32,7 @@ module operators_mod
   public calc_dptfdlev
   public calc_dphs
   public calc_wedudlev_wedvdlev
+  public calc_qmf
   public nh_prepare
   public nh_solve
   public interp_gz
@@ -1161,5 +1163,23 @@ contains
     end associate
 
   end subroutine calc_wedudlev_wedvdlev
+
+  subroutine calc_qmf(block, state)
+
+    type(block_type), intent(inout) :: block
+    type(state_type), intent(inout) :: state
+
+    integer i, j, k
+
+    associate (adv_batches => block%adv_batches)
+    do i = 1, size(adv_batches)
+      do j = 1, size(adv_batches(i)%tracer_names)
+        k = adv_batches(i)%tracer_idx(j)
+        call adv_calc_mass_flux(block, adv_batches(i), state%q(:,:,:,k), state%qmf_lon(:,:,:,k), state%qmf_lat(:,:,:,k))
+      end do
+    end do
+    end associate
+
+  end subroutine calc_qmf
 
 end module operators_mod

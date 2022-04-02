@@ -34,6 +34,7 @@ module gmcore_mod
   public adv_accum_wind
   public block_type
   public state_type
+  public tend_type
   public proc
 
   procedure(space_operators_interface), pointer :: operators

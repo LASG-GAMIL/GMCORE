@@ -5,7 +5,7 @@ module adv_mod
   use const_mod
   use namelist_mod
   use block_mod
-  use process_mod
+  use parallel_mod
   use adv_batch_mod
   use ffsl_mod
 
@@ -56,6 +56,7 @@ contains
 
     select case (adv_scheme)
     case ('ffsl')
+      call ffsl_init()
       adv_calc_mass_flux   => ffsl_calc_mass_flux
       adv_calc_tracer_flux => ffsl_calc_tracer_flux
     end select
@@ -93,7 +94,7 @@ contains
 
     type(block_type), intent(inout) :: block
 
-    integer nbatch, nbatch_tracer, i, j, k, l, is, ie, js, je, ks, ke
+    integer nbatch, nbatch_tracer, i, j, k, is, ie, js, je, ks, ke
     logical found
     character(30) unique_batch_names(100)
     real(r8) unique_tracer_dt(100)
@@ -120,40 +121,39 @@ contains
       end do
     end if
 
-    ! Initialize advection batches.
+    ! Initialize advection batches in block objects and allocate tracer arrays in state objects.
     is = block%mesh%full_lon_lb; ie = block%mesh%full_lon_ub
     js = block%mesh%full_lat_lb; je = block%mesh%full_lat_ub
     ks = block%mesh%full_lev_lb; ke = block%mesh%full_lev_ub
+    allocate(block%adv_batches(nbatch))
+    do i = 1, nbatch
+      call block%adv_batches(i)%init(block%mesh, unique_batch_names(i), unique_tracer_dt(i))
+    end do
     do i = 1, size(block%state)
-      allocate(block%state(i)%adv_batches(nbatch))
-      do j = 1, nbatch
-        call block%state(i)%adv_batches(j)%init(block%mesh, unique_batch_names(j), unique_tracer_dt(j))
-      end do
       allocate(block%state(i)%q      (is:ie,js:je,ks:ke,ntracer))
       allocate(block%state(i)%qmf_lon(is:ie,js:je,ks:ke,ntracer))
       allocate(block%state(i)%qmf_lat(is:ie,js:je,ks:ke,ntracer))
       allocate(block%state(i)%qmf_lev(is:ie,js:je,ks:ke,ntracer))
     end do
 
-    do i = 1, size(block%state)
-      do j = 1, nbatch
-        nbatch_tracer = 0
-        do k = 1, ntracer
-          if (batch_names(k) == block%state(i)%adv_batches(j)%alert_key) then
-            nbatch_tracer = nbatch_tracer + 1
-          end if
-        end do
-        call block%state(i)%adv_batches(j)%allocate_tracers(nbatch_tracer)
-        l = 0
-        do k = 1, ntracer
-          if (batch_names(k) == block%state(i)%adv_batches(j)%alert_key) then
-            l = l + 1
-            block%state(i)%adv_batches(j)%tracer_idx       (l) =                   k
-            block%state(i)%adv_batches(j)%tracer_names     (l) = tracer_names     (k)
-            block%state(i)%adv_batches(j)%tracer_long_names(l) = tracer_long_names(k)
-            block%state(i)%adv_batches(j)%tracer_units     (l) = tracer_units     (k)
-          end if
-        end do
+    ! Record tracer information in advection batches.
+    do i = 1, nbatch
+      nbatch_tracer = 0
+      do j = 1, ntracer
+        if (batch_names(j) == block%adv_batches(i)%alert_key) then
+          nbatch_tracer = nbatch_tracer + 1
+        end if
+      end do
+      call block%adv_batches(i)%allocate_tracers(nbatch_tracer)
+      k = 0
+      do j = 1, ntracer
+        if (batch_names(j) == block%adv_batches(i)%alert_key) then
+          k = k + 1
+          block%adv_batches(i)%tracer_idx       (k) =                   j
+          block%adv_batches(i)%tracer_names     (k) = tracer_names     (j)
+          block%adv_batches(i)%tracer_long_names(k) = tracer_long_names(j)
+          block%adv_batches(i)%tracer_units     (k) = tracer_units     (j)
+        end if
       end do
     end do
 
@@ -164,11 +164,77 @@ contains
     type(block_type), intent(inout) :: block
     integer, intent(in) :: itime
 
-    integer i
+    real(r8) work(block%mesh%full_lon_ibeg:block%mesh%full_lon_iend,block%mesh%num_full_lev)
+    real(r8) pole(block%mesh%num_full_lev)
+    integer i, j, k, l
 
-    associate (state => block%state(itime))
-    do i = 1, size(state%adv_batches)
-      call state%adv_batches(i)%accum_wind(state%u, state%v)
+    associate (mesh => block%mesh, u => block%state(itime)%u, v => block%state(itime)%v)
+    do l = 1, size(block%adv_batches)
+      associate (batch => block%adv_batches(l))
+      if (batch%step == 0) then
+        batch%u = u
+        batch%v = v
+        batch%step = batch%step + 1
+      else if (batch%step == batch%nstep) then
+        batch%u      = (batch%u + u) / (batch%nstep + 1)
+        batch%v      = (batch%v + v) / (batch%nstep + 1)
+        batch%step   = 0
+        ! Calculate CFL numbers and divergence along each axis.
+        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+            do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+              batch%cflx(i,j,k) = batch%dt * batch%u(i,j,k) / mesh%de_lon(j)
+            end do
+          end do
+          do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              batch%cfly(i,j,k) = batch%dt * batch%v(i,j,k) / mesh%de_lat(j)
+            end do
+          end do
+          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              batch%divx(i,j,k) = (batch%u(i,j,k) - batch%u(i-1,j,k)) * mesh%le_lon(j) / mesh%area_cell(j)
+              batch%divy(i,j,k) = (batch%v(i,j  ,k) * mesh%le_lat(j  ) - &
+                                   batch%v(i,j-1,k) * mesh%le_lat(j-1)) / mesh%area_cell(j)
+            end do
+          end do
+        end do
+        if (mesh%has_south_pole()) then
+          j = mesh%full_lat_ibeg
+          do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              work(i,k) = batch%v(i,j,k)
+            end do
+          end do
+          call zonal_sum(proc%zonal_circle, work, pole)
+          pole = pole * mesh%le_lat(j) / global_mesh%num_full_lon / mesh%area_cell(j)
+          do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              batch%divy(i,j,k) = pole(k)
+            end do
+          end do
+        end if
+        if (mesh%has_north_pole()) then
+          j = mesh%full_lat_iend
+          do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              work(i,k) = -batch%v(i,j-1,k)
+            end do
+          end do
+          call zonal_sum(proc%zonal_circle, work, pole)
+          pole = pole * mesh%le_lat(j) / global_mesh%num_full_lon / mesh%area_cell(j)
+          do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              batch%divy(i,j,k) = pole(k)
+            end do
+          end do
+        end if
+      else
+        batch%u = batch%u + u
+        batch%v = batch%v + v
+        batch%step = batch%step + 1
+      end if
+      end associate
     end do
     end associate
 
@@ -176,6 +242,7 @@ contains
 
   subroutine adv_final()
 
+    ntracer = 0
     if (allocated(batch_names      )) deallocate(batch_names      )
     if (allocated(tracer_names     )) deallocate(tracer_names     )
     if (allocated(tracer_long_names)) deallocate(tracer_long_names)

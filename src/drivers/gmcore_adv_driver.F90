@@ -5,6 +5,8 @@ program gmcore_adv_driver
   use history_mod
   use process_mod
   use time_mod, old => old_time_idx, new => new_time_idx
+  use operators_mod, only: calc_qmf
+  use time_schemes_mod, only: time_integrator
   use deform_case4_mod
 
   implicit none
@@ -58,12 +60,31 @@ program gmcore_adv_driver
       call set_uv(proc%blocks(iblk), proc%blocks(iblk)%state(new), elapsed_seconds + dt_adv)
       call adv_accum_wind(proc%blocks(iblk), new)
     end do
-    stop
+    do iblk = 1, size(proc%blocks)
+      call time_integrator(adv_operator, proc%blocks(iblk), old, new, dt_adv)
+    end do
     call time_advance(dt_adv)
     if (is_root_proc() .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
     call history_write_h0(proc%blocks, old)
   end do
 
   call gmcore_final()
+
+contains
+
+  subroutine adv_operator(block, old_state, star_state, new_state, tend1, tend2, dt, pass)
+
+    type(block_type), intent(inout) :: block
+    type(state_type), intent(in   ) :: old_state
+    type(state_type), intent(inout) :: star_state
+    type(state_type), intent(inout) :: new_state
+    type(tend_type ), intent(inout) :: tend1
+    type(tend_type ), intent(in   ) :: tend2
+    real(8), intent(in) :: dt
+    integer, intent(in) :: pass
+
+    call calc_qmf(block, star_state)
+
+  end subroutine adv_operator
 
 end program gmcore_adv_driver
