@@ -84,6 +84,8 @@ contains
                                  block%mesh%full_lev_lb:block%mesh%full_lev_ub)
 
     integer i, j, k
+    real(r8) work(block%mesh%full_lon_ibeg:block%mesh%full_lon_iend,block%mesh%num_full_lev)
+    real(r8) pole(block%mesh%num_full_lev)
 
     associate (mesh => block%mesh, &
                u    => batch%u   , & ! in
@@ -94,28 +96,47 @@ contains
                my   => batch%qy)     ! work array
     ! Run inner advective operators.
     call flux(block, batch, u, v, m, m, mfx, mfy)
-    ! Subtract divergence terms from flux to form advective operators.
-    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-        do i = mesh%half_lon_ibeg - 1, mesh%half_lon_iend
-          mfx(i,j,k) = mfx(i,j,k) - 0.5_r8 * (divx(i,j,k) * m(i,j,k) + divx(i+1,j,k) * m(i+1,j,k))
-        end do
-      end do
-      do j = mesh%half_lat_ibeg - 1, mesh%half_lat_iend
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          mfy(i,j,k) = mfy(i,j,k) - 0.5_r8 * (divy(i,j,k) * m(i,j,k) + divy(i,j+1,k) * m(i,j+1,k))
-        end do
-      end do
-    end do
     ! Calculate intermediate tracer density due to advective operators.
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          mx(i,j,k) = m(i,j,k) - 0.5_r8 * (mfx(i,j,k) - mfx(i-1,j,k))
-          my(i,j,k) = m(i,j,k) - 0.5_r8 * (mfy(i,j,k) - mfy(i,j-1,k))
+          ! Subtract divergence terms from flux to form advective operators.
+          mx(i,j,k) = m(i,j,k) - 0.5_r8 * (mfx(i,j,k) - mfx(i-1,j,k) - divx(i,j,k) * m(i,j,k))
+          my(i,j,k) = m(i,j,k) - 0.5_r8 * (mfy(i,j,k) - mfy(i,j-1,k) - divy(i,j,k) * m(i,j,k))
         end do
       end do
     end do
+    ! Handle the Pole boundary conditions.
+    if (mesh%has_south_pole()) then
+      j = mesh%full_lat_ibeg
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          work(i,k) = mfy(i,j,k)
+        end do
+      end do
+      call zonal_sum(proc%zonal_circle, work, pole)
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          mx(i,j,k) = m(i,j,k)
+          my(i,j,k) = m(i,j,k) - 0.5_r8 * (pole(k) - divy(i,j,k) * m(i,j,k))
+        end do
+      end do
+    end if
+    if (mesh%has_north_pole()) then
+      j = mesh%full_lat_iend
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          work(i,k) = mfy(i,j-1,k)
+        end do
+      end do
+      call zonal_sum(proc%zonal_circle, work, pole)
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          mx(i,j,k) = m(i,j,k)
+          my(i,j,k) = m(i,j,k) + 0.5_r8 * (pole(k) - divy(i,j,k) * m(i,j,k))
+        end do
+      end do
+    end if
     call fill_halo(block, mx, full_lon=.true., full_lat=.true., full_lev=.true.)
     call fill_halo(block, my, full_lon=.true., full_lat=.true., full_lev=.true.)
     ! Run outer flux form operators.
@@ -139,6 +160,8 @@ contains
                                    block%mesh%full_lev_lb:block%mesh%full_lev_ub)
 
     integer i, j, k
+    real(r8) work(block%mesh%full_lon_ibeg:block%mesh%full_lon_iend,block%mesh%num_full_lev)
+    real(r8) pole(block%mesh%num_full_lev)
 
     associate (mesh => block%mesh, &
                u    => batch%u   , & ! in
@@ -151,28 +174,47 @@ contains
                qy   => batch%qy)     ! work array
     ! Run inner advective operators.
     call flux(block, batch, u, v, q, q, qmfx, qmfy)
-    ! Subtract divergence terms from flux to form advective operators.
-    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-        do i = mesh%half_lon_ibeg - 1, mesh%half_lon_iend
-          qmfx(i,j,k) = qmfx(i,j,k) - 0.5_r8 * (divx(i,j,k) * q(i,j,k) + divx(i+1,j,k) * q(i+1,j,k))
-        end do
-      end do
-      do j = mesh%half_lat_ibeg - 1, mesh%half_lat_iend
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          qmfy(i,j,k) = qmfy(i,j,k) - 0.5_r8 * (divy(i,j,k) * q(i,j,k) + divy(i,j+1,k) * q(i,j+1,k))
-        end do
-      end do
-    end do
     ! Calculate intermediate tracer density due to advective operators.
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          qx(i,j,k) = q(i,j,k) - 0.5_r8 * (qmfx(i,j,k) - qmfx(i-1,j,k))
-          qy(i,j,k) = q(i,j,k) - 0.5_r8 * (qmfy(i,j,k) - qmfy(i,j-1,k))
+          ! Subtract divergence terms from flux to form advective operators.
+          qx(i,j,k) = q(i,j,k) - 0.5_r8 * (qmfx(i,j,k) - qmfx(i-1,j,k) - divx(i,j,k) * q(i,j,k))
+          qy(i,j,k) = q(i,j,k) - 0.5_r8 * (qmfy(i,j,k) - qmfy(i,j-1,k) - divy(i,j,k) * q(i,j,k))
         end do
       end do
     end do
+    ! Handle the Pole boundary conditions.
+    if (mesh%has_south_pole()) then
+      j = mesh%full_lat_ibeg
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          work(i,k) = qmfy(i,j,k)
+        end do
+      end do
+      call zonal_sum(proc%zonal_circle, work, pole)
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          qx(i,j,k) = q(i,j,k)
+          qy(i,j,k) = q(i,j,k) - 0.5_r8 * (pole(k) - divy(i,j,k) * q(i,j,k))
+        end do
+      end do
+    end if
+    if (mesh%has_north_pole()) then
+      j = mesh%full_lat_iend
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          work(i,k) = qmfy(i,j-1,k)
+        end do
+      end do
+      call zonal_sum(proc%zonal_circle, work, pole)
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          qx(i,j,k) = q(i,j,k)
+          qy(i,j,k) = q(i,j,k) + 0.5_r8 * (pole(k) - divy(i,j,k) * q(i,j,k))
+        end do
+      end do
+    end if
     call fill_halo(block, qx, full_lon=.true., full_lat=.true., full_lev=.true.)
     call fill_halo(block, qy, full_lon=.true., full_lat=.true., full_lev=.true.)
     ! Run outer flux form operators.

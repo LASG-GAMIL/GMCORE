@@ -1,9 +1,10 @@
 program gmcore_adv_driver
 
+  use flogger
   use namelist_mod
   use gmcore_mod
   use history_mod
-  use process_mod
+  use parallel_mod
   use time_mod, old => old_time_idx, new => new_time_idx
   use operators_mod, only: calc_qmf
   use time_schemes_mod, only: time_integrator
@@ -53,6 +54,7 @@ program gmcore_adv_driver
   end do
 
   call history_setup_h0_adv(proc%blocks)
+  call diagnose(proc%blocks, old)
   call output(old)
 
   do while (.not. time_is_finished())
@@ -64,6 +66,7 @@ program gmcore_adv_driver
       call time_integrator(adv_operator, proc%blocks(iblk), old, new, dt_adv)
     end do
     call time_advance(dt_adv)
+    call diagnose(proc%blocks, old)
     if (is_root_proc() .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
     call output(old)
   end do
@@ -86,6 +89,32 @@ contains
     call calc_qmf(block, star_state)
 
   end subroutine adv_operator
+
+  subroutine diagnose(blocks, itime)
+
+    type(block_type), intent(inout), target :: blocks(:)
+    integer, intent(in) :: itime
+
+    integer i, j, k, iblk
+    real(r8) qm
+
+    qm = 0
+    do iblk = 1, size(blocks)
+      associate (mesh  => blocks(iblk)%mesh        , &
+                 state => blocks(iblk)%state(itime))
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            qm = qm + state%q(i,j,k,1) * mesh%area_cell(j)
+          end do
+        end do
+      end do
+      call global_sum(proc%comm, qm)
+      call log_add_diag('qm', qm)
+      end associate
+    end do
+
+  end subroutine diagnose
 
   subroutine output(itime)
 
