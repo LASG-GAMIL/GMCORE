@@ -216,8 +216,8 @@ contains
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           ci = int(cflx(i,j,k))
           cf = cflx(i,j,k) - ci
-          i1 = i - merge(0, ci, ci > 0) + 1
-          i2 = i + merge(ci, 0, ci > 0)
+          i1 = i - merge(ci, 0, ci > 0) + 1
+          i2 = i - merge(0, ci, ci > 0)
           sm = sum(mx(i1:i2,j,k))
           iu = merge(i - ci, i - ci + 1, cf > 0)
           dm = slope(mx(iu-1:iu+1,j,k))
@@ -295,8 +295,8 @@ contains
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           ci = int(cflx(i,j,k))
           cf = cflx(i,j,k) - ci
-          i1 = i - merge(0, ci, ci > 0) + 1
-          i2 = i + merge(ci, 0, ci > 0)
+          i1 = i - merge(ci, 0, ci > 0) + 1
+          i2 = i - merge(0, ci, ci > 0)
           sm = sum(mx(i1:i2,j,k))
           iu = merge(i - ci, i - ci + 1, cf > 0)
           s1 = merge(1 - abs(cf), 0.0_r8, cf >= 0)

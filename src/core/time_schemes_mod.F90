@@ -176,7 +176,6 @@ contains
           end do
         end if
         call fill_halo(block, new_state%q(:,:,:,l), full_lon=.true., full_lat=.true., full_lev=.true.)
-        print *, block%adv_batches(m)%tracer_names(n), minval(new_state%q(:,:,:,l)), maxval(new_state%q(:,:,:,l))
       end do
     end do
     end associate

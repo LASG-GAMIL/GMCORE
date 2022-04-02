@@ -53,7 +53,7 @@ program gmcore_adv_driver
   end do
 
   call history_setup_h0_adv(proc%blocks)
-  call history_write_h0(proc%blocks, old)
+  call output(old)
 
   do while (.not. time_is_finished())
     do iblk = 1, size(proc%blocks)
@@ -65,7 +65,7 @@ program gmcore_adv_driver
     end do
     call time_advance(dt_adv)
     if (is_root_proc() .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
-    call history_write_h0(proc%blocks, old)
+    call output(old)
   end do
 
   call gmcore_final()
@@ -86,5 +86,24 @@ contains
     call calc_qmf(block, star_state)
 
   end subroutine adv_operator
+
+  subroutine output(itime)
+
+    integer, intent(in) :: itime
+
+    real(8), save :: time1 = 0, time2
+    integer i, j, k, iblk
+
+    if (time_is_alerted('history_write')) then
+      if (time_step == 0) call cpu_time(time1)
+      call cpu_time(time2)
+      if (time_step /= 0) then
+        if (is_root_proc()) call log_notice('Time cost ' // to_str(time2 - time1, 5) // ' seconds.')
+        time1 = time2
+      end if
+      call history_write_h0(proc%blocks, itime)
+    end if
+
+  end subroutine output
 
 end program gmcore_adv_driver
