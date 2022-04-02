@@ -111,8 +111,8 @@ contains
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          my(i,j,k) = m(i,j,k) - 0.5_r8 * (mfx(i,j,k) - mfx(i-1,j,k))
-          mx(i,j,k) = m(i,j,k) - 0.5_r8 * (mfy(i,j,k) - mfy(i,j-1,k))
+          mx(i,j,k) = m(i,j,k) - 0.5_r8 * (mfx(i,j,k) - mfx(i-1,j,k))
+          my(i,j,k) = m(i,j,k) - 0.5_r8 * (mfy(i,j,k) - mfy(i,j-1,k))
         end do
       end do
     end do

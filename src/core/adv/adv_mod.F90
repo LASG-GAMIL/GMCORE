@@ -229,6 +229,8 @@ contains
             end do
           end do
         end if
+        call fill_halo(block, batch%divx, full_lon=.false., full_lat=.true., full_lev=.true.)
+        call fill_halo(block, batch%divy, full_lon=.true., full_lat=.false., full_lev=.true.)
       else
         batch%u = batch%u + u
         batch%v = batch%v + v
