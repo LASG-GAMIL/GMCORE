@@ -8,6 +8,7 @@ program gmcore_adv_driver
   use time_mod, old => old_time_idx, new => new_time_idx
   use operators_mod, only: calc_qmf
   use time_schemes_mod, only: time_integrator
+  use solid_rotation_test_mod
   use deform_case4_mod
 
   implicit none
@@ -40,6 +41,9 @@ program gmcore_adv_driver
   call gmcore_init(namelist_path)
 
   select case (test_case)
+  case ('solid_rotation')
+    set_ic => solid_rotation_set_ic
+    set_uv => solid_rotation_set_uv
   case ('deform_case4')
     set_ic => deform_case4_set_ic
     set_uv => deform_case4_set_uv

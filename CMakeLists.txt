@@ -169,6 +169,7 @@ set(gmcore_files
   src/prepare/bkg_mod.F90
   src/physics/test_forcing_mod.F90
   src/tests/adv/deform_case4_mod.F90
+  src/tests/adv/solid_rotation_test_mod.F90
   src/tests/swm/rossby_haurwitz_wave_test_mod.F90
   src/tests/swm/mountain_zonal_flow_test_mod.F90
   src/tests/swm/jet_zonal_flow_test_mod.F90
