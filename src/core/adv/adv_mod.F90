@@ -222,15 +222,13 @@ contains
             end do
           end do
           call zonal_sum(proc%zonal_circle, work, pole)
-          pole = pole * mesh%le_lat(j) / global_mesh%num_full_lon / mesh%area_cell(j) * batch%dt
+          pole = pole * mesh%le_lat(j-1) / global_mesh%num_full_lon / mesh%area_cell(j) * batch%dt
           do k = mesh%full_lev_ibeg, mesh%full_lev_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
               batch%divy(i,j,k) = pole(k)
             end do
           end do
         end if
-        call fill_halo(block, batch%divx, full_lon=.false., full_lat=.true., full_lev=.true.)
-        call fill_halo(block, batch%divy, full_lon=.true., full_lat=.false., full_lev=.true.)
       else
         batch%u = batch%u + u
         batch%v = batch%v + v

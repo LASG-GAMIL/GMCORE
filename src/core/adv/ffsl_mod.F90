@@ -246,8 +246,8 @@ contains
                                  block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
                                  block%mesh%full_lev_lb:block%mesh%full_lev_ub)
 
-    integer i, j, k, iu, ju, ci, i1, i2
-    real(r8) cf, sm, dm
+    integer i, j, k, iu, ju, ci
+    real(r8) cf, dm
 
     associate (mesh => block %mesh, &
                cflx => batch %cflx, & ! in
@@ -258,12 +258,16 @@ contains
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           ci = int(cflx(i,j,k))
           cf = cflx(i,j,k) - ci
-          i1 = i - merge(ci, 0, ci > 0) + 1
-          i2 = i - merge(0, ci, ci > 0)
-          sm = sum(mx(i1:i2,j,k))
+          if (ci > 0) then
+            mfx(i,j,k) = sum(mx(i+1-ci:i,j,k))
+          else if (ci < 0) then
+            mfx(i,j,k) = sum(mx(i+1:i-ci,j,k))
+          else
+            mfx(i,j,k) = 0
+          end if
           iu = merge(i - ci, i - ci + 1, cf > 0)
           dm = slope(mx(iu-1:iu+1,j,k))
-          mfx(i,j,k) = cf * (mx(iu,j,k) + dm * 0.5_r8 * (sign(1.0_r8, cf) - cf)) + sm
+          mfx(i,j,k) = mfx(i,j,k) + cf * (mx(iu,j,k) + dm * 0.5_r8 * (sign(1.0_r8, cf) - cf))
         end do
       end do
       ! Along y-axis
@@ -305,8 +309,8 @@ contains
                                  block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
                                  block%mesh%full_lev_lb:block%mesh%full_lev_ub)
 
-    integer i, j, k, iu, ju, ci, i1, i2
-    real(r8) cf, s1, s2, ds1, ds2, ds3, sm
+    integer i, j, k, iu, ju, ci
+    real(r8) cf, s1, s2, ds1, ds2, ds3
 
     associate (mesh => block %mesh, &
                cflx => batch %cflx, & ! in
@@ -337,16 +341,20 @@ contains
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           ci = int(cflx(i,j,k))
           cf = cflx(i,j,k) - ci
-          i1 = i - merge(ci, 0, ci > 0) + 1
-          i2 = i - merge(0, ci, ci > 0)
-          sm = sum(mx(i1:i2,j,k))
+          if (ci > 0) then
+            mfx(i,j,k) = sum(mx(i+1-ci:i,j,k))
+          else if (ci < 0) then
+            mfx(i,j,k) = sum(mx(i+1:i-ci,j,k))
+          else
+            mfx(i,j,k) = 0
+          end if
           iu = merge(i - ci, i - ci + 1, cf > 0)
           s1 = merge(1 - abs(cf), 0.0_r8, cf >= 0)
           s2 = merge(1.0_r8, abs(cf), cf >= 0)
           ds1 = s2    - s1
           ds2 = s2**2 - s1**2
           ds3 = s2**3 - s1**3
-          mfx(i,j,k) = sign(mxl(iu,j,k) * ds1 + 0.5_r8 * dmx(iu,j,k) * ds2 + mx6(iu,j,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8), cf) + sm
+          mfx(i,j,k) = mfx(i,j,k) + sign(mxl(iu,j,k) * ds1 + 0.5_r8 * dmx(iu,j,k) * ds2 + mx6(iu,j,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8), cf)
         end do
       end do
       ! Along y-axis
