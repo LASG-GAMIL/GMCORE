@@ -88,6 +88,7 @@ contains
     real(r8) pole(block%mesh%num_full_lev)
 
     associate (mesh => block%mesh, &
+               dt   => batch%dt  , & ! in
                u    => batch%u   , & ! in
                v    => batch%v   , & ! in
                divx => batch%divx, & ! in
@@ -101,8 +102,19 @@ contains
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           ! Subtract divergence terms from flux to form advective operators.
-          mx(i,j,k) = m(i,j,k) - 0.5_r8 * (mfx(i,j,k) - mfx(i-1,j,k) - divx(i,j,k) * m(i,j,k))
-          my(i,j,k) = m(i,j,k) - 0.5_r8 * (mfy(i,j,k) - mfy(i,j-1,k) - divy(i,j,k) * m(i,j,k))
+          mx(i,j,k) = m(i,j,k) - 0.5_r8 * (          &
+            (                                        &
+              mfx(i,j,k) - mfx(i-1,j,k)              &
+            ) * mesh%le_lon(j) / mesh%area_cell(j) - &
+            divx(i,j,k) * m(i,j,k)                   &
+          ) * dt
+          my(i,j,k) = m(i,j,k) - 0.5_r8 * (     &
+            (                                   &
+              mfy(i,j  ,k) * mesh%le_lat(j  ) - &
+              mfy(i,j-1,k) * mesh%le_lat(j-1)   &
+            ) / mesh%area_cell(j) -             &
+            divy(i,j,k) * m(i,j,k)              &
+          ) * dt
         end do
       end do
     end do
@@ -115,10 +127,11 @@ contains
         end do
       end do
       call zonal_sum(proc%zonal_circle, work, pole)
+      pole = pole * mesh%le_lat(j) / global_mesh%num_full_lon / mesh%area_cell(j)
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           mx(i,j,k) = m(i,j,k)
-          my(i,j,k) = m(i,j,k) - 0.5_r8 * (pole(k) - divy(i,j,k) * m(i,j,k))
+          my(i,j,k) = m(i,j,k) - 0.5_r8 * (pole(k) - divy(i,j,k) * m(i,j,k)) * dt
         end do
       end do
     end if
@@ -130,10 +143,11 @@ contains
         end do
       end do
       call zonal_sum(proc%zonal_circle, work, pole)
+      pole = pole * mesh%le_lat(j-1) / global_mesh%num_full_lon / mesh%area_cell(j)
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           mx(i,j,k) = m(i,j,k)
-          my(i,j,k) = m(i,j,k) + 0.5_r8 * (pole(k) - divy(i,j,k) * m(i,j,k))
+          my(i,j,k) = m(i,j,k) + 0.5_r8 * (pole(k) - divy(i,j,k) * m(i,j,k)) * dt
         end do
       end do
     end if
@@ -164,6 +178,7 @@ contains
     real(r8) pole(block%mesh%num_full_lev)
 
     associate (mesh => block%mesh, &
+               dt   => batch%dt  , & ! in
                u    => batch%u   , & ! in
                v    => batch%v   , & ! in
                mfx  => batch%mfx , & ! in
@@ -179,8 +194,19 @@ contains
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           ! Subtract divergence terms from flux to form advective operators.
-          qx(i,j,k) = q(i,j,k) - 0.5_r8 * (qmfx(i,j,k) - qmfx(i-1,j,k) - divx(i,j,k) * q(i,j,k))
-          qy(i,j,k) = q(i,j,k) - 0.5_r8 * (qmfy(i,j,k) - qmfy(i,j-1,k) - divy(i,j,k) * q(i,j,k))
+          qx(i,j,k) = q(i,j,k) - 0.5_r8 * (          &
+            (                                        &
+              qmfx(i,j,k) - qmfx(i-1,j,k)            &
+            ) * mesh%le_lon(j) / mesh%area_cell(j) - &
+            divx(i,j,k) * q(i,j,k)                   &
+          ) * dt
+          qy(i,j,k) = q(i,j,k) - 0.5_r8 * (      &
+            (                                    &
+              qmfy(i,j  ,k) * mesh%le_lat(j  ) - &
+              qmfy(i,j-1,k) * mesh%le_lat(j-1)   &
+            ) / mesh%area_cell(j) -              &
+            divy(i,j,k) * q(i,j,k)               &
+          ) * dt
         end do
       end do
     end do
@@ -193,10 +219,11 @@ contains
         end do
       end do
       call zonal_sum(proc%zonal_circle, work, pole)
+      pole = pole * mesh%le_lat(j) / global_mesh%num_full_lon / mesh%area_cell(j)
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           qx(i,j,k) = q(i,j,k)
-          qy(i,j,k) = q(i,j,k) - 0.5_r8 * (pole(k) - divy(i,j,k) * q(i,j,k))
+          qy(i,j,k) = q(i,j,k) - 0.5_r8 * (pole(k) - divy(i,j,k) * q(i,j,k)) * dt
         end do
       end do
     end if
@@ -208,10 +235,11 @@ contains
         end do
       end do
       call zonal_sum(proc%zonal_circle, work, pole)
+      pole = pole * mesh%le_lat(j-1) / global_mesh%num_full_lon / mesh%area_cell(j)
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           qx(i,j,k) = q(i,j,k)
-          qy(i,j,k) = q(i,j,k) + 0.5_r8 * (pole(k) - divy(i,j,k) * q(i,j,k))
+          qy(i,j,k) = q(i,j,k) + 0.5_r8 * (pole(k) - divy(i,j,k) * q(i,j,k)) * dt
         end do
       end do
     end if

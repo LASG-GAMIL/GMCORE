@@ -193,9 +193,9 @@ contains
           end do
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              batch%divx(i,j,k) = (batch%u(i,j,k) - batch%u(i-1,j,k)) * mesh%le_lon(j) / mesh%area_cell(j) * batch%dt
+              batch%divx(i,j,k) = (batch%u(i,j,k) - batch%u(i-1,j,k)) * mesh%le_lon(j) / mesh%area_cell(j)
               batch%divy(i,j,k) = (batch%v(i,j  ,k) * mesh%le_lat(j  ) - &
-                                   batch%v(i,j-1,k) * mesh%le_lat(j-1)) / mesh%area_cell(j) * batch%dt
+                                   batch%v(i,j-1,k) * mesh%le_lat(j-1)) / mesh%area_cell(j)
             end do
           end do
         end do
@@ -207,7 +207,7 @@ contains
             end do
           end do
           call zonal_sum(proc%zonal_circle, work, pole)
-          pole = pole * mesh%le_lat(j) / global_mesh%num_full_lon / mesh%area_cell(j) * batch%dt
+          pole = pole * mesh%le_lat(j) / global_mesh%num_full_lon / mesh%area_cell(j)
           do k = mesh%full_lev_ibeg, mesh%full_lev_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
               batch%divy(i,j,k) = pole(k)
@@ -222,7 +222,7 @@ contains
             end do
           end do
           call zonal_sum(proc%zonal_circle, work, pole)
-          pole = pole * mesh%le_lat(j-1) / global_mesh%num_full_lon / mesh%area_cell(j) * batch%dt
+          pole = pole * mesh%le_lat(j-1) / global_mesh%num_full_lon / mesh%area_cell(j)
           do k = mesh%full_lev_ibeg, mesh%full_lev_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
               batch%divy(i,j,k) = pole(k)
