@@ -171,6 +171,10 @@ contains
                            long_name=adv_batches(i)%tracer_long_names(j), &
                            units=adv_batches(i)%tracer_units(j), &
                            dim_names=cell_dims_2d, dtype='r8')
+        call fiona_add_var('h0', trim(adv_batches(i)%tracer_names(j)) // '_qmfx', &
+                           long_name='', units='', dim_names=lon_dims_2d)
+        call fiona_add_var('h0', trim(adv_batches(i)%tracer_names(j)) // '_qmfy', &
+                           long_name='', units='', dim_names=lat_dims_2d)
       end do
       call fiona_add_var('h0', 'u'   , long_name='', units='', dim_names= lon_dims_2d)
       call fiona_add_var('h0', 'v'   , long_name='', units='', dim_names= lat_dims_2d)
@@ -430,15 +434,33 @@ contains
                  adv_batches => blocks(iblk)%adv_batches, &
                  state       => blocks(iblk)%state(itime))
       do i = 1, size(adv_batches)
+        do j = 1, size(adv_batches(i)%tracer_names)
+          is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
+          js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
+          start = [is,js]
+          count = [mesh%num_full_lon,mesh%num_full_lat]
+          call fiona_output('h0', adv_batches(i)%tracer_names(j), &
+                            state%q(is:ie,js:je,1,adv_batches(i)%tracer_idx(j)), &
+                            start=start, count=count)
+          is = mesh%half_lon_ibeg; ie = mesh%half_lon_iend
+          js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
+          start = [is,js]
+          count = [mesh%num_half_lon,mesh%num_full_lat]
+          call fiona_output('h0', trim(adv_batches(i)%tracer_names(j)) // '_qmfx', &
+                            state%qmf_lon(is:ie,js:je,1,adv_batches(i)%tracer_idx(j)), &
+                            start=start, count=count)
+          is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
+          js = mesh%half_lat_ibeg; je = mesh%half_lat_iend
+          start = [is,js]
+          count = [mesh%num_full_lon,mesh%num_half_lat]
+          call fiona_output('h0', trim(adv_batches(i)%tracer_names(j)) // '_qmfy', &
+                            state%qmf_lat(is:ie,js:je,1,adv_batches(i)%tracer_idx(j)), &
+                            start=start, count=count)
+        end do
         is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
         js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
         start = [is,js]
         count = [mesh%num_full_lon,mesh%num_full_lat]
-        do j = 1, size(adv_batches(i)%tracer_names)
-          call fiona_output('h0', adv_batches(i)%tracer_names(j), &
-                            state%q(is:ie,js:je,1,adv_batches(i)%tracer_idx(j)), &
-                            start=start, count=count)
-        end do
         call fiona_output('h0', 'divx', adv_batches(i)%divx(is:ie,js:je,1), start=start, count=count)
         call fiona_output('h0', 'divy', adv_batches(i)%divy(is:ie,js:je,1), start=start, count=count)
         is = mesh%half_lon_ibeg; ie = mesh%half_lon_iend
