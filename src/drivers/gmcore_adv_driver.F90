@@ -96,25 +96,27 @@ contains
 
   subroutine diagnose(blocks, itime)
 
-    type(block_type), intent(inout), target :: blocks(:)
+    type(block_type), intent(inout) :: blocks(:)
     integer, intent(in) :: itime
 
-    integer i, j, k, iblk
+    integer i, j, k, l, iblk
     real(r8) qm
 
     qm = 0
     do iblk = 1, size(blocks)
       associate (mesh  => blocks(iblk)%mesh        , &
                  state => blocks(iblk)%state(itime))
-      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-        do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            qm = qm + state%q(i,j,k,1) * mesh%area_cell(j)
+      do l = 1, size(blocks(iblk)%adv_batches(1)%tracer_names)
+        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+          do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              qm = qm + state%q(i,j,k,l) * mesh%area_cell(j)
+            end do
           end do
         end do
+        call global_sum(proc%comm, qm)
+        call log_add_diag('qm' // to_str(l), qm)
       end do
-      call global_sum(proc%comm, qm)
-      call log_add_diag('qm', qm)
       end associate
     end do
 
