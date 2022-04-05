@@ -295,7 +295,7 @@ contains
           end if
           iu = merge(i - ci, i - ci + 1, cf > 0)
           dm = slope(mx(iu-1:iu+1,j,k))
-          mfx(i,j,k) = mfx(i,j,k) + cf * (mx(iu,j,k) + dm * 0.5_r8 * (sign(1.0_r8, cf) - cf))
+          mfx(i,j,k) = u(i,j,k) * (mfx(i,j,k) + cf * (mx(iu,j,k) + dm * 0.5_r8 * (sign(1.0_r8, cf) - cf))) / cflx(i,j,k)
         end do
       end do
       ! Along y-axis
@@ -304,7 +304,7 @@ contains
           cf = cfly(i,j,k)
           ju = merge(j, j + 1, cf > 0)
           dm = slope(my(i,ju-1:ju+1,k))
-          mfy(i,j,k) = cf * (my(i,ju,k) + dm * 0.5_r8 * (sign(1.0_r8, cf) - cf))
+          mfy(i,j,k) = v(i,j,k) * (my(i,ju,k) + dm * 0.5_r8 * (sign(1.0_r8, cf) - cf))
         end do
       end do
     end do
