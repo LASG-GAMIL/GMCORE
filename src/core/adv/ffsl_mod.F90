@@ -287,9 +287,9 @@ contains
           ci = int(cflx(i,j,k))
           cf = cflx(i,j,k) - ci
           if (ci > 0) then
-            mfx(i,j,k) = sum(mx(i+1-ci:i,j,k))
+            mfx(i,j,k) =  sum(mx(i+1-ci:i,j,k))
           else if (ci < 0) then
-            mfx(i,j,k) = sum(mx(i+1:i-ci,j,k))
+            mfx(i,j,k) = -sum(mx(i+1:i-ci,j,k))
           else
             mfx(i,j,k) = 0
           end if
@@ -370,9 +370,9 @@ contains
           ci = int(cflx(i,j,k))
           cf = cflx(i,j,k) - ci
           if (ci > 0) then
-            mfx(i,j,k) = sum(mx(i+1-ci:i,j,k))
+            mfx(i,j,k) =  sum(mx(i+1-ci:i,j,k))
           else if (ci < 0) then
-            mfx(i,j,k) = sum(mx(i+1:i-ci,j,k))
+            mfx(i,j,k) = -sum(mx(i+1:i-ci,j,k))
           else
             mfx(i,j,k) = 0
           end if
