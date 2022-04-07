@@ -151,8 +151,8 @@ contains
         end do
       end do
     end if
-    call fill_halo(block, mx, full_lon=.true., full_lat=.true., full_lev=.true.)
-    call fill_halo(block, my, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block, mx, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
+    call fill_halo(block, my, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
     ! Run outer flux form operators.
     call flux(block, batch, u, v, my, mx, mfx, mfy)
     end associate
@@ -243,8 +243,8 @@ contains
         end do
       end do
     end if
-    call fill_halo(block, qx, full_lon=.true., full_lat=.true., full_lev=.true.)
-    call fill_halo(block, qy, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block, qx, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
+    call fill_halo(block, qy, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
     ! Run outer flux form operators.
     call flux(block, batch, mfx, mfy, qy, qx, qmfx, qmfy)
     end associate
@@ -286,16 +286,17 @@ contains
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           ci = int(cflx(i,j,k))
           cf = cflx(i,j,k) - ci
-          if (ci > 0) then
-            mfx(i,j,k) =  sum(mx(i+1-ci:i,j,k))
-          else if (ci < 0) then
-            mfx(i,j,k) = -sum(mx(i+1:i-ci,j,k))
+          if (cflx(i,j,k) > 0) then
+            iu = i - ci
+            dm = slope(mx(iu-1:iu+1,j,k))
+            mfx(i,j,k) = u(i,j,k) * (cf * (mx(iu,j,k) + dm * 0.5_r8 * (1 - cf)) + sum(mx(i+1-ci:i,j,k))) / cflx(i,j,k)
+          else if (cflx(i,j,k) < 0) then
+            iu = i - ci + 1
+            dm = slope(mx(iu-1:iu+1,j,k))
+            mfx(i,j,k) = u(i,j,k) * (cf * (mx(iu,j,k) - dm * 0.5_r8 * (1 + cf)) - sum(mx(i+1:i-ci,j,k))) / cflx(i,j,k)
           else
             mfx(i,j,k) = 0
           end if
-          iu = merge(i - ci, i - ci + 1, cf > 0)
-          dm = slope(mx(iu-1:iu+1,j,k))
-          mfx(i,j,k) = u(i,j,k) * (mfx(i,j,k) + cf * (mx(iu,j,k) + dm * 0.5_r8 * (sign(1.0_r8, cf) - cf))) / cflx(i,j,k)
         end do
       end do
       ! Along y-axis
@@ -369,33 +370,49 @@ contains
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           ci = int(cflx(i,j,k))
           cf = cflx(i,j,k) - ci
-          if (ci > 0) then
-            mfx(i,j,k) =  sum(mx(i+1-ci:i,j,k))
-          else if (ci < 0) then
-            mfx(i,j,k) = -sum(mx(i+1:i-ci,j,k))
+          if (cflx(i,j,k) > 0) then
+            iu = i - ci
+            s1 = 1 - cf
+            s2 = 1
+            ds1 = s2    - s1
+            ds2 = s2**2 - s1**2
+            ds3 = s2**3 - s1**3
+            mfx(i,j,k) =  u(i,j,k) * (sum(mx(i+1-ci:i,j,k)) + mxl(iu,j,k) * ds1 + 0.5_r8 * dmx(iu,j,k) * ds2 + mx6(iu,j,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx(i,j,k)
+          else if (cflx(i,j,k) < 0) then
+            iu = i - ci + 1
+            s1 = 0
+            s2 = -cf
+            ds1 = s2    - s1
+            ds2 = s2**2 - s1**2
+            ds3 = s2**3 - s1**3
+            mfx(i,j,k) = -u(i,j,k) * (sum(mx(i+1:i-ci,j,k)) + mxl(iu,j,k) * ds1 + 0.5_r8 * dmx(iu,j,k) * ds2 + mx6(iu,j,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx(i,j,k)
           else
             mfx(i,j,k) = 0
           end if
-          iu = merge(i - ci, i - ci + 1, cf > 0)
-          s1 = merge(1 - abs(cf), 0.0_r8, cf >= 0)
-          s2 = merge(1.0_r8, abs(cf), cf >= 0)
-          ds1 = s2    - s1
-          ds2 = s2**2 - s1**2
-          ds3 = s2**3 - s1**3
-          mfx(i,j,k) = mfx(i,j,k) + sign(mxl(iu,j,k) * ds1 + 0.5_r8 * dmx(iu,j,k) * ds2 + mx6(iu,j,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8), cf)
         end do
       end do
       ! Along y-axis
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          cf = cfly(i,j,k)
-          ju = merge(j, j + 1, cf > 0)
-          s1 = merge(1 - abs(cf), 0.0_r8, cf >= 0)
-          s2 = merge(1.0_r8, abs(cf), cf >= 0)
-          ds1 = s2    - s1
-          ds2 = s2**2 - s1**2
-          ds3 = s2**3 - s1**3
-          mfy(i,j,k) = sign(myl(i,ju,k) * ds1 + 0.5_r8 * dmy(i,ju,k) * ds2 + my6(i,ju,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8), cf)
+          if (cfly(i,j,k) > 0) then
+            ju = j
+            s1 = 1 - cfly(i,j,k)
+            s2 = 1
+            ds1 = s2    - s1
+            ds2 = s2**2 - s1**2
+            ds3 = s2**3 - s1**3
+            mfy(i,j,k) =  v(i,j,k) * (myl(i,ju,k) * ds1 + 0.5_r8 * dmy(i,ju,k) * ds2 + my6(i,ju,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cfly(i,j,k)
+          else if (cfly(i,j,k) < 0) then
+            ju = j + 1
+            s1 = 0
+            s2 = -cfly(i,j,k)
+            ds1 = s2    - s1
+            ds2 = s2**2 - s1**2
+            ds3 = s2**3 - s1**3
+            mfy(i,j,k) = -v(i,j,k) * (myl(i,ju,k) * ds1 + 0.5_r8 * dmy(i,ju,k) * ds2 + my6(i,ju,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cfly(i,j,k)
+          else
+            mfy(i,j,k) = 0
+          end if
         end do
       end do
     end do

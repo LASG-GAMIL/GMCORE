@@ -43,6 +43,7 @@ program gmcore_adv_driver
 
   select case (test_case)
   case ('solid_rotation')
+    call solid_rotation_test_init()
     set_ic => solid_rotation_test_set_ic
     set_uv => solid_rotation_test_set_uv
   case ('deform_case1')

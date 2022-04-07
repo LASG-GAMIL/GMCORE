@@ -9,15 +9,24 @@ module solid_rotation_test_mod
 
   implicit none
 
+  public solid_rotation_test_init
   public solid_rotation_test_set_ic
   public solid_rotation_test_set_uv
 
+  real(r8), parameter :: period = 12 * 86400
   real(r8), parameter :: h0     = 1000 ! m
   real(r8), parameter :: lon0   = 3 * pi / 2.0_r8
-  real(r8), parameter :: lat0   = 80.0_r8 * rad
-  real(r8), parameter :: alpha  = 5.0_r8 * rad
+  real(r8), parameter :: lat0   = 0
+  real(r8), parameter :: alpha  = 90.0_r8 * rad
+  real(r8) u0
 
 contains
+
+  subroutine solid_rotation_test_init()
+
+    u0 = pi2 * radius / period
+
+  end subroutine solid_rotation_test_init
 
   subroutine solid_rotation_test_set_ic(block)
 
@@ -61,9 +70,7 @@ contains
     real(8), intent(in) :: time_in_seconds
 
     integer i, j
-    real(r8) lon, lat, u0
-
-    u0 = 2 * pi * radius / (12.0_r8 * 86400.0_r8)
+    real(r8) lon, lat
 
     associate (mesh => block%mesh, u => state%u, v => state%v)
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
