@@ -351,7 +351,7 @@ contains
                m6x  => batch %q6x , & ! work array
                m6y  => batch %q6y )   ! work array
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           call ppm(mx(i-2:i+2,j,k), mlx(i,j,k), dmx(i,j,k), m6x(i,j,k))
           call ppm(my(i,j-2:j+2,k), mly(i,j,k), dmy(i,j,k), m6y(i,j,k))
