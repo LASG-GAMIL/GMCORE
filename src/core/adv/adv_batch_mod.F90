@@ -31,12 +31,12 @@ module adv_batch_mod
     real(r8), allocatable, dimension(:,:,:) :: divy ! Divergence along y-axis
     real(r8), allocatable, dimension(:,:,:) :: qx   ! Tracer mixing ratio due to advective operator along x axis
     real(r8), allocatable, dimension(:,:,:) :: qy   ! Tracer mixing ratio due to advective operator along y axis
-    real(r8), allocatable, dimension(:,:,:) :: qxl  ! Tracer mixing ratio at left cell edge along x axis
-    real(r8), allocatable, dimension(:,:,:) :: qyl  ! Tracer mixing ratio at left cell edge along y axis
+    real(r8), allocatable, dimension(:,:,:) :: qlx  ! Tracer mixing ratio at left cell edge along x axis
+    real(r8), allocatable, dimension(:,:,:) :: qly  ! Tracer mixing ratio at left cell edge along y axis
     real(r8), allocatable, dimension(:,:,:) :: dqx  ! Tracer mixing ratio mismatch (or slope) at cell center along x axis
     real(r8), allocatable, dimension(:,:,:) :: dqy  ! Tracer mixing ratio mismatch (or slope) at cell center along y axis
-    real(r8), allocatable, dimension(:,:,:) :: qx6  ! PPM mismatch at cell center along x axis
-    real(r8), allocatable, dimension(:,:,:) :: qy6  ! PPM mismatch at cell center along y axis
+    real(r8), allocatable, dimension(:,:,:) :: q6x  ! PPM mismatch at cell center along x axis
+    real(r8), allocatable, dimension(:,:,:) :: q6y  ! PPM mismatch at cell center along y axis
   contains
     procedure :: init       => adv_batch_init
     procedure :: clear      => adv_batch_clear
@@ -74,12 +74,12 @@ contains
       call allocate_array(mesh, this%qx  , full_lon=.true., full_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%qy  , full_lon=.true., full_lat=.true., full_lev=.true.)
       if (ffsl_flux_type == 'ppm') then
-        call allocate_array(mesh, this%qxl, full_lon=.true., full_lat=.true., full_lev=.true.)
-        call allocate_array(mesh, this%qyl, full_lon=.true., full_lat=.true., full_lev=.true.)
+        call allocate_array(mesh, this%qlx, full_lon=.true., full_lat=.true., full_lev=.true.)
+        call allocate_array(mesh, this%qly, full_lon=.true., full_lat=.true., full_lev=.true.)
         call allocate_array(mesh, this%dqx, full_lon=.true., full_lat=.true., full_lev=.true.)
         call allocate_array(mesh, this%dqy, full_lon=.true., full_lat=.true., full_lev=.true.)
-        call allocate_array(mesh, this%qx6, full_lon=.true., full_lat=.true., full_lev=.true.)
-        call allocate_array(mesh, this%qy6, full_lon=.true., full_lat=.true., full_lev=.true.)
+        call allocate_array(mesh, this%q6x, full_lon=.true., full_lat=.true., full_lev=.true.)
+        call allocate_array(mesh, this%q6y, full_lon=.true., full_lat=.true., full_lev=.true.)
       end if
     end select
 
@@ -109,12 +109,12 @@ contains
     if (allocated(this%divy)) deallocate(this%divy)
     if (allocated(this%qx  )) deallocate(this%qx  )
     if (allocated(this%qy  )) deallocate(this%qy  )
-    if (allocated(this%qxl )) deallocate(this%qxl )
-    if (allocated(this%qyl )) deallocate(this%qyl )
+    if (allocated(this%qlx )) deallocate(this%qlx )
+    if (allocated(this%qly )) deallocate(this%qly )
     if (allocated(this%dqx )) deallocate(this%dqx )
     if (allocated(this%dqy )) deallocate(this%dqy )
-    if (allocated(this%qx6 )) deallocate(this%qx6 )
-    if (allocated(this%qy6 )) deallocate(this%qy6 )
+    if (allocated(this%q6x )) deallocate(this%q6x )
+    if (allocated(this%q6y )) deallocate(this%q6y )
 
   end subroutine adv_batch_clear
 

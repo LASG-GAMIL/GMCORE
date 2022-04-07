@@ -344,26 +344,26 @@ contains
     associate (mesh => block %mesh, &
                cflx => batch %cflx, & ! in
                cfly => batch %cfly, & ! in
-               mxl  => batch %qxl , & ! work array
-               myl  => batch %qyl , & ! work array
+               mlx  => batch %qlx , & ! work array
+               mly  => batch %qly , & ! work array
                dmx  => batch %dqx , & ! work array
                dmy  => batch %dqy , & ! work array
-               mx6  => batch %qx6 , & ! work array
-               my6  => batch %qy6 )   ! work array
+               m6x  => batch %q6x , & ! work array
+               m6y  => batch %q6y )   ! work array
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          call ppm(mx(i-2:i+2,j,k), mxl(i,j,k), dmx(i,j,k), mx6(i,j,k))
-          call ppm(my(i,j-2:j+2,k), myl(i,j,k), dmy(i,j,k), my6(i,j,k))
+          call ppm(mx(i-2:i+2,j,k), mlx(i,j,k), dmx(i,j,k), m6x(i,j,k))
+          call ppm(my(i,j-2:j+2,k), mly(i,j,k), dmy(i,j,k), m6y(i,j,k))
         end do
       end do
     end do
-    call fill_halo(block, mxl, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
+    call fill_halo(block, mlx, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
     call fill_halo(block, dmx, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
-    call fill_halo(block, mx6, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
-    call fill_halo(block, myl, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
+    call fill_halo(block, m6x, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
+    call fill_halo(block, mly, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
     call fill_halo(block, dmy, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
-    call fill_halo(block, my6, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
+    call fill_halo(block, m6y, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       ! Along x-axis
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -377,7 +377,7 @@ contains
             ds1 = s2    - s1
             ds2 = s2**2 - s1**2
             ds3 = s2**3 - s1**3
-            mfx(i,j,k) =  u(i,j,k) * (sum(mx(i+1-ci:i,j,k)) + mxl(iu,j,k) * ds1 + 0.5_r8 * dmx(iu,j,k) * ds2 + mx6(iu,j,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx(i,j,k)
+            mfx(i,j,k) =  u(i,j,k) * (sum(mx(i+1-ci:i,j,k)) + mlx(iu,j,k) * ds1 + 0.5_r8 * dmx(iu,j,k) * ds2 + m6x(iu,j,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx(i,j,k)
           else if (cflx(i,j,k) < 0) then
             iu = i - ci + 1
             s1 = 0
@@ -385,7 +385,7 @@ contains
             ds1 = s2    - s1
             ds2 = s2**2 - s1**2
             ds3 = s2**3 - s1**3
-            mfx(i,j,k) = -u(i,j,k) * (sum(mx(i+1:i-ci,j,k)) + mxl(iu,j,k) * ds1 + 0.5_r8 * dmx(iu,j,k) * ds2 + mx6(iu,j,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx(i,j,k)
+            mfx(i,j,k) = -u(i,j,k) * (sum(mx(i+1:i-ci,j,k)) + mlx(iu,j,k) * ds1 + 0.5_r8 * dmx(iu,j,k) * ds2 + m6x(iu,j,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx(i,j,k)
           else
             mfx(i,j,k) = 0
           end if
@@ -401,7 +401,7 @@ contains
             ds1 = s2    - s1
             ds2 = s2**2 - s1**2
             ds3 = s2**3 - s1**3
-            mfy(i,j,k) =  v(i,j,k) * (myl(i,ju,k) * ds1 + 0.5_r8 * dmy(i,ju,k) * ds2 + my6(i,ju,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cfly(i,j,k)
+            mfy(i,j,k) =  v(i,j,k) * (mly(i,ju,k) * ds1 + 0.5_r8 * dmy(i,ju,k) * ds2 + m6y(i,ju,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cfly(i,j,k)
           else if (cfly(i,j,k) < 0) then
             ju = j + 1
             s1 = 0
@@ -409,7 +409,7 @@ contains
             ds1 = s2    - s1
             ds2 = s2**2 - s1**2
             ds3 = s2**3 - s1**3
-            mfy(i,j,k) = -v(i,j,k) * (myl(i,ju,k) * ds1 + 0.5_r8 * dmy(i,ju,k) * ds2 + my6(i,ju,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cfly(i,j,k)
+            mfy(i,j,k) = -v(i,j,k) * (mly(i,ju,k) * ds1 + 0.5_r8 * dmy(i,ju,k) * ds2 + m6y(i,ju,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cfly(i,j,k)
           else
             mfy(i,j,k) = 0
           end if
