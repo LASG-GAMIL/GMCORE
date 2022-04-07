@@ -9,7 +9,8 @@ program gmcore_adv_driver
   use operators_mod, only: calc_qmf
   use time_schemes_mod, only: time_integrator
   use solid_rotation_test_mod
-  use deform_case4_mod
+  use deform_test_mod
+  use moving_vortices_test_mod
 
   implicit none
 
@@ -42,11 +43,28 @@ program gmcore_adv_driver
 
   select case (test_case)
   case ('solid_rotation')
-    set_ic => solid_rotation_set_ic
-    set_uv => solid_rotation_set_uv
+    set_ic => solid_rotation_test_set_ic
+    set_uv => solid_rotation_test_set_uv
+  case ('deform_case1')
+    call deform_test_init(1)
+    set_ic => deform_test_set_ic
+    set_uv => deform_case1_test_set_uv
+  case ('deform_case2')
+    call deform_test_init(2)
+    set_ic => deform_test_set_ic
+    set_uv => deform_case2_test_set_uv
+  case ('deform_case3')
+    call deform_test_init(3)
+    set_ic => deform_test_set_ic
+    set_uv => deform_case3_test_set_uv
   case ('deform_case4')
-    set_ic => deform_case4_set_ic
-    set_uv => deform_case4_set_uv
+    call deform_test_init(4)
+    set_ic => deform_test_set_ic
+    set_uv => deform_case4_test_set_uv
+  case ('moving_vortices')
+    call moving_vortices_test_init()
+    set_ic => moving_vortices_test_set_ic
+    set_uv => moving_vortices_test_set_uv
   case default
     call log_error('Unknown test case ' // trim(test_case) // '!', pid=proc%id)
   end select
@@ -69,8 +87,8 @@ program gmcore_adv_driver
     do iblk = 1, size(proc%blocks)
       call time_integrator(adv_operator, proc%blocks(iblk), old, new, dt_adv)
     end do
+    call diagnose(proc%blocks, new)
     call time_advance(dt_adv)
-    call diagnose(proc%blocks, old)
     if (is_root_proc() .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
     call output(old)
   end do

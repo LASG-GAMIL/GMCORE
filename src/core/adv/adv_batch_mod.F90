@@ -19,7 +19,7 @@ module adv_batch_mod
     real(r8) :: dt         ! Advection time step size in seconds
     integer      , allocatable, dimension(:) :: tracer_idx
     character(10), allocatable, dimension(:) :: tracer_names
-    character(10), allocatable, dimension(:) :: tracer_long_names
+    character(30), allocatable, dimension(:) :: tracer_long_names
     character(10), allocatable, dimension(:) :: tracer_units
     real(r8), allocatable, dimension(:,:,:) :: mfx
     real(r8), allocatable, dimension(:,:,:) :: mfy

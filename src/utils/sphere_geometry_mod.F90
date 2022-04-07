@@ -44,6 +44,16 @@ module sphere_geometry_mod
     module procedure inverse_cartesian_transform_2
   end interface inverse_cartesian_transform
 
+  interface rotation_transform
+    module procedure rotation_transform_r8
+    module procedure rotation_transform_r16
+  end interface rotation_transform
+
+  interface inverse_rotation_transform
+    module procedure inverse_rotation_transform_r8
+    module procedure inverse_rotation_transform_r16
+  end interface inverse_rotation_transform
+
   interface calc_distance
     module procedure calc_distance_r8
     module procedure calc_distance_r16
@@ -155,7 +165,32 @@ contains
   !   the north pole (lon_p,lat_p) defined at the original coordinate system.  !
   ! ************************************************************************** !
 
-  subroutine rotation_transform(lon_p, lat_p, lon_o, lat_o, lon_r, lat_r)
+  subroutine rotation_transform_r8(lon_p, lat_p, lon_o, lat_o, lon_r, lat_r)
+
+    real(8), intent(in) :: lon_p, lat_p ! Rotated pole coordinate
+    real(8), intent(in) :: lon_o, lat_o ! Original coordinate
+    real(8), intent(out), optional :: lon_r, lat_r ! Rotated coordinate
+
+    real(8) tmp1, tmp2, tmp3, dlon
+
+    dlon = lon_o - lon_p
+    if (present(lon_r)) then
+        tmp1 = cos(lat_o) * sin(dlon)
+        tmp2 = cos(lat_o) * sin(lat_p) * cos(dlon) - cos(lat_p) * sin(lat_o)
+        lon_r = atan2(tmp1, tmp2)
+        if (lon_r < 0.0d0) lon_r = pi2 + lon_r
+    end if
+    if (present(lat_r)) then
+        tmp1 = sin(lat_o) * sin(lat_p)
+        tmp2 = cos(lat_o) * cos(lat_p) * cos(dlon)
+        tmp3 = tmp1 + tmp2
+        tmp3 = min(max(tmp3, -1.0d0), 1.0d0)
+        lat_r = asin(tmp3)
+    end if
+
+  end subroutine rotation_transform_r8
+
+  subroutine rotation_transform_r16(lon_p, lat_p, lon_o, lat_o, lon_r, lat_r)
 
     real(16), intent(in) :: lon_p, lat_p ! Rotated pole coordinate
     real(16), intent(in) :: lon_o, lat_o ! Original coordinate
@@ -178,9 +213,40 @@ contains
         lat_r = asin(tmp3)
     end if
 
-  end subroutine rotation_transform
+  end subroutine rotation_transform_r16
 
-  subroutine inverse_rotation_transform(lon_p, lat_p, lon_o, lat_o, lon_r, lat_r)
+  subroutine inverse_rotation_transform_r8(lon_p, lat_p, lon_o, lat_o, lon_r, lat_r)
+
+    real(8), intent(in)  :: lon_p, lat_p ! Rotated pole coordinate
+    real(8), intent(out) :: lon_o, lat_o ! Original coordinate
+    real(8), intent(in)  :: lon_r, lat_r ! Rotated coordinate
+
+    real(8) sin_lon_r, cos_lon_r, sin_lat_r, cos_lat_r, sin_lat_p, cos_lat_p
+    real(8) tmp1, tmp2, tmp3
+
+    sin_lon_r = sin(lon_r)
+    cos_lon_r = cos(lon_r)
+    sin_lat_r = sin(lat_r)
+    cos_lat_r = cos(lat_r)
+    sin_lat_p = sin(lat_p)
+    cos_lat_p = cos(lat_p)
+
+    tmp1 = cos_lat_r * sin_lon_r
+    tmp2 = sin_lat_r * cos_lat_p + cos_lat_r * cos_lon_r * sin_lat_p
+    ! This trick is due to the inaccuracy of trigonometry calculation.
+    if (abs(tmp2) < eps) tmp2 = 0.0d0
+    lon_o = atan2(tmp1, tmp2)
+    lon_o = lon_p + lon_o
+    if (lon_o > pi2) lon_o = lon_o - pi2
+    tmp1 = sin_lat_r * sin_lat_p
+    tmp2 = cos_lat_r * cos_lat_p * cos_lon_r
+    tmp3 = tmp1 - tmp2
+    tmp3 = min(max(tmp3, -1.0d0), 1.0d0)
+    lat_o = asin(tmp3)
+
+end subroutine inverse_rotation_transform_r8
+
+  subroutine inverse_rotation_transform_r16(lon_p, lat_p, lon_o, lat_o, lon_r, lat_r)
 
       real(16), intent(in)  :: lon_p, lat_p ! Rotated pole coordinate
       real(16), intent(out) :: lon_o, lat_o ! Original coordinate
@@ -209,7 +275,7 @@ contains
       tmp3 = min(max(tmp3, -1.0d0), 1.0d0)
       lat_o = asin(tmp3)
 
-  end subroutine inverse_rotation_transform
+  end subroutine inverse_rotation_transform_r16
 
   pure real(8) function calc_distance_r8(lon1, lat1, lon2, lat2) result(res)
 

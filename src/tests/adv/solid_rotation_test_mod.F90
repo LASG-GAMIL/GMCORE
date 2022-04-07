@@ -9,17 +9,17 @@ module solid_rotation_test_mod
 
   implicit none
 
-  public solid_rotation_set_ic
-  public solid_rotation_set_uv
+  public solid_rotation_test_set_ic
+  public solid_rotation_test_set_uv
 
   real(r8), parameter :: h0     = 1000 ! m
   real(r8), parameter :: lon0   = 3 * pi / 2.0_r8
-  real(r8), parameter :: lat0   = 0
-  real(r8), parameter :: alpha  = pi05
+  real(r8), parameter :: lat0   = 80.0_r8 * rad
+  real(r8), parameter :: alpha  = 5.0_r8 * rad
 
 contains
 
-  subroutine solid_rotation_set_ic(block)
+  subroutine solid_rotation_test_set_ic(block)
 
     type(block_type), intent(inout) :: block
 
@@ -52,9 +52,9 @@ contains
     call fill_halo(block, state%q(:,:,:,2), full_lon=.true., full_lat=.true., full_lev=.true.)
     end associate
 
-  end subroutine solid_rotation_set_ic
+  end subroutine solid_rotation_test_set_ic
 
-  subroutine solid_rotation_set_uv(block, state, time_in_seconds)
+  subroutine solid_rotation_test_set_uv(block, state, time_in_seconds)
 
     type(block_type), intent(in   ) :: block
     type(state_type), intent(inout) :: state
@@ -84,6 +84,6 @@ contains
     call fill_halo(block, v, full_lon=.true., full_lat=.false., full_lev=.true.)
     end associate
 
-  end subroutine solid_rotation_set_uv
+  end subroutine solid_rotation_test_set_uv
 
 end module solid_rotation_test_mod
