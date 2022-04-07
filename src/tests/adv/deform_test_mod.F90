@@ -238,7 +238,7 @@ contains
       lat = mesh%full_lat(j)
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
         lon = mesh%half_lon(i) - c1
-        u(i,j,1) = k * sin(lon)**2  * sin(lat**2) * cos_t + c2 * cos(lat)
+        u(i,j,1) = k * sin(lon)**2  * sin(2 * lat) * cos_t + c2 * cos(lat)
       end do
     end do
     call fill_halo(block, u, full_lon=.false., full_lat=.true., full_lev=.true.)
@@ -246,7 +246,7 @@ contains
       lat = mesh%half_lat(j)
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         lon = mesh%full_lon(i) - c1
-        v(i,j,1) = k * sin(lon * 2) * cos(lat) * cos_t
+        v(i,j,1) = k * sin(2 * lon) * cos(lat) * cos_t
       end do
     end do
     call fill_halo(block, v, full_lon=.true., full_lat=.false., full_lev=.true.)
