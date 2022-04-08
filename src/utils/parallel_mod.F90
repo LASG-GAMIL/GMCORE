@@ -454,96 +454,91 @@ contains
     logical, intent(in), optional :: south_halo
     logical, intent(in), optional :: north_halo
 
-    integer i, j, j1, j2, nx, ny, mx, hx, hy, ierr
-    integer send_req1, send_req2, recv_req
+    integer t1, t2, i, j, nx, ny, mx, hx, hy, ierr
+    integer send_req, recv_req
     real(8) tmp(size(array,1),block%mesh%lat_halo_width)
 
-    i = merge(1, 2, full_lon)
-    j = merge(1, 2, full_lat)
-
-    if (merge(west_halo, .true., present(west_halo))) then
-      call MPI_SENDRECV(array, 1, block%halo(east)%send_type_2d(i,j), block%halo(east)%proc_id, 3, &
-                        array, 1, block%halo(west)%recv_type_2d(i,j), block%halo(west)%proc_id, 3, &
-                        proc%comm, MPI_STATUS_IGNORE, ierr)
-    end if
-
-    if (merge(east_halo, .true., present(east_halo))) then
-      call MPI_SENDRECV(array, 1, block%halo(west)%send_type_2d(i,j), block%halo(west)%proc_id, 7, &
-                        array, 1, block%halo(east)%recv_type_2d(i,j), block%halo(east)%proc_id, 7, &
-                        proc%comm, MPI_STATUS_IGNORE, ierr)
-    end if
-
-    if (merge(south_halo, .true., present(south_halo))) then
-      send_req1 = MPI_REQUEST_NULL; send_req2 = MPI_REQUEST_NULL; recv_req  = MPI_REQUEST_NULL
-      if (block%halo(north)%proc_id /= proc%id) then ! Skip sending to self.
-        call MPI_ISEND(array, 1, block%halo(north)%send_type_2d(i,j), block%halo(north)%proc_id, 11, &
-                       proc%comm, send_req1, ierr)
-      end if
-      if (proc%at_south_pole) then
-        call MPI_ISEND(array, 1, block%halo(south)%send_type_2d(i,j), block%halo(south)%proc_id, 11, &
-                       proc%comm, send_req2, ierr)
-      end if
-      call MPI_IRECV(array, 1, block%halo(south)%recv_type_2d(i,j), block%halo(south)%proc_id, 11, &
-                     proc%comm, recv_req, ierr)
-      call MPI_WAIT(send_req1, MPI_STATUS_IGNORE, ierr)
-      call MPI_WAIT(send_req2, MPI_STATUS_IGNORE, ierr)
-      call MPI_WAIT(recv_req , MPI_STATUS_IGNORE, ierr)
-    end if
-
-    if (merge(north_halo, .true., present(north_halo))) then
-      send_req1 = MPI_REQUEST_NULL; send_req2 = MPI_REQUEST_NULL; recv_req  = MPI_REQUEST_NULL
-      if (block%halo(south)%proc_id /= proc%id) then ! Skip sending to self.
-        call MPI_ISEND(array, 1, block%halo(south)%send_type_2d(i,j), block%halo(south)%proc_id, 15, &
-                       proc%comm, send_req1, ierr)
-      end if
-      if (proc%at_north_pole) then
-        call MPI_ISEND(array, 1, block%halo(north)%send_type_2d(i,j), block%halo(north)%proc_id, 15, &
-                       proc%comm, send_req2, ierr)
-      end if
-      call MPI_IRECV(array, 1, block%halo(north)%recv_type_2d(i,j), block%halo(north)%proc_id, 15, &
-                     proc%comm, recv_req, ierr)
-      call MPI_WAIT(send_req1, MPI_STATUS_IGNORE, ierr)
-      call MPI_WAIT(send_req2, MPI_STATUS_IGNORE, ierr)
-      call MPI_WAIT(recv_req , MPI_STATUS_IGNORE, ierr)
-    end if
-
-    ! reverse
+    t1 = merge(1, 2, full_lon)
+    t2 = merge(1, 2, full_lat)
     nx = size(array, 1)
     mx = size(array, 1) / 2
     ny = size(array, 2)
     hx = block%mesh%lon_halo_width
     hy = block%mesh%lat_halo_width
+
+    if (merge(west_halo, .true., present(west_halo))) then
+      call MPI_SENDRECV(array, 1, block%halo(east)%send_type_2d(t1,t2), block%halo(east)%proc_id, 3, &
+                        array, 1, block%halo(west)%recv_type_2d(t1,t2), block%halo(west)%proc_id, 3, &
+                        proc%comm, MPI_STATUS_IGNORE, ierr)
+    end if
+
+    if (merge(east_halo, .true., present(east_halo))) then
+      call MPI_SENDRECV(array, 1, block%halo(west)%send_type_2d(t1,t2), block%halo(west)%proc_id, 7, &
+                        array, 1, block%halo(east)%recv_type_2d(t1,t2), block%halo(east)%proc_id, 7, &
+                        proc%comm, MPI_STATUS_IGNORE, ierr)
+    end if
+
+    if (merge(south_halo, .true., present(south_halo))) then
+      send_req = MPI_REQUEST_NULL; recv_req = MPI_REQUEST_NULL
+      if (.not. proc%at_north_pole) then
+        call MPI_ISEND(array, 1, block%halo(north)%send_type_2d(t1,t2), block%halo(north)%proc_id, 9, &
+                       proc%comm, send_req, ierr)
+      end if
+      if (.not. proc%at_south_pole) then
+        call MPI_IRECV(array, 1, block%halo(south)%recv_type_2d(t1,t2), block%halo(south)%proc_id, 9, &
+                       proc%comm, recv_req, ierr)
+      end if
+      call MPI_WAIT(send_req, MPI_STATUS_IGNORE, ierr)
+      call MPI_WAIT(recv_req, MPI_STATUS_IGNORE, ierr)
+    end if
+
+    if (merge(north_halo, .true., present(north_halo))) then
+      send_req = MPI_REQUEST_NULL; recv_req = MPI_REQUEST_NULL
+      if (.not. proc%at_south_pole) then
+        call MPI_ISEND(array, 1, block%halo(south)%send_type_2d(t1,t2), block%halo(south)%proc_id, 10, &
+                       proc%comm, send_req, ierr)
+      end if
+      if (.not. proc%at_north_pole) then
+        call MPI_IRECV(array, 1, block%halo(north)%recv_type_2d(t1,t2), block%halo(north)%proc_id, 10, &
+                       proc%comm, recv_req, ierr)
+      end if
+      call MPI_WAIT(send_req, MPI_STATUS_IGNORE, ierr)
+      call MPI_WAIT(recv_req, MPI_STATUS_IGNORE, ierr)
+    end if
+
     if (merge(south_halo, .true., present(south_halo)) .and. proc%at_south_pole) then
+      call MPI_SENDRECV(array, 1, block%halo(south)%send_type_2d(t1,t2), block%halo(south)%proc_id, 11, &
+                        array, 1, block%halo(south)%recv_type_2d(t1,t2), block%halo(south)%proc_id, 11, &
+                        proc%comm, MPI_STATUS_IGNORE, ierr)
+      ! Reverse array order.
       tmp(:,:) = array(:,1:hy)
-      if (block%halo(south)%proc_id == proc%id) then  ! 1D decompostion, also reverse in lon
-        do j = 1, hy - merge(1, 0, full_lat)
-          j1 = hy - j + 1
-          j2 = j + merge(1, 0, full_lat)
-          array(hx+1:mx   ,j1) = tmp(mx+1:nx-hx,j2)
-          array(mx+1:nx-hx,j1) = tmp(hx+1:mx   ,j2)
+      if (block%halo(south)%proc_id == proc%id) then ! 1D decompostion, also reverse in lon
+        do j = 1, hy
+          array(hx+1:mx   ,hy-j+1) = tmp(mx+1:nx-hx,j)
+          array(mx+1:nx-hx,hy-j+1) = tmp(hx+1:mx   ,j)
         end do
       else
-        do j = 1, hy - merge(1, 0, full_lat)
-          j1 = hy - j + 1
-          j2 = j + merge(1, 0, full_lat)
-          array(:,j1) = tmp(:,j2)
+        do j = 1, hy
+          array(:,hy-j+1) = tmp(:,j)
         end do
       end if
     end if
+
     if (merge(north_halo, .true., present(north_halo)) .and. proc%at_north_pole) then
+      send_req = MPI_REQUEST_NULL; recv_req  = MPI_REQUEST_NULL
+      call MPI_SENDRECV(array, 1, block%halo(north)%send_type_2d(t1,t2), block%halo(north)%proc_id, 12, &
+                        array, 1, block%halo(north)%recv_type_2d(t1,t2), block%halo(north)%proc_id, 12, &
+                        proc%comm, MPI_STATUS_IGNORE, ierr)
+      ! Reverse array order.
       tmp(:,:) = array(:,ny-hy+1:ny)
-      if (block%halo(north)%proc_id == proc%id) then  ! 1D decompostion, also reverse in lon
-        do j = 1, hy - merge(1, 0, full_lat)
-          j1 = ny - hy + j
-          j2 = hy - j + merge(0, 1, full_lat)
-          array(hx+1:mx   ,j1) = tmp(mx+1:nx-hx,j2)
-          array(mx+1:nx-hx,j1) = tmp(hx+1:mx   ,j2)
+      if (block%halo(north)%proc_id == proc%id) then ! 1D decompostion, also reverse in lon
+        do j = 1, hy
+          array(hx+1:mx   ,ny-hy+j) = tmp(mx+1:nx-hx,hy-j+1)
+          array(mx+1:nx-hx,ny-hy+j) = tmp(hx+1:mx   ,hy-j+1)
         end do
       else
-        do j = 1, hy - merge(1, 0, full_lat)
-          j1 = ny - hy + j
-          j2 = hy - j + merge(0, 1, full_lat)
-          array(:,j1) = tmp(:,j2)
+        do j = 1, hy
+          array(:,ny-hy+j) = tmp(:,hy-j+1)
         end do
       end if
     end if
@@ -656,97 +651,91 @@ contains
     logical, intent(in), optional :: south_halo
     logical, intent(in), optional :: north_halo
 
-    integer i, j, j1, j2, k, nx, ny, mx, hx, hy, ierr
-    integer send_req1, send_req2, recv_req
+    integer t1, t2, t3, i, j, nx, ny, mx, hx, hy, ierr
+    integer send_req, recv_req
     real(8) tmp(size(array,1),block%mesh%lat_halo_width,size(array,3))
 
-    i = merge(1, 2, full_lon)
-    j = merge(1, 2, full_lat)
-    k = merge(1, 2, merge(full_lev, .true., present(full_lev)))
-
-    if (merge(west_halo, .true., present(west_halo))) then
-      call MPI_SENDRECV(array, 1, block%halo(east)%send_type_3d(i,j,k), block%halo(east)%proc_id, 3, &
-                        array, 1, block%halo(west)%recv_type_3d(i,j,k), block%halo(west)%proc_id, 3, &
-                        proc%comm, MPI_STATUS_IGNORE, ierr)
-    end if
-
-    if (merge(east_halo, .true., present(east_halo))) then
-      call MPI_SENDRECV(array, 1, block%halo(west)%send_type_3d(i,j,k), block%halo(west)%proc_id, 7, &
-                        array, 1, block%halo(east)%recv_type_3d(i,j,k), block%halo(east)%proc_id, 7, &
-                        proc%comm, MPI_STATUS_IGNORE, ierr)
-    end if
-
-    if (merge(south_halo, .true., present(south_halo))) then
-      send_req1 = MPI_REQUEST_NULL; send_req2 = MPI_REQUEST_NULL; recv_req  = MPI_REQUEST_NULL
-      if (block%halo(north)%proc_id /= proc%id) then ! Skip sending to self.
-        call MPI_ISEND(array, 1, block%halo(north)%send_type_3d(i,j,k), block%halo(north)%proc_id, 11, &
-                       proc%comm, send_req1, ierr)
-      end if
-      if (proc%at_south_pole) then
-        call MPI_ISEND(array, 1, block%halo(south)%send_type_3d(i,j,k), block%halo(south)%proc_id, 11, &
-                       proc%comm, send_req2, ierr)
-      end if
-      call MPI_IRECV(array, 1, block%halo(south)%recv_type_3d(i,j,k), block%halo(south)%proc_id, 11, &
-                     proc%comm, recv_req, ierr)
-      call MPI_WAIT(send_req1, MPI_STATUS_IGNORE, ierr)
-      call MPI_WAIT(send_req2, MPI_STATUS_IGNORE, ierr)
-      call MPI_WAIT(recv_req , MPI_STATUS_IGNORE, ierr)
-    end if
-
-    if (merge(north_halo, .true., present(north_halo))) then
-      send_req1 = MPI_REQUEST_NULL; send_req2 = MPI_REQUEST_NULL; recv_req  = MPI_REQUEST_NULL
-      if (block%halo(south)%proc_id /= proc%id) then ! Skip sending to self.
-        call MPI_ISEND(array, 1, block%halo(south)%send_type_3d(i,j,k), block%halo(south)%proc_id, 15, &
-                       proc%comm, send_req1, ierr)
-      end if
-      if (proc%at_north_pole) then
-        call MPI_ISEND(array, 1, block%halo(north)%send_type_3d(i,j,k), block%halo(north)%proc_id, 15, &
-                       proc%comm, send_req2, ierr)
-      end if
-      call MPI_IRECV(array, 1, block%halo(north)%recv_type_3d(i,j,k), block%halo(north)%proc_id, 15, &
-                     proc%comm, recv_req, ierr)
-      call MPI_WAIT(send_req1, MPI_STATUS_IGNORE, ierr)
-      call MPI_WAIT(send_req2, MPI_STATUS_IGNORE, ierr)
-      call MPI_WAIT(recv_req , MPI_STATUS_IGNORE, ierr)
-    end if
-
-    ! reverse
+    t1 = merge(1, 2, full_lon)
+    t2 = merge(1, 2, full_lat)
+    t3 = merge(1, 2, merge(full_lev, .true., present(full_lev)))
     nx = size(array, 1)
     mx = size(array, 1) / 2
     ny = size(array, 2)
     hx = block%mesh%lon_halo_width
     hy = block%mesh%lat_halo_width
+
+    if (merge(west_halo, .true., present(west_halo))) then
+      call MPI_SENDRECV(array, 1, block%halo(east)%send_type_3d(t1,t2,t3), block%halo(east)%proc_id, 3, &
+                        array, 1, block%halo(west)%recv_type_3d(t1,t2,t3), block%halo(west)%proc_id, 3, &
+                        proc%comm, MPI_STATUS_IGNORE, ierr)
+    end if
+
+    if (merge(east_halo, .true., present(east_halo))) then
+      call MPI_SENDRECV(array, 1, block%halo(west)%send_type_3d(t1,t2,t3), block%halo(west)%proc_id, 7, &
+                        array, 1, block%halo(east)%recv_type_3d(t1,t2,t3), block%halo(east)%proc_id, 7, &
+                        proc%comm, MPI_STATUS_IGNORE, ierr)
+    end if
+
+    if (merge(south_halo, .true., present(south_halo))) then
+      send_req = MPI_REQUEST_NULL; recv_req = MPI_REQUEST_NULL
+      if (.not. proc%at_north_pole) then
+        call MPI_ISEND(array, 1, block%halo(north)%send_type_3d(t1,t2,t3), block%halo(north)%proc_id, 9, &
+                       proc%comm, send_req, ierr)
+      end if
+      if (.not. proc%at_south_pole) then
+        call MPI_IRECV(array, 1, block%halo(south)%recv_type_3d(t1,t2,t3), block%halo(south)%proc_id, 9, &
+                       proc%comm, recv_req, ierr)
+      end if
+      call MPI_WAIT(send_req, MPI_STATUS_IGNORE, ierr)
+      call MPI_WAIT(recv_req, MPI_STATUS_IGNORE, ierr)
+    end if
+
+    if (merge(north_halo, .true., present(north_halo))) then
+      send_req = MPI_REQUEST_NULL; recv_req = MPI_REQUEST_NULL
+      if (.not. proc%at_south_pole) then
+        call MPI_ISEND(array, 1, block%halo(south)%send_type_3d(t1,t2,t3), block%halo(south)%proc_id, 10, &
+                       proc%comm, send_req, ierr)
+      end if
+      if (.not. proc%at_north_pole) then
+        call MPI_IRECV(array, 1, block%halo(north)%recv_type_3d(t1,t2,t3), block%halo(north)%proc_id, 10, &
+                       proc%comm, recv_req, ierr)
+      end if
+      call MPI_WAIT(send_req, MPI_STATUS_IGNORE, ierr)
+      call MPI_WAIT(recv_req, MPI_STATUS_IGNORE, ierr)
+    end if
+
     if (merge(south_halo, .true., present(south_halo)) .and. proc%at_south_pole) then
+      call MPI_SENDRECV(array, 1, block%halo(south)%send_type_3d(t1,t2,t3), block%halo(south)%proc_id, 11, &
+                        array, 1, block%halo(south)%recv_type_3d(t1,t2,t3), block%halo(south)%proc_id, 11, &
+                        proc%comm, MPI_STATUS_IGNORE, ierr)
+      ! Reverse array order.
       tmp(:,:,:) = array(:,1:hy,:)
-      if (block%halo(south)%proc_id == proc%id) then  ! 1D decompostion, also reverse in lon
-        do j = 1, hy - merge(1, 0, full_lat)
-          j1 = hy - j + 1
-          j2 = j + merge(1, 0, full_lat)
-          array(hx+1:mx   ,j1,:) = tmp(mx+1:nx-hx,j2,:)
-          array(mx+1:nx-hx,j1,:) = tmp(hx+1:mx   ,j2,:)
+      if (block%halo(south)%proc_id == proc%id) then ! 1D decompostion, also reverse in lon
+        do j = 1, hy
+          array(hx+1:mx   ,hy-j+1,:) = tmp(mx+1:nx-hx,j,:)
+          array(mx+1:nx-hx,hy-j+1,:) = tmp(hx+1:mx   ,j,:)
         end do
       else
-        do j = 1, hy - merge(1, 0, full_lat)
-          j1 = hy - j + 1
-          j2 = j + merge(1, 0, full_lat)
-          array(:,j1,:) = tmp(:,j2,:)
+        do j = 1, hy
+          array(:,hy-j+1,:) = tmp(:,j,:)
         end do
       end if
     end if
+
     if (merge(north_halo, .true., present(north_halo)) .and. proc%at_north_pole) then
+      send_req = MPI_REQUEST_NULL; recv_req  = MPI_REQUEST_NULL
+      call MPI_SENDRECV(array, 1, block%halo(north)%send_type_3d(t1,t2,t3), block%halo(north)%proc_id, 12, &
+                        array, 1, block%halo(north)%recv_type_3d(t1,t2,t3), block%halo(north)%proc_id, 12, &
+                        proc%comm, MPI_STATUS_IGNORE, ierr)
       tmp(:,:,:) = array(:,ny-hy+1:ny,:)
-      if (block%halo(north)%proc_id == proc%id) then  ! 1D decompostion, also reverse in lon
-        do j = 1, hy - merge(1, 0, full_lat)
-          j1 = ny - hy + j
-          j2 = hy - j + merge(0, 1, full_lat)
-          array(hx+1:mx   ,j1,:) = tmp(mx+1:nx-hx,j2,:)
-          array(mx+1:nx-hx,j1,:) = tmp(hx+1:mx   ,j2,:)
+      if (block%halo(north)%proc_id == proc%id) then ! 1D decompostion, also reverse in lon
+        do j = 1, hy
+          array(hx+1:mx   ,ny-hy+j,:) = tmp(mx+1:nx-hx,hy-j+1,:)
+          array(mx+1:nx-hx,ny-hy+j,:) = tmp(hx+1:mx   ,hy-j+1,:)
         end do
       else
-        do j = 1, hy - merge(1, 0, full_lat)
-          j1 = ny - hy + j
-          j2 = hy - j + merge(0, 1, full_lat)
-          array(:,j1,:) = tmp(:,j2,:)
+        do j = 1, hy
+          array(:,ny-hy+j,:) = tmp(:,hy-j+1,:)
         end do
       end if
     end if

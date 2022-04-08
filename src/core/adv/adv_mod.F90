@@ -114,8 +114,8 @@ contains
         unique_tracer_dt  (nbatch) = tracer_dt  (i)
       end if
     end do
-    call log_notice('There are ' // to_str(nbatch) // ' advection batches.')
     if (is_root_proc()) then
+      call log_notice('There are ' // to_str(nbatch) // ' advection batches.')
       do i = 1, nbatch
         write(*, *) '- ', trim(unique_batch_names(i)), real(unique_tracer_dt(i))
       end do
@@ -189,6 +189,9 @@ contains
           do j = mesh%half_lat_ibeg, mesh%half_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
               batch%cfly(i,j,k) = batch%dt * batch%v(i,j,k) / mesh%de_lat(j)
+              if (abs(batch%cfly(i,j,k)) > 1) then
+                call log_error('cfly exceeds 1!')
+              end if
             end do
           end do
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole

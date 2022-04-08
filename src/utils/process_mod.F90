@@ -306,7 +306,8 @@ contains
       case (south, north)
         call proc%blocks(1)%halo(i)%init(proc%blocks(1)%mesh, proc%ngb(i)%orient, dtype,               &
                                          host_id=proc%id, ngb_proc_id=proc%ngb(i)%id,                  &
-                                         lon_ibeg=proc%ngb(i)%lon_ibeg, lon_iend=proc%ngb(i)%lon_iend)
+                                         lon_ibeg=proc%ngb(i)%lon_ibeg, lon_iend=proc%ngb(i)%lon_iend, &
+                                         at_south_pole=proc%at_south_pole, at_north_pole=proc%at_north_pole)
       end select
     end do
     ! Initialize async objects.
