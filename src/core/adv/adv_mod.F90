@@ -129,12 +129,14 @@ contains
     do i = 1, nbatch
       call block%adv_batches(i)%init(block%mesh, unique_batch_names(i), unique_tracer_dt(i))
     end do
+    associate (mesh => block%mesh)
     do i = 1, size(block%state)
-      allocate(block%state(i)%q      (is:ie,js:je,ks:ke,ntracer))
-      allocate(block%state(i)%qmf_lon(is:ie,js:je,ks:ke,ntracer))
-      allocate(block%state(i)%qmf_lat(is:ie,js:je,ks:ke,ntracer))
-      allocate(block%state(i)%qmf_lev(is:ie,js:je,ks:ke,ntracer))
+      allocate(block%state(i)%q      (mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub,ntracer))
+      allocate(block%state(i)%qmf_lon(mesh%half_lon_lb:mesh%half_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub,ntracer))
+      allocate(block%state(i)%qmf_lat(mesh%full_lon_lb:mesh%full_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub,ntracer))
+      allocate(block%state(i)%qmf_lev(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%half_lev_lb:mesh%half_lev_ub,ntracer))
     end do
+    end associate
 
     ! Record tracer information in advection batches.
     do i = 1, nbatch
