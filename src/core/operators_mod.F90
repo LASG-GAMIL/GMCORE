@@ -1175,7 +1175,7 @@ contains
     do i = 1, size(adv_batches)
       do j = 1, size(adv_batches(i)%tracer_names)
         k = adv_batches(i)%tracer_idx(j)
-        call adv_calc_mass_flux(block, adv_batches(i), state%q(:,:,:,k), state%qmf_lon(:,:,:,k), state%qmf_lat(:,:,:,k))
+        call adv_calc_mass_flux_cell(block, adv_batches(i), state%q(:,:,:,k), state%qmf_lon(:,:,:,k), state%qmf_lat(:,:,:,k))
       end do
     end do
     end associate
