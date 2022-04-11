@@ -133,7 +133,7 @@ module mesh_mod
 
 contains
 
-  subroutine mesh_init_global(this, num_lon, num_lat, num_lev, id, lon_halo_width, lat_halo_width)
+  subroutine mesh_init_global(this, num_lon, num_lat, num_lev, id, lon_halo_width, lat_halo_width, keep_lev)
 
     class(mesh_type), intent(inout)           :: this
     integer         , intent(in   )           :: num_lon
@@ -142,12 +142,13 @@ contains
     integer         , intent(in   ), optional :: id
     integer         , intent(in   ), optional :: lon_halo_width
     integer         , intent(in   ), optional :: lat_halo_width
+    logical         , intent(in   ), optional :: keep_lev
 
     real(r8) dlat0
     real(16) x(3), y(3), z(3)
     integer i, j, j0, jj
 
-    call this%clear()
+    call this%clear(keep_lev)
 
     this%num_full_lon  = num_lon
     this%num_half_lon  = num_lon
@@ -456,7 +457,8 @@ contains
 
   subroutine mesh_init_from_parent(this, parent, id,               &
                                    lon_halo_width, lat_halo_width, &
-                                   lon_ibeg, lon_iend, lat_ibeg, lat_iend)
+                                   lon_ibeg, lon_iend, lat_ibeg, lat_iend, &
+                                   keep_lev)
 
     class(mesh_type), intent(inout) :: this
     class(mesh_type), intent(in), target :: parent
@@ -467,10 +469,11 @@ contains
     integer, intent(in) :: lon_iend
     integer, intent(in) :: lat_ibeg
     integer, intent(in) :: lat_iend
+    logical, intent(in), optional :: keep_lev
 
     integer i, j
 
-    call this%clear()
+    call this%clear(keep_lev)
 
     this%parent => parent
 
@@ -577,15 +580,14 @@ contains
     num_lev = global_mesh%num_full_lev
     lat_halo_width = global_mesh%lat_halo_width
 
-    call this%clear(keep_lev=.true.)
-
     ! Replace lon_halo_width with new value.
     this%lon_halo_width = lon_halo_width
     if (associated(this%parent)) then
       call this%init_from_parent(this%parent, this%id, this%lon_halo_width, this%lat_halo_width, &
-                                 this%full_lon_ibeg, this%full_lon_iend, this%full_lat_ibeg, this%full_lat_iend)
+                                 this%full_lon_ibeg, this%full_lon_iend, this%full_lat_ibeg, this%full_lat_iend, &
+                                 keep_lev=.true.)
     else
-      call this%init_global(num_lon, num_lat, num_lev, 0, lon_halo_width, lat_halo_width)
+      call this%init_global(num_lon, num_lat, num_lev, 0, lon_halo_width, lat_halo_width, keep_lev=.true.)
     end if
 
   end subroutine mesh_reinit
