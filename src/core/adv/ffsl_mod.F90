@@ -11,12 +11,12 @@ module ffsl_mod
   private
 
   public ffsl_init
-  public ffsl_calc_mass_flux_cell
-  public ffsl_calc_mass_flux_vtx
-  public ffsl_calc_tracer_flux_cell
+  public ffsl_calc_mass_hflx_cell
+  public ffsl_calc_mass_hflx_vtx
+  public ffsl_calc_tracer_hflx_cell
 
   interface
-    subroutine flux_cell_interface(block, batch, u, v, mx, my, mfx, mfy)
+    subroutine hflx_cell_interface(block, batch, u, v, mx, my, mfx, mfy)
       import block_type, adv_batch_type, r8
       type(block_type    ), intent(in   ) :: block
       type(adv_batch_type), intent(inout) :: batch
@@ -38,8 +38,8 @@ module ffsl_mod
       real(r8), intent(out) :: mfy(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
                                    block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
                                    block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-    end subroutine flux_cell_interface
-    subroutine flux_vtx_interface(block, batch, u, v, mx, my, mfx, mfy)
+    end subroutine hflx_cell_interface
+    subroutine hflx_vtx_interface(block, batch, u, v, mx, my, mfx, mfy)
       import block_type, adv_batch_type, r8
       type(block_type    ), intent(in   ) :: block
       type(adv_batch_type), intent(inout) :: batch
@@ -61,15 +61,15 @@ module ffsl_mod
       real(r8), intent(out) :: mfy(block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
                                    block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
                                    block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-    end subroutine flux_vtx_interface
+    end subroutine hflx_vtx_interface
     pure real(r8) function slope_interface(f)
       import r8
       real(r8), intent(in) :: f(-1:1)
     end function slope_interface
   end interface
 
-  procedure(flux_cell_interface), pointer :: flux_cell => null()
-  procedure(flux_vtx_interface ), pointer :: flux_vtx  => null()
+  procedure(hflx_cell_interface), pointer :: hflx_cell => null()
+  procedure(hflx_vtx_interface ), pointer :: hflx_vtx  => null()
   procedure(slope_interface    ), pointer :: slope     => null()
 
 contains
@@ -78,11 +78,11 @@ contains
 
     select case (ffsl_flux_type)
     case ('van_leer')
-      flux_cell => flux_van_leer_cell
-      flux_vtx  => flux_van_leer_vtx
+      hflx_cell => flux_van_leer_cell
+      hflx_vtx  => flux_van_leer_vtx
     case ('ppm')
-      flux_cell => flux_ppm_cell
-      flux_vtx  => flux_ppm_vtx
+      hflx_cell => flux_ppm_cell
+      hflx_vtx  => flux_ppm_vtx
     end select
 
     select case (limiter_type)
@@ -96,7 +96,7 @@ contains
 
   end subroutine ffsl_init
 
-  subroutine ffsl_calc_mass_flux_cell(block, batch, m, mfx, mfy)
+  subroutine ffsl_calc_mass_hflx_cell(block, batch, m, mfx, mfy)
 
     type(block_type    ), intent(in   ) :: block
     type(adv_batch_type), intent(inout) :: batch
@@ -123,7 +123,7 @@ contains
                mx   => batch%qx  , & ! work array
                my   => batch%qy)     ! work array
     ! Run inner advective operators.
-    call flux_cell(block, batch, u, v, m, m, mfx, mfy)
+    call hflx_cell(block, batch, u, v, m, m, mfx, mfy)
     ! Calculate intermediate tracer density due to advective operators.
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -181,12 +181,12 @@ contains
     call fill_halo(block, mx, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
     call fill_halo(block, my, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
     ! Run outer flux form operators.
-    call flux_cell(block, batch, u, v, my, mx, mfx, mfy)
+    call hflx_cell(block, batch, u, v, my, mx, mfx, mfy)
     end associate
 
-  end subroutine ffsl_calc_mass_flux_cell
+  end subroutine ffsl_calc_mass_hflx_cell
 
-  subroutine ffsl_calc_mass_flux_vtx(block, batch, m, mfx, mfy)
+  subroutine ffsl_calc_mass_hflx_vtx(block, batch, m, mfx, mfy)
 
     type(block_type    ), intent(in   ) :: block
     type(adv_batch_type), intent(inout) :: batch
@@ -211,7 +211,7 @@ contains
                mx   => batch%qx  , & ! work array
                my   => batch%qy)     ! work array
     ! Run inner advective operators.
-    call flux_vtx(block, batch, u, v, m, m, mfx, mfy)
+    call hflx_vtx(block, batch, u, v, m, m, mfx, mfy)
     ! Calculate intermediate tracer density due to advective operators.
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
@@ -236,12 +236,12 @@ contains
     call fill_halo(block, mx, full_lon=.false., full_lat=.false., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
     call fill_halo(block, my, full_lon=.false., full_lat=.false., full_lev=.true., south_halo=.false., north_halo=.false.)
     ! Run outer flux form operators.
-    call flux_vtx(block, batch, u, v, my, mx, mfx, mfy)
+    call hflx_vtx(block, batch, u, v, my, mx, mfx, mfy)
     end associate
 
-  end subroutine ffsl_calc_mass_flux_vtx
+  end subroutine ffsl_calc_mass_hflx_vtx
 
-  subroutine ffsl_calc_tracer_flux_cell(block, batch, q, qmfx, qmfy)
+  subroutine ffsl_calc_tracer_hflx_cell(block, batch, q, qmfx, qmfy)
 
     type(block_type    ), intent(in   ) :: block
     type(adv_batch_type), intent(inout) :: batch
@@ -270,7 +270,7 @@ contains
                qx   => batch%qx  , & ! work array
                qy   => batch%qy)     ! work array
     ! Run inner advective operators.
-    call flux_cell(block, batch, u, v, q, q, qmfx, qmfy)
+    call hflx_cell(block, batch, u, v, q, q, qmfx, qmfy)
     ! Calculate intermediate tracer density due to advective operators.
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -328,10 +328,10 @@ contains
     call fill_halo(block, qx, full_lon=.true., full_lat=.true., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
     call fill_halo(block, qy, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
     ! Run outer flux form operators.
-    call flux_cell(block, batch, mfx, mfy, qy, qx, qmfx, qmfy)
+    call hflx_cell(block, batch, mfx, mfy, qy, qx, qmfx, qmfy)
     end associate
 
-  end subroutine ffsl_calc_tracer_flux_cell
+  end subroutine ffsl_calc_tracer_hflx_cell
 
   subroutine flux_van_leer_cell(block, batch, u, v, mx, my, mfx, mfy)
 
