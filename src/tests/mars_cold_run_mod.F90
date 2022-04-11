@@ -31,8 +31,8 @@ contains
     call topo_regrid(block)
 
     associate (mesh   => block%mesh           , &
-               u      => block%state(1)%u     , &
-               v      => block%state(1)%v     , &
+               u      => block%state(1)%u_lon , &
+               v      => block%state(1)%v_lat , &
                t      => block%state(1)%t     , &
                pt     => block%state(1)%pt    , &
                ph     => block%state(1)%ph    , &

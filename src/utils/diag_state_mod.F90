@@ -224,9 +224,9 @@ contains
       this%zm = state%gz / g
       this%zm_lev = state%gz_lev / g
       do k = 1, size(this%levels)
-        call interp_lon_edge_to_height_level(state%mesh, this%zm, state%u, this%levels(k), this%buf)
+        call interp_lon_edge_to_height_level(state%mesh, this%zm, state%u_lon, this%levels(k), this%buf)
         this%u(:,:,k) = this%u(:,:,k) + this%buf
-        call interp_lat_edge_to_height_level(state%mesh, this%zm, state%v, this%levels(k), this%buf)
+        call interp_lat_edge_to_height_level(state%mesh, this%zm, state%v_lat, this%levels(k), this%buf)
         this%v(:,:,k) = this%v(:,:,k) + this%buf
         call interp_cell_to_height_level(state%mesh, this%zm, state%pt, this%levels(k), this%buf)
         this%pt(:,:,k) = this%pt(:,:,k) + this%buf
@@ -242,9 +242,9 @@ contains
     case (pressure_levels)
       this%zm_lev = state%gz_lev / g
       do k = 1, size(this%levels)
-        call interp_lon_edge_to_pressure_level(state%mesh, state%p, state%u, this%levels(k), this%buf)
+        call interp_lon_edge_to_pressure_level(state%mesh, state%p, state%u_lon, this%levels(k), this%buf)
         this%u(:,:,k) = this%u(:,:,k) + this%buf
-        call interp_lat_edge_to_pressure_level(state%mesh, state%p, state%v, this%levels(k), this%buf)
+        call interp_lat_edge_to_pressure_level(state%mesh, state%p, state%v_lat, this%levels(k), this%buf)
         this%v(:,:,k) = this%v(:,:,k) + this%buf
         call interp_cell_to_pressure_level(state%mesh, state%p, state%pt, this%levels(k), this%buf)
         this%pt(:,:,k) = this%pt(:,:,k) + this%buf

@@ -129,10 +129,10 @@ contains
     real(r8) rhs(block%mesh%full_lon_ibeg:block%mesh%full_lon_iend)
     integer i, j, k
 
-    associate (mesh => block%mesh, &
-               vor  => state%vor , &
-               u    => state%u   , &
-               v    => state%v)
+    associate (mesh => block%mesh , &
+               vor  => state%vor  , &
+               u    => state%u_lon, &
+               v    => state%v_lat)
     call calc_vor(block, state, u, v)
     select case (vor_damp_order)
     case (2)
@@ -159,7 +159,7 @@ contains
                   u(i  ,j+1,k) + u(i  ,j,k)                       &
                 ) / mesh%de_lat(j)
             end do
-            call zonal_solver(j,k)%solve(rhs, state%v(mesh%full_lon_ibeg:mesh%full_lon_iend,j,k))
+            call zonal_solver(j,k)%solve(rhs, v(mesh%full_lon_ibeg:mesh%full_lon_iend,j,k))
           else
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
               v(i,j,k) = v(i,j,k) + dt * c_lat(j,k) * ( &

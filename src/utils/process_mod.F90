@@ -310,12 +310,6 @@ contains
                                          at_south_pole=proc%at_south_pole, at_north_pole=proc%at_north_pole)
       end select
     end do
-    ! Initialize async objects.
-    do i = 1, size(proc%blocks(1)%state)
-      do j = 1, size(proc%blocks(1)%state(i)%async)
-        call proc%blocks(1)%state(i)%async(j)%init(size(proc%ngb))
-      end do
-    end do
 
   end subroutine process_create_blocks
 

@@ -35,13 +35,15 @@ contains
     real(r8) lon, cos_lat, sin_lat
     real(r8) a, b, c
     integer i, j
-    type(mesh_type), pointer :: mesh
-
-    mesh => block%mesh
 
     gz0 = 8.0d3 * g
 
-    block%static%gzs(:,:) = 0.0
+    associate (mesh   => block%mesh          , &
+               u      => block%state(1)%u_lon, &
+               v      => block%state(1)%v_lat, &
+               gz     => block%state(1)%gz   , &
+               gzs    => block%static%gzs)
+    gzs(:,:) = 0.0
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       cos_lat = mesh%full_cos_lat(j)
@@ -51,10 +53,10 @@ contains
         a = cos_lat
         b = R * cos_lat**(R - 1) * sin_lat**2 * cos(R * lon)
         c = cos_lat**(R + 1) * cos(R * lon)
-        block%state(1)%u(i,j,1) = radius * omg * (a + b - c)
+        u(i,j,1) = radius * omg * (a + b - c)
       end do
     end do
-    call fill_halo(block, block%state(1)%u, full_lon=.false., full_lat=.true.)
+    call fill_halo(block, u, full_lon=.false., full_lat=.true.)
 
     do j = mesh%half_lat_ibeg, mesh%half_lat_iend
       cos_lat = mesh%half_cos_lat(j)
@@ -62,10 +64,10 @@ contains
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         lon = mesh%full_lon(i)
         a = R * cos_lat**(R - 1) * sin_lat * sin(R * lon)
-        block%state(1)%v(i,j,1) = - radius * omg * a
+        v(i,j,1) = - radius * omg * a
       end do
     end do
-    call fill_halo(block, block%state(1)%v, full_lon=.true., full_lat=.false.)
+    call fill_halo(block, v, full_lon=.true., full_lat=.false.)
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       cos_lat = mesh%full_cos_lat(j)
@@ -76,10 +78,11 @@ contains
       c = 0.25 * omg**2 * cos_lat**(2 * R) * ((R + 1) * cos_lat**2 - R - 2)
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         lon = mesh%full_lon(i)
-        block%state(1)%gz(i,j,1) = gz0 + radius**2 * (a + b * cos(R * lon) + c * cos(2 * R * lon))
+        gz(i,j,1) = gz0 + radius**2 * (a + b * cos(R * lon) + c * cos(2 * R * lon))
       end do
     end do
-    call fill_halo(block, block%state(1)%gz, full_lon=.true., full_lat=.true.)
+    call fill_halo(block, gz, full_lon=.true., full_lat=.true.)
+    end associate
 
   end subroutine rossby_haurwitz_wave_test_set_ic
 

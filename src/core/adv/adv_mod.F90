@@ -209,10 +209,10 @@ contains
     do l = 1, size(block%adv_batches)
       select case (block%adv_batches(l)%loc)
       case ('cell')
-        associate (mesh  => block%mesh          , &
-                   batch => block%adv_batches(l), &
-                   u     => block%state(itime)%u, &
-                   v     => block%state(itime)%v)
+        associate (mesh  => block%mesh              , &
+                   batch => block%adv_batches(l)    , &
+                   u     => block%state(itime)%u_lon, &
+                   v     => block%state(itime)%v_lat)
         if (batch%step == 0) then
           batch%u    = u
           batch%v    = v

@@ -30,45 +30,48 @@ contains
 
     integer i, j, neval, ierr
     real(r8) abserr
-    type(mesh_type), pointer :: mesh
 
-    mesh => block%mesh
-
+    associate (mesh   => block%mesh          , &
+               u      => block%state(1)%u_lon, &
+               v      => block%state(1)%v_lat, &
+               gz     => block%state(1)%gz   , &
+               gzs    => block%static%gzs)
     gh0 = g * 1.0d4
     ghd = g * 120.0d0
 
-    block%static%gzs = 0.0_r8
+    gzs = 0
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-        block%state(1)%u(i,j,1) = u_function(mesh%full_lat(j))
+        u(i,j,1) = u_function(mesh%full_lat(j))
       end do
     end do
-    call fill_halo(block, block%state(1)%u, full_lon=.false., full_lat=.true.)
+    call fill_halo(block, u, full_lon=.false., full_lat=.true.)
 
-    block%state(1)%v = 0.0_r8
+    v = 0
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       i = mesh%half_lon_ibeg
       if (j == mesh%full_lat_ibeg) then
-        block%state(1)%gz(i,j,1) = gh0
+        gz(i,j,1) = gh0
       else
         call qags(gh_integrand, -0.5*pi, mesh%full_lat(j), 1.0e-12, 1.0e-3, block%state(1)%gz(i,j,1), abserr, neval, ierr)
         if (ierr /= 0) then
           call log_error('Failed to calculate integration at (' // to_str(i) // ',' // to_str(j) // ')!')
         end if
-        block%state(1)%gz(i,j,1) = gh0 - block%state(1)%gz(i,j,1)
+        gz(i,j,1) = gh0 - gz(i,j,1)
       end if
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-        block%state(1)%gz(i,j,1) = block%state(1)%gz(mesh%half_lon_ibeg,j,1)
+        gz(i,j,1) = gz(mesh%half_lon_ibeg,j,1)
         ! Add perturbation.
-        block%state(1)%gz(i,j,1) = block%state(1)%gz(i,j,1) + ghd * &
+        gz(i,j,1) = block%state(1)%gz(i,j,1) + ghd * &
           cos(mesh%full_lat(j)) * &
           exp(-(merge(mesh%full_lon(i) - 2*pi, mesh%full_lon(i), mesh%full_lon(i) > pi)  / alpha)**2) * &
           exp(-((lat2 - mesh%full_lat(j)) / beta)**2)
       end do
     end do
-    call fill_halo(block, block%state(1)%gz, full_lon=.true., full_lat=.true.)
+    call fill_halo(block, gz, full_lon=.true., full_lat=.true.)
+    end associate
 
   end subroutine jet_zonal_flow_test_set_ic
 

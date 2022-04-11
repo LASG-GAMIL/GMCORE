@@ -151,10 +151,10 @@ contains
 
     call calc_div(block, state)
 
-    associate (mesh => block%mesh, &
-               div  => state%div , &
-               u    => state%u   , &
-               v    => state%v)
+    associate (mesh => block%mesh , &
+               div  => state%div  , &
+               u    => state%u_lon, &
+               v    => state%v_lat)
     select case (div_damp_order)
     case (2)
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend

@@ -307,7 +307,7 @@ contains
       associate (block => proc%blocks(iblk)            , &
                  mesh  => proc%blocks(iblk)%mesh       , &
                  ph    => proc%blocks(iblk)%state(1)%ph, &
-                 u     => proc%blocks(iblk)%state(1)%u)
+                 u     => proc%blocks(iblk)%state(1)%u_lon)
         select case (bkg_type)
         case ('era5')
           allocate(u1(mesh%half_lon_lb:mesh%half_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,num_era5_lev))
@@ -390,7 +390,7 @@ contains
       associate (block => proc%blocks(iblk)            , &
                  mesh  => proc%blocks(iblk)%mesh       , &
                  ph    => proc%blocks(iblk)%state(1)%ph, &
-                 v     => proc%blocks(iblk)%state(1)%v)
+                 v     => proc%blocks(iblk)%state(1)%v_lat)
         select case (bkg_type)
         case ('era5')
           allocate(v1(mesh%full_lon_lb:mesh%full_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,num_era5_lev))

@@ -44,8 +44,8 @@ contains
     h0 = 25.0_r8
 
     associate (mesh   => block%mesh           , &
-               u      => block%state(1)%u     , &
-               v      => block%state(1)%v     , &
+               u      => block%state(1)%u_lon , &
+               v      => block%state(1)%v_lat , &
                t      => block%state(1)%t     , &
                pt     => block%state(1)%pt    , &
                gzs    => block%static  %gzs   , &
@@ -130,8 +130,8 @@ contains
     h0 = 250.0_r8
 
     associate (mesh   => block%mesh           , &
-               u      => block%state(1)%u     , &
-               v      => block%state(1)%v     , &
+               u      => block%state(1)%u_lon , &
+               v      => block%state(1)%v_lat , &
                t      => block%state(1)%t     , &
                pt     => block%state(1)%pt    , &
                gzs    => block%static  %gzs   , &

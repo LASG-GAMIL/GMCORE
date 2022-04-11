@@ -28,45 +28,49 @@ contains
 
     real(r8) etav, eta, tbar, gzbar, sin_lat, cos_lat
     integer i, j, k
-    type(mesh_type), pointer :: mesh
-    type(state_type), pointer :: state
-    type(static_type), pointer :: static
 
-    mesh => block%mesh
-    state => block%state(1)
-    static => block%static
-
-    state%phs = 1.0e5_r8
-    state%v   = 0
+    associate (mesh   => block%mesh           , &
+               u      => block%state(1)%u_lon , &
+               v      => block%state(1)%v_lat , &
+               phs    => block%state(1)%phs   , &
+               ph_lev => block%state(1)%ph_lev, &
+               ph     => block%state(1)%ph    , &
+               gz_lev => block%state(1)%gz_lev, &
+               gz     => block%state(1)%gz    , &
+               t      => block%state(1)%t     , &
+               pt     => block%state(1)%pt    , &
+               gzs    => block%static%gzs)
+    phs = 1.0e5_r8
+    v   = 0
 
     do k = mesh%half_lev_ibeg, mesh%half_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          state%ph_lev(i,j,k) = vert_coord_calc_ph_lev(k, state%phs(i,j))
+          ph_lev(i,j,k) = vert_coord_calc_ph_lev(k, phs(i,j))
         end do
       end do
     end do
-    call fill_halo(block, state%ph_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
+    call fill_halo(block, ph_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          state%ph(i,j,k) = 0.5d0 * (state%ph_lev(i,j,k) + state%ph_lev(i,j,k+1))
+          ph(i,j,k) = 0.5d0 * (ph_lev(i,j,k) + ph_lev(i,j,k+1))
         end do
       end do
     end do
-    call fill_halo(block, state%ph, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block, ph, full_lon=.true., full_lat=.true., full_lev=.true.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       eta = mesh%full_lev(k)
       etav = (eta - eta0) * pi / 2d0
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          state%u(i,j,k) = u0 * cos(etav)**(1.5d0) * sin(2 * mesh%full_lat(j))**2
+          u(i,j,k) = u0 * cos(etav)**(1.5d0) * sin(2 * mesh%full_lat(j))**2
         end do
       end do
     end do
-    call fill_halo(block, state%u, full_lon=.false., full_lat=.true., full_lev=.true.)
+    call fill_halo(block, u, full_lon=.false., full_lat=.true., full_lev=.true.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       eta = mesh%full_lev(k)
@@ -80,16 +84,16 @@ contains
         sin_lat = mesh%full_sin_lat(j)
         cos_lat = mesh%full_cos_lat(j)
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          state%t(i,j,k) = tbar + 3d0 / 4d0 * eta * pi * u0 / Rd * sin(etav) * sqrt(cos(etav)) * (     &
-              (-2 * sin_lat**6 * (cos_lat**2 + 1d0 / 3d0) + 10d0 / 63d0) * 2 * u0 * cos(etav)**1.5d0 + &
-              (8d0 / 5d0 * cos_lat**3 * (sin_lat**2 + 2d0 / 3d0) - pi / 4d0) * radius * omega          &
-            )
-          state%pt(i,j,k) = potential_temperature(state%t(i,j,k), state%ph(i,j,k))
+          t(i,j,k) = tbar + 3d0 / 4d0 * eta * pi * u0 / Rd * sin(etav) * sqrt(cos(etav)) * (         &
+            (-2 * sin_lat**6 * (cos_lat**2 + 1d0 / 3d0) + 10d0 / 63d0) * 2 * u0 * cos(etav)**1.5d0 + &
+            (8d0 / 5d0 * cos_lat**3 * (sin_lat**2 + 2d0 / 3d0) - pi / 4d0) * radius * omega          &
+          )
+          pt(i,j,k) = potential_temperature(t(i,j,k), ph(i,j,k))
         end do
       end do
     end do
-    call fill_halo(block, state%t , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call fill_halo(block, state%pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block, t , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
 
     do k = mesh%half_lev_ibeg, mesh%half_lev_iend
       eta = mesh%half_lev(k)
@@ -107,14 +111,14 @@ contains
         sin_lat = mesh%full_sin_lat(j)
         cos_lat = mesh%full_cos_lat(j)
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          state%gz_lev(i,j,k) = gzbar + u0 * cos(etav)**1.5d0 * (                                &
+          gz_lev(i,j,k) = gzbar + u0 * cos(etav)**1.5d0 * (                                      &
             (-2 * sin_lat**6 * (cos_lat**2 + 1d0 / 3d0) + 10d0 / 63d0) * u0 * cos(etav)**1.5d0 + &
             (8d0 / 5d0 * cos_lat**3 * (sin_lat**2 + 2d0 / 3d0) - pi / 4d0) * radius * omega      &
           )
         end do
       end do
     end do
-    call fill_halo(block, state%gz_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
+    call fill_halo(block, gz_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       eta = mesh%full_lev(k)
@@ -132,27 +136,28 @@ contains
         sin_lat = mesh%full_sin_lat(j)
         cos_lat = mesh%full_cos_lat(j)
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          state%gz(i,j,k) = gzbar + u0 * cos(etav)**1.5d0 * (                                    &
+          gz(i,j,k) = gzbar + u0 * cos(etav)**1.5d0 * (                                          &
             (-2 * sin_lat**6 * (cos_lat**2 + 1d0 / 3d0) + 10d0 / 63d0) * u0 * cos(etav)**1.5d0 + &
             (8d0 / 5d0 * cos_lat**3 * (sin_lat**2 + 2d0 / 3d0) - pi / 4d0) * radius * omega      &
           )
         end do
       end do
     end do
-    call fill_halo(block, state%gz, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block, gz, full_lon=.true., full_lat=.true., full_lev=.true.)
 
     etav = (1 - eta0) * pi / 2
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       sin_lat = mesh%full_sin_lat(j)
       cos_lat = mesh%full_cos_lat(j)
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        static%gzs(i,j) = u0 * cos(etav)**1.5d0 * (                                            &
+        gzs(i,j) = u0 * cos(etav)**1.5d0 * (                                                   &
           (-2 * sin_lat**6 * (cos_lat**2 + 1d0 / 3d0) + 10d0 / 63d0) * u0 * cos(etav)**1.5d0 + &
           (8d0 / 5d0 * cos_lat**3 * (sin_lat**2 + 2d0 / 3d0) - pi / 4d0) * radius * omega      &
         )
       end do
     end do
-    call fill_halo(block, static%gzs, full_lon=.true., full_lat=.true.)
+    call fill_halo(block, gzs, full_lon=.true., full_lat=.true.)
+    end associate
 
   end subroutine steady_state_test_set_ic
 

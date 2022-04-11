@@ -33,8 +33,8 @@ contains
                kmh_lat   => state%kmh_lat  , &
                kmh_vtx   => state%kmh_vtx  , &
                dpt       => tend%smag_dpt  , &
-               u         => state%u        , &
-               v         => state%v        , &
+               u         => state%u_lon    , &
+               v         => state%v_lat    , &
                pt        => state%pt)
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole

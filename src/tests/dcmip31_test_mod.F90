@@ -49,8 +49,8 @@ contains
     real(r8) ts, cos_2lat, r, local_z, local_ztop
 
     associate (mesh   => block%mesh           , &
-               u      => block%state(1)%u     , &
-               v      => block%state(1)%v     , &
+               u      => block%state(1)%u_lon , &
+               v      => block%state(1)%v_lat , &
                w      => block%state(1)%w_lev , &
                phs    => block%state(1)%phs   , &
                ph_lev => block%state(1)%ph_lev, &

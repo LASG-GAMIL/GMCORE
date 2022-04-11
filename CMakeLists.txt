@@ -121,7 +121,6 @@ set(gmcore_files
   src/utils/process_mod.F90
   src/utils/halo_mod.F90
   src/utils/allocator_mod.F90
-  src/utils/parallel_types_mod.F90
   src/utils/parallel_mod.F90
   src/utils/tridiag_mkl_mod.F90
   src/utils/tridiag_spk_mod.F90

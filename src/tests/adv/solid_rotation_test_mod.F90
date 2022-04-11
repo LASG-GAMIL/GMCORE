@@ -72,7 +72,7 @@ contains
     integer i, j
     real(r8) lon, lat
 
-    associate (mesh => block%mesh, u => state%u, v => state%v)
+    associate (mesh => block%mesh, u => state%u_lon, v => state%v_lat)
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       lat = mesh%full_lat(j)
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend

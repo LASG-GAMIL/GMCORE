@@ -95,50 +95,30 @@ contains
 
     type(block_type), intent(inout), target :: block
 
-    real(dp), allocatable :: u(:,:,:), v(:,:,:), h(:,:,:)
     real(dp) C
     integer i, j
-    type(mesh_type), pointer :: mesh
 
-    mesh => block%mesh
-
-    allocate(u(mesh%half_lon_lb:mesh%half_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,1))
-    allocate(v(mesh%full_lon_lb:mesh%full_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,1))
-    allocate(h(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,1))
+    associate (mesh => block%mesh          , &
+               u    => block%state(1)%u_lon, &
+               v    => block%state(1)%v_lat, &
+               gz   => block%state(1)%gz   )
     call getFields(mesh%full_lat(mesh%full_lat_lb:mesh%full_lat_ub), &
                    mesh%full_lon(mesh%full_lon_lb:mesh%full_lon_ub), &
                    mesh%half_lat(mesh%half_lat_lb:mesh%half_lat_ub), &
-                   mesh%half_lon(mesh%half_lon_lb:mesh%half_lon_ub), [0.0_dp], u, v, h, 0)
+                   mesh%half_lon(mesh%half_lon_lb:mesh%half_lon_ub), [0.0_dp], u, v, gz, 0)
     call getPhaseSpeed(C, 0)
     if (is_root_proc()) call log_notice('Phase speed is ' // trim(to_str(C, 20)))
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        block%state(1)%gz(i,j,1) = g * h(i,j,1) + 5.0d4
+        gz(i,j,1) = g * gz(i,j,1) + 5.0d4
       end do
     end do
+    call fill_halo(block, gz, full_lon=.true., full_lat=.true.)
 
-    call fill_halo(block, block%state(1)%gz, full_lon=.true., full_lat=.true.)
-
-    do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-      do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-        block%state(1)%u(i,j,1) = u(i,j,1)
-      end do
-    end do
-
-    call fill_halo(block, block%state(1)%u, full_lon=.false., full_lat=.true.)
-
-    do j = mesh%half_lat_ibeg, mesh%half_lat_iend
-      do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        block%state(1)%v(i,j,1) = v(i,j,1)
-      end do
-    end do
-
-    call fill_halo(block, block%state(1)%v, full_lon=.true., full_lat=.false.)
-
-    deallocate(u)
-    deallocate(v)
-    deallocate(h)
+    call fill_halo(block, u, full_lon=.false., full_lat=.true.)
+    call fill_halo(block, v, full_lon=.true., full_lat=.false.)
+    end associate
 
   end subroutine shallow_water_waves_test_set_ic
 

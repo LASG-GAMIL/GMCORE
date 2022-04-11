@@ -27,12 +27,11 @@ contains
     real(r8) abserr
     real(r8) gh0
     
-    associate(mesh => block%mesh       , &
-              u    => block%state(1)%u , &
-              v    => block%state(1)%v , &
-              gz   => block%state(1)%gz, &
+    associate(mesh => block%mesh          , &
+              u    => block%state(1)%u_lon, &
+              v    => block%state(1)%v_lat, &
+              gz   => block%state(1)%gz   , &
               gzs  => block%static%gzs)
-    
     gh0 = g * 6.0e3_r8
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend

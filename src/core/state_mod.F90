@@ -4,7 +4,6 @@ module state_mod
   use namelist_mod
   use mesh_mod
   use allocator_mod
-  use parallel_types_mod
 
   implicit none
 
@@ -20,15 +19,15 @@ module state_mod
     ! For nesting
     integer :: id = 0
     type(state_type), pointer :: parent => null()
-    real(r8), allocatable, dimension(:,:,:) :: u                 ! Zonal wind speed (m s-1)
+    real(r8), allocatable, dimension(:,:,:) :: u_lon             ! Zonal wind speed (m s-1)
     real(r8), allocatable, dimension(:,:,:) :: v_lon
-    real(r8), allocatable, dimension(:,:,:) :: u_f               ! Zonal wind speed (m s-1)
-    real(r8), allocatable, dimension(:,:,:) :: v                 ! Meridional wind speed (m s-1)
     real(r8), allocatable, dimension(:,:,:) :: u_lat
+    real(r8), allocatable, dimension(:,:,:) :: v_lat             ! Meridional wind speed (m s-1)
+    real(r8), allocatable, dimension(:,:,:) :: u_f               ! Zonal wind speed (m s-1)
     real(r8), allocatable, dimension(:,:,:) :: v_f               ! Meridional wind speed (m s-1)
-    real(r8), allocatable, dimension(:,:,:) :: wedphdlev_lev     ! Vertical coordinate speed multiplied by 𝛛π/𝛛η
-    real(r8), allocatable, dimension(:,:,:) :: wedphdlev_lev_lon ! Vertical coordinate speed multiplied by 𝛛π/𝛛η on zonal edge
-    real(r8), allocatable, dimension(:,:,:) :: wedphdlev_lev_lat ! Vertical coordinate speed multiplied by 𝛛π/𝛛η on merdional edge
+    real(r8), allocatable, dimension(:,:,:) :: we_lev            ! Vertical coordinate speed multiplied by 𝛛π/𝛛η
+    real(r8), allocatable, dimension(:,:,:) :: we_lev_lon        ! Vertical coordinate speed multiplied by 𝛛π/𝛛η on zonal edge
+    real(r8), allocatable, dimension(:,:,:) :: we_lev_lat        ! Vertical coordinate speed multiplied by 𝛛π/𝛛η on merdional edge
     real(r8), allocatable, dimension(:,:,:) :: gz                ! Geopotential (m2 s-2)
     real(r8), allocatable, dimension(:,:,:) :: gz_f              ! Geopotential (m2 s-2)
     real(r8), allocatable, dimension(:,:,:) :: gz_lev            ! Geopotential height on half levels (m2 s-2)
@@ -59,7 +58,7 @@ module state_mod
     real(r8), allocatable, dimension(:,:,:) :: vor               ! Vorticity (s-1)
     ! Nonhydrostatic variables
     real(r8), allocatable, dimension(:,:,:) :: m_lev
-    real(r8), allocatable, dimension(:,:,:) :: wedphdlev
+    real(r8), allocatable, dimension(:,:,:) :: we
     real(r8), allocatable, dimension(:,:,:) :: w                 ! Vertical wind speed
     real(r8), allocatable, dimension(:,:,:) :: w_lev             ! Vertical wind speed
     real(r8), allocatable, dimension(:,:,:) :: w_lev_lon         ! Vertical wind speed
@@ -94,7 +93,6 @@ module state_mod
     real(r8) te
     real(r8) tpe
     real(r8) tav
-    type(async_type), allocatable :: async(:)
   contains
     procedure :: init => state_init
     procedure :: clear => state_clear
@@ -112,15 +110,15 @@ contains
 
     this%mesh => mesh
 
-    call allocate_array(mesh, this%u                , half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%u_lon            , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%v_lon            , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%u_f              , half_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%v                , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%u_lat            , full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%v_lat            , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%v_f              , full_lon=.true., half_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%wedphdlev_lev    , full_lon=.true., full_lat=.true., half_lev=.true.)
-    call allocate_array(mesh, this%wedphdlev_lev_lon, half_lon=.true., full_lat=.true., half_lev=.true.)
-    call allocate_array(mesh, this%wedphdlev_lev_lat, full_lon=.true., half_lat=.true., half_lev=.true.)
+    call allocate_array(mesh, this%we_lev           , full_lon=.true., full_lat=.true., half_lev=.true.)
+    call allocate_array(mesh, this%we_lev_lon       , half_lon=.true., full_lat=.true., half_lev=.true.)
+    call allocate_array(mesh, this%we_lev_lat       , full_lon=.true., half_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%gz               , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%gz_f             , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%gz_lev           , full_lon=.true., full_lat=.true., half_lev=.true.)
@@ -151,7 +149,7 @@ contains
 
     if (nonhydrostatic) then
       call allocate_array(mesh, this%m_lev          , full_lon=.true., full_lat=.true., half_lev=.true.)
-      call allocate_array(mesh, this%wedphdlev      , full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%we             , full_lon=.true., full_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%w              , full_lon=.true., full_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%w_lev          , full_lon=.true., full_lat=.true., half_lev=.true.)
       call allocate_array(mesh, this%w_lev_lon      , half_lon=.true., full_lat=.true., half_lev=.true.)
@@ -187,23 +185,21 @@ contains
       call allocate_array(mesh, this%kmh_lat      , full_lon=.true., half_lat=.true., full_lev=.true.)
     end if
 
-    allocate(this%async(11))
-
   end subroutine state_init
 
   subroutine state_clear(this)
 
     class(state_type), intent(inout) :: this
 
-    if (allocated(this%u                )) deallocate(this%u                )
+    if (allocated(this%u_lon            )) deallocate(this%u_lon            )
     if (allocated(this%v_lon            )) deallocate(this%v_lon            )
-    if (allocated(this%u_f              )) deallocate(this%u_f              )
-    if (allocated(this%v                )) deallocate(this%v                )
     if (allocated(this%u_lat            )) deallocate(this%u_lat            )
+    if (allocated(this%v_lat            )) deallocate(this%v_lat            )
+    if (allocated(this%u_f              )) deallocate(this%u_f              )
     if (allocated(this%v_f              )) deallocate(this%v_f              )
-    if (allocated(this%wedphdlev_lev    )) deallocate(this%wedphdlev_lev    )
-    if (allocated(this%wedphdlev_lev_lon)) deallocate(this%wedphdlev_lev_lon)
-    if (allocated(this%wedphdlev_lev_lat)) deallocate(this%wedphdlev_lev_lat)
+    if (allocated(this%we_lev           )) deallocate(this%we_lev           )
+    if (allocated(this%we_lev_lon       )) deallocate(this%we_lev_lon       )
+    if (allocated(this%we_lev_lat       )) deallocate(this%we_lev_lat       )
     if (allocated(this%gz               )) deallocate(this%gz               )
     if (allocated(this%gz_f             )) deallocate(this%gz_f             )
     if (allocated(this%gz_lev           )) deallocate(this%gz_lev           )
@@ -234,7 +230,7 @@ contains
     if (allocated(this%vor              )) deallocate(this%vor              )
 
     if (allocated(this%m_lev            )) deallocate(this%m_lev            )
-    if (allocated(this%wedphdlev        )) deallocate(this%wedphdlev        )
+    if (allocated(this%we               )) deallocate(this%we               )
     if (allocated(this%w                )) deallocate(this%w                )
     if (allocated(this%w_lev            )) deallocate(this%w_lev            )
     if (allocated(this%w_lev_lon        )) deallocate(this%w_lev_lon        )
@@ -267,8 +263,6 @@ contains
     if (allocated(this%qmf_lon          )) deallocate(this%qmf_lon          )
     if (allocated(this%qmf_lat          )) deallocate(this%qmf_lat          )
     if (allocated(this%qmf_lev          )) deallocate(this%qmf_lev          )
-
-    if (allocated(this%async            )) deallocate(this%async            )
 
   end subroutine state_clear
 

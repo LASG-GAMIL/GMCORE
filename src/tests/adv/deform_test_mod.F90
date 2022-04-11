@@ -133,7 +133,7 @@ contains
     integer i, j
     real(r8) lon, lat, k, cos_t
 
-    associate (mesh => block%mesh, u => state%u, v => state%v)
+    associate (mesh => block%mesh, u => state%u_lon, v => state%v_lat)
     k = 10.0_r8 * radius / period
     cos_t = cos(pi * time_in_seconds / period)
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -165,7 +165,7 @@ contains
     integer i, j
     real(r8) lon, lat, k, cos_t
 
-    associate (mesh => block%mesh, u => state%u, v => state%v)
+    associate (mesh => block%mesh, u => state%u_lon, v => state%v_lat)
     k = 10.0_r8 * radius / period
     cos_t = cos(pi * time_in_seconds / period)
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -197,7 +197,7 @@ contains
     integer i, j
     real(r8) lon, lat, k, cos_t
 
-    associate (mesh => block%mesh, u => state%u, v => state%v)
+    associate (mesh => block%mesh, u => state%u_lon, v => state%v_lat)
     k = 5.0_r8 * radius / period
     cos_t = cos(pi * time_in_seconds / period)
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -229,7 +229,7 @@ contains
     integer i, j
     real(r8) lon, lat, k, c1, c2, cos_t
 
-    associate (mesh => block%mesh, u => state%u, v => state%v)
+    associate (mesh => block%mesh, u => state%u_lon, v => state%v_lat)
     k = 10.0_r8 * radius / period
     c1 = pi2 * time_in_seconds / period
     c2 = pi2 * radius / period

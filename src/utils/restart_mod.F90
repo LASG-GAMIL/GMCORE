@@ -124,7 +124,7 @@ contains
         start = [is,js,ks]
         count = [mesh%num_half_lon,mesh%num_full_lat,mesh%num_full_lev]
 
-        call fiona_output('r0', 'u'     , state%u    (is:ie,js:je,ks:ke), start=start, count=count)
+        call fiona_output('r0', 'u'     , state%u_lon(is:ie,js:je,ks:ke), start=start, count=count)
 
         is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
         js = mesh%half_lat_ibeg; je = mesh%half_lat_iend
@@ -132,7 +132,7 @@ contains
         start = [is,js,ks]
         count = [mesh%num_full_lon,mesh%num_half_lat,mesh%num_full_lev]
 
-        call fiona_output('r0', 'v'     , state%v    (is:ie,js:je,ks:ke), start=start, count=count)
+        call fiona_output('r0', 'v'     , state%v_lat(is:ie,js:je,ks:ke), start=start, count=count)
 
         is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
         js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
@@ -202,8 +202,8 @@ contains
         start = [is,js,ks]
         count = [mesh%num_half_lon,mesh%num_full_lat,mesh%num_full_lev]
 
-        call fiona_input('r0', 'u'  , state%u(is:ie,js:je,ks:ke), start=start, count=count, time_step=time_step)
-        call fill_halo(block, state%u, full_lon=.false., full_lat=.true., full_lev=.true.)
+        call fiona_input('r0', 'u'  , state%u_lon(is:ie,js:je,ks:ke), start=start, count=count, time_step=time_step)
+        call fill_halo(block, state%u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
 
         is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
         js = mesh%half_lat_ibeg; je = mesh%half_lat_iend
@@ -211,8 +211,8 @@ contains
         start = [is,js,ks]
         count = [mesh%num_full_lon,mesh%num_half_lat,mesh%num_full_lev]
 
-        call fiona_input('r0', 'v'  , state%v(is:ie,js:je,ks:ke), start=start, count=count, time_step=time_step)
-        call fill_halo(block, state%v, full_lon=.true., full_lat=.false., full_lev=.true.)
+        call fiona_input('r0', 'v'  , state%v_lat(is:ie,js:je,ks:ke), start=start, count=count, time_step=time_step)
+        call fill_halo(block, state%v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
 
         is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
         js = mesh%full_lat_ibeg; je = mesh%full_lat_iend

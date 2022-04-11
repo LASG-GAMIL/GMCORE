@@ -261,38 +261,30 @@ contains
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            new_state%u(i,j,k) = old_state%u(i,j,k) + dt * tend%du(i,j,k)
+            new_state%u_lon(i,j,k) = old_state%u_lon(i,j,k) + dt * tend%du(i,j,k)
           end do
         end do
       end do
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            new_state%v(i,j,k) = old_state%v(i,j,k) + dt * tend%dv(i,j,k)
+            new_state%v_lat(i,j,k) = old_state%v_lat(i,j,k) + dt * tend%dv(i,j,k)
           end do
         end do
       end do
-      call fill_halo(block, new_state%u, full_lon=.false., full_lat=.true., full_lev=.true.)
-      call fill_halo(block, new_state%v, full_lon=.true., full_lat=.false., full_lev=.true.)
-      if (mesh%has_south_pole()) then
-        j = mesh%half_lat_ibeg
-        new_state%v(:,j,:) = 0.4_r8 * new_state%v(:,j,:) + 0.6_r8 * new_state%v(:,j+1,:)
-      end if
-      if (mesh%has_north_pole()) then
-        j = mesh%half_lat_iend
-        new_state%v(:,j,:) = 0.4_r8 * new_state%v(:,j,:) + 0.6_r8 * new_state%v(:,j-1,:)
-      end if
-      call filter_on_lon_edge(block, new_state%u, new_state%u_f)
-      call filter_on_lat_edge(block, new_state%v, new_state%v_f)
+      call fill_halo(block, new_state%u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
+      call fill_halo(block, new_state%v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
+      call filter_on_lon_edge(block, new_state%u_lon, new_state%u_f)
+      call filter_on_lat_edge(block, new_state%v_lat, new_state%v_f)
       call fill_halo(block, new_state%u_f, full_lon=.false., full_lat=.true., full_lev=.true.)
       call fill_halo(block, new_state%v_f, full_lon=.true., full_lat=.false., full_lev=.true.)
     end if
 
     if (time_is_alerted('filter_reset')) then
-      if (tend%update_phs) new_state%phs = new_state%phs_f
-      if (tend%update_pt ) new_state%pt  = new_state%pt_f
-      if (tend%update_u  ) new_state%u   = new_state%u_f
-      if (tend%update_v  ) new_state%v   = new_state%v_f
+      if (tend%update_phs) new_state%phs   = new_state%phs_f
+      if (tend%update_pt ) new_state%pt    = new_state%pt_f
+      if (tend%update_u  ) new_state%u_lon = new_state%u_f
+      if (tend%update_v  ) new_state%v_lat = new_state%v_f
     end if
     end associate
 

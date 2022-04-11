@@ -298,7 +298,7 @@ contains
     call fiona_add_var('h1', 'dptfdlon'     , long_name='zonal potential temperature flux gradient'     , units='', dim_names=cell_dims_3d)
     call fiona_add_var('h1', 'dptfdlat'     , long_name='meridional potential temperature flux gradient', units='', dim_names=cell_dims_3d)
     call fiona_add_var('h1', 'dptfdlev'     , long_name='vertical potential temperature flux gradient'  , units='', dim_names=cell_dims_3d)
-    call fiona_add_var('h1', 'wedphdlev_lev', long_name='vertical coordinate velocity'                  , units='', dim_names= lev_dims_3d)
+    call fiona_add_var('h1', 'we_lev', long_name='vertical coordinate velocity'                  , units='', dim_names= lev_dims_3d)
     call fiona_add_var('h1', 'pgf_lon'      , long_name='zonal pressure gradient force'                 , units='', dim_names= lon_dims_3d)
     call fiona_add_var('h1', 'wedudlev'     , long_name='vertical advection of u'                       , units='', dim_names= lon_dims_3d)
     call fiona_add_var('h1', 'pgf_lat'      , long_name='meridional pressure gradient force'            , units='', dim_names= lat_dims_3d)
@@ -338,7 +338,7 @@ contains
     call fiona_add_var('h1', 'dptfdlon'     , long_name='zonal potential temperature flux gradient'     , units='', dim_names=cell_dims_3d)
     call fiona_add_var('h1', 'dptfdlat'     , long_name='meridional potential temperature flux gradient', units='', dim_names=cell_dims_3d)
     call fiona_add_var('h1', 'dptfdlev'     , long_name='vertical potential temperature flux gradient'  , units='', dim_names=cell_dims_3d)
-    call fiona_add_var('h1', 'wedphdlev_lev', long_name='vertical coordinate velocity'                  , units='', dim_names= lev_dims_3d)
+    call fiona_add_var('h1', 'we_lev', long_name='vertical coordinate velocity'                  , units='', dim_names= lev_dims_3d)
     call fiona_add_var('h1', 'pgf_lon'      , long_name='zonal pressure gradient force'                 , units='', dim_names= lon_dims_3d)
     call fiona_add_var('h1', 'wedudlev'     , long_name='vertical advection of u'                       , units='', dim_names= lon_dims_3d)
     call fiona_add_var('h1', 'pgf_lat'      , long_name='meridional pressure gradient force'            , units='', dim_names= lat_dims_3d)
@@ -392,12 +392,12 @@ contains
       js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
       start = [is,js]
       count = [mesh%num_half_lon,mesh%num_full_lat]
-      call fiona_output('h0', 'u'     ,  state%u  (is:ie,js:je,1)     , start=start, count=count)
+      call fiona_output('h0', 'u'     ,  state%u_lon(is:ie,js:je,1)   , start=start, count=count)
       is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
       js = mesh%half_lat_ibeg; je = mesh%half_lat_iend
       start = [is,js]
       count = [mesh%num_full_lon,mesh%num_half_lat]
-      call fiona_output('h0', 'v'     ,  state%v  (is:ie,js:je,1)     , start=start, count=count)
+      call fiona_output('h0', 'v'     ,  state%v_lat(is:ie,js:je,1)   , start=start, count=count)
       is = mesh%half_lon_ibeg; ie = mesh%half_lon_iend
       js = mesh%half_lat_ibeg; je = mesh%half_lat_iend
       start = [is,js]
@@ -501,13 +501,13 @@ contains
       ks = mesh%full_lev_ibeg; ke = mesh%full_lev_iend
       start = [is,js,ks]
       count = [mesh%num_half_lon,mesh%num_full_lat,mesh%num_full_lev]
-      call fiona_output('h0', 'u'       ,  state%u      (is:ie,js:je,ks:ke)     , start=start, count=count)
+      call fiona_output('h0', 'u'       ,  state%u_lon  (is:ie,js:je,ks:ke)     , start=start, count=count)
       is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
       js = mesh%half_lat_ibeg; je = mesh%half_lat_iend
       ks = mesh%full_lev_ibeg; ke = mesh%full_lev_iend
       start = [is,js,ks]
       count = [mesh%num_full_lon,mesh%num_half_lat,mesh%num_full_lev]
-      call fiona_output('h0', 'v'       ,  state%v      (is:ie,js:je,ks:ke)     , start=start, count=count)
+      call fiona_output('h0', 'v'       ,  state%v_lat  (is:ie,js:je,ks:ke)     , start=start, count=count)
       is = mesh%half_lon_ibeg; ie = mesh%half_lon_iend
       js = mesh%half_lat_ibeg; je = mesh%half_lat_iend
       ks = mesh%full_lev_ibeg; ke = mesh%full_lev_iend
@@ -562,13 +562,13 @@ contains
       ks = mesh%full_lev_ibeg; ke = mesh%full_lev_iend
       start = [is,js,ks]
       count = [mesh%num_half_lon,mesh%num_full_lat,mesh%num_full_lev]
-      call fiona_output('h0', 'u'       ,  state%u      (is:ie,js:je,ks:ke)     , start=start, count=count)
+      call fiona_output('h0', 'u'       ,  state%u_lon  (is:ie,js:je,ks:ke)     , start=start, count=count)
       is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
       js = mesh%half_lat_ibeg; je = mesh%half_lat_iend
       ks = mesh%full_lev_ibeg; ke = mesh%full_lev_iend
       start = [is,js,ks]
       count = [mesh%num_full_lon,mesh%num_half_lat,mesh%num_full_lev]
-      call fiona_output('h0', 'v'       ,  state%v      (is:ie,js:je,ks:ke)     , start=start, count=count)
+      call fiona_output('h0', 'v'       ,  state%v_lat  (is:ie,js:je,ks:ke)     , start=start, count=count)
       is = mesh%half_lon_ibeg; ie = mesh%half_lon_iend
       js = mesh%half_lat_ibeg; je = mesh%half_lat_iend
       ks = mesh%full_lev_ibeg; ke = mesh%full_lev_iend
@@ -762,7 +762,7 @@ contains
     ks = mesh%half_lev_ibeg; ke = mesh%half_lev_iend
     start = [is,js,ks]
     count = [mesh%num_full_lon,mesh%num_full_lat,mesh%num_half_lev]
-    call fiona_output('h1', 'wedphdlev_lev', state%wedphdlev_lev(is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'we_lev', state%we_lev(is:ie,js:je,ks:ke), start=start, count=count)
     end associate
     
     call fiona_end_output('h1')
@@ -841,7 +841,7 @@ contains
     ks = mesh%half_lev_ibeg; ke = mesh%half_lev_iend
     start = [is,js,ks]
     count = [mesh%num_full_lon,mesh%num_full_lat,mesh%num_half_lev]
-    call fiona_output('h1', 'wedphdlev_lev', state%wedphdlev_lev(is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'we_lev', state%we_lev(is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'adv_gz_lon'   ,  tend%adv_gz_lon   (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'adv_gz_lat'   ,  tend%adv_gz_lat   (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'adv_gz_lev'   ,  tend%adv_gz_lev   (is:ie,js:je,ks:ke), start=start, count=count)

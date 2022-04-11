@@ -62,26 +62,6 @@ contains
       if (use_smag_damp) then
         call smag_damp_run(blocks(iblk), dt, blocks(iblk)%tend(new), blocks(iblk)%state(new))
       end if
-      if (use_div_damp .or. use_vor_damp .or. use_smag_damp) then
-        associate (block => blocks(iblk)               , &
-                   u     => blocks(iblk)%state(new)%u  , &
-                   v     => blocks(iblk)%state(new)%v  , &
-                   u_f   => blocks(iblk)%state(new)%u_f, &
-                   v_f   => blocks(iblk)%state(new)%v_f)
-        call filter_on_lon_edge(block, u, u_f)
-        call fill_halo(block, u_f, full_lon=.false., full_lat=.true., full_lev=.true.)
-        call filter_on_lat_edge(block, v, v_f)
-        call fill_halo(block, v_f, full_lon=.true., full_lat=.false., full_lev=.true.)
-        end associate
-      end if
-      if (use_smag_damp) then
-        associate (block => blocks(iblk)               , &
-                   pt    => blocks(iblk)%state(new)%pt , &
-                   pt_f  => blocks(iblk)%state(new)%pt_f)
-        call filter_on_cell(block, pt, pt_f)
-        call fill_halo(block, pt_f, full_lon=.true., full_lat=.true., full_lev=.true.)
-        end associate
-      end if
     end do
 
   end subroutine damp_run

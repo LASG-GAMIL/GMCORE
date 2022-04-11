@@ -32,25 +32,27 @@ contains
     type(block_type), intent(inout), target :: block
     real(r8) cos_lat, sin_lat, full_lon, r
     integer i, j, k
-    type(mesh_type), pointer :: mesh
-    type(state_type), pointer :: state
-    type(static_type), pointer :: static
 
-    mesh => block%mesh
-    state => block%state(1)
-    static => block%static
-    
+    associate (mesh   => block%mesh           , &
+               u      => block%state(1)%u_lon , &
+               v      => block%state(1)%v_lat , &
+               phs    => block%state(1)%phs   , &
+               ph_lev => block%state(1)%ph_lev, &
+               ph     => block%state(1)%ph    , &
+               t      => block%state(1)%t     , &
+               pt     => block%state(1)%pt    , &
+               gzs    => block%static%gzs)
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         cos_lat = mesh%full_cos_lat(j)
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          state%u(i,j,k) = u0 * cos_lat
+          u(i,j,k) = u0 * cos_lat
         end do
       end do
     end do
-    call fill_halo(block, state%u, full_lon=.false., full_lat=.true., full_lev=.true.)
+    call fill_halo(block, u, full_lon=.false., full_lat=.true., full_lev=.true.)
 
-    state%v = 0.0
+    v = 0.0
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       sin_lat = mesh%full_sin_lat(j)
@@ -58,53 +60,54 @@ contains
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         full_lon = mesh%full_lon(i)
         r = radius * acos(sin(latc) * sin_lat + cos(latc) * cos_lat * cos(full_lon - lonc))
-        static%gzs(i,j) = g * h0 * exp(-(r / d)**2)
+        gzs(i,j) = g * h0 * exp(-(r / d)**2)
       end do
     end do
-    call fill_halo(block, static%gzs, full_lon=.true., full_lat=.true.)
+    call fill_halo(block, gzs, full_lon=.true., full_lat=.true.)
 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       sin_lat = mesh%full_sin_lat(j)
       cos_lat = mesh%full_cos_lat(j)
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        state%phs(i,j) = psp * exp(-0.5_r8 * radius * N**2 * u0 / g**2 / kap * (u0 / radius + 2.0_r8 * omega) * &
-                        (sin_lat**2 - 1.0_r8) - N**2 / g**2 / kap * static%gzs(i,j))
+        phs(i,j) = psp * exp(-0.5_r8 * radius * N**2 * u0 / g**2 / kap * (u0 / radius + 2.0_r8 * omega) * &
+                   (sin_lat**2 - 1.0_r8) - N**2 / g**2 / kap * gzs(i,j))
       end do
     end do
-    call fill_halo(block, state%phs, full_lon=.true., full_lat=.true.)
+    call fill_halo(block, phs, full_lon=.true., full_lat=.true.)
 
     do k = mesh%half_lev_ibeg, mesh%half_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          state%ph_lev(i,j,k) = vert_coord_calc_ph_lev(k, state%phs(i,j))
+          ph_lev(i,j,k) = vert_coord_calc_ph_lev(k, phs(i,j))
         end do
       end do
     end do
-    call fill_halo(block, state%ph_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
+    call fill_halo(block, ph_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          state%ph(i,j,k) = 0.5d0 * (state%ph_lev(i,j,k) + state%ph_lev(i,j,k+1))
+          ph(i,j,k) = 0.5d0 * (ph_lev(i,j,k) + ph_lev(i,j,k+1))
         end do
       end do
     end do
-    call fill_halo(block, state%ph, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block, ph, full_lon=.true., full_lat=.true., full_lev=.true.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          state%t(i,j,k) = 288.d0
-          state%pt(i,j,k) = potential_temperature(state%t(i,j,k), state%ph(i,j,k))
+          t (i,j,k) = 288.d0
+          pt(i,j,k) = potential_temperature(t(i,j,k), ph(i,j,k))
         end do
       end do
     end do
-    call fill_halo(block, state%t, full_lon=.true., full_lat=.true., full_lev=.true.)
-    call fill_halo(block, state%pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block, t , full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
 
     if (nonhydrostatic) then
-      call diag_gz_lev(block, state)
+      call diag_gz_lev(block, block%state(1))
     end if
+    end associate
   
   end subroutine mountain_wave_test_set_ic
   

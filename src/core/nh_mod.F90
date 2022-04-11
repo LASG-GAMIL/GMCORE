@@ -101,7 +101,7 @@ contains
     type(block_type), intent(in) :: block
     type(state_type), intent(inout) :: state
 
-    call interp_lev_edge_to_cell(block%mesh, state%wedphdlev_lev, state%wedphdlev)
+    call interp_lev_edge_to_cell(block%mesh, state%we_lev, state%we)
 
   end subroutine interp_wedphdlev
 
@@ -111,8 +111,8 @@ contains
     type(state_type), intent(inout) :: state
 
     associate (mesh         => block%mesh        , &
-               u            => state%u           , & ! in
-               v            => state%v           , & ! in
+               u            => state%u_lon       , & ! in
+               v            => state%v_lat       , & ! in
                m_lev        => state%m_lev       , & ! in
                u_lev_lon    => state%u_lev_lon   , & ! out
                v_lev_lat    => state%v_lev_lat   , & ! out
@@ -193,8 +193,8 @@ contains
                gz_lev        => state%gz_lev       , & ! in
                gz            => state%gz           , & ! in
                m_lev         => state%m_lev        , & ! in
-               wedphdlev     => state%wedphdlev    , & ! in
-               wedphdlev_lev => state%wedphdlev_lev, & ! in
+               we     => state%we    , & ! in
+               we_lev => state%we_lev, & ! in
                adv_gz_lon    => tend%adv_gz_lon    , & ! out
                adv_gz_lat    => tend%adv_gz_lat    , & ! out
                adv_gz_lev    => tend%adv_gz_lev)       ! out
@@ -255,10 +255,10 @@ contains
         b = mesh%half_dlev_lower(k) / mesh%half_dlev_upper(k)
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            dwedphdlevgz = a * (wedphdlev(i,j,k  ) * gz(i,j,k  ) - wedphdlev_lev(i,j,k) * gz_lev(i,j,k)) - &
-                           b * (wedphdlev(i,j,k-1) * gz(i,j,k-1) - wedphdlev_lev(i,j,k) * gz_lev(i,j,k))
-            dwedphdlev = a * (wedphdlev(i,j,k  ) - wedphdlev_lev(i,j,k)) - &
-                         b * (wedphdlev(i,j,k-1) - wedphdlev_lev(i,j,k))
+            dwedphdlevgz = a * (we(i,j,k  ) * gz(i,j,k  ) - we_lev(i,j,k) * gz_lev(i,j,k)) - &
+                           b * (we(i,j,k-1) * gz(i,j,k-1) - we_lev(i,j,k) * gz_lev(i,j,k))
+            dwedphdlev = a * (we(i,j,k  ) - we_lev(i,j,k)) - &
+                         b * (we(i,j,k-1) - we_lev(i,j,k))
             adv_gz_lev(i,j,k) = (dwedphdlevgz - gz_lev(i,j,k) * dwedphdlev) / m_lev(i,j,k)
           end do
         end do
@@ -266,14 +266,14 @@ contains
       k = mesh%half_lev_ibeg
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          adv_gz_lev(i,j,k) = wedphdlev(i,j,k) * (gz(i,j,k) - gz_lev(i,j,k)) / m_lev(i,j,k)
+          adv_gz_lev(i,j,k) = we(i,j,k) * (gz(i,j,k) - gz_lev(i,j,k)) / m_lev(i,j,k)
         end do
       end do
       ! Bottom gz is static topography, so no tendency for it (i.e., gzs).
       k = mesh%half_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          adv_gz_lev(i,j,k) = wedphdlev(i,j,k-1) * (gz_lev(i,j,k) - gz(i,j,k-1)) / m_lev(i,j,k)
+          adv_gz_lev(i,j,k) = we(i,j,k-1) * (gz_lev(i,j,k) - gz(i,j,k-1)) / m_lev(i,j,k)
         end do
       end do
     end associate
@@ -299,8 +299,8 @@ contains
                w_lev         => state%w_lev        , &
                w             => state%w            , &
                m_lev         => state%m_lev        , &
-               wedphdlev     => state%wedphdlev    , &
-               wedphdlev_lev => state%wedphdlev_lev, &
+               we     => state%we    , &
+               we_lev => state%we_lev, &
                adv_w_lon     => tend%adv_w_lon     , &
                adv_w_lat     => tend%adv_w_lat     , &
                adv_w_lev     => tend%adv_w_lev)
@@ -361,10 +361,10 @@ contains
         b = mesh%half_dlev_lower(k) / mesh%half_dlev_upper(k)
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            dwedphdlevw = a * (wedphdlev(i,j,k  ) * w(i,j,k  ) - wedphdlev_lev(i,j,k) * w_lev(i,j,k)) - &
-                          b * (wedphdlev(i,j,k-1) * w(i,j,k-1) - wedphdlev_lev(i,j,k) * w_lev(i,j,k))
-            dwedphdlev = a * (wedphdlev(i,j,k  ) - wedphdlev_lev(i,j,k)) - &
-                         b * (wedphdlev(i,j,k-1) - wedphdlev_lev(i,j,k))
+            dwedphdlevw = a * (we(i,j,k  ) * w(i,j,k  ) - we_lev(i,j,k) * w_lev(i,j,k)) - &
+                          b * (we(i,j,k-1) * w(i,j,k-1) - we_lev(i,j,k) * w_lev(i,j,k))
+            dwedphdlev = a * (we(i,j,k  ) - we_lev(i,j,k)) - &
+                         b * (we(i,j,k-1) - we_lev(i,j,k))
             adv_w_lev(i,j,k) = (dwedphdlevw - state%w_lev(i,j,k) * dwedphdlev) / m_lev(i,j,k)
           end do
         end do
