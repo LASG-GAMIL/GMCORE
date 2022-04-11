@@ -21,8 +21,10 @@ module state_mod
     integer :: id = 0
     type(state_type), pointer :: parent => null()
     real(r8), allocatable, dimension(:,:,:) :: u                 ! Zonal wind speed (m s-1)
+    real(r8), allocatable, dimension(:,:,:) :: v_lon
     real(r8), allocatable, dimension(:,:,:) :: u_f               ! Zonal wind speed (m s-1)
     real(r8), allocatable, dimension(:,:,:) :: v                 ! Meridional wind speed (m s-1)
+    real(r8), allocatable, dimension(:,:,:) :: u_lat
     real(r8), allocatable, dimension(:,:,:) :: v_f               ! Meridional wind speed (m s-1)
     real(r8), allocatable, dimension(:,:,:) :: wedphdlev_lev     ! Vertical coordinate speed multiplied by 𝛛π/𝛛η
     real(r8), allocatable, dimension(:,:,:) :: wedphdlev_lev_lon ! Vertical coordinate speed multiplied by 𝛛π/𝛛η on zonal edge
@@ -111,8 +113,10 @@ contains
     this%mesh => mesh
 
     call allocate_array(mesh, this%u                , half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%v_lon            , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%u_f              , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%v                , full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%u_lat            , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%v_f              , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%wedphdlev_lev    , full_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%wedphdlev_lev_lon, half_lon=.true., full_lat=.true., half_lev=.true.)
@@ -192,8 +196,10 @@ contains
     class(state_type), intent(inout) :: this
 
     if (allocated(this%u                )) deallocate(this%u                )
+    if (allocated(this%v_lon            )) deallocate(this%v_lon            )
     if (allocated(this%u_f              )) deallocate(this%u_f              )
     if (allocated(this%v                )) deallocate(this%v                )
+    if (allocated(this%u_lat            )) deallocate(this%u_lat            )
     if (allocated(this%v_f              )) deallocate(this%v_f              )
     if (allocated(this%wedphdlev_lev    )) deallocate(this%wedphdlev_lev    )
     if (allocated(this%wedphdlev_lev_lon)) deallocate(this%wedphdlev_lev_lon)

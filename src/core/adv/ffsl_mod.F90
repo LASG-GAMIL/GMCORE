@@ -12,6 +12,7 @@ module ffsl_mod
 
   public ffsl_init
   public ffsl_calc_mass_flux_cell
+  public ffsl_calc_mass_flux_vtx
   public ffsl_calc_tracer_flux_cell
 
   interface
@@ -78,8 +79,10 @@ contains
     select case (ffsl_flux_type)
     case ('van_leer')
       flux_cell => flux_van_leer_cell
+      flux_vtx  => flux_van_leer_vtx
     case ('ppm')
       flux_cell => flux_ppm_cell
+      flux_vtx  => flux_ppm_vtx
     end select
 
     select case (limiter_type)
@@ -182,6 +185,61 @@ contains
     end associate
 
   end subroutine ffsl_calc_mass_flux_cell
+
+  subroutine ffsl_calc_mass_flux_vtx(block, batch, m, mfx, mfy)
+
+    type(block_type    ), intent(in   ) :: block
+    type(adv_batch_type), intent(inout) :: batch
+    real(r8), intent(in ) :: m  (block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
+                                 block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
+                                 block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+    real(r8), intent(out) :: mfx(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
+                                 block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
+                                 block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+    real(r8), intent(out) :: mfy(block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
+                                 block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
+                                 block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+
+    integer i, j, k
+
+    associate (mesh => block%mesh, &
+               dt   => batch%dt  , & ! in
+               u    => batch%u   , & ! in
+               v    => batch%v   , & ! in
+               divx => batch%divx, & ! in
+               divy => batch%divy, & ! in
+               mx   => batch%qx  , & ! work array
+               my   => batch%qy)     ! work array
+    ! Run inner advective operators.
+    call flux_vtx(block, batch, u, v, m, m, mfx, mfy)
+    ! Calculate intermediate tracer density due to advective operators.
+    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+          ! Subtract divergence terms from flux to form advective operators.
+          mx(i,j,k) = m(i,j,k) - 0.5_r8 * (          &
+            (                                        &
+              mfx(i+1,j,k) - mfx(i,j,k)              &
+            ) * mesh%de_lat(j) / mesh%area_vtx(j) -  &
+            divx(i,j,k) * m(i,j,k)                   &
+          ) * dt
+          my(i,j,k) = m(i,j,k) - 0.5_r8 * (     &
+            (                                   &
+              mfy(i,j+1,k) * mesh%de_lon(j+1) - &
+              mfy(i,j  ,k) * mesh%de_lon(j  )   &
+            ) / mesh%area_vtx(j) -              &
+            divy(i,j,k) * m(i,j,k)              &
+          ) * dt
+        end do
+      end do
+    end do
+    call fill_halo(block, mx, full_lon=.false., full_lat=.false., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
+    call fill_halo(block, my, full_lon=.false., full_lat=.false., full_lev=.true., south_halo=.false., north_halo=.false.)
+    ! Run outer flux form operators.
+    call flux_vtx(block, batch, u, v, my, mx, mfx, mfy)
+    end associate
+
+  end subroutine ffsl_calc_mass_flux_vtx
 
   subroutine ffsl_calc_tracer_flux_cell(block, batch, q, qmfx, qmfy)
 
@@ -375,13 +433,13 @@ contains
           ci = int(cflx(i,j,k))
           cf = cflx(i,j,k) - ci
           if (cflx(i,j,k) > 0) then
+            iu = i - ci - 1
+            dm = slope(mx(iu-1:iu+1,j,k))
+            mfx(i,j,k) = u(i,j,k) * (cf * (mx(iu,j,k) + dm * 0.5_r8 * (1 - cf)) + sum(mx(i-ci:i-1,j,k))) / cflx(i,j,k)
+          else if (cflx(i,j,k) < 0) then
             iu = i - ci
             dm = slope(mx(iu-1:iu+1,j,k))
-            mfx(i,j,k) = u(i,j,k) * (cf * (mx(iu,j,k) + dm * 0.5_r8 * (1 - cf)) + sum(mx(i+1-ci:i,j,k))) / cflx(i,j,k)
-          else if (cflx(i,j,k) < 0) then
-            iu = i - ci + 1
-            dm = slope(mx(iu-1:iu+1,j,k))
-            mfx(i,j,k) = u(i,j,k) * (cf * (mx(iu,j,k) - dm * 0.5_r8 * (1 + cf)) - sum(mx(i+1:i-ci,j,k))) / cflx(i,j,k)
+            mfx(i,j,k) = u(i,j,k) * (cf * (mx(iu,j,k) - dm * 0.5_r8 * (1 + cf)) - sum(mx(i:i-ci-1,j,k))) / cflx(i,j,k)
           else
             mfx(i,j,k) = 0
           end if
@@ -391,7 +449,7 @@ contains
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           cf = cfly(i,j,k)
-          ju = merge(j, j + 1, cf > 0)
+          ju = merge(j - 1, j, cf > 0)
           dm = slope(my(i,ju-1:ju+1,k))
           mfy(i,j,k) = v(i,j,k) * (my(i,ju,k) + dm * 0.5_r8 * (sign(1.0_r8, cf) - cf))
         end do
@@ -566,21 +624,21 @@ contains
           ci = int(cflx(i,j,k))
           cf = cflx(i,j,k) - ci
           if (cflx(i,j,k) > 0) then
-            iu = i - ci
+            iu = i - ci - 1
             s1 = 1 - cf
             s2 = 1
             ds1 = s2    - s1
             ds2 = s2**2 - s1**2
             ds3 = s2**3 - s1**3
-            mfx(i,j,k) =  u(i,j,k) * (sum(mx(i+1-ci:i,j,k)) + mlx(iu,j,k) * ds1 + 0.5_r8 * dmx(iu,j,k) * ds2 + m6x(iu,j,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx(i,j,k)
+            mfx(i,j,k) =  u(i,j,k) * (sum(mx(i-ci:i-1,j,k)) + mlx(iu,j,k) * ds1 + 0.5_r8 * dmx(iu,j,k) * ds2 + m6x(iu,j,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx(i,j,k)
           else if (cflx(i,j,k) < 0) then
-            iu = i - ci + 1
+            iu = i - ci
             s1 = 0
             s2 = -cf
             ds1 = s2    - s1
             ds2 = s2**2 - s1**2
             ds3 = s2**3 - s1**3
-            mfx(i,j,k) = -u(i,j,k) * (sum(mx(i+1:i-ci,j,k)) + mlx(iu,j,k) * ds1 + 0.5_r8 * dmx(iu,j,k) * ds2 + m6x(iu,j,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx(i,j,k)
+            mfx(i,j,k) = -u(i,j,k) * (sum(mx(i:i-ci-1,j,k)) + mlx(iu,j,k) * ds1 + 0.5_r8 * dmx(iu,j,k) * ds2 + m6x(iu,j,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflx(i,j,k)
           else
             mfx(i,j,k) = 0
           end if
@@ -590,7 +648,7 @@ contains
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           if (cfly(i,j,k) > 0) then
-            ju = j
+            ju = j - 1
             s1 = 1 - cfly(i,j,k)
             s2 = 1
             ds1 = s2    - s1
@@ -598,7 +656,7 @@ contains
             ds3 = s2**3 - s1**3
             mfy(i,j,k) =  v(i,j,k) * (mly(i,ju,k) * ds1 + 0.5_r8 * dmy(i,ju,k) * ds2 + m6y(i,ju,k) * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cfly(i,j,k)
           else if (cfly(i,j,k) < 0) then
-            ju = j + 1
+            ju = j
             s1 = 0
             s2 = -cfly(i,j,k)
             ds1 = s2    - s1

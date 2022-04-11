@@ -13,6 +13,7 @@ module adv_batch_mod
   ! Different tracers can be combined into one batch, and adved in different frequencfly.
   type adv_batch_type
     type(mesh_type), pointer :: mesh => null()
+    character(10) :: loc       = 'cell'
     character(30) :: alert_key = ''
     integer  :: nstep  = 0 ! Number of dynamic steps for one adv step
     integer  :: step   = 0 ! Dynamic step counter
@@ -46,41 +47,70 @@ module adv_batch_mod
 
 contains
 
-  subroutine adv_batch_init(this, mesh, alert_key, dt)
+  subroutine adv_batch_init(this, mesh, loc, alert_key, dt)
 
     class(adv_batch_type), intent(inout) :: this
     type(mesh_type), intent(in), target :: mesh
+    character(*), intent(in) :: loc
     character(*), intent(in) :: alert_key
     real(r8), intent(in) :: dt
 
     call this%clear()
 
     this%mesh => mesh
+    this%loc       = loc
     this%alert_key = alert_key
     this%dt        = dt
     this%nstep     = dt / dt_dyn
     this%step      = 0
 
-    call allocate_array(mesh, this%mfx , half_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%mfy , full_lon=.true., half_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%u   , half_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%v   , full_lon=.true., half_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%cflx, half_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%cfly, full_lon=.true., half_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%divx, full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%divy, full_lon=.true., full_lat=.true., full_lev=.true.)
-    select case (adv_scheme)
-    case ('ffsl')
-      call allocate_array(mesh, this%qx  , full_lon=.true., full_lat=.true., full_lev=.true.)
-      call allocate_array(mesh, this%qy  , full_lon=.true., full_lat=.true., full_lev=.true.)
-      if (ffsl_flux_type == 'ppm') then
-        call allocate_array(mesh, this%qlx, full_lon=.true., full_lat=.true., full_lev=.true.)
-        call allocate_array(mesh, this%qly, full_lon=.true., full_lat=.true., full_lev=.true.)
-        call allocate_array(mesh, this%dqx, full_lon=.true., full_lat=.true., full_lev=.true.)
-        call allocate_array(mesh, this%dqy, full_lon=.true., full_lat=.true., full_lev=.true.)
-        call allocate_array(mesh, this%q6x, full_lon=.true., full_lat=.true., full_lev=.true.)
-        call allocate_array(mesh, this%q6y, full_lon=.true., full_lat=.true., full_lev=.true.)
-      end if
+    select case (loc)
+    case ('cell')
+      call allocate_array(mesh, this%mfx , half_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%mfy , full_lon=.true., half_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%u   , half_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%v   , full_lon=.true., half_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%cflx, half_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%cfly, full_lon=.true., half_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%divx, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%divy, full_lon=.true., full_lat=.true., full_lev=.true.)
+      select case (adv_scheme)
+      case ('ffsl')
+        call allocate_array(mesh, this%qx, full_lon=.true., full_lat=.true., full_lev=.true.)
+        call allocate_array(mesh, this%qy, full_lon=.true., full_lat=.true., full_lev=.true.)
+        if (ffsl_flux_type == 'ppm') then
+          call allocate_array(mesh, this%qlx, full_lon=.true., full_lat=.true., full_lev=.true.)
+          call allocate_array(mesh, this%qly, full_lon=.true., full_lat=.true., full_lev=.true.)
+          call allocate_array(mesh, this%dqx, full_lon=.true., full_lat=.true., full_lev=.true.)
+          call allocate_array(mesh, this%dqy, full_lon=.true., full_lat=.true., full_lev=.true.)
+          call allocate_array(mesh, this%q6x, full_lon=.true., full_lat=.true., full_lev=.true.)
+          call allocate_array(mesh, this%q6y, full_lon=.true., full_lat=.true., full_lev=.true.)
+        end if
+      end select
+    case ('vtx')
+      call allocate_array(mesh, this%mfx , full_lon=.true., half_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%mfy , half_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%u   , full_lon=.true., half_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%v   , half_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%cflx, full_lon=.true., half_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%cfly, half_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%divx, half_lon=.true., half_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%divy, half_lon=.true., half_lat=.true., full_lev=.true.)
+      select case (adv_scheme)
+      case ('ffsl')
+        call allocate_array(mesh, this%qx, half_lon=.true., half_lat=.true., full_lev=.true.)
+        call allocate_array(mesh, this%qy, half_lon=.true., half_lat=.true., full_lev=.true.)
+        if (ffsl_flux_type == 'ppm') then
+          call allocate_array(mesh, this%qlx, half_lon=.true., half_lat=.true., full_lev=.true.)
+          call allocate_array(mesh, this%qly, half_lon=.true., half_lat=.true., full_lev=.true.)
+          call allocate_array(mesh, this%dqx, half_lon=.true., half_lat=.true., full_lev=.true.)
+          call allocate_array(mesh, this%dqy, half_lon=.true., half_lat=.true., full_lev=.true.)
+          call allocate_array(mesh, this%q6x, half_lon=.true., half_lat=.true., full_lev=.true.)
+          call allocate_array(mesh, this%q6y, half_lon=.true., half_lat=.true., full_lev=.true.)
+        end if
+      end select
+    case default
+      call log_error('Invalid grid location ' // trim(loc) // '!')
     end select
 
   end subroutine adv_batch_init
@@ -89,6 +119,8 @@ contains
 
     class(adv_batch_type), intent(inout) :: this
 
+    this%mesh      => null()
+    this%loc       = 'cell'
     this%alert_key = ''
     this%dt        = 0
     this%nstep     = 0

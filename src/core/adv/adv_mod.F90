@@ -19,6 +19,7 @@ module adv_mod
   public adv_allocate_tracers
   public adv_accum_wind
   public adv_calc_mass_flux_cell
+  public adv_calc_mass_flux_vtx
   public adv_calc_tracer_flux_cell
 
   interface
@@ -74,6 +75,7 @@ contains
     case ('ffsl')
       call ffsl_init()
       adv_calc_mass_flux_cell   => ffsl_calc_mass_flux_cell
+      adv_calc_mass_flux_vtx    => ffsl_calc_mass_flux_vtx
       adv_calc_tracer_flux_cell => ffsl_calc_tracer_flux_cell
     end select
 
@@ -138,13 +140,19 @@ contains
     end if
 
     ! Initialize advection batches in block objects and allocate tracer arrays in state objects.
-    is = block%mesh%full_lon_lb; ie = block%mesh%full_lon_ub
-    js = block%mesh%full_lat_lb; je = block%mesh%full_lat_ub
-    ks = block%mesh%full_lev_lb; ke = block%mesh%full_lev_ub
-    allocate(block%adv_batches(nbatch))
-    do i = 1, nbatch
-      call block%adv_batches(i)%init(block%mesh, unique_batch_names(i), unique_tracer_dt(i))
-    end do
+    if (advection) then
+      allocate(block%adv_batches(nbatch))
+      do i = 1, nbatch
+        call block%adv_batches(i)%init(block%mesh, 'cell', unique_batch_names(i), unique_tracer_dt(i))
+      end do
+    else
+      allocate(block%adv_batches(nbatch + 2))
+      do i = 1, nbatch - 2
+        call block%adv_batches(i)%init(block%mesh, 'cell', unique_batch_names(i), unique_tracer_dt(i))
+      end do
+      call block%adv_batches(nbatch-1)%init(block%mesh, 'cell', 'dyn', dt_dyn)
+      call block%adv_batches(nbatch  )%init(block%mesh, 'vtx' , 'vor', dt_dyn)
+    end if
     associate (mesh => block%mesh)
     do i = 1, size(block%state)
       allocate(block%state(i)%q      (mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub,ntracer))
@@ -186,78 +194,124 @@ contains
     real(r8) pole(block%mesh%num_full_lev)
     integer i, j, k, l
 
-    associate (mesh => block%mesh, u => block%state(itime)%u, v => block%state(itime)%v)
     do l = 1, size(block%adv_batches)
-      associate (batch => block%adv_batches(l))
-      if (batch%step == 0) then
-        batch%u = u
-        batch%v = v
-        batch%step = batch%step + 1
-      else if (batch%step == batch%nstep) then
-        batch%u      = (batch%u + u) / (batch%nstep + 1)
-        batch%v      = (batch%v + v) / (batch%nstep + 1)
-        batch%step   = 0
-        ! Calculate CFL numbers and divergence along each axis.
-        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-            do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              batch%cflx(i,j,k) = batch%dt * batch%u(i,j,k) / mesh%de_lon(j)
-            end do
-          end do
-          do j = mesh%half_lat_ibeg, mesh%half_lat_iend
-            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              batch%cfly(i,j,k) = batch%dt * batch%v(i,j,k) / mesh%de_lat(j)
-              if (abs(batch%cfly(i,j,k)) > 1) then
-                call log_error('cfly exceeds 1!')
-              end if
-            end do
-          end do
-          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              batch%divx(i,j,k) = (batch%u(i,j,k) - batch%u(i-1,j,k)) * mesh%le_lon(j) / mesh%area_cell(j)
-              batch%divy(i,j,k) = (batch%v(i,j  ,k) * mesh%le_lat(j  ) - &
-                                   batch%v(i,j-1,k) * mesh%le_lat(j-1)) / mesh%area_cell(j)
-            end do
-          end do
-        end do
-        if (mesh%has_south_pole()) then
-          j = mesh%full_lat_ibeg
+      select case (block%adv_batches(l)%loc)
+      case ('cell')
+        associate (mesh  => block%mesh          , &
+                   batch => block%adv_batches(l), &
+                   u     => block%state(itime)%u, &
+                   v     => block%state(itime)%v)
+        if (batch%step == 0) then
+          batch%u    = u
+          batch%v    = v
+          batch%step = batch%step + 1
+        else if (batch%step == batch%nstep) then
+          batch%u    = (batch%u + u) / (batch%nstep + 1)
+          batch%v    = (batch%v + v) / (batch%nstep + 1)
+          batch%step = 0
+          ! Calculate CFL numbers and divergence along each axis.
           do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              work(i,k) = batch%v(i,j,k)
+            do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+              do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+                batch%cflx(i,j,k) = batch%dt * batch%u(i,j,k) / mesh%de_lon(j)
+              end do
+            end do
+            do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+                batch%cfly(i,j,k) = batch%dt * batch%v(i,j,k) / mesh%de_lat(j)
+                if (abs(batch%cfly(i,j,k)) > 1) then
+                  call log_error('cfly exceeds 1!')
+                end if
+              end do
+            end do
+            do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+                batch%divx(i,j,k) = (batch%u(i,j,k) - batch%u(i-1,j,k)) * mesh%le_lon(j) / mesh%area_cell(j)
+                batch%divy(i,j,k) = (batch%v(i,j  ,k) * mesh%le_lat(j  ) - &
+                                     batch%v(i,j-1,k) * mesh%le_lat(j-1)) / mesh%area_cell(j)
+              end do
             end do
           end do
-          call zonal_sum(proc%zonal_circle, work, pole)
-          pole = pole * mesh%le_lat(j) / global_mesh%num_full_lon / mesh%area_cell(j)
-          do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              batch%divy(i,j,k) = pole(k)
+          if (mesh%has_south_pole()) then
+            j = mesh%full_lat_ibeg
+            do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+                work(i,k) = batch%v(i,j,k)
+              end do
             end do
-          end do
+            call zonal_sum(proc%zonal_circle, work, pole)
+            pole = pole * mesh%le_lat(j) / global_mesh%num_full_lon / mesh%area_cell(j)
+            do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+                batch%divy(i,j,k) = pole(k)
+              end do
+            end do
+          end if
+          if (mesh%has_north_pole()) then
+            j = mesh%full_lat_iend
+            do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+                work(i,k) = -batch%v(i,j-1,k)
+              end do
+            end do
+            call zonal_sum(proc%zonal_circle, work, pole)
+            pole = pole * mesh%le_lat(j-1) / global_mesh%num_full_lon / mesh%area_cell(j)
+            do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+                batch%divy(i,j,k) = pole(k)
+              end do
+            end do
+          end if
+        else
+          batch%u    = batch%u + u
+          batch%v    = batch%v + v
+          batch%step = batch%step + 1
         end if
-        if (mesh%has_north_pole()) then
-          j = mesh%full_lat_iend
+        end associate
+      case ('vtx')
+        associate (mesh  => block%mesh              , &
+                   batch => block%adv_batches(l)    , &
+                   u     => block%state(itime)%u_lat, &
+                   v     => block%state(itime)%v_lon)
+        if (batch%step == 0) then
+          batch%u    = u
+          batch%v    = v
+          batch%step = batch%step + 1
+        else if (batch%step == batch%nstep) then
+          batch%u    = (batch%u + u) / (batch%nstep + 1)
+          batch%v    = (batch%v + v) / (batch%nstep + 1)
+          batch%step = 0
+          ! Calculate CFL numbers and divergence along each axis.
           do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              work(i,k) = -batch%v(i,j-1,k)
+            do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+                batch%cflx(i,j,k) = batch%dt * batch%u(i,j,k) / mesh%le_lat(j)
+              end do
+            end do
+            do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+              do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+                batch%cfly(i,j,k) = batch%dt * batch%v(i,j,k) / mesh%le_lon(j)
+                if (abs(batch%cfly(i,j,k)) > 1) then
+                  call log_error('cfly exceeds 1!')
+                end if
+              end do
+            end do
+            do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+              do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+                batch%divx(i,j,k) = (batch%u(i+1,j,k) - batch%u(i,j,k)) * mesh%de_lat(j) / mesh%area_vtx(j)
+                batch%divy(i,j,k) = (batch%v(i,j+1,k) * mesh%de_lon(j+1) - &
+                                     batch%v(i,j  ,k) * mesh%de_lon(j  )) / mesh%area_vtx(j)
+              end do
             end do
           end do
-          call zonal_sum(proc%zonal_circle, work, pole)
-          pole = pole * mesh%le_lat(j-1) / global_mesh%num_full_lon / mesh%area_cell(j)
-          do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              batch%divy(i,j,k) = pole(k)
-            end do
-          end do
+        else
+          batch%u    = batch%u + u
+          batch%v    = batch%v + v
+          batch%step = batch%step + 1
         end if
-      else
-        batch%u = batch%u + u
-        batch%v = batch%v + v
-        batch%step = batch%step + 1
-      end if
-      end associate
+        end associate
+      end select
     end do
-    end associate
 
   end subroutine adv_accum_wind
 
