@@ -63,6 +63,7 @@ contains
     case ('upwind')
       interp_pv => interp_pv_upwind
     case ('ffsl')
+      interp_pv => interp_pv_ffsl
     case default
       call log_error('Invalid pv_scheme ' // trim(pv_scheme) // '!', pid=proc%id)
     end select
@@ -550,53 +551,52 @@ contains
 
   subroutine calc_mf(block, state)
 
-    type(block_type), intent(in) :: block
+    type(block_type), intent(inout) :: block
     type(state_type), intent(inout) :: state
 
     integer i, j, k
 
     associate (mesh     => block%mesh    , &
+               m        => state%m       , & ! in
                m_lon    => state%m_lon   , & ! in
                m_lat    => state%m_lat   , & ! in
-               u        => state%u_f     , & ! in
-               v        => state%v_f     , & ! in
+               u_lon    => state%u_lon   , & ! in
+               v_lat    => state%v_lat   , & ! in
+               u_lat    => state%u_lat   , & ! out
+               v_lon    => state%v_lon   , & ! out
                mf_lon_n => state%mf_lon_n, & ! out
                mf_lat_n => state%mf_lat_n, & ! out
                mf_lon_t => state%mf_lon_t, & ! out
                mf_lat_t => state%mf_lat_t)   ! out
-    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole + merge(0, 1, mesh%has_north_pole())
-        do i = mesh%half_lon_ibeg - 1, mesh%half_lon_iend
-          mf_lon_n(i,j,k) = m_lon(i,j,k) * u(i,j,k)
-        end do
-      end do
-    end do
-
-    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%half_lat_ibeg - merge(0, 1, mesh%has_south_pole()), mesh%half_lat_iend
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend + 1
-          mf_lat_n(i,j,k) = m_lat(i,j,k) * v(i,j,k)
-        end do
-      end do
-    end do
+    call block%adv_batch_mass%accum_uv_cell(u_lon, v_lat)
+    call adv_calc_mass_hflx_cell(block, block%adv_batch_mass, m, mf_lon_n, mf_lat_n)
+    call fill_halo(block, mf_lon_n, full_lon=.false., full_lat=.true., full_lev=.true.)
+    call fill_halo(block, mf_lat_n, full_lon=.true., full_lat=.false., full_lev=.true.)
+    call block%adv_batch_mass%accum_mf_cell(mf_lon_n, mf_lat_n)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           mf_lat_t(i,j,k) = mesh%half_tangent_wgt(1,j) * (mf_lon_n(i-1,j  ,k) + mf_lon_n(i,j  ,k)) + &
                             mesh%half_tangent_wgt(2,j) * (mf_lon_n(i-1,j+1,k) + mf_lon_n(i,j+1,k))
+          u_lat(i,j,k) = mf_lat_t(i,j,k) / m_lat(i,j,k)
         end do
       end do
     end do
+    call fill_halo(block, u_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           mf_lon_t(i,j,k) = mesh%full_tangent_wgt(1,j) * (mf_lat_n(i,j-1,k) + mf_lat_n(i+1,j-1,k)) + &
                             mesh%full_tangent_wgt(2,j) * (mf_lat_n(i,j  ,k) + mf_lat_n(i+1,j  ,k))
+          v_lon(i,j,k) = mf_lon_t(i,j,k) / m_lon(i,j,k)
         end do
       end do
     end do
+    call fill_halo(block, v_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
+
+    call block%adv_batch_pv%accum_uv_vtx(u_lat, v_lon)
     end associate
 
   end subroutine calc_mf
@@ -617,8 +617,7 @@ contains
     real(r8) pole(state%mesh%num_full_lev)
 
     associate (mesh     => block%mesh    , &
-               mf_lat_t => state%mf_lat_t, & ! in
-               m_lat    => state%m_lat   , & ! in
+               u_lat    => state%u_lat   , & ! in
                vor      => state%vor)        ! out
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%half_lat_ibeg - merge(0, 1, mesh%has_south_pole()), mesh%half_lat_iend
@@ -636,7 +635,7 @@ contains
         j = mesh%half_lat_ibeg
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            work(i,k) = -mf_lat_t(i,j,k) / m_lat(i,j,k) * mesh%le_lat(j)
+            work(i,k) = -u_lat(i,j,k) * mesh%le_lat(j)
           end do
         end do
         call zonal_sum(proc%zonal_circle, work, pole)
@@ -651,7 +650,7 @@ contains
         j = mesh%half_lat_iend
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            work(i,k) = mf_lat_t(i,j,k) / m_lat(i,j,k) * mesh%le_lat(j)
+            work(i,k) = u_lat(i,j,k) * mesh%le_lat(j)
           end do
         end do
         call zonal_sum(proc%zonal_circle, work, pole)
@@ -676,11 +675,11 @@ contains
 
     associate (mesh  => block%mesh , &
                m_vtx => state%m_vtx, & ! in
-               u     => state%u_f  , & ! in
-               v     => state%v_f  , & ! in
+               u_lon => state%u_lon, & ! in
+               v_lat => state%v_lat, & ! in
                vor   => state%vor  , & ! in
                pv    => state%pv)      ! out
-    call calc_vor(block, state, u, v)
+    call calc_vor(block, state, u_lon, v_lat)
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
@@ -805,6 +804,17 @@ contains
     end associate
 
   end subroutine interp_pv_upwind
+
+  subroutine interp_pv_ffsl(block, state)
+
+    type(block_type), intent(inout) :: block
+    type(state_type), intent(inout) :: state
+
+    call adv_calc_tracer_hval_vtx(block, block%adv_batch_pv, state%pv, state%pv_lon, state%pv_lat)
+    call fill_halo(block, state%pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false.)
+    call fill_halo(block, state%pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., north_halo=.false.)
+
+  end subroutine interp_pv_ffsl
 
   subroutine calc_coriolis(block, state, tend, dt)
 
@@ -1170,11 +1180,16 @@ contains
 
     integer i, j, k
 
-    associate (adv_batches => block%adv_batches)
+    associate (adv_batches => block%adv_batches, &
+               q           => state%q          , & ! in
+               qmf_lon     => state%qmf_lon    , & ! out
+               qmf_lat     => state%qmf_lat    )   ! out
     do i = 1, size(adv_batches)
       do j = 1, size(adv_batches(i)%tracer_names)
         k = adv_batches(i)%tracer_idx(j)
-        call adv_calc_mass_hflx_cell(block, adv_batches(i), state%q(:,:,:,k), state%qmf_lon(:,:,:,k), state%qmf_lat(:,:,:,k))
+        call adv_calc_mass_hflx_cell(block, adv_batches(i), q(:,:,:,k), qmf_lon(:,:,:,k), qmf_lat(:,:,:,k))
+        call fill_halo(block, qmf_lon(:,:,:,k), full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
+        call fill_halo(block, qmf_lat(:,:,:,k), full_lon=.true., full_lat=.false., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
       end do
     end do
     end associate

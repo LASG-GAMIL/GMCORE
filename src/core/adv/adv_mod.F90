@@ -22,6 +22,7 @@ module adv_mod
   public adv_calc_mass_hflx_vtx
   public adv_calc_tracer_hflx_cell
   public adv_calc_tracer_hflx_vtx
+  public adv_calc_tracer_hval_vtx
 
   interface
     subroutine calc_hflx_cell_interface(block, batch, m, mfx, mfy)
@@ -52,6 +53,20 @@ module adv_mod
                                    block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
                                    block%mesh%full_lev_lb:block%mesh%full_lev_ub)
     end subroutine calc_hflx_vtx_interface
+    subroutine calc_hval_vtx_interface(block, batch, m, mvx, mvy)
+      import block_type, adv_batch_type, r8
+      type(block_type    ), intent(in   ) :: block
+      type(adv_batch_type), intent(inout) :: batch
+      real(r8), intent(in ) :: m  (block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
+                                   block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
+                                   block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+      real(r8), intent(out) :: mvx(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
+                                   block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
+                                   block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+      real(r8), intent(out) :: mvy(block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
+                                   block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
+                                   block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+    end subroutine calc_hval_vtx_interface
     subroutine calc_vflx_cell_interface(block, batch, m, mfz)
       import block_type, adv_batch_type, r8
       type(block_type    ), intent(in   ) :: block
@@ -69,6 +84,7 @@ module adv_mod
   procedure(calc_hflx_vtx_interface ), pointer :: adv_calc_mass_hflx_vtx    => null()
   procedure(calc_hflx_cell_interface), pointer :: adv_calc_tracer_hflx_cell => null()
   procedure(calc_hflx_vtx_interface ), pointer :: adv_calc_tracer_hflx_vtx  => null()
+  procedure(calc_hval_vtx_interface ), pointer :: adv_calc_tracer_hval_vtx  => null()
 
   integer ntracer
   character(30), allocatable :: batch_names(:)
@@ -90,6 +106,7 @@ contains
       adv_calc_mass_hflx_vtx    => ffsl_calc_mass_hflx_vtx
       adv_calc_tracer_hflx_cell => ffsl_calc_tracer_hflx_cell
       adv_calc_tracer_hflx_vtx  => ffsl_calc_tracer_hflx_vtx
+      adv_calc_tracer_hval_vtx  => ffsl_calc_tracer_hval_vtx
     end select
 
     ntracer = 0

@@ -208,7 +208,7 @@ contains
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             this%cfly(i,j,k) = this%dt * this%v(i,j,k) / mesh%de_lat(j)
             if (abs(this%cfly(i,j,k)) > 1) then
-              call log_error('cfly exceeds 1!')
+              call log_error('cfly exceeds 1!', __FILE__, __LINE__)
             end if
           end do
         end do
@@ -216,7 +216,7 @@ contains
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             this%divx(i,j,k) = (this%u(i,j,k) - this%u(i-1,j,k)) * mesh%le_lon(j) / mesh%area_cell(j)
             this%divy(i,j,k) = (this%v(i,j  ,k) * mesh%le_lat(j  ) - &
-                                  this%v(i,j-1,k) * mesh%le_lat(j-1)) / mesh%area_cell(j)
+                                this%v(i,j-1,k) * mesh%le_lat(j-1)) / mesh%area_cell(j)
           end do
         end do
       end do
@@ -317,7 +317,7 @@ contains
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
             this%cfly(i,j,k) = this%dt * this%v(i,j,k) / mesh%le_lon(j)
             if (abs(this%cfly(i,j,k)) > 1) then
-              call log_error('cfly exceeds 1!')
+              call log_error('cfly exceeds 1!', __FILE__, __LINE__)
             end if
           end do
         end do
@@ -325,7 +325,7 @@ contains
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
             this%divx(i,j,k) = (this%u(i+1,j,k) - this%u(i,j,k)) * mesh%de_lat(j) / mesh%area_vtx(j)
             this%divy(i,j,k) = (this%v(i,j+1,k) * mesh%de_lon(j+1) - &
-                                  this%v(i,j  ,k) * mesh%de_lon(j  )) / mesh%area_vtx(j)
+                                this%v(i,j  ,k) * mesh%de_lon(j  )) / mesh%area_vtx(j)
           end do
         end do
       end do
