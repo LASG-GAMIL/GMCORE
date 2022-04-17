@@ -44,12 +44,12 @@ contains
     integer iblk, i
 
     call topo_read(topo_file)
-    do iblk = 1, size(proc%blocks)
-      call topo_regrid(proc%blocks(iblk))
+    do iblk = 1, size(blocks)
+      call topo_regrid(blocks(iblk))
     end do
     if (use_topo_smooth) then
-      do iblk = 1, size(proc%blocks)
-        call topo_smooth(proc%blocks(iblk))
+      do iblk = 1, size(blocks)
+        call topo_smooth(blocks(iblk))
       end do
     end if
 
@@ -62,10 +62,10 @@ contains
     call bkg_regrid_v()
 
     if (nonhydrostatic) then
-      do iblk = 1, size(proc%blocks)
-        call diag_ph    (proc%blocks(iblk), proc%blocks(iblk)%state(1))
-        call diag_t     (proc%blocks(iblk), proc%blocks(iblk)%state(1))
-        call diag_gz_lev(proc%blocks(iblk), proc%blocks(iblk)%state(1))
+      do iblk = 1, size(blocks)
+        call diag_ph    (blocks(iblk), blocks(iblk)%state(1))
+        call diag_t     (blocks(iblk), blocks(iblk)%state(1))
+        call diag_gz_lev(blocks(iblk), blocks(iblk)%state(1))
       end do
     end if
 

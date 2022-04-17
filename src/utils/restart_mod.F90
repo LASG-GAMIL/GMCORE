@@ -99,10 +99,10 @@ contains
     call fiona_output('r0', 'lat' , global_mesh%full_lat_deg(1:global_mesh%num_full_lat))
     call fiona_output('r0', 'ilon', global_mesh%half_lon_deg(1:global_mesh%num_half_lon))
     call fiona_output('r0', 'ilat', global_mesh%half_lat_deg(1:global_mesh%num_half_lat))
-    do iblk = 1, size(proc%blocks)
-      associate (mesh   => proc%blocks(iblk)%mesh        , &
-                 state  => proc%blocks(iblk)%state(itime), &
-                 static => proc%blocks(iblk)%static)
+    do iblk = 1, size(blocks)
+      associate (mesh   => blocks(iblk)%mesh        , &
+                 state  => blocks(iblk)%state(itime), &
+                 static => blocks(iblk)%static)
 
         is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
         js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
@@ -173,11 +173,11 @@ contains
 
     call fiona_input('r0', 'time', time_value, time_step=time_step)
     call fiona_get_att('r0', 'time', 'units', time_units)
-    do iblk = 1, size(proc%blocks)
-      associate (block  => proc%blocks(iblk)                    , &
-                 mesh   => proc%blocks(iblk)%mesh               , &
-                 state  => proc%blocks(iblk)%state(old_time_idx), &
-                 static => proc%blocks(iblk)%static)
+    do iblk = 1, size(blocks)
+      associate (block  => blocks(iblk)                    , &
+                 mesh   => blocks(iblk)%mesh               , &
+                 state  => blocks(iblk)%state(old_time_idx), &
+                 static => blocks(iblk)%static)
         is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
         js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
         ks = mesh%full_lev_ibeg; ke = mesh%full_lev_iend

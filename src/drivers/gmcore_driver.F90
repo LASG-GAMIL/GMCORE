@@ -85,8 +85,8 @@ program gmcore_driver
       call log_error('Unknown test case ' // trim(test_case) // '!', pid=proc%id)
     end select
 
-    do iblk = 1, size(proc%blocks)
-      call set_ic(proc%blocks(iblk))
+    do iblk = 1, size(blocks)
+      call set_ic(blocks(iblk))
     end do
   end if
 

@@ -103,9 +103,9 @@ contains
     ! Initialize cyclic tridiagonal solvers on each zonal circles if need implicit integration.
     js =  1e8
     je = -1e8
-    do iblk = 1, size(proc%blocks)
-      js = min(proc%blocks(iblk)%mesh%full_lat_ibeg_no_pole, js)
-      je = max(proc%blocks(iblk)%mesh%full_lat_iend_no_pole, je)
+    do iblk = 1, size(blocks)
+      js = min(blocks(iblk)%mesh%full_lat_ibeg_no_pole, js)
+      je = max(blocks(iblk)%mesh%full_lat_iend_no_pole, je)
     end do
 
     allocate(use_implicit_solver(js:je))

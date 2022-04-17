@@ -17,6 +17,7 @@ module block_mod
   private
 
   public block_type
+  public blocks
   public global_mesh
   public mesh_type
   public state_type
@@ -38,6 +39,8 @@ module block_mod
     procedure :: clear => block_clear
     final :: block_final
   end type block_type
+
+  type(block_type), allocatable :: blocks(:)
 
 contains
 
@@ -102,9 +105,11 @@ contains
     do i = 1, size(this%tend)
       call this%tend(i)%clear()
     end do
-    do i = 1, size(this%adv_batches)
-      call this%adv_batches(i)%clear()
-    end do
+    if (allocated(this%adv_batches)) then
+      do i = 1, size(this%adv_batches)
+        call this%adv_batches(i)%clear()
+      end do
+    end if
     do i = 1, size(this%halo)
       call this%halo(i)%clear()
     end do

@@ -24,7 +24,7 @@ if (ENSURE_ORDER)
 endif ()
 
 if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
-  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -ffree-line-length-none -ffpe-trap=invalid,zero,overflow")
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -ffree-line-length-none")
   if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O0 -fcheck=all -g -fbacktrace")
   else ()
@@ -121,6 +121,8 @@ set(gmcore_files
   src/utils/process_mod.F90
   src/utils/halo_mod.F90
   src/utils/allocator_mod.F90
+  src/utils/parallel_types_mod.F90
+  src/utils/parallel_zonal_mod.F90
   src/utils/parallel_mod.F90
   src/utils/tridiag_mkl_mod.F90
   src/utils/tridiag_spk_mod.F90

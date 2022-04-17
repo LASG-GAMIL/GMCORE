@@ -57,14 +57,15 @@ contains
     call vert_coord_init(num_lev, namelist_path)
     call process_create_blocks()
     call time_init(dt_dyn)
-    call diag_state_init(proc%blocks)
+    call diag_state_init(blocks)
     call history_init()
     call restart_init()
     call time_scheme_init()
     call adv_init()
     call pgf_init()
     call interp_init()
-    call damp_init(proc%blocks)
+    call operators_init()
+    call damp_init(blocks)
 
     operators => space_operators
 
@@ -95,10 +96,10 @@ contains
 
     integer j, iblk, itime
 
-    do iblk = 1, size(proc%blocks)
-      associate (block => proc%blocks(iblk)     , &
-                 mesh  => proc%blocks(iblk)%mesh, &
-                 state => proc%blocks(iblk)%state(old))
+    do iblk = 1, size(blocks)
+      associate (block => blocks(iblk)     , &
+                 mesh  => blocks(iblk)%mesh, &
+                 state => blocks(iblk)%state(old))
       if (baroclinic) then 
         call prepare_static(block)
         ! Ensure bottom gz_lev is the same as gzs.
@@ -123,17 +124,17 @@ contains
       end associate
     end do
 
-    call operators_prepare(proc%blocks, old, dt_dyn)
-    if (nonhydrostatic) call nh_prepare(proc%blocks)
-    call diagnose(proc%blocks, old)
+    call operators_prepare(blocks, old, dt_dyn)
+    if (nonhydrostatic) call nh_prepare(blocks)
+    call diagnose(blocks, old)
     call output(old)
 
     do while (.not. time_is_finished())
-      call time_integrate(dt_dyn, proc%blocks)
+      call time_integrate(dt_dyn, blocks)
       if (is_root_proc() .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
       call time_advance(dt_dyn)
-      call operators_prepare(proc%blocks, old, dt_dyn)
-      call diagnose(proc%blocks, old)
+      call operators_prepare(blocks, old, dt_dyn)
+      call diagnose(blocks, old)
       call output(old)
     end do
 
@@ -192,8 +193,8 @@ contains
         if (is_root_proc()) call log_notice('Time cost ' // to_str(time2 - time1, 5) // ' seconds.')
         time1 = time2
       end if
-      if (output_h0) call history_write_h0(proc%blocks, itime)
-      if (output_h1) call history_write_h1(proc%blocks, itime)
+      if (output_h0) call history_write_h0(blocks, itime)
+      if (output_h1) call history_write_h1(blocks, itime)
     end if
     if (time_is_alerted('restart_write')) then
       call restart_write(itime)
@@ -306,7 +307,7 @@ contains
       blocks(iblk)%state(itime)%te  = te
       blocks(iblk)%state(itime)%tav = tav
       blocks(iblk)%state(itime)%tpe = tpe
-      if (diag_state(iblk)%is_init()) call diag_state(iblk)%run(proc%blocks(iblk)%state(itime))
+      if (diag_state(iblk)%is_init()) call diag_state(iblk)%run(blocks(iblk)%state(itime))
     end do
 
     call log_add_diag('tm' , tm )

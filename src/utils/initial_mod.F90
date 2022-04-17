@@ -71,10 +71,10 @@ contains
       call fiona_output('i0', 'ilev', global_mesh%half_lev)
     end if
 
-    do iblk = 1, size(proc%blocks)
-      associate (mesh   => proc%blocks(iblk)%mesh,     &
-               state  => proc%blocks(iblk)%state(1), &
-               static => proc%blocks(iblk)%static)
+    do iblk = 1, size(blocks)
+      associate (mesh   => blocks(iblk)%mesh,     &
+                 state  => blocks(iblk)%state(1), &
+                 static => blocks(iblk)%static)
       is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
       js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
       ks = mesh%full_lev_ibeg; ke = mesh%full_lev_iend
@@ -141,11 +141,11 @@ contains
     end if
     call fiona_start_input('i0')
 
-    do iblk = 1, size(proc%blocks)
-      associate (block  => proc%blocks(iblk)                    , &
-                 mesh   => proc%blocks(iblk)%mesh               , &
-                 state  => proc%blocks(iblk)%state(old_time_idx), &
-                 static => proc%blocks(iblk)%static)
+    do iblk = 1, size(blocks)
+      associate (block  => blocks(iblk)                    , &
+                 mesh   => blocks(iblk)%mesh               , &
+                 state  => blocks(iblk)%state(old_time_idx), &
+                 static => blocks(iblk)%static)
       is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
       js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
       ks = mesh%full_lev_ibeg; ke = mesh%full_lev_iend

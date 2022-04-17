@@ -26,7 +26,7 @@ contains
 
     integer iblk
 
-    do iblk = 1, size(proc%blocks)
+    do iblk = 1, size(blocks)
       call diag_rhod (blocks(iblk), blocks(iblk)%state(1))
       call diag_p    (blocks(iblk), blocks(iblk)%state(1))
       call interp_p  (blocks(iblk), blocks(iblk)%state(1))

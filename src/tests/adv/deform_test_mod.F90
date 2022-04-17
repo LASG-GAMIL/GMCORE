@@ -56,7 +56,7 @@ contains
     real(r8) lon, lat, r, r1, r2, qmax, qmin, c
     real(r8) x(3), x1(3), x2(3)
 
-    call adv_add_tracer('deform_test', dt, 'q0', 'background tracer')
+    call adv_add_tracer('deform_test', dt, 'q0', 'background tracer'       )
     call adv_add_tracer('deform_test', dt, 'q1', 'cosine hills tracer'     )
     call adv_add_tracer('deform_test', dt, 'q2', 'slotted cylinders tracer')
     call adv_add_tracer('deform_test', dt, 'q3', 'gaussian hills tracer'   )

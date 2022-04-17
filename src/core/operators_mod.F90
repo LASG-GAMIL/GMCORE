@@ -17,6 +17,7 @@ module operators_mod
 
   private
 
+  public operators_init
   public operators_prepare
   public diag_ph
   public diag_m
@@ -43,6 +44,10 @@ module operators_mod
   end interface operators_prepare
 
 contains
+
+  subroutine operators_init()
+
+  end subroutine operators_init
 
   subroutine operators_prepare_1(blocks, itime, dt)
 

@@ -30,7 +30,7 @@ program gmcore_prepare
   call process_init()
   call vert_coord_init(num_lev, scheme=vert_coord_scheme, template=vert_coord_template)
   call process_create_blocks()
-  call damp_init(proc%blocks)
+  call damp_init(blocks)
 
   if (is_root_proc()) then
     write(*, *) '=================== GMCORE Parameters ==================='

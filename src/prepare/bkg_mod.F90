@@ -84,11 +84,11 @@ contains
 
     lapse_kappa = lapse_rate * Rd_o_g
     do_drymass_correct = .false.
-    do iblk = 1, size(proc%blocks)
-      associate (block => proc%blocks(iblk)             , &
-                 mesh  => proc%blocks(iblk)%mesh        , &
-                 gzs   => proc%blocks(iblk)%static%gzs  , &
-                 phs   => proc%blocks(iblk)%state(1)%phs)
+    do iblk = 1, size(blocks)
+      associate (block => blocks(iblk)             , &
+                 mesh  => blocks(iblk)%mesh        , &
+                 gzs   => blocks(iblk)%static%gzs  , &
+                 phs   => blocks(iblk)%state(1)%phs)
         allocate(p0  (mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub))
         allocate(t0  (mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub))
         allocate(z0  (mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub))
@@ -190,10 +190,10 @@ contains
 
     if (is_root_proc()) call log_notice('Calculate pressure on each grid.')
 
-    do iblk = 1, size(proc%blocks)
-      associate (mesh => proc%blocks(iblk)%mesh        , &
-                 phs  => proc%blocks(iblk)%state(1)%phs, &
-                 ph   => proc%blocks(iblk)%state(1)%ph)
+    do iblk = 1, size(blocks)
+      associate (mesh => blocks(iblk)%mesh        , &
+                 phs  => blocks(iblk)%state(1)%phs, &
+                 ph   => blocks(iblk)%state(1)%ph)
         ! Calculate pressure on GMCORE grids.
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -214,13 +214,13 @@ contains
 
     if (is_root_proc()) call log_notice('Regrid temperature and calculate potential temperature.')
 
-    do iblk = 1, size(proc%blocks)
-      associate (block => proc%blocks(iblk)             , &
-                 mesh  => proc%blocks(iblk)%mesh        , &
-                 phs   => proc%blocks(iblk)%state(1)%phs, &
-                 ph    => proc%blocks(iblk)%state(1)%ph , &
-                 t     => proc%blocks(iblk)%state(1)%t  , &
-                 pt    => proc%blocks(iblk)%state(1)%pt)
+    do iblk = 1, size(blocks)
+      associate (block => blocks(iblk)             , &
+                 mesh  => blocks(iblk)%mesh        , &
+                 phs   => blocks(iblk)%state(1)%phs, &
+                 ph    => blocks(iblk)%state(1)%ph , &
+                 t     => blocks(iblk)%state(1)%t  , &
+                 pt    => blocks(iblk)%state(1)%pt)
         select case (bkg_type)
         case ('era5')
           allocate(t1(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,num_era5_lev))
@@ -303,11 +303,11 @@ contains
 
     if (is_root_proc()) call log_notice('Regrid u wind component.')
 
-    do iblk = 1, size(proc%blocks)
-      associate (block => proc%blocks(iblk)            , &
-                 mesh  => proc%blocks(iblk)%mesh       , &
-                 ph    => proc%blocks(iblk)%state(1)%ph, &
-                 u     => proc%blocks(iblk)%state(1)%u_lon)
+    do iblk = 1, size(blocks)
+      associate (block => blocks(iblk)            , &
+                 mesh  => blocks(iblk)%mesh       , &
+                 ph    => blocks(iblk)%state(1)%ph, &
+                 u     => blocks(iblk)%state(1)%u_lon)
         select case (bkg_type)
         case ('era5')
           allocate(u1(mesh%half_lon_lb:mesh%half_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,num_era5_lev))
@@ -386,11 +386,11 @@ contains
 
     if (is_root_proc()) call log_notice('Regrid v wind component.')
 
-    do iblk = 1, size(proc%blocks)
-      associate (block => proc%blocks(iblk)            , &
-                 mesh  => proc%blocks(iblk)%mesh       , &
-                 ph    => proc%blocks(iblk)%state(1)%ph, &
-                 v     => proc%blocks(iblk)%state(1)%v_lat)
+    do iblk = 1, size(blocks)
+      associate (block => blocks(iblk)            , &
+                 mesh  => blocks(iblk)%mesh       , &
+                 ph    => blocks(iblk)%state(1)%ph, &
+                 v     => blocks(iblk)%state(1)%v_lat)
         select case (bkg_type)
         case ('era5')
           allocate(v1(mesh%full_lon_lb:mesh%full_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,num_era5_lev))

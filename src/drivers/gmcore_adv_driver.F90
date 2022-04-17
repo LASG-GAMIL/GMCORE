@@ -70,25 +70,25 @@ program gmcore_adv_driver
     call log_error('Unknown test case ' // trim(test_case) // '!', pid=proc%id)
   end select
 
-  do iblk = 1, size(proc%blocks)
-    call set_ic(proc%blocks(iblk))
-    call set_uv(proc%blocks(iblk), proc%blocks(iblk)%state(old), elapsed_seconds)
-    call adv_accum_wind(proc%blocks(iblk), old)
+  do iblk = 1, size(blocks)
+    call set_ic(blocks(iblk))
+    call set_uv(blocks(iblk), blocks(iblk)%state(old), elapsed_seconds)
+    call adv_accum_wind(blocks(iblk), old)
   end do
 
-  call history_setup_h0_adv(proc%blocks)
-  call diagnose(proc%blocks, old)
+  call history_setup_h0_adv(blocks)
+  call diagnose(blocks, old)
   call output(old)
 
   do while (.not. time_is_finished())
-    do iblk = 1, size(proc%blocks)
-      call set_uv(proc%blocks(iblk), proc%blocks(iblk)%state(new), elapsed_seconds + dt_adv)
-      call adv_accum_wind(proc%blocks(iblk), new)
+    do iblk = 1, size(blocks)
+      call set_uv(blocks(iblk), blocks(iblk)%state(new), elapsed_seconds + dt_adv)
+      call adv_accum_wind(blocks(iblk), new)
     end do
-    do iblk = 1, size(proc%blocks)
-      call time_integrator(adv_operator, proc%blocks(iblk), old, new, dt_adv)
+    do iblk = 1, size(blocks)
+      call time_integrator(adv_operator, blocks(iblk), old, new, dt_adv)
     end do
-    call diagnose(proc%blocks, new)
+    call diagnose(blocks, new)
     call time_advance(dt_adv)
     if (is_root_proc() .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
     call output(old)
@@ -155,7 +155,7 @@ contains
         if (is_root_proc()) call log_notice('Time cost ' // to_str(time2 - time1, 5) // ' seconds.')
         time1 = time2
       end if
-      call history_write_h0(proc%blocks, itime)
+      call history_write_h0(blocks, itime)
     end if
 
   end subroutine output

@@ -385,24 +385,24 @@ contains
       js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
       start = [is,js]
       count = [mesh%num_full_lon,mesh%num_full_lat]
-      call fiona_output('h0', 'zs'    , static%gzs(is:ie,js:je) / g   , start=start, count=count)
-      call fiona_output('h0', 'z'     ,  state%gz (is:ie,js:je,1) / g , start=start, count=count)
-      call fiona_output('h0', 'div'   ,  state%div(is:ie,js:je,1)     , start=start, count=count)
+      call fiona_output('h0', 'zs' , static%gzs(is:ie,js:je  ) / g, start=start, count=count)
+      call fiona_output('h0', 'z'  ,  state%gz (is:ie,js:je,1) / g, start=start, count=count)
+      call fiona_output('h0', 'div',  state%div(is:ie,js:je,1)    , start=start, count=count)
       is = mesh%half_lon_ibeg; ie = mesh%half_lon_iend
       js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
       start = [is,js]
       count = [mesh%num_half_lon,mesh%num_full_lat]
-      call fiona_output('h0', 'u'     ,  state%u_lon(is:ie,js:je,1)   , start=start, count=count)
+      call fiona_output('h0', 'u'  ,  state%u_lon(is:ie,js:je,1)  , start=start, count=count)
       is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
       js = mesh%half_lat_ibeg; je = mesh%half_lat_iend
       start = [is,js]
       count = [mesh%num_full_lon,mesh%num_half_lat]
-      call fiona_output('h0', 'v'     ,  state%v_lat(is:ie,js:je,1)   , start=start, count=count)
+      call fiona_output('h0', 'v'  ,  state%v_lat(is:ie,js:je,1)  , start=start, count=count)
       is = mesh%half_lon_ibeg; ie = mesh%half_lon_iend
       js = mesh%half_lat_ibeg; je = mesh%half_lat_iend
       start = [is,js]
       count = [mesh%num_half_lon,mesh%num_half_lat]
-      call fiona_output('h0', 'pv'    ,  state%pv (is:ie,js:je,1)     , start=start, count=count)
+      call fiona_output('h0', 'pv' ,  state%pv (is:ie,js:je,1)    , start=start, count=count)
  
       call fiona_output('h0', 'tm' , state %tm)
       call fiona_output('h0', 'te' , state %te)
@@ -658,32 +658,32 @@ contains
     js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
     start = [is,js]
     count = [mesh%num_full_lon,mesh%num_full_lat]
-    call fiona_output('h1', 'dmfdlon' ,  tend%dmfdlon (is:ie,js:je,ks:ke), start=start, count=count)
-    call fiona_output('h1', 'dmfdlat' ,  tend%dmfdlat (is:ie,js:je,ks:ke), start=start, count=count)
-    call fiona_output('h1', 'ke'      , state%ke      (is:ie,js:je,ks:ke), start=start, count=count)
-    call fiona_output('h1', 'dgzdt'   ,  tend%dgz     (is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'dmfdlon' ,  tend%dmfdlon (is:ie,js:je,1), start=start, count=count)
+    call fiona_output('h1', 'dmfdlat' ,  tend%dmfdlat (is:ie,js:je,1), start=start, count=count)
+    call fiona_output('h1', 'ke'      , state%ke      (is:ie,js:je,1), start=start, count=count)
+    call fiona_output('h1', 'dgzdt'   ,  tend%dgz     (is:ie,js:je,1), start=start, count=count)
 
     is = mesh%half_lon_ibeg; ie = mesh%half_lon_iend
     js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
     start = [is,js]
     count = [mesh%num_half_lon,mesh%num_full_lat]
-    call fiona_output('h1', 'qhv'     ,  tend%qhv      (is:ie,js:je,ks:ke), start=start, count=count)
-    call fiona_output('h1', 'pgf_lon' ,  tend%pgf_lon  (is:ie,js:je,ks:ke), start=start, count=count)
-    call fiona_output('h1', 'dkedlon' ,  tend%dkedlon  (is:ie,js:je,ks:ke), start=start, count=count)
-    call fiona_output('h1', 'dudt   ' ,  tend%du       (is:ie,js:je,ks:ke), start=start, count=count)
-    call fiona_output('h1', 'mf_lon_n', state%mf_lon_n (is:ie,js:je,ks:ke), start=start, count=count)
-    call fiona_output('h1', 'mf_lon_t', state%mf_lon_t (is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'qhv'     ,  tend%qhv      (is:ie,js:je,1), start=start, count=count)
+    call fiona_output('h1', 'pgf_lon' ,  tend%pgf_lon  (is:ie,js:je,1), start=start, count=count)
+    call fiona_output('h1', 'dkedlon' ,  tend%dkedlon  (is:ie,js:je,1), start=start, count=count)
+    call fiona_output('h1', 'dudt   ' ,  tend%du       (is:ie,js:je,1), start=start, count=count)
+    call fiona_output('h1', 'mf_lon_n', state%mf_lon_n (is:ie,js:je,1), start=start, count=count)
+    call fiona_output('h1', 'mf_lon_t', state%mf_lon_t (is:ie,js:je,1), start=start, count=count)
 
     is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
     js = mesh%half_lat_ibeg; je = mesh%half_lat_iend
     start = [is,js]
     count = [mesh%num_full_lon,mesh%num_half_lat]
-    call fiona_output('h1', 'qhu'     ,  tend%qhu      (is:ie,js:je,ks:ke), start=start, count=count)
-    call fiona_output('h1', 'pgf_lat' ,  tend%pgf_lat  (is:ie,js:je,ks:ke), start=start, count=count)
-    call fiona_output('h1', 'dkedlat' ,  tend%dkedlat  (is:ie,js:je,ks:ke), start=start, count=count)
-    call fiona_output('h1', 'dvdt'    ,  tend%dv       (is:ie,js:je,ks:ke), start=start, count=count)
-    call fiona_output('h1', 'mf_lat_n', state%mf_lat_n (is:ie,js:je,ks:ke), start=start, count=count)
-    call fiona_output('h1', 'mf_lat_t', state%mf_lat_t (is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'qhu'     ,  tend%qhu      (is:ie,js:je,1), start=start, count=count)
+    call fiona_output('h1', 'pgf_lat' ,  tend%pgf_lat  (is:ie,js:je,1), start=start, count=count)
+    call fiona_output('h1', 'dkedlat' ,  tend%dkedlat  (is:ie,js:je,1), start=start, count=count)
+    call fiona_output('h1', 'dvdt'    ,  tend%dv       (is:ie,js:je,1), start=start, count=count)
+    call fiona_output('h1', 'mf_lat_n', state%mf_lat_n (is:ie,js:je,1), start=start, count=count)
+    call fiona_output('h1', 'mf_lat_t', state%mf_lat_t (is:ie,js:je,1), start=start, count=count)
     end associate
 
     call fiona_end_output('h1')
