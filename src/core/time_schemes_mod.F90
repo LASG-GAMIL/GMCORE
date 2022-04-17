@@ -209,10 +209,10 @@ contains
         call filter_on_cell(block, new_state%phs, new_state%phs_f)
         call fill_halo(block, new_state%phs_f, full_lon=.true., full_lat=.true.)
 
-        call diag_ph(block, new_state)
-        call diag_m (block, new_state)
+        call calc_ph(block, new_state)
+        call calc_m (block, new_state)
         if (nonhydrostatic) then
-          call diag_m_lev(block, new_state)
+          call calc_m_lev(block, new_state)
         end if
       else if (tend%copy_phs) then
         new_state%phs    = old_state%phs

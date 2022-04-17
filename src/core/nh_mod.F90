@@ -16,7 +16,7 @@ module nh_mod
   public nh_prepare
   public nh_solve
   public interp_gz
-  public diag_m_lev
+  public calc_m_lev
 
 contains
 
@@ -30,7 +30,7 @@ contains
       call diag_rhod (blocks(iblk), blocks(iblk)%state(1))
       call diag_p    (blocks(iblk), blocks(iblk)%state(1))
       call interp_p  (blocks(iblk), blocks(iblk)%state(1))
-      call diag_m_lev(blocks(iblk), blocks(iblk)%state(1))
+      call calc_m_lev(blocks(iblk), blocks(iblk)%state(1))
     end do
 
   end subroutine nh_prepare
@@ -59,7 +59,7 @@ contains
 
   end subroutine nh_solve
 
-  subroutine diag_m_lev(block, state)
+  subroutine calc_m_lev(block, state)
 
     type(block_type), intent(in) :: block
     type(state_type), intent(inout) :: state
@@ -94,7 +94,7 @@ contains
       call fill_halo(block, m_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
     end associate
 
-  end subroutine diag_m_lev
+  end subroutine calc_m_lev
 
   subroutine interp_wedphdlev(block, state)
 

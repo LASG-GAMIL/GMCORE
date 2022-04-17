@@ -348,14 +348,14 @@ contains
     case (all_pass)
       call operators_prepare(block, star_state, dt, pass)
       if (hydrostatic) then
-        call calc_dmfdlon_dmfdlat  (block, star_state, tend1, dt)
-        call calc_dphs             (block, star_state, tend1, dt)
+        call calc_grad_mf          (block, star_state, tend1, dt)
+        call calc_dphsdt           (block, star_state, tend1, dt)
         call calc_wedphdlev_lev    (block, star_state, tend1, dt)
         call calc_wedudlev_wedvdlev(block, star_state, tend1, dt)
         call calc_dptfdlon_dptfdlat(block, star_state, tend1, dt)
         call calc_dptfdlev         (block, star_state, tend1, dt)
-        call calc_qhu_qhv          (block, star_state, tend1, dt)
-        call calc_dkedlon_dkedlat  (block, star_state, tend1, dt)
+        call calc_coriolis         (block, star_state, tend1, dt)
+        call calc_grad_ke          (block, star_state, tend1, dt)
         call pgf_run               (block, star_state, tend1)
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
@@ -383,8 +383,8 @@ contains
         tend1%update_phs = .true.
         tend1%update_pt  = .true.
       else if (nonhydrostatic) then
-        call calc_dmfdlon_dmfdlat  (block, star_state, tend1, dt)
-        call calc_dphs             (block, star_state, tend1, dt)
+        call calc_grad_mf          (block, star_state, tend1, dt)
+        call calc_dphsdt           (block, star_state, tend1, dt)
         call calc_wedphdlev_lev    (block, star_state, tend1, dt)
         call calc_dptfdlon_dptfdlat(block, star_state, tend1, dt)
         call calc_dptfdlev         (block, star_state, tend1, dt)
@@ -403,8 +403,8 @@ contains
 
         call nh_solve(block, tend1, old_state, star_state, new_state, dt)
 
-        call calc_qhu_qhv          (block, star_state, tend1, dt)
-        call calc_dkedlon_dkedlat  (block, star_state, tend1, dt)
+        call calc_coriolis         (block, star_state, tend1, dt)
+        call calc_grad_ke          (block, star_state, tend1, dt)
         call calc_wedudlev_wedvdlev(block, star_state, tend1, dt)
         call pgf_run               (block, new_state, tend1)
 
@@ -425,9 +425,9 @@ contains
         tend1%update_u   = .true.
         tend1%update_v   = .true.
       else
-        call calc_dmfdlon_dmfdlat(block, star_state, tend1, dt)
-        call calc_qhu_qhv        (block, star_state, tend1, dt)
-        call calc_dkedlon_dkedlat(block, star_state, tend1, dt)
+        call calc_grad_mf        (block, star_state, tend1, dt)
+        call calc_coriolis       (block, star_state, tend1, dt)
+        call calc_grad_ke        (block, star_state, tend1, dt)
         call pgf_run             (block, star_state, tend1    )
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
@@ -457,14 +457,14 @@ contains
     case (forward_pass)
       call operators_prepare(block, star_state, dt, pass)
       if (hydrostatic) then
-        call calc_dmfdlon_dmfdlat  (block, star_state, tend1, dt)
-        call calc_dphs             (block, star_state, tend1, dt)
+        call calc_grad_mf          (block, star_state, tend1, dt)
+        call calc_dphsdt           (block, star_state, tend1, dt)
         call calc_wedphdlev_lev    (block, star_state, tend1, dt)
         call calc_wedudlev_wedvdlev(block, star_state, tend1, dt)
         call calc_dptfdlon_dptfdlat(block, star_state, tend1, dt)
         call calc_dptfdlev         (block, star_state, tend1, dt)
-        call calc_qhu_qhv          (block, star_state, tend1, dt)
-        call calc_dkedlon_dkedlat  (block, star_state, tend1, dt)
+        call calc_coriolis         (block, star_state, tend1, dt)
+        call calc_grad_ke          (block, star_state, tend1, dt)
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -491,9 +491,9 @@ contains
       else if (nonhydrostatic) then
 
       else
-        call calc_dmfdlon_dmfdlat(block, star_state, tend1, dt)
-        call calc_qhu_qhv        (block, star_state, tend1, dt)
-        call calc_dkedlon_dkedlat(block, star_state, tend1, dt)
+        call calc_grad_mf         (block, star_state, tend1, dt)
+        call calc_coriolis        (block, star_state, tend1, dt)
+        call calc_grad_ke         (block, star_state, tend1, dt)
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole

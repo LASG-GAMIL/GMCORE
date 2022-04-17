@@ -105,7 +105,7 @@ contains
     call fill_halo(block, pt, full_lon=.true., full_lat=.true., full_lev=.true.)
 
     if (nonhydrostatic) then
-      call diag_gz_lev(block, block%state(1))
+      call calc_gz_lev(block, block%state(1))
     end if
     end associate
   

@@ -53,7 +53,7 @@ module namelist_mod
   integer         :: ke_scheme            = 2
   real(r8)        :: ke_cell_wgt          = 3.0_r8 / 8.0_r8
 
-  integer         :: pv_scheme            = 2 ! 1: midpoint, 2: upwind
+  character(30)   :: pv_scheme            = 'upwind' ! midpoint, upwind, ffsl
   logical         :: pv_pole_stokes       = .true.
   integer         :: weno_order_pv        = 3
   integer         :: upwind_order_pv      = 3
@@ -275,13 +275,11 @@ contains
     if (ke_scheme == 2) then
       write(*, *) 'ke_cell_wgt         = ', to_str(ke_cell_wgt, 2)
     end if
-      write(*, *) 'pv_scheme           = ', to_str(pv_scheme)
+      write(*, *) 'pv_scheme           = ', trim(pv_scheme)
       write(*, *) 'pv_pole_stokes      = ', to_str(pv_pole_stokes)
-    if (pv_scheme == 2) then
+    if (pv_scheme == 'upwind') then
       write(*, *) 'upwind_order_pv     = ', to_str(upwind_order_pv)
       write(*, *) 'upwind_wgt_pv       = ', to_str(upwind_wgt_pv, 2)
-    else if (pv_scheme == 3) then
-      write(*, *) 'weno_order_pv       = ', to_str(weno_order_pv)
     end if
       write(*, *) 'zonal_tridiag_solver= ', trim(zonal_tridiag_solver)
       write(*, *) 'time_scheme         = ', trim(time_scheme)

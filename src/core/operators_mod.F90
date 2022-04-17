@@ -19,19 +19,19 @@ module operators_mod
 
   public operators_init
   public operators_prepare
-  public diag_ph
-  public diag_m
-  public diag_t
-  public diag_gz_lev
+  public calc_ph
+  public calc_m
+  public calc_t
+  public calc_gz_lev
   public calc_wedphdlev_lev
   public calc_div
   public calc_vor
-  public calc_qhu_qhv
-  public calc_dkedlon_dkedlat
-  public calc_dmfdlon_dmfdlat
+  public calc_coriolis
+  public calc_grad_ke
+  public calc_grad_mf
   public calc_dptfdlon_dptfdlat
   public calc_dptfdlev
-  public calc_dphs
+  public calc_dphsdt
   public calc_wedudlev_wedvdlev
   public calc_qmf
   public nh_prepare
@@ -43,10 +43,30 @@ module operators_mod
     module procedure operators_prepare_2
   end interface operators_prepare
 
+  interface
+    subroutine interp_pv_interface(block, state)
+      import block_type, state_type
+      type(block_type), intent(inout) :: block
+      type(state_type), intent(inout) :: state
+    end subroutine interp_pv_interface
+  end interface
+
+  procedure(interp_pv_interface), pointer :: interp_pv => null()
+
 contains
 
   subroutine operators_init()
 
+    select case (pv_scheme)
+    case ('midpoint')
+      interp_pv => interp_pv_midpoint
+    case ('upwind')
+      interp_pv => interp_pv_upwind
+    case ('ffsl')
+    case default
+      call log_error('Invalid pv_scheme ' // trim(pv_scheme) // '!', pid=proc%id)
+    end select
+    
   end subroutine operators_init
 
   subroutine operators_prepare_1(blocks, itime, dt)
@@ -62,18 +82,17 @@ contains
         call diag_ph                  (blocks(iblk), blocks(iblk)%state(itime))
         call diag_t                   (blocks(iblk), blocks(iblk)%state(itime))
       end if
-      call diag_m                     (blocks(iblk), blocks(iblk)%state(itime))
+      call calc_m                     (blocks(iblk), blocks(iblk)%state(itime))
       if (nonhydrostatic) then
-        call diag_m_lev               (blocks(iblk), blocks(iblk)%state(itime))
+        call calc_m_lev               (blocks(iblk), blocks(iblk)%state(itime))
       end if
-      call interp_m_vtx               (blocks(iblk), blocks(iblk)%state(itime))
       call calc_mf                    (blocks(iblk), blocks(iblk)%state(itime))
       call calc_ke                    (blocks(iblk), blocks(iblk)%state(itime))
-      call diag_pv                    (blocks(iblk), blocks(iblk)%state(itime))
+      call calc_pv                    (blocks(iblk), blocks(iblk)%state(itime))
       call interp_pv                  (blocks(iblk), blocks(iblk)%state(itime))
       call calc_div                   (blocks(iblk), blocks(iblk)%state(itime))
       if (hydrostatic) then
-        call diag_gz_lev              (blocks(iblk), blocks(iblk)%state(itime))
+        call calc_gz_lev              (blocks(iblk), blocks(iblk)%state(itime))
       end if
       call pgf_prepare                (blocks(iblk), blocks(iblk)%state(itime))
     end do
@@ -94,18 +113,17 @@ contains
         call diag_ph                  (block, state)
         call diag_t                   (block, state)
       end if
-      call diag_m                     (block, state)
+      call calc_m                     (block, state)
       if (nonhydrostatic) then
-        call diag_m_lev               (block, state)
+        call calc_m_lev               (block, state)
       end if
       call calc_mf                    (block, state)
       call calc_ke                    (block, state)
       call calc_div                   (block, state)
-      call interp_m_vtx               (block, state)
-      call diag_pv                    (block, state)
+      call calc_pv                    (block, state)
       call interp_pv                  (block, state)
       if (hydrostatic) then
-        call diag_gz_lev              (block, state)
+        call calc_gz_lev              (block, state)
       end if
       call pgf_prepare                (block, state)
     ! --------------------------------------------------------------------------
@@ -115,17 +133,16 @@ contains
       call calc_mf                    (block, state)
       call calc_ke                    (block, state)
       call calc_div                   (block, state)
-      call interp_m_vtx               (block, state)
-      call diag_pv                    (block, state)
+      call calc_pv                    (block, state)
       call interp_pv                  (block, state)
     ! --------------------------------------------------------------------------
     case (backward_pass)
       if (hydrostatic) then
-        call diag_ph                  (block, state)
-        call diag_t                   (block, state)
-        call diag_gz_lev              (block, state)
+        call calc_ph                  (block, state)
+        call calc_t                   (block, state)
+        call calc_gz_lev              (block, state)
       end if
-      call diag_m                     (block, state)
+      call calc_m                     (block, state)
       call pgf_prepare                (block, state)
     ! --------------------------------------------------------------------------
     case (no_wind_pass)
@@ -134,16 +151,16 @@ contains
         call diag_t                   (block, state)
         call diag_gz_lev              (block, state)
       end if
-      call diag_m                     (block, state)
+      call calc_m                     (block, state)
       if (nonhydrostatic) then
-        call diag_m_lev               (block, state)
+        call calc_m_lev               (block, state)
       end if
       call pgf_prepare                (block, state)
     end select
 
   end subroutine operators_prepare_2
 
-  subroutine diag_ph(block, state)
+  subroutine calc_ph(block, state)
 
     type(block_type), intent(in) :: block
     type(state_type), intent(inout) :: state
@@ -173,9 +190,9 @@ contains
     call fill_halo(block, ph, full_lon=.true., full_lat=.true., full_lev=.true.)
     end associate
 
-  end subroutine diag_ph
+  end subroutine calc_ph
 
-  subroutine diag_t(block, state)
+  subroutine calc_t(block, state)
 
     type(block_type), intent(in) :: block
     type(state_type), intent(inout) :: state
@@ -196,7 +213,7 @@ contains
     call fill_halo(block, t, full_lon=.true., full_lat=.true., full_lev=.true.)
     end associate
 
-  end subroutine diag_t
+  end subroutine calc_t
 
   subroutine calc_wedphdlev_lev(block, state, tend, dt)
 
@@ -436,7 +453,7 @@ contains
 
   end subroutine calc_div
 
-  subroutine diag_gz_lev(block, state)
+  subroutine calc_gz_lev(block, state)
 
     type(block_type), intent(in) :: block
     type(state_type), intent(inout) :: state
@@ -463,9 +480,9 @@ contains
     call fill_halo(block, gz_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
     end associate
 
-  end subroutine diag_gz_lev
+  end subroutine calc_gz_lev
 
-  subroutine diag_m(block, state)
+  subroutine calc_m(block, state)
 
     type(block_type), intent(in) :: block
     type(state_type), intent(inout) :: state
@@ -478,7 +495,8 @@ contains
                gzs    => block%static%gzs, & ! in
                m      => state%m         , & ! out
                m_lon  => state%m_lon     , & ! out
-               m_lat  => state%m_lat)        ! out
+               m_lat  => state%m_lat     , & ! out
+               m_vtx  => state%m_vtx     )   ! out
     if (baroclinic) then
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend + merge(0, 1, mesh%has_north_pole())
@@ -504,9 +522,10 @@ contains
     call fill_halo(block, m_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
     call average_cell_to_lat_edge(mesh, m, m_lat)
     call fill_halo(block, m_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
+    call interp_cell_to_vtx(mesh, m, m_vtx)
     end associate
 
-  end subroutine diag_m
+  end subroutine calc_m
 
   subroutine interp_pt(block, state)
 
@@ -528,15 +547,6 @@ contains
     end associate
 
   end subroutine interp_pt
-
-  subroutine interp_m_vtx(block, state)
-
-    type(block_type), intent(in) :: block
-    type(state_type), intent(inout) :: state
-
-    call interp_cell_to_vtx(state%mesh, state%m, state%m_vtx)
-
-  end subroutine interp_m_vtx
 
   subroutine calc_mf(block, state)
 
@@ -657,7 +667,7 @@ contains
 
   end subroutine calc_vor
 
-  subroutine diag_pv(block, state)
+  subroutine calc_pv(block, state)
 
     type(block_type), intent(in) :: block
     type(state_type), intent(inout) :: state
@@ -681,11 +691,11 @@ contains
     call fill_halo(block, pv, full_lon=.false., full_lat=.false., full_lev=.true.)
     end associate
 
-  end subroutine diag_pv
+  end subroutine calc_pv
 
   subroutine interp_pv_midpoint(block, state)
 
-    type(block_type), intent(in) :: block
+    type(block_type), intent(inout) :: block
     type(state_type), intent(inout) :: state
 
     integer i, j, k
@@ -717,7 +727,7 @@ contains
 
   subroutine interp_pv_upwind(block, state)
 
-    type(block_type), intent(in) :: block
+    type(block_type), intent(inout) :: block
     type(state_type), intent(inout) :: state
 
     real(r8) ut, vt, b
@@ -796,23 +806,7 @@ contains
 
   end subroutine interp_pv_upwind
 
-  subroutine interp_pv(block, state)
-    
-    type(block_type), intent(in) :: block
-    type(state_type), intent(inout) :: state 
-
-    select case (pv_scheme)
-    case (1)
-      call interp_pv_midpoint(block, state)
-    case (2)
-      call interp_pv_upwind(block, state)
-    case default
-      if (is_root_proc()) call log_error('Unknown PV scheme!')
-    end select
-
-  end subroutine interp_pv
-
-  subroutine calc_qhu_qhv(block, state, tend, dt)
+  subroutine calc_coriolis(block, state, tend, dt)
 
     type(block_type), intent(inout) :: block
     type(state_type), intent(inout) :: state
@@ -872,9 +866,9 @@ contains
     end do
     end associate
 
-  end subroutine calc_qhu_qhv
+  end subroutine calc_coriolis
 
-  subroutine calc_dkedlon_dkedlat(block, state, tend, dt)
+  subroutine calc_grad_ke(block, state, tend, dt)
 
     type(block_type), intent(inout) :: block
     type(state_type), intent(inout) :: state
@@ -903,9 +897,9 @@ contains
     end do
     end associate
 
-  end subroutine calc_dkedlon_dkedlat
+  end subroutine calc_grad_ke
 
-  subroutine calc_dmfdlon_dmfdlat(block, state, tend, dt)
+  subroutine calc_grad_mf(block, state, tend, dt)
 
     type(block_type), intent(inout) :: block
     type(state_type), intent(in) :: state
@@ -972,7 +966,7 @@ contains
     end if
     end associate
 
-  end subroutine calc_dmfdlon_dmfdlat
+  end subroutine calc_grad_mf
 
   subroutine calc_dptfdlon_dptfdlat(block, state, tend, dt)
 
@@ -1073,7 +1067,7 @@ contains
 
   end subroutine calc_dptfdlev
 
-  subroutine calc_dphs(block, state, tend, dt)
+  subroutine calc_dphsdt(block, state, tend, dt)
 
     type(block_type), intent(inout) :: block
     type(state_type), intent(in) :: state
@@ -1096,7 +1090,7 @@ contains
     end do
     end associate
 
-  end subroutine calc_dphs
+  end subroutine calc_dphsdt
 
   subroutine calc_wedudlev_wedvdlev(block, state, tend, dt)
 
