@@ -14,6 +14,7 @@ module ffsl_mod
   public ffsl_calc_mass_hflx_cell
   public ffsl_calc_mass_hflx_vtx
   public ffsl_calc_tracer_hflx_cell
+  public ffsl_calc_tracer_hflx_vtx
 
   interface
     subroutine hflx_cell_interface(block, batch, u, v, mx, my, mfx, mfy)
@@ -62,9 +63,9 @@ module ffsl_mod
                                    block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
                                    block%mesh%full_lev_lb:block%mesh%full_lev_ub)
     end subroutine hflx_vtx_interface
-    pure real(r8) function slope_interface(f)
+    pure real(r8) function slope_interface(fm1, f, fp1)
       import r8
-      real(r8), intent(in) :: f(-1:1)
+      real(r8), intent(in) :: fm1, f, fp1
     end function slope_interface
   end interface
 
@@ -333,6 +334,63 @@ contains
 
   end subroutine ffsl_calc_tracer_hflx_cell
 
+  subroutine ffsl_calc_tracer_hflx_vtx(block, batch, q, qmfx, qmfy)
+
+    type(block_type    ), intent(in   ) :: block
+    type(adv_batch_type), intent(inout) :: batch
+    real(r8), intent(in ) :: q    (block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
+                                   block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
+                                   block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+    real(r8), intent(out) :: qmfx (block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
+                                   block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
+                                   block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+    real(r8), intent(out) :: qmfy (block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
+                                   block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
+                                   block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+
+    integer i, j, k
+
+    associate (mesh => block%mesh, &
+               dt   => batch%dt  , & ! in
+               u    => batch%u   , & ! in
+               v    => batch%v   , & ! in
+               mfx  => batch%mfx , & ! in
+               mfy  => batch%mfy , & ! in
+               divx => batch%divx, & ! in
+               divy => batch%divy, & ! in
+               qx   => batch%qx  , & ! work array
+               qy   => batch%qy)     ! work array
+    ! Run inner advective operators.
+    call hflx_vtx(block, batch, u, v, q, q, qmfx, qmfy)
+    ! Calculate intermediate tracer density due to advective operators.
+    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      do j = mesh%half_lat_ibeg, mesh%half_lat_iend_no_pole
+        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+          ! Subtract divergence terms from flux to form advective operators.
+          qx(i,j,k) = q(i,j,k) - 0.5_r8 * (         &
+            (                                       &
+              qmfx(i+1,j,k) - qmfx(i,j,k)           &
+            ) * mesh%de_lat(j) / mesh%area_vtx(j) - &
+            divx(i,j,k) * q(i,j,k)                  &
+          ) * dt
+          qy(i,j,k) = q(i,j,k) - 0.5_r8 * (      &
+            (                                    &
+              qmfy(i,j+1,k) * mesh%de_lon(j+1) - &
+              qmfy(i,j  ,k) * mesh%de_lon(j  )   &
+            ) / mesh%area_vtx(j) -               &
+            divy(i,j,k) * q(i,j,k)               &
+          ) * dt
+        end do
+      end do
+    end do
+    call fill_halo(block, qx, full_lon=.false., full_lat=.false., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
+    call fill_halo(block, qy, full_lon=.false., full_lat=.false., full_lev=.true., south_halo=.false., north_halo=.false.)
+    ! Run outer flux form operators.
+    call hflx_cell(block, batch, mfx, mfy, qy, qx, qmfx, qmfy)
+    end associate
+
+  end subroutine ffsl_calc_tracer_hflx_vtx
+
   subroutine flux_van_leer_cell(block, batch, u, v, mx, my, mfx, mfy)
 
     type(block_type    ), intent(in   ) :: block
@@ -370,11 +428,11 @@ contains
           cf = cflx(i,j,k) - ci
           if (cflx(i,j,k) > 0) then
             iu = i - ci
-            dm = slope(mx(iu-1:iu+1,j,k))
+            dm = slope(mx(iu-1,j,k), mx(iu,j,k), mx(iu+1,j,k))
             mfx(i,j,k) = u(i,j,k) * (cf * (mx(iu,j,k) + dm * 0.5_r8 * (1 - cf)) + sum(mx(i+1-ci:i,j,k))) / cflx(i,j,k)
           else if (cflx(i,j,k) < 0) then
             iu = i - ci + 1
-            dm = slope(mx(iu-1:iu+1,j,k))
+            dm = slope(mx(iu-1,j,k), mx(iu,j,k), mx(iu+1,j,k))
             mfx(i,j,k) = u(i,j,k) * (cf * (mx(iu,j,k) - dm * 0.5_r8 * (1 + cf)) - sum(mx(i+1:i-ci,j,k))) / cflx(i,j,k)
           else
             mfx(i,j,k) = 0
@@ -386,7 +444,7 @@ contains
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           cf = cfly(i,j,k)
           ju = merge(j, j + 1, cf > 0)
-          dm = slope(my(i,ju-1:ju+1,k))
+          dm = slope(my(i,ju-1,k), my(i,ju,k), my(i,ju+1,k))
           mfy(i,j,k) = v(i,j,k) * (my(i,ju,k) + dm * 0.5_r8 * (sign(1.0_r8, cf) - cf))
         end do
       end do
@@ -434,11 +492,11 @@ contains
           cf = cflx(i,j,k) - ci
           if (cflx(i,j,k) > 0) then
             iu = i - ci - 1
-            dm = slope(mx(iu-1:iu+1,j,k))
+            dm = slope(mx(iu-1,j,k), mx(iu,j,k), mx(iu+1,j,k))
             mfx(i,j,k) = u(i,j,k) * (cf * (mx(iu,j,k) + dm * 0.5_r8 * (1 - cf)) + sum(mx(i-ci:i-1,j,k))) / cflx(i,j,k)
           else if (cflx(i,j,k) < 0) then
             iu = i - ci
-            dm = slope(mx(iu-1:iu+1,j,k))
+            dm = slope(mx(iu-1,j,k), mx(iu,j,k), mx(iu+1,j,k))
             mfx(i,j,k) = u(i,j,k) * (cf * (mx(iu,j,k) - dm * 0.5_r8 * (1 + cf)) - sum(mx(i:i-ci-1,j,k))) / cflx(i,j,k)
           else
             mfx(i,j,k) = 0
@@ -450,7 +508,7 @@ contains
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           cf = cfly(i,j,k)
           ju = merge(j - 1, j, cf > 0)
-          dm = slope(my(i,ju-1:ju+1,k))
+          dm = slope(my(i,ju-1,k), my(i,ju,k), my(i,ju+1,k))
           mfy(i,j,k) = v(i,j,k) * (my(i,ju,k) + dm * 0.5_r8 * (sign(1.0_r8, cf) - cf))
         end do
       end do
@@ -499,8 +557,8 @@ contains
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          call ppm(mx(i-2:i+2,j,k), mlx(i,j,k), dmx(i,j,k), m6x(i,j,k))
-          call ppm(my(i,j-2:j+2,k), mly(i,j,k), dmy(i,j,k), m6y(i,j,k))
+          call ppm(mx(i-2,j,k), mx(i-1,j,k), mx(i,j,k), mx(i+1,j,k), mx(i+2,j,k), mlx(i,j,k), dmx(i,j,k), m6x(i,j,k))
+          call ppm(my(i,j-2,k), my(i,j-1,k), my(i,j,k), my(i,j+1,k), my(i,j+2,k), mly(i,j,k), dmy(i,j,k), m6y(i,j,k))
         end do
       end do
     end do
@@ -606,8 +664,8 @@ contains
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          call ppm(mx(i-2:i+2,j,k), mlx(i,j,k), dmx(i,j,k), m6x(i,j,k))
-          call ppm(my(i,j-2:j+2,k), mly(i,j,k), dmy(i,j,k), m6y(i,j,k))
+          call ppm(mx(i-2,j,k), mx(i-1,j,k), mx(i,j,k), mx(i+1,j,k), mx(i+2,j,k), mlx(i,j,k), dmx(i,j,k), m6x(i,j,k))
+          call ppm(my(i,j-2,k), my(i,j-1,k), my(i,j,k), my(i,j+1,k), my(i,j+2,k), mly(i,j,k), dmy(i,j,k), m6y(i,j,k))
         end do
       end do
     end do
@@ -675,9 +733,13 @@ contains
 
   end subroutine flux_ppm_vtx
 
-  subroutine ppm(f, fl, df, f6)
+  subroutine ppm(fm2, fm1, f, fp1, fp2, fl, df, f6)
 
-    real(r8), intent(in ) :: f(-2:2)
+    real(r8), intent(in ) :: fm2
+    real(r8), intent(in ) :: fm1
+    real(r8), intent(in ) :: f
+    real(r8), intent(in ) :: fp1
+    real(r8), intent(in ) :: fp2
     real(r8), intent(out) :: fl
     real(r8), intent(out) :: df
     real(r8), intent(out) :: f6
@@ -685,49 +747,49 @@ contains
     real(r8) dfl, dfr, fr
 
     ! Calculate values at left and right cell interfaces.
-    dfl = slope(f(-2:0))
-    df  = slope(f(-1:1))
-    dfr = slope(f( 0:2))
+    dfl = slope(fm2, fm1, f  )
+    df  = slope(fm1, f  , fp1)
+    dfr = slope(f  , fp1, fp2)
     ! Why (B2) in Lin (2004) divide (dfl - df) and (df - dfr) by 3?
-    fl = 0.5_r8 * (f(-1) + f(0)) + (dfl - df) / 6.0_r8
-    fr = 0.5_r8 * (f( 1) + f(0)) + (df - dfr) / 6.0_r8
+    fl = 0.5_r8 * (fm1 + f) + (dfl - df) / 6.0_r8
+    fr = 0.5_r8 * (fp1 + f) + (df - dfr) / 6.0_r8
     ! Why (B3) and (B4) in Lin (2004) multiply df by 2?
-    fl = f(0) - sign(min(abs(df), abs(fl - f(0))), df)
-    fr = f(0) + sign(min(abs(df), abs(fr - f(0))), df)
-    f6 = 6 * f(0) - 3 * (fl + fr)
+    fl = f - sign(min(abs(df), abs(fl - f)), df)
+    fr = f + sign(min(abs(df), abs(fr - f)), df)
+    f6 = 6 * f - 3 * (fl + fr)
     df = fr - fl
 
   end subroutine ppm
 
-  pure real(r8) function slope_simple(f) result(res)
+  pure real(r8) function slope_simple(fm1, f, fp1) result(res)
 
-    real(r8), intent(in) :: f(-1:1) 
+    real(r8), intent(in) :: fm1, f, fp1
 
-    res = (f(1) - f(-1)) * 0.5_r8
+    res = (fp1 - fm1) * 0.5_r8
 
   end function slope_simple
 
-  pure real(r8) function slope_mono(f) result(res)
+  pure real(r8) function slope_mono(fm1, f, fp1) result(res)
 
-    real(r8), intent(in) :: f(-1:1)
+    real(r8), intent(in) :: fm1, f, fp1
 
     real(r8) df, df_min, df_max
 
-    df = (f(1) - f(-1)) * 0.5_r8 ! Initial guess
-    df_min = 2 * (f(0) - minval(f))
-    df_max = 2 * (maxval(f) - f(0))
+    df = (fp1 - fm1) * 0.5_r8 ! Initial guess
+    df_min = 2 * (f - min(fm1, f, fp1))
+    df_max = 2 * (max(fm1, f, fp1) - f)
     res = sign(min(abs(df), df_min, df_max), df)
 
   end function slope_mono
 
-  pure real(r8) function slope_pd(f) result(res)
+  pure real(r8) function slope_pd(fm1, f, fp1) result(res)
 
-    real(r8), intent(in) :: f(-1:1)
+    real(r8), intent(in) :: fm1, f, fp1
 
     real(r8) df
 
-    df = (f(1) - f(-1)) * 0.5_r8 ! Initial guess
-    res = sign(min(abs(df), 2 * f(0)), df)
+    df = (fp1 - fm1) * 0.5_r8 ! Initial guess
+    res = sign(min(abs(df), 2 * f), df)
 
   end function slope_pd
 
