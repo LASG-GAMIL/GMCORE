@@ -17,9 +17,10 @@ module adv_batch_mod
     type(mesh_type), pointer :: mesh => null()
     character(10) :: loc       = 'cell'
     character(30) :: alert_key = ''
-    integer  :: nstep  = 0 ! Number of dynamic steps for one adv step
-    integer  :: step   = 0 ! Dynamic step counter
-    real(r8) :: dt         ! Advection time step size in seconds
+    integer  :: nstep   = 0 ! Number of dynamic steps for one adv step
+    integer  :: uv_step = 0 ! Step counter for u and v
+    integer  :: mf_step = 0 ! Step counter for mass flux
+    real(r8) :: dt          ! Advection time step size in seconds
     integer      , allocatable, dimension(:) :: tracer_idx
     character(10), allocatable, dimension(:) :: tracer_names
     character(30), allocatable, dimension(:) :: tracer_long_names
@@ -68,7 +69,8 @@ contains
     this%alert_key = alert_key
     this%dt        = dt
     this%nstep     = dt / dt_dyn
-    this%step      = 0
+    this%uv_step   = 0
+    this%mf_step   = 0
 
     select case (loc)
     case ('cell')
@@ -130,7 +132,8 @@ contains
     this%alert_key = ''
     this%dt        = 0
     this%nstep     = 0
-    this%step      = 0
+    this%uv_step   = 0
+    this%mf_step   = 0
 
     if (allocated(this%tracer_idx       )) deallocate(this%tracer_idx       )
     if (allocated(this%tracer_names     )) deallocate(this%tracer_names     )
@@ -183,20 +186,20 @@ contains
     integer i, j, k
 
     associate (mesh => this%mesh)
-    if (this%step == 0) then
-      this%u    = u
-      this%v    = v
-      if (this%nstep > 1) this%step = this%step + 1
-    else if (this%step == this%nstep) then
-      this%u    = (this%u + u) / (this%nstep + 1)
-      this%v    = (this%v + v) / (this%nstep + 1)
-      this%step = 0
+    if (this%uv_step == 0) then
+      this%u = u
+      this%v = v
+      if (this%nstep > 1) this%uv_step = this%uv_step + 1
+    else if (this%uv_step == this%nstep) then
+      this%u = (this%u + u) / (this%nstep + 1)
+      this%v = (this%v + v) / (this%nstep + 1)
+      this%uv_step = 0
     else
-      this%u    = this%u + u
-      this%v    = this%v + v
-      this%step = this%step + 1
+      this%u = this%u + u
+      this%v = this%v + v
+      this%uv_step = this%uv_step + 1
     end if
-    if (this%step == 0) then
+    if (this%uv_step == 0) then
       ! Calculate CFL numbers and divergence along each axis.
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -265,18 +268,18 @@ contains
                                 this%mesh%half_lat_lb:this%mesh%half_lat_ub, &
                                 this%mesh%full_lev_lb:this%mesh%full_lev_ub)
 
-    if (this%step == 0) then
-      this%mfx  = mfx
-      this%mfy  = mfy
-      if (this%nstep > 1) this%step = this%step + 1
-    else if (this%step == this%nstep) then
-      this%mfx  = this%mfx + mfx
-      this%mfy  = this%mfy + mfy
-      this%step = 0
+    if (this%mf_step == 0) then
+      this%mfx = mfx
+      this%mfy = mfy
+      if (this%nstep > 1) this%mf_step = this%mf_step + 1
+    else if (this%mf_step == this%nstep) then
+      this%mfx = this%mfx + mfx
+      this%mfy = this%mfy + mfy
+      this%mf_step = 0
     else
-      this%mfx  = this%mfx + mfx
-      this%mfy  = this%mfy + mfy
-      this%step = this%step + 1
+      this%mfx = this%mfx + mfx
+      this%mfy = this%mfy + mfy
+      this%mf_step = this%mf_step + 1
     end if
 
   end subroutine adv_batch_accum_mf_cell
@@ -292,20 +295,20 @@ contains
                               this%mesh%full_lev_lb:this%mesh%full_lev_ub)
 
     associate (mesh => this%mesh)
-    if (this%step == 0) then
-      this%u    = u
-      this%v    = v
-      if (this%nstep > 1) this%step = this%step + 1
-    else if (this%step == this%nstep) then
-      this%u    = (this%u + u) / (this%nstep + 1)
-      this%v    = (this%v + v) / (this%nstep + 1)
-      this%step = 0
+    if (this%uv_step == 0) then
+      this%u = u
+      this%v = v
+      if (this%nstep > 1) this%uv_step = this%uv_step + 1
+    else if (this%uv_step == this%nstep) then
+      this%u = (this%u + u) / (this%nstep + 1)
+      this%v = (this%v + v) / (this%nstep + 1)
+      this%uv_step = 0
     else
-      this%u    = this%u + u
-      this%v    = this%v + v
-      this%step = this%step + 1
+      this%u = this%u + u
+      this%v = this%v + v
+      this%uv_step = this%uv_step + 1
     end if
-    if (this%step == 0) then
+    if (this%uv_step == 0) then
       ! Calculate CFL numbers and divergence along each axis.
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%half_lat_ibeg, mesh%half_lat_iend
@@ -344,18 +347,18 @@ contains
                                 this%mesh%full_lat_lb:this%mesh%full_lat_ub, &
                                 this%mesh%full_lev_lb:this%mesh%full_lev_ub)
 
-    if (this%step == 0) then
-      this%mfx  = mfx
-      this%mfy  = mfy
-      if (this%nstep > 1) this%step = this%step + 1
-    else if (this%step == this%nstep) then
-      this%mfx  = this%mfx + mfx
-      this%mfy  = this%mfy + mfy
-      this%step = 0
+    if (this%mf_step == 0) then
+      this%mfx = mfx
+      this%mfy = mfy
+      if (this%nstep > 1) this%mf_step = this%mf_step + 1
+    else if (this%mf_step == this%nstep) then
+      this%mfx = this%mfx + mfx
+      this%mfy = this%mfy + mfy
+      this%mf_step = 0
     else
-      this%mfx  = this%mfx + mfx
-      this%mfy  = this%mfy + mfy
-      this%step = this%step + 1
+      this%mfx = this%mfx + mfx
+      this%mfy = this%mfy + mfy
+      this%mf_step = this%mf_step + 1
     end if
 
   end subroutine adv_batch_accum_mf_vtx

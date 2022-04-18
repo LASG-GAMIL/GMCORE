@@ -98,13 +98,13 @@ contains
 
     select case (ffsl_flux_type)
     case ('van_leer')
-      hflx_cell => flux_van_leer_cell
-      hflx_vtx  => flux_van_leer_vtx
-      hval_vtx  => value_van_leer_vtx
+      hflx_cell => hflx_van_leer_cell
+      hflx_vtx  => hflx_van_leer_vtx
+      hval_vtx  => hval_van_leer_vtx
     case ('ppm')
-      hflx_cell => flux_ppm_cell
-      hflx_vtx  => flux_ppm_vtx
-      hval_vtx  => value_ppm_vtx
+      hflx_cell => hflx_ppm_cell
+      hflx_vtx  => hflx_ppm_vtx
+      hval_vtx  => hval_ppm_vtx
     end select
 
     select case (limiter_type)
@@ -477,7 +477,7 @@ contains
 
   end subroutine ffsl_calc_tracer_hval_vtx
 
-  subroutine flux_van_leer_cell(block, batch, u, v, mx, my, mfx, mfy)
+  subroutine hflx_van_leer_cell(block, batch, u, v, mx, my, mfx, mfy)
 
     type(block_type    ), intent(in   ) :: block
     type(adv_batch_type), intent(inout) :: batch
@@ -537,9 +537,9 @@ contains
     end do
     end associate
 
-  end subroutine flux_van_leer_cell
+  end subroutine hflx_van_leer_cell
 
-  subroutine flux_van_leer_vtx(block, batch, u, v, mx, my, mfx, mfy)
+  subroutine hflx_van_leer_vtx(block, batch, u, v, mx, my, mfx, mfy)
 
     type(block_type    ), intent(in   ) :: block
     type(adv_batch_type), intent(inout) :: batch
@@ -599,9 +599,9 @@ contains
     end do
     end associate
 
-  end subroutine flux_van_leer_vtx
+  end subroutine hflx_van_leer_vtx
 
-  subroutine value_van_leer_vtx(block, batch, mx, my, mvx, mvy)
+  subroutine hval_van_leer_vtx(block, batch, mx, my, mvx, mvy)
 
     type(block_type    ), intent(in   ) :: block
     type(adv_batch_type), intent(inout) :: batch
@@ -655,9 +655,9 @@ contains
     end do
     end associate
 
-  end subroutine value_van_leer_vtx
+  end subroutine hval_van_leer_vtx
 
-  subroutine flux_ppm_cell(block, batch, u, v, mx, my, mfx, mfy)
+  subroutine hflx_ppm_cell(block, batch, u, v, mx, my, mfx, mfy)
 
     type(block_type    ), intent(in   ) :: block
     type(adv_batch_type), intent(inout) :: batch
@@ -760,9 +760,9 @@ contains
     end do
     end associate
 
-  end subroutine flux_ppm_cell
+  end subroutine hflx_ppm_cell
 
-  subroutine flux_ppm_vtx(block, batch, u, v, mx, my, mfx, mfy)
+  subroutine hflx_ppm_vtx(block, batch, u, v, mx, my, mfx, mfy)
 
     type(block_type    ), intent(in   ) :: block
     type(adv_batch_type), intent(inout) :: batch
@@ -865,9 +865,9 @@ contains
     end do
     end associate
 
-  end subroutine flux_ppm_vtx
+  end subroutine hflx_ppm_vtx
 
-  subroutine value_ppm_vtx(block, batch, mx, my, mvx, mvy)
+  subroutine hval_ppm_vtx(block, batch, mx, my, mvx, mvy)
 
     type(block_type    ), intent(in   ) :: block
     type(adv_batch_type), intent(inout) :: batch
@@ -964,7 +964,7 @@ contains
     end do
     end associate
 
-  end subroutine value_ppm_vtx  
+  end subroutine hval_ppm_vtx  
 
   subroutine ppm(fm2, fm1, f, fp1, fp2, fl, df, f6)
 
