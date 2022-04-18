@@ -500,8 +500,8 @@ contains
                m_vtx  => state%m_vtx     )   ! out
     if (baroclinic) then
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-        do j = mesh%full_lat_ibeg, mesh%full_lat_iend + merge(0, 1, mesh%has_north_pole())
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend + 1
+        do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             m(i,j,k) = ph_lev(i,j,k+1) - ph_lev(i,j,k)
             if (m(i,j,k) <= 0) then
               print *, mesh%full_lon_deg(i), '(', to_str(i), ')', mesh%full_lat_deg(j), '(', to_str(j), ')', k
@@ -512,13 +512,14 @@ contains
         end do
       end do
     else
-      do j = mesh%full_lat_ibeg, mesh%full_lat_iend + merge(0, 1, mesh%has_north_pole())
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend + 1
+      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           m(i,j,1) = (gz(i,j,1) - gzs(i,j)) / g
         end do
       end do
     end if
 
+    call fill_halo(block, m, full_lon=.true., full_lat=.true., full_lev=.true.)
     call average_cell_to_lon_edge(mesh, m, m_lon)
     call fill_halo(block, m_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
     call average_cell_to_lat_edge(mesh, m, m_lat)
