@@ -55,7 +55,6 @@ module namelist_mod
 
   character(30)   :: pv_scheme            = 'ffsl' ! midpoint, upwind, ffsl
   logical         :: pv_pole_stokes       = .true.
-  integer         :: weno_order_pv        = 3
   integer         :: upwind_order_pv      = 3
   real(r8)        :: upwind_wgt_pv        = 1
 
@@ -63,7 +62,7 @@ module namelist_mod
   integer         :: coriolis_scheme      = 1
 
   character(8)    :: adv_scheme           = 'ffsl'
-  character(8)    :: limiter_type         = 'pd'
+  character(8)    :: limiter_type         = 'mono'
   character(8)    :: ffsl_flux_type       = 'ppm'
 
   character(8)    :: zonal_tridiag_solver = 'spk' ! mkl, spk
@@ -88,7 +87,6 @@ module namelist_mod
   real(r8)        :: filter_coef_a        = 1.2
   real(r8)        :: filter_coef_b        = 0.4
   real(r8)        :: filter_coef_c        = 0.4
-  real(r8)        :: filter_reset_interval= 0
 
   ! Damping settings
   logical         :: use_topo_smooth      = .false.
@@ -167,7 +165,6 @@ module namelist_mod
     ke_cell_wgt               , &
     pv_scheme                 , &
     pv_pole_stokes            , &
-    weno_order_pv             , &
     upwind_order_pv           , &
     upwind_wgt_pv             , &
     pgf_scheme                , &
@@ -189,7 +186,6 @@ module namelist_mod
     filter_coef_a             , &
     filter_coef_b             , &
     filter_coef_c             , &
-    filter_reset_interval     , &
     coarse_pole_mul           , &
     coarse_pole_decay         , &
     use_topo_smooth           , &

@@ -279,13 +279,6 @@ contains
       call fill_halo(block, new_state%u_f, full_lon=.false., full_lat=.true., full_lev=.true.)
       call fill_halo(block, new_state%v_f, full_lon=.true., full_lat=.false., full_lev=.true.)
     end if
-
-    if (time_is_alerted('filter_reset')) then
-      if (tend%update_phs) new_state%phs   = new_state%phs_f
-      if (tend%update_pt ) new_state%pt    = new_state%pt_f
-      if (tend%update_u  ) new_state%u_lon = new_state%u_f
-      if (tend%update_v  ) new_state%v_lat = new_state%v_f
-    end if
     end associate
 
   end subroutine update_state

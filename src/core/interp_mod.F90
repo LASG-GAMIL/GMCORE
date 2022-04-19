@@ -176,15 +176,9 @@ contains
       case (3)
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%half_lat_ibeg, mesh%half_lat_iend
-            if (j == 1 .or. j == global_mesh%num_half_lat) then
-              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-                x_lat(i,j,k) = upwind1(sign(1.0_r8, v(i,j,k)), beta, x(i,j:j+1,k))
-              end do
-            else
-              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-                x_lat(i,j,k) = weno3(sign(1.0_r8, v(i,j,k)), x(i,j-1:j+2,k))
-              end do
-            end if
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              x_lat(i,j,k) = weno3(sign(1.0_r8, v(i,j,k)), x(i,j-1:j+2,k))
+            end do
           end do
         end do
         return
@@ -203,15 +197,9 @@ contains
       case(3)
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%half_lat_ibeg, mesh%half_lat_iend
-            if (j == 1 .or. j == global_mesh%num_half_lat) then
-              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-                x_lat(i,j,k) = upwind1(sign(1.0_r8, v(i,j,k)), beta, x(i,j:j+1,k))
-              end do
-            else
-              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-                x_lat(i,j,k) = upwind3(sign(1.0_r8, v(i,j,k)), beta, x(i,j-1:j+2,k))
-              end do
-            end if
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              x_lat(i,j,k) = upwind3(sign(1.0_r8, v(i,j,k)), beta, x(i,j-1:j+2,k))
+            end do
           end do
         end do
         return
@@ -450,15 +438,9 @@ contains
       case (3)
         do k = mesh%half_lev_ibeg, mesh%half_lev_iend
           do j = mesh%half_lat_ibeg, mesh%half_lat_iend
-            if (j == 1 .or. j == global_mesh%num_half_lat) then
-              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-                x_lev_lat(i,j,k) = upwind1(sign(1.0_r8, v(i,j,k)), beta, x_lev(i,j:j+1,k))
-              end do
-            else
-              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-                x_lev_lat(i,j,k) = weno3(sign(1.0_r8, v(i,j,k)), x_lev(i,j-1:j+2,k))
-              end do
-            end if
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              x_lev_lat(i,j,k) = weno3(sign(1.0_r8, v(i,j,k)), x_lev(i,j-1:j+2,k))
+            end do
           end do
         end do
         return
@@ -477,15 +459,9 @@ contains
       case (3)
         do k = mesh%half_lev_ibeg, mesh%half_lev_iend
           do j = mesh%half_lat_ibeg, mesh%half_lat_iend
-            if (j == 1 .or. j == global_mesh%num_half_lat) then
-              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-                x_lev_lat(i,j,k) = upwind1(sign(1.0_r8, v(i,j,k)), beta, x_lev(i,j:j+1,k))
-              end do
-            else
-              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-                x_lev_lat(i,j,k) = upwind3(sign(1.0_r8, v(i,j,k)), beta, x_lev(i,j-1:j+2,k))
-              end do
-            end if
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              x_lev_lat(i,j,k) = upwind3(sign(1.0_r8, v(i,j,k)), beta, x_lev(i,j-1:j+2,k))
+            end do
           end do
         end do
         return

@@ -176,21 +176,25 @@ contains
         call block%adv_batches(i)%init(block%mesh, 'cell', unique_batch_names(i), unique_tracer_dt(i))
       end do
     else
-      allocate(block%adv_batches(nbatch))
       call block%adv_batch_mass%init(block%mesh, 'cell', 'mass', dt_dyn)
       call block%adv_batch_pv  %init(block%mesh, 'vtx' , 'pv'  , dt_dyn)
-      do i = 1, nbatch
-        call block%adv_batches(i)%init(block%mesh, 'cell', unique_batch_names(i), unique_tracer_dt(i))
-      end do
+      if (nbatch > 0) then
+        allocate(block%adv_batches(nbatch))
+        do i = 1, nbatch
+          call block%adv_batches(i)%init(block%mesh, 'cell', unique_batch_names(i), unique_tracer_dt(i))
+        end do
+      end if
     end if
-    associate (mesh => block%mesh)
-    do i = 1, size(block%state)
-      allocate(block%state(i)%q      (mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub,ntracer))
-      allocate(block%state(i)%qmf_lon(mesh%half_lon_lb:mesh%half_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub,ntracer))
-      allocate(block%state(i)%qmf_lat(mesh%full_lon_lb:mesh%full_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub,ntracer))
-      allocate(block%state(i)%qmf_lev(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%half_lev_lb:mesh%half_lev_ub,ntracer))
-    end do
-    end associate
+    if (ntracer > 0) then
+      associate (mesh => block%mesh)
+      do i = 1, size(block%state)
+        allocate(block%state(i)%q      (mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub,ntracer))
+        allocate(block%state(i)%qmf_lon(mesh%half_lon_lb:mesh%half_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub,ntracer))
+        allocate(block%state(i)%qmf_lat(mesh%full_lon_lb:mesh%full_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub,ntracer))
+        allocate(block%state(i)%qmf_lev(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%half_lev_lb:mesh%half_lev_ub,ntracer))
+      end do
+      end associate
+    end if
 
     ! Record tracer information in advection batches.
     do i = 1, nbatch
@@ -224,24 +228,26 @@ contains
     real(r8) pole(block%mesh%num_full_lev)
     integer i, j, k, l
 
-    do l = 1, size(block%adv_batches)
-      select case (block%adv_batches(l)%loc)
-      case ('cell')
-        call block%adv_batches(l)%accum_uv_cell( &
-          block%state(itime)%u_lon             , &
-          block%state(itime)%v_lat             )
-        call block%adv_batches(l)%accum_mf_cell( &
-          block%state(itime)%mf_lon_n          , &
-          block%state(itime)%mf_lat_n          )
-      case ('vtx')
-        call block%adv_batches(l)%accum_uv_vtx ( &
-          block%state(itime)%u_lat             , &
-          block%state(itime)%v_lon             )
-        call block%adv_batches(l)%accum_mf_vtx ( &
-          block%state(itime)%mf_lat_t          , &
-          block%state(itime)%mf_lon_t          )
-      end select
-    end do
+    if (allocated(block%adv_batches)) then
+      do l = 1, size(block%adv_batches)
+        select case (block%adv_batches(l)%loc)
+        case ('cell')
+          call block%adv_batches(l)%accum_uv_cell( &
+            block%state(itime)%u_lon             , &
+            block%state(itime)%v_lat             )
+          call block%adv_batches(l)%accum_mf_cell( &
+            block%state(itime)%mf_lon_n          , &
+            block%state(itime)%mf_lat_n          )
+        case ('vtx')
+          call block%adv_batches(l)%accum_uv_vtx ( &
+            block%state(itime)%u_lat             , &
+            block%state(itime)%v_lon             )
+          call block%adv_batches(l)%accum_mf_vtx ( &
+            block%state(itime)%mf_lat_t          , &
+            block%state(itime)%mf_lon_t          )
+        end select
+      end do
+    end if
 
   end subroutine adv_accum_wind
 

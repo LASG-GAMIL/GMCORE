@@ -8,6 +8,8 @@ module adv_batch_mod
   use parallel_types_mod
   use parallel_zonal_mod
 
+  implicit none
+
   private
 
   public adv_batch_type
@@ -64,7 +66,7 @@ contains
 
     call this%clear()
 
-    this%mesh => mesh
+    this%mesh      => mesh
     this%loc       = loc
     this%alert_key = alert_key
     this%dt        = dt
@@ -118,7 +120,7 @@ contains
         end if
       end select
     case default
-      call log_error('Invalid grid location ' // trim(loc) // '!')
+      call log_error('Invalid grid location ' // trim(loc) // '!', __FILE__, __LINE__)
     end select
 
   end subroutine adv_batch_init
@@ -205,6 +207,9 @@ contains
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
             this%cflx(i,j,k) = this%dt * this%u(i,j,k) / mesh%de_lon(j)
+            if (abs(this%cflx(i,j,k)) > mesh%lon_halo_width) then
+              call log_error('cflx exceeds mesh%lon_halo_width ' // to_str(mesh%lon_halo_width) // '!', __FILE__, __LINE__)
+            end if
           end do
         end do
         do j = mesh%half_lat_ibeg, mesh%half_lat_iend
@@ -314,6 +319,9 @@ contains
         do j = mesh%half_lat_ibeg, mesh%half_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             this%cflx(i,j,k) = this%dt * this%u(i,j,k) / mesh%le_lat(j)
+            if (abs(this%cflx(i,j,k)) > mesh%lon_halo_width) then
+              call log_error('cflx exceeds mesh%lon_halo_width ' // to_str(mesh%lon_halo_width) // '!', __FILE__, __LINE__)
+            end if
           end do
         end do
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole

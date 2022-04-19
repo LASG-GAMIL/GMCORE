@@ -86,7 +86,6 @@ contains
     end select
 
     call time_add_alert('print', seconds=seconds)
-    if (filter_reset_interval > 0) call time_add_alert('filter_reset', seconds=filter_reset_interval)
 
     if (is_root_proc()) call print_namelist()
 
