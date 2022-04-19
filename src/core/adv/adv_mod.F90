@@ -25,7 +25,7 @@ module adv_mod
   public adv_calc_tracer_hval_vtx
 
   interface
-    subroutine calc_hflx_cell_interface(block, batch, m, mfx, mfy)
+    subroutine calc_hflx_cell_interface(block, batch, m, mfx, mfy, dt)
       import block_type, adv_batch_type, r8
       type(block_type    ), intent(in   ) :: block
       type(adv_batch_type), intent(inout) :: batch
@@ -38,8 +38,9 @@ module adv_mod
       real(r8), intent(out) :: mfy(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
                                    block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
                                    block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+      real(8), intent(in), optional :: dt
     end subroutine calc_hflx_cell_interface
-    subroutine calc_hflx_vtx_interface(block, batch, m, mfx, mfy)
+    subroutine calc_hflx_vtx_interface(block, batch, m, mfx, mfy, dt)
       import block_type, adv_batch_type, r8
       type(block_type    ), intent(in   ) :: block
       type(adv_batch_type), intent(inout) :: batch
@@ -52,8 +53,9 @@ module adv_mod
       real(r8), intent(out) :: mfy(block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
                                    block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
                                    block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+      real(8), intent(in), optional :: dt
     end subroutine calc_hflx_vtx_interface
-    subroutine calc_hval_vtx_interface(block, batch, m, mvx, mvy)
+    subroutine calc_hval_vtx_interface(block, batch, m, mvx, mvy, dt)
       import block_type, adv_batch_type, r8
       type(block_type    ), intent(in   ) :: block
       type(adv_batch_type), intent(inout) :: batch
@@ -66,8 +68,9 @@ module adv_mod
       real(r8), intent(out) :: mvy(block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
                                    block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
                                    block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+      real(8), intent(in), optional :: dt
     end subroutine calc_hval_vtx_interface
-    subroutine calc_vflx_cell_interface(block, batch, m, mfz)
+    subroutine calc_vflx_cell_interface(block, batch, m, mfz, dt)
       import block_type, adv_batch_type, r8
       type(block_type    ), intent(in   ) :: block
       type(adv_batch_type), intent(inout) :: batch
@@ -77,6 +80,7 @@ module adv_mod
       real(r8), intent(out) :: mfz(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
                                    block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
                                    block%mesh%half_lev_lb:block%mesh%half_lev_ub)
+      real(8), intent(in), optional :: dt
     end subroutine calc_vflx_cell_interface
   end interface
 

@@ -44,10 +44,11 @@ module operators_mod
   end interface operators_prepare
 
   interface
-    subroutine interp_pv_interface(block, state)
+    subroutine interp_pv_interface(block, state, dt)
       import block_type, state_type
       type(block_type), intent(inout) :: block
       type(state_type), intent(inout) :: state
+      real(8), intent(in) :: dt
     end subroutine interp_pv_interface
   end interface
 
@@ -87,10 +88,10 @@ contains
       if (nonhydrostatic) then
         call calc_m_lev               (blocks(iblk), blocks(iblk)%state(itime))
       end if
-      call calc_mf                    (blocks(iblk), blocks(iblk)%state(itime))
+      call calc_mf                    (blocks(iblk), blocks(iblk)%state(itime), dt)
       call calc_ke                    (blocks(iblk), blocks(iblk)%state(itime))
       call calc_pv                    (blocks(iblk), blocks(iblk)%state(itime))
-      call interp_pv                  (blocks(iblk), blocks(iblk)%state(itime))
+      call interp_pv                  (blocks(iblk), blocks(iblk)%state(itime), dt)
       call calc_div                   (blocks(iblk), blocks(iblk)%state(itime))
       if (hydrostatic) then
         call calc_gz_lev              (blocks(iblk), blocks(iblk)%state(itime))
@@ -118,11 +119,11 @@ contains
       if (nonhydrostatic) then
         call calc_m_lev               (block, state)
       end if
-      call calc_mf                    (block, state)
+      call calc_mf                    (block, state, dt)
       call calc_ke                    (block, state)
       call calc_div                   (block, state)
       call calc_pv                    (block, state)
-      call interp_pv                  (block, state)
+      call interp_pv                  (block, state, dt)
       if (hydrostatic) then
         call calc_gz_lev              (block, state)
       end if
@@ -131,11 +132,11 @@ contains
     case (forward_pass)
       if (baroclinic) then
       end if
-      call calc_mf                    (block, state)
+      call calc_mf                    (block, state, dt)
       call calc_ke                    (block, state)
       call calc_div                   (block, state)
       call calc_pv                    (block, state)
-      call interp_pv                  (block, state)
+      call interp_pv                  (block, state, dt)
     ! --------------------------------------------------------------------------
     case (backward_pass)
       if (hydrostatic) then
@@ -266,8 +267,8 @@ contains
     real(r8) pole(state%mesh%num_full_lev)
 
     associate (mesh => block%mesh , &
-               u    => state%u_lon, & ! in
-               v    => state%v_lat, & ! in
+               u    => state%u_f, & ! in
+               v    => state%v_f, & ! in
                ke   => state%ke   )   ! out
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole + merge(0, 1, mesh%has_north_pole())
@@ -550,10 +551,11 @@ contains
 
   end subroutine interp_pt
 
-  subroutine calc_mf(block, state)
+  subroutine calc_mf(block, state, dt)
 
     type(block_type), intent(inout) :: block
     type(state_type), intent(inout) :: state
+    real(8), intent(in) :: dt
 
     integer i, j, k
 
@@ -561,16 +563,16 @@ contains
                m        => state%m       , & ! in
                m_lon    => state%m_lon   , & ! in
                m_lat    => state%m_lat   , & ! in
-               u_lon    => state%u_lon   , & ! in
-               v_lat    => state%v_lat   , & ! in
+               u_lon    => state%u_f   , & ! in
+               v_lat    => state%v_f   , & ! in
                u_lat    => state%u_lat   , & ! out
                v_lon    => state%v_lon   , & ! out
                mf_lon_n => state%mf_lon_n, & ! out
                mf_lat_n => state%mf_lat_n, & ! out
                mf_lon_t => state%mf_lon_t, & ! out
                mf_lat_t => state%mf_lat_t)   ! out
-    call block%adv_batch_mass%accum_uv_cell(u_lon, v_lat)
-    call adv_calc_mass_hflx_cell(block, block%adv_batch_mass, m, mf_lon_n, mf_lat_n)
+    call block%adv_batch_mass%accum_uv_cell(u_lon, v_lat, dt)
+    call adv_calc_mass_hflx_cell(block, block%adv_batch_mass, m, mf_lon_n, mf_lat_n, dt)
     call fill_halo(block, mf_lon_n, full_lon=.false., full_lat=.true., full_lev=.true.)
     call fill_halo(block, mf_lat_n, full_lon=.true., full_lat=.false., full_lev=.true.)
     call block%adv_batch_mass%accum_mf_cell(mf_lon_n, mf_lat_n)
@@ -597,7 +599,7 @@ contains
     end do
     call fill_halo(block, v_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
 
-    call block%adv_batch_pv%accum_uv_vtx(u_lat, v_lon)
+    call block%adv_batch_pv%accum_uv_vtx(u_lat, v_lon, dt)
     end associate
 
   end subroutine calc_mf
@@ -676,8 +678,8 @@ contains
 
     associate (mesh  => block%mesh , &
                m_vtx => state%m_vtx, & ! in
-               u_lon => state%u_lon, & ! in
-               v_lat => state%v_lat, & ! in
+               u_lon => state%u_f, & ! in
+               v_lat => state%v_f, & ! in
                vor   => state%vor  , & ! in
                pv    => state%pv)      ! out
     call calc_vor(block, state, u_lon, v_lat)
@@ -693,10 +695,11 @@ contains
 
   end subroutine calc_pv
 
-  subroutine interp_pv_midpoint(block, state)
+  subroutine interp_pv_midpoint(block, state, dt)
 
     type(block_type), intent(inout) :: block
     type(state_type), intent(inout) :: state
+    real(8), intent(in) :: dt
 
     integer i, j, k
 
@@ -725,10 +728,11 @@ contains
 
   end subroutine interp_pv_midpoint
 
-  subroutine interp_pv_upwind(block, state)
+  subroutine interp_pv_upwind(block, state, dt)
 
     type(block_type), intent(inout) :: block
     type(state_type), intent(inout) :: state
+    real(8), intent(in) :: dt
 
     real(r8) b
     integer i, j, k
@@ -795,12 +799,13 @@ contains
 
   end subroutine interp_pv_upwind
 
-  subroutine interp_pv_ffsl(block, state)
+  subroutine interp_pv_ffsl(block, state, dt)
 
     type(block_type), intent(inout) :: block
     type(state_type), intent(inout) :: state
+    real(8), intent(in) :: dt
 
-    call adv_calc_tracer_hval_vtx(block, block%adv_batch_pv, state%pv, state%pv_lon, state%pv_lat)
+    call adv_calc_tracer_hval_vtx(block, block%adv_batch_pv, state%pv, state%pv_lat, state%pv_lon, dt)
     call fill_halo(block, state%pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false.)
     call fill_halo(block, state%pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., north_halo=.false.)
 

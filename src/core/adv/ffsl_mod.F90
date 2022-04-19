@@ -118,7 +118,7 @@ contains
 
   end subroutine ffsl_init
 
-  subroutine ffsl_calc_mass_hflx_cell(block, batch, m, mfx, mfy)
+  subroutine ffsl_calc_mass_hflx_cell(block, batch, m, mfx, mfy, dt)
 
     type(block_type    ), intent(in   ) :: block
     type(adv_batch_type), intent(inout) :: batch
@@ -131,13 +131,16 @@ contains
     real(r8), intent(out) :: mfy(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
                                  block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
                                  block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+    real(8), intent(in), optional :: dt
 
     integer i, j, k
     real(r8) work(block%mesh%full_lon_ibeg:block%mesh%full_lon_iend,block%mesh%num_full_lev)
     real(r8) pole(block%mesh%num_full_lev)
+    real(r8) dt_
+
+    dt_ = merge(dt, batch%dt, present(dt))
 
     associate (mesh => block%mesh, &
-               dt   => batch%dt  , & ! in
                u    => batch%u   , & ! in
                v    => batch%v   , & ! in
                divx => batch%divx, & ! in
@@ -158,14 +161,14 @@ contains
               mfx(i,j,k) - mfx(i-1,j,k)              &
             ) * mesh%le_lon(j) / mesh%area_cell(j) - &
             divx(i,j,k) * m(i,j,k)                   &
-          ) * dt
+          ) * dt_
           my(i,j,k) = m(i,j,k) - 0.5_r8 * (     &
             (                                   &
               mfy(i,j  ,k) * mesh%le_lat(j  ) - &
               mfy(i,j-1,k) * mesh%le_lat(j-1)   &
             ) / mesh%area_cell(j) -             &
             divy(i,j,k) * m(i,j,k)              &
-          ) * dt
+          ) * dt_
         end do
       end do
     end do
@@ -182,7 +185,7 @@ contains
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           mx(i,j,k) = m(i,j,k)
-          my(i,j,k) = m(i,j,k) - 0.5_r8 * (pole(k) - divy(i,j,k) * m(i,j,k)) * dt
+          my(i,j,k) = m(i,j,k) - 0.5_r8 * (pole(k) - divy(i,j,k) * m(i,j,k)) * dt_
         end do
       end do
     end if
@@ -198,7 +201,7 @@ contains
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           mx(i,j,k) = m(i,j,k)
-          my(i,j,k) = m(i,j,k) + 0.5_r8 * (pole(k) - divy(i,j,k) * m(i,j,k)) * dt
+          my(i,j,k) = m(i,j,k) + 0.5_r8 * (pole(k) - divy(i,j,k) * m(i,j,k)) * dt_
         end do
       end do
     end if
@@ -210,7 +213,7 @@ contains
 
   end subroutine ffsl_calc_mass_hflx_cell
 
-  subroutine ffsl_calc_mass_hflx_vtx(block, batch, m, mfx, mfy)
+  subroutine ffsl_calc_mass_hflx_vtx(block, batch, m, mfx, mfy, dt)
 
     type(block_type    ), intent(in   ) :: block
     type(adv_batch_type), intent(inout) :: batch
@@ -223,11 +226,14 @@ contains
     real(r8), intent(out) :: mfy(block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
                                  block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
                                  block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+    real(8), intent(in), optional :: dt
 
     integer i, j, k
+    real(r8) dt_
+
+    dt_ = merge(dt, batch%dt, present(dt))
 
     associate (mesh => block%mesh, &
-               dt   => batch%dt  , & ! in
                u    => batch%u   , & ! in
                v    => batch%v   , & ! in
                divx => batch%divx, & ! in
@@ -248,14 +254,14 @@ contains
               mfx(i+1,j,k) - mfx(i,j,k)              &
             ) * mesh%de_lat(j) / mesh%area_vtx(j) -  &
             divx(i,j,k) * m(i,j,k)                   &
-          ) * dt
+          ) * dt_
           my(i,j,k) = m(i,j,k) - 0.5_r8 * (     &
             (                                   &
               mfy(i,j+1,k) * mesh%de_lon(j+1) - &
               mfy(i,j  ,k) * mesh%de_lon(j  )   &
             ) / mesh%area_vtx(j) -              &
             divy(i,j,k) * m(i,j,k)              &
-          ) * dt
+          ) * dt_
         end do
       end do
     end do
@@ -267,7 +273,7 @@ contains
 
   end subroutine ffsl_calc_mass_hflx_vtx
 
-  subroutine ffsl_calc_tracer_hflx_cell(block, batch, q, qmfx, qmfy)
+  subroutine ffsl_calc_tracer_hflx_cell(block, batch, q, qmfx, qmfy, dt)
 
     type(block_type    ), intent(in   ) :: block
     type(adv_batch_type), intent(inout) :: batch
@@ -280,13 +286,16 @@ contains
     real(r8), intent(out) :: qmfy (block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
                                    block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
                                    block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+    real(8), intent(in), optional :: dt
 
     integer i, j, k
     real(r8) work(block%mesh%full_lon_ibeg:block%mesh%full_lon_iend,block%mesh%num_full_lev)
     real(r8) pole(block%mesh%num_full_lev)
+    real(r8) dt_
+
+    dt_ = merge(dt, batch%dt, present(dt))
 
     associate (mesh => block%mesh, &
-               dt   => batch%dt  , & ! in
                u    => batch%u   , & ! in
                v    => batch%v   , & ! in
                mfx  => batch%mfx , & ! in
@@ -309,14 +318,14 @@ contains
               qmfx(i,j,k) - qmfx(i-1,j,k)            &
             ) * mesh%le_lon(j) / mesh%area_cell(j) - &
             divx(i,j,k) * q(i,j,k)                   &
-          ) * dt
+          ) * dt_
           qy(i,j,k) = q(i,j,k) - 0.5_r8 * (      &
             (                                    &
               qmfy(i,j  ,k) * mesh%le_lat(j  ) - &
               qmfy(i,j-1,k) * mesh%le_lat(j-1)   &
             ) / mesh%area_cell(j) -              &
             divy(i,j,k) * q(i,j,k)               &
-          ) * dt
+          ) * dt_
         end do
       end do
     end do
@@ -333,7 +342,7 @@ contains
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           qx(i,j,k) = q(i,j,k)
-          qy(i,j,k) = q(i,j,k) - 0.5_r8 * (pole(k) - divy(i,j,k) * q(i,j,k)) * dt
+          qy(i,j,k) = q(i,j,k) - 0.5_r8 * (pole(k) - divy(i,j,k) * q(i,j,k)) * dt_
         end do
       end do
     end if
@@ -349,7 +358,7 @@ contains
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           qx(i,j,k) = q(i,j,k)
-          qy(i,j,k) = q(i,j,k) + 0.5_r8 * (pole(k) - divy(i,j,k) * q(i,j,k)) * dt
+          qy(i,j,k) = q(i,j,k) + 0.5_r8 * (pole(k) - divy(i,j,k) * q(i,j,k)) * dt_
         end do
       end do
     end if
@@ -361,7 +370,7 @@ contains
 
   end subroutine ffsl_calc_tracer_hflx_cell
 
-  subroutine ffsl_calc_tracer_hflx_vtx(block, batch, q, qmfx, qmfy)
+  subroutine ffsl_calc_tracer_hflx_vtx(block, batch, q, qmfx, qmfy, dt)
 
     type(block_type    ), intent(in   ) :: block
     type(adv_batch_type), intent(inout) :: batch
@@ -374,11 +383,14 @@ contains
     real(r8), intent(out) :: qmfy (block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
                                    block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
                                    block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+    real(8), intent(in), optional :: dt
 
     integer i, j, k
+    real(r8) dt_
+
+    dt_ = merge(dt, batch%dt, present(dt))
 
     associate (mesh => block%mesh, &
-               dt   => batch%dt  , & ! in
                u    => batch%u   , & ! in
                v    => batch%v   , & ! in
                mfx  => batch%mfx , & ! in
@@ -401,14 +413,14 @@ contains
               qmfx(i+1,j,k) - qmfx(i,j,k)           &
             ) * mesh%de_lat(j) / mesh%area_vtx(j) - &
             divx(i,j,k) * q(i,j,k)                  &
-          ) * dt
+          ) * dt_
           qy(i,j,k) = q(i,j,k) - 0.5_r8 * (      &
             (                                    &
               qmfy(i,j+1,k) * mesh%de_lon(j+1) - &
               qmfy(i,j  ,k) * mesh%de_lon(j  )   &
             ) / mesh%area_vtx(j) -               &
             divy(i,j,k) * q(i,j,k)               &
-          ) * dt
+          ) * dt_
         end do
       end do
     end do
@@ -420,7 +432,7 @@ contains
 
   end subroutine ffsl_calc_tracer_hflx_vtx
 
-  subroutine ffsl_calc_tracer_hval_vtx(block, batch, q, qvx, qvy)
+  subroutine ffsl_calc_tracer_hval_vtx(block, batch, q, qvx, qvy, dt)
 
     type(block_type    ), intent(in   ) :: block
     type(adv_batch_type), intent(inout) :: batch
@@ -433,11 +445,14 @@ contains
     real(r8), intent(out) :: qvy(block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
                                  block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
                                  block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+    real(8), intent(in), optional :: dt
 
     integer i, j, k
+    real(r8) dt_
+
+    dt_ = merge(dt, batch%dt, present(dt))
 
     associate (mesh => block%mesh, &
-               dt   => batch%dt  , & ! in
                u    => batch%u   , & ! in
                v    => batch%v   , & ! in
                divx => batch%divx, & ! in
@@ -458,14 +473,14 @@ contains
               qvx(i+1,j,k) - qvx(i,j,k)             &
             ) * mesh%de_lat(j) / mesh%area_vtx(j) - &
             divx(i,j,k) * q(i,j,k)                  &
-          ) * dt
+          ) * dt_
           qy(i,j,k) = q(i,j,k) - 0.5_r8 * (     &
             (                                   &
               qvy(i,j+1,k) * mesh%de_lon(j+1) - &
               qvy(i,j  ,k) * mesh%de_lon(j  )   &
             ) / mesh%area_vtx(j) -              &
             divy(i,j,k) * q(i,j,k)              &
-          ) * dt
+          ) * dt_
         end do
       end do
     end do

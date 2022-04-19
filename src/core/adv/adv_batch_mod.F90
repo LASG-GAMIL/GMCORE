@@ -173,7 +173,7 @@ contains
 
   end subroutine adv_batch_allocate_tracers
 
-  subroutine adv_batch_accum_uv_cell(this, u, v)
+  subroutine adv_batch_accum_uv_cell(this, u, v, dt)
 
     class(adv_batch_type), intent(inout) :: this
     real(r8), intent(in) :: u(this%mesh%half_lon_lb:this%mesh%half_lon_ub, &
@@ -182,10 +182,14 @@ contains
     real(r8), intent(in) :: v(this%mesh%full_lon_lb:this%mesh%full_lon_ub, &
                               this%mesh%half_lat_lb:this%mesh%half_lat_ub, &
                               this%mesh%full_lev_lb:this%mesh%full_lev_ub)
+    real(r8), intent(in), optional :: dt
 
     real(r8) work(this%mesh%full_lon_ibeg:this%mesh%full_lon_iend,this%mesh%num_full_lev)
     real(r8) pole(this%mesh%num_full_lev)
+    real(r8) dt_
     integer i, j, k
+
+    dt_ = merge(dt, this%dt, present(dt))
 
     associate (mesh => this%mesh)
     if (this%uv_step == 0) then
@@ -206,7 +210,7 @@ contains
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            this%cflx(i,j,k) = this%dt * this%u(i,j,k) / mesh%de_lon(j)
+            this%cflx(i,j,k) = dt_ * this%u(i,j,k) / mesh%de_lon(j)
             if (abs(this%cflx(i,j,k)) > mesh%lon_halo_width) then
               call log_error('cflx exceeds mesh%lon_halo_width ' // to_str(mesh%lon_halo_width) // '!', __FILE__, __LINE__)
             end if
@@ -214,7 +218,7 @@ contains
         end do
         do j = mesh%half_lat_ibeg, mesh%half_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            this%cfly(i,j,k) = this%dt * this%v(i,j,k) / mesh%de_lat(j)
+            this%cfly(i,j,k) = dt_ * this%v(i,j,k) / mesh%de_lat(j)
             if (abs(this%cfly(i,j,k)) > 1) then
               call log_error('cfly exceeds 1!', __FILE__, __LINE__)
             end if
@@ -289,7 +293,7 @@ contains
 
   end subroutine adv_batch_accum_mf_cell
 
-  subroutine adv_batch_accum_uv_vtx(this, u, v)
+  subroutine adv_batch_accum_uv_vtx(this, u, v, dt)
 
     class(adv_batch_type), intent(inout) :: this
     real(r8), intent(in) :: u(this%mesh%full_lon_lb:this%mesh%full_lon_ub, &
@@ -298,6 +302,12 @@ contains
     real(r8), intent(in) :: v(this%mesh%half_lon_lb:this%mesh%half_lon_ub, &
                               this%mesh%full_lat_lb:this%mesh%full_lat_ub, &
                               this%mesh%full_lev_lb:this%mesh%full_lev_ub)
+    real(r8), intent(in), optional :: dt
+
+    real(r8) dt_
+    integer i, j, k
+
+    dt_ = merge(dt, this%dt, present(dt))
 
     associate (mesh => this%mesh)
     if (this%uv_step == 0) then
@@ -318,7 +328,7 @@ contains
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%half_lat_ibeg, mesh%half_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            this%cflx(i,j,k) = this%dt * this%u(i,j,k) / mesh%le_lat(j)
+            this%cflx(i,j,k) = dt_ * this%u(i,j,k) / mesh%le_lat(j)
             if (abs(this%cflx(i,j,k)) > mesh%lon_halo_width) then
               call log_error('cflx exceeds mesh%lon_halo_width ' // to_str(mesh%lon_halo_width) // '!', __FILE__, __LINE__)
             end if
@@ -326,7 +336,7 @@ contains
         end do
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            this%cfly(i,j,k) = this%dt * this%v(i,j,k) / mesh%le_lon(j)
+            this%cfly(i,j,k) = dt_ * this%v(i,j,k) / mesh%le_lon(j)
             if (abs(this%cfly(i,j,k)) > 1) then
               call log_error('cfly exceeds 1!', __FILE__, __LINE__)
             end if
