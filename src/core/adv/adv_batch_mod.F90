@@ -31,8 +31,8 @@ module adv_batch_mod
     real(r8), allocatable, dimension(:,:,:) :: mfy
     real(r8), allocatable, dimension(:,:,:) :: u
     real(r8), allocatable, dimension(:,:,:) :: v
-    real(r8), allocatable, dimension(:,:,:) :: cflx ! Fractional CFL number along x-axis
-    real(r8), allocatable, dimension(:,:,:) :: cfly ! Fractional CFL number along y-axis
+    real(r8), allocatable, dimension(:,:,:) :: cflx ! CFL number along x-axis
+    real(r8), allocatable, dimension(:,:,:) :: cfly ! CFL number along y-axis
     real(r8), allocatable, dimension(:,:,:) :: divx ! Divergence along x-axis
     real(r8), allocatable, dimension(:,:,:) :: divy ! Divergence along y-axis
     real(r8), allocatable, dimension(:,:,:) :: qx   ! Tracer mixing ratio due to advective operator along x axis
@@ -182,11 +182,11 @@ contains
     real(r8), intent(in) :: v(this%mesh%full_lon_lb:this%mesh%full_lon_ub, &
                               this%mesh%half_lat_lb:this%mesh%half_lat_ub, &
                               this%mesh%full_lev_lb:this%mesh%full_lev_ub)
-    real(r8), intent(in), optional :: dt
+    real(8), intent(in), optional :: dt
 
     real(r8) work(this%mesh%full_lon_ibeg:this%mesh%full_lon_iend,this%mesh%num_full_lev)
     real(r8) pole(this%mesh%num_full_lev)
-    real(r8) dt_
+    real(8) dt_
     integer i, j, k
 
     dt_ = merge(dt, this%dt, present(dt))
@@ -302,9 +302,9 @@ contains
     real(r8), intent(in) :: v(this%mesh%half_lon_lb:this%mesh%half_lon_ub, &
                               this%mesh%full_lat_lb:this%mesh%full_lat_ub, &
                               this%mesh%full_lev_lb:this%mesh%full_lev_ub)
-    real(r8), intent(in), optional :: dt
+    real(8), intent(in), optional :: dt
 
-    real(r8) dt_
+    real(8) dt_
     integer i, j, k
 
     dt_ = merge(dt, this%dt, present(dt))

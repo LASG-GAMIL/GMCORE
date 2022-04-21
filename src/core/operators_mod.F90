@@ -267,8 +267,8 @@ contains
     real(r8) pole(state%mesh%num_full_lev)
 
     associate (mesh => block%mesh , &
-               u    => state%u_f, & ! in
-               v    => state%v_f, & ! in
+               u    => state%u_f  , & ! in
+               v    => state%v_f  , & ! in
                ke   => state%ke   )   ! out
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole + merge(0, 1, mesh%has_north_pole())
@@ -493,7 +493,7 @@ contains
 
     associate (mesh   => block%mesh      , &
                ph_lev => state%ph_lev    , & ! in
-               gz     => state%gz_f      , & ! in
+               gz     => state%gz        , & ! in
                gzs    => block%static%gzs, & ! in
                m      => state%m         , & ! out
                m_lon  => state%m_lon     , & ! out
@@ -563,8 +563,8 @@ contains
                m        => state%m       , & ! in
                m_lon    => state%m_lon   , & ! in
                m_lat    => state%m_lat   , & ! in
-               u_lon    => state%u_f   , & ! in
-               v_lat    => state%v_f   , & ! in
+               u_lon    => state%u_f     , & ! in
+               v_lat    => state%v_f     , & ! in
                u_lat    => state%u_lat   , & ! out
                v_lon    => state%v_lon   , & ! out
                mf_lon_n => state%mf_lon_n, & ! out
@@ -678,8 +678,8 @@ contains
 
     associate (mesh  => block%mesh , &
                m_vtx => state%m_vtx, & ! in
-               u_lon => state%u_f, & ! in
-               v_lat => state%v_f, & ! in
+               u_lon => state%u_f  , & ! in
+               v_lat => state%v_f  , & ! in
                vor   => state%vor  , & ! in
                pv    => state%pv)      ! out
     call calc_vor(block, state, u_lon, v_lat)

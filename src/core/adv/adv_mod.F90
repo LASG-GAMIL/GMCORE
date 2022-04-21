@@ -95,7 +95,7 @@ module adv_mod
   character(30), allocatable :: tracer_names(:)
   character(30), allocatable :: tracer_long_names(:)
   character(30), allocatable :: tracer_units(:)
-  real(r8), allocatable :: tracer_dt(:)
+  real(8), allocatable :: tracer_dt(:)
 
 contains
 

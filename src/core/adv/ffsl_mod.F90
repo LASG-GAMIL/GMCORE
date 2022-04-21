@@ -136,7 +136,7 @@ contains
     integer i, j, k
     real(r8) work(block%mesh%full_lon_ibeg:block%mesh%full_lon_iend,block%mesh%num_full_lev)
     real(r8) pole(block%mesh%num_full_lev)
-    real(r8) dt_
+    real(8) dt_
 
     dt_ = merge(dt, batch%dt, present(dt))
 
@@ -229,7 +229,7 @@ contains
     real(8), intent(in), optional :: dt
 
     integer i, j, k
-    real(r8) dt_
+    real(8) dt_
 
     dt_ = merge(dt, batch%dt, present(dt))
 
@@ -291,7 +291,7 @@ contains
     integer i, j, k
     real(r8) work(block%mesh%full_lon_ibeg:block%mesh%full_lon_iend,block%mesh%num_full_lev)
     real(r8) pole(block%mesh%num_full_lev)
-    real(r8) dt_
+    real(8) dt_
 
     dt_ = merge(dt, batch%dt, present(dt))
 
@@ -386,7 +386,7 @@ contains
     real(8), intent(in), optional :: dt
 
     integer i, j, k
-    real(r8) dt_
+    real(8) dt_
 
     dt_ = merge(dt, batch%dt, present(dt))
 
@@ -448,7 +448,7 @@ contains
     real(8), intent(in), optional :: dt
 
     integer i, j, k
-    real(r8) dt_
+    real(8) dt_
 
     dt_ = merge(dt, batch%dt, present(dt))
 
