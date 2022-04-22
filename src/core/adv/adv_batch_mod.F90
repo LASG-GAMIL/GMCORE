@@ -212,7 +212,8 @@ contains
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
             this%cflx(i,j,k) = dt_ * this%u(i,j,k) / mesh%de_lon(j)
             if (abs(this%cflx(i,j,k)) > mesh%lon_halo_width) then
-              call log_error('cflx exceeds mesh%lon_halo_width ' // to_str(mesh%lon_halo_width) // '!', __FILE__, __LINE__)
+              call log_error('cflx exceeds mesh%lon_halo_width ' // &
+                             to_str(mesh%lon_halo_width) // ' at j=' // to_str(j) // '!', __FILE__, __LINE__)
             end if
           end do
         end do
@@ -220,7 +221,7 @@ contains
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             this%cfly(i,j,k) = dt_ * this%v(i,j,k) / mesh%de_lat(j)
             if (abs(this%cfly(i,j,k)) > 1) then
-              call log_error('cfly exceeds 1!', __FILE__, __LINE__)
+              call log_error('cfly exceeds 1 at j=' // to_str(j) // '!', __FILE__, __LINE__)
             end if
           end do
         end do
@@ -338,7 +339,7 @@ contains
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
             this%cfly(i,j,k) = dt_ * this%v(i,j,k) / mesh%le_lon(j)
             if (abs(this%cfly(i,j,k)) > 1) then
-              call log_error('cfly exceeds 1!', __FILE__, __LINE__)
+              call log_error('cfly exceeds 1 at j=' // to_str(j) // '!', __FILE__, __LINE__)
             end if
           end do
         end do
