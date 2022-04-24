@@ -10,6 +10,7 @@ module damp_mod
   use div_damp_mod
   use smag_damp_mod
   use laplace_damp_mod
+  use zonal_damp_mod
   use filter_mod
 
   implicit none
@@ -29,6 +30,7 @@ contains
     call vor_damp_init(blocks)
     call div_damp_init(blocks)
     call laplace_damp_init()
+    call zonal_damp_init()
 
   end subroutine damp_init
 
@@ -37,6 +39,7 @@ contains
     call vor_damp_final()
     call div_damp_final()
     call laplace_damp_final()
+    call zonal_damp_final()
 
   end subroutine damp_final
 
@@ -49,19 +52,27 @@ contains
     integer iblk, cyc
 
     do iblk = 1, size(blocks)
+      associate (block => blocks(iblk)           , &
+                 state => blocks(iblk)%state(new), &
+                 tend  => blocks(iblk)%tend(new))
       if (use_div_damp) then
         do cyc = 1, div_damp_cycles
-          call div_damp_run(blocks(iblk), dt, blocks(iblk)%state(new))
+          call div_damp_run(block, dt, state)
         end do
       end if
       if (use_vor_damp) then
         do cyc = 1, div_damp_cycles
-          call vor_damp_run(blocks(iblk), dt, blocks(iblk)%state(new))
+          call vor_damp_run(block, dt, state)
         end do
       end if
       if (use_smag_damp) then
-        call smag_damp_run(blocks(iblk), dt, blocks(iblk)%tend(new), blocks(iblk)%state(new))
+        call smag_damp_run(block, dt, tend, state)
       end if
+      call zonal_damp_on_lon_edge(block, 6, dt, state%u_lon)
+      call zonal_damp_on_lat_edge(block, 6, dt, state%v_lat)
+      call fill_halo(block, state%u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
+      call fill_halo(block, state%v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
+      end associate
     end do
 
   end subroutine damp_run

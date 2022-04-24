@@ -35,8 +35,6 @@ program gmcore_swm_driver
 
   call parse_namelist(namelist_path)
 
-  call const_init(planet)
-
   call gmcore_init(namelist_path)
 
   if (restart) then

@@ -196,6 +196,7 @@ contains
     real(8), intent(in) :: dt
 
     integer i, j, k
+    real(r8) wgt
 
     associate (mesh => block%mesh)
     if (baroclinic) then
@@ -251,6 +252,15 @@ contains
         call fill_halo(block, new_state%gz, full_lon=.true., full_lat=.true.)
         call filter_on_cell(block, new_state%gz, new_state%gz_f)
         call fill_halo(block, new_state%gz_f, full_lon=.true., full_lat=.true.)
+        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+            if (abs(mesh%full_lat_deg(j)) > 85) then
+              wgt = sin(pi05 * (1 - (pi05 - abs(mesh%full_lat(j))) / (5 * rad)))
+              new_state%gz(:,j,k) = wgt * new_state%gz_f(:,j,k) + (1 - wgt) * new_state%gz(:,j,k)
+            end if
+          end do
+        end do
+        call fill_halo(block, new_state%gz, full_lon=.true., full_lat=.true., west_halo=.false., east_halo=.false.)
       else if (tend%copy_gz) then
         new_state%gz   = old_state%gz
         new_state%gz_f = old_state%gz_f
@@ -266,7 +276,7 @@ contains
         end do
       end do
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-        do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+        do j = mesh%half_lat_ibeg, mesh%half_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             new_state%v_lat(i,j,k) = old_state%v_lat(i,j,k) + dt * tend%dv(i,j,k)
           end do
@@ -274,6 +284,14 @@ contains
       end do
       call fill_halo(block, new_state%u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
       call fill_halo(block, new_state%v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
+      if (mesh%has_south_pole()) then
+        j = mesh%half_lat_ibeg
+        new_state%v_lat(:,j,:) = 0.4_r8 * new_state%v_lat(:,j,:) + 0.6_r8 * new_state%v_lat(:,j+1,:)
+      end if
+      if (mesh%has_north_pole()) then
+        j = mesh%half_lat_iend
+        new_state%v_lat(:,j,:) = 0.4_r8 * new_state%v_lat(:,j,:) + 0.6_r8 * new_state%v_lat(:,j-1,:)
+      end if
       call filter_on_lon_edge(block, new_state%u_lon, new_state%u_f)
       call filter_on_lat_edge(block, new_state%v_lat, new_state%v_f)
       call fill_halo(block, new_state%u_f, full_lon=.false., full_lat=.true., full_lev=.true.)
