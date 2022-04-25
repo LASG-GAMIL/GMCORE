@@ -8,6 +8,9 @@ module adv_mod
   use parallel_mod
   use adv_batch_mod
   use ffsl_mod
+  use upwind_mod
+  use weno_mod
+  use tvd_mod
 
   implicit none
 
@@ -23,6 +26,12 @@ module adv_mod
   public adv_calc_tracer_hflx_cell
   public adv_calc_tracer_hflx_vtx
   public adv_calc_tracer_hval_vtx
+
+  public upwind1
+  public upwind3
+  public weno3
+  public weno5
+  public tvd
 
   interface
     subroutine calc_hflx_cell_interface(block, batch, m, mfx, mfy, dt)

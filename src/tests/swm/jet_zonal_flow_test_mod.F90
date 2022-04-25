@@ -55,16 +55,16 @@ contains
       if (j == mesh%full_lat_ibeg) then
         gz(i,j,1) = gh0
       else
-        call qags(gh_integrand, -0.5*pi, mesh%full_lat(j), 1.0e-12, 1.0e-3, block%state(1)%gz(i,j,1), abserr, neval, ierr)
+        call qags(gh_integrand, -0.5*pi, mesh%full_lat(j), 1.0d-12, 1.0d-3, gz(i,j,1), abserr, neval, ierr)
         if (ierr /= 0) then
-          call log_error('Failed to calculate integration at (' // to_str(i) // ',' // to_str(j) // ')!')
+          call log_error('Failed to calculate integration at (' // to_str(i) // ',' // to_str(j) // ')!', __FILE__, __LINE__)
         end if
         gz(i,j,1) = gh0 - gz(i,j,1)
       end if
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
         gz(i,j,1) = gz(mesh%half_lon_ibeg,j,1)
         ! Add perturbation.
-        gz(i,j,1) = block%state(1)%gz(i,j,1) + ghd * &
+        gz(i,j,1) = gz(i,j,1) + ghd * &
           cos(mesh%full_lat(j)) * &
           exp(-(merge(mesh%full_lon(i) - 2*pi, mesh%full_lon(i), mesh%full_lon(i) > pi)  / alpha)**2) * &
           exp(-((lat2 - mesh%full_lat(j)) / beta)**2)

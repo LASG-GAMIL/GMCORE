@@ -144,8 +144,6 @@ set(gmcore_files
   src/core/tend_mod.F90
   src/core/nh_mod.F90
   src/core/interp_mod.F90
-  src/core/upwind_mod.F90
-  src/core/weno_mod.F90
   src/core/operators_mod.F90
   src/core/filter_types_mod.F90
   src/core/filter_mod.F90
@@ -158,6 +156,9 @@ set(gmcore_files
   src/core/adv/adv_batch_mod.F90
   src/core/adv/adv_mod.F90
   src/core/adv/ffsl_mod.F90
+  src/core/adv/tvd_mod.F90
+  src/core/adv/weno_mod.F90
+  src/core/adv/upwind_mod.F90
   src/core/gmcore_mod.F90
   src/prepare/prepare_mod.F90
   src/prepare/topo_mod.F90

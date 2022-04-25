@@ -11,7 +11,6 @@ module operators_mod
   use adv_mod
   use nh_mod
   use interp_mod
-  use upwind_mod
 
   implicit none
 
@@ -759,10 +758,6 @@ contains
                             (1 - b) * 0.5_r8 * (pv(i,j-1,k) + pv(i,j,k))
           end do
         end do
-      end do
-      call fill_halo(block, pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false.)
-
-      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             b  = abs(ut(i,j,k)) / (sqrt(ut(i,j,k)**2 + vn(i,j,k)**2) + eps)
@@ -771,7 +766,6 @@ contains
           end do
         end do
       end do
-      call fill_halo(block, pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., north_halo=.false.)
     case (3)
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -781,10 +775,6 @@ contains
                             (1 - b) * 0.5_r8 * (pv(i,j-1,k) + pv(i,j,k))
           end do
         end do
-      end do
-      call fill_halo(block, pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false.)
-
-      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             b  = abs(ut(i,j,k)) / (sqrt(ut(i,j,k)**2 + vn(i,j,k)**2) + eps)

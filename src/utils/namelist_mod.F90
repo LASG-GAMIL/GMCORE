@@ -64,6 +64,7 @@ module namelist_mod
   character(8)    :: adv_scheme           = 'ffsl'
   character(8)    :: limiter_type         = 'mono'
   character(8)    :: ffsl_flux_type       = 'ppm'
+  character(8)    :: tvd_limiter_type     = 'van_leer'
 
   character(8)    :: zonal_tridiag_solver = 'spk' ! mkl, spk
 
@@ -172,6 +173,7 @@ module namelist_mod
     adv_scheme                , &
     limiter_type              , &
     ffsl_flux_type            , &
+    tvd_limiter_type          , &
     zonal_tridiag_solver      , &
     weno_order                , &
     upwind_order              , &
@@ -279,7 +281,6 @@ contains
     end if
       write(*, *) 'zonal_tridiag_solver= ', trim(zonal_tridiag_solver)
       write(*, *) 'time_scheme         = ', trim(time_scheme)
-      write(*, *) 'weno_order          = ', to_str(weno_order)
       write(*, *) 'upwind_order        = ', to_str(upwind_order)
     if (upwind_order > 0) then
       write(*, *) 'upwind_wgt          = ', to_str(upwind_wgt, 2)
