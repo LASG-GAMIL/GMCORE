@@ -129,6 +129,8 @@ contains
     allocate(tracer_units     (1000))
     allocate(tracer_dt        (1000))
 
+    call tvd_init()
+
   end subroutine adv_init
 
   subroutine adv_add_tracer(batch_name, dt, name, long_name, units)

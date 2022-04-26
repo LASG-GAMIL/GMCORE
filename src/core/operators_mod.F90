@@ -62,6 +62,8 @@ contains
       interp_pv => interp_pv_midpoint
     case ('upwind')
       interp_pv => interp_pv_upwind
+    case ('tvd')
+      interp_pv => interp_pv_tvd
     case ('ffsl')
       interp_pv => interp_pv_ffsl
     case default
@@ -741,10 +743,6 @@ contains
                vn       => state%v_f     , & ! in
                ut       => state%u_lat   , & ! in
                vt       => state%v_lon   , & ! in
-               m_lon    => state%m_lon   , & ! in
-               m_lat    => state%m_lat   , & ! in
-               mf_lon_t => state%mf_lon_t, & ! in
-               mf_lat_t => state%mf_lat_t, & ! in
                pv       => state%pv      , & ! in
                pv_lon   => state%pv_lon  , & ! out
                pv_lat   => state%pv_lat)     ! out
@@ -775,7 +773,7 @@ contains
                             (1 - b) * 0.5_r8 * (pv(i,j-1,k) + pv(i,j,k))
           end do
         end do
-        do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+        do j = mesh%half_lat_ibeg, mesh%half_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             b  = abs(ut(i,j,k)) / (sqrt(ut(i,j,k)**2 + vn(i,j,k)**2) + eps)
             pv_lat(i,j,k) = b * upwind3(sign(1.0_r8, ut(i,j,k)), upwind_wgt_pv, pv(i-2:i+1,j,k)) + &
@@ -783,11 +781,49 @@ contains
           end do
         end do
       end do
-      call fill_halo(block, pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., north_halo=.false.)
     end select
+    call fill_halo(block, pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false.)
+    call fill_halo(block, pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., north_halo=.false.)
     end associate
 
   end subroutine interp_pv_upwind
+
+  subroutine interp_pv_tvd(block, state, dt)
+
+    type(block_type), intent(inout) :: block
+    type(state_type), intent(inout) :: state
+    real(8), intent(in) :: dt
+
+    real(r8) cfl
+    integer i, j, k
+
+    associate (mesh     => block%mesh    , &
+               un       => state%u_f     , & ! in
+               vn       => state%v_f     , & ! in
+               ut       => state%u_lat   , & ! in
+               vt       => state%v_lon   , & ! in
+               pv       => state%pv      , & ! in
+               pv_lon   => state%pv_lon  , & ! out
+               pv_lat   => state%pv_lat)     ! out
+    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+        do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+          cfl = vt(i,j,k) * dt / mesh%le_lon(j)
+          pv_lon(i,j,k) = tvd(cfl, pv(i,j-2,k), pv(i,j-1,k), pv(i,j,k), pv(i,j+1,k))
+        end do
+      end do
+      do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          cfl = ut(i,j,k) * dt / mesh%le_lat(j)
+          pv_lat(i,j,k) = tvd(cfl, pv(i-2,j,k), pv(i-1,j,k), pv(i,j,k), pv(i+1,j,k))
+        end do
+      end do
+    end do
+    call fill_halo(block, pv_lon, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false.)
+    call fill_halo(block, pv_lat, full_lon=.true., full_lat=.false., full_lev=.true., north_halo=.false.)
+    end associate
+
+  end subroutine interp_pv_tvd
 
   subroutine interp_pv_ffsl(block, state, dt)
 
