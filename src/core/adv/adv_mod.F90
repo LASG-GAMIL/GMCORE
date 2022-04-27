@@ -24,6 +24,7 @@ module adv_mod
   public adv_calc_mass_hflx_cell
   public adv_calc_mass_hflx_vtx
   public adv_calc_tracer_hflx_cell
+  public adv_calc_tracer_vflx_cell
   public adv_calc_tracer_hflx_vtx
   public adv_calc_tracer_hval_vtx
 
@@ -96,6 +97,7 @@ module adv_mod
   procedure(calc_hflx_cell_interface), pointer :: adv_calc_mass_hflx_cell   => null()
   procedure(calc_hflx_vtx_interface ), pointer :: adv_calc_mass_hflx_vtx    => null()
   procedure(calc_hflx_cell_interface), pointer :: adv_calc_tracer_hflx_cell => null()
+  procedure(calc_vflx_cell_interface), pointer :: adv_calc_tracer_vflx_cell => null()
   procedure(calc_hflx_vtx_interface ), pointer :: adv_calc_tracer_hflx_vtx  => null()
   procedure(calc_hval_vtx_interface ), pointer :: adv_calc_tracer_hval_vtx  => null()
 

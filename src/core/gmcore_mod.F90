@@ -349,10 +349,9 @@ contains
       if (hydrostatic) then
         call calc_grad_mf          (block, star_state, tend1, dt)
         call calc_dphsdt           (block, star_state, tend1, dt)
-        call calc_wedphdlev_lev    (block, star_state, tend1, dt)
+        call calc_we_lev           (block, star_state, tend1, dt)
         call calc_wedudlev_wedvdlev(block, star_state, tend1, dt)
-        call calc_dptfdlon_dptfdlat(block, star_state, tend1, dt)
-        call calc_dptfdlev         (block, star_state, tend1, dt)
+        call calc_grad_ptf         (block, star_state, tend1, dt)
         call calc_coriolis         (block, star_state, tend1, dt)
         call calc_grad_ke          (block, star_state, tend1, dt)
         call pgf_run               (block, star_state, tend1)
@@ -384,9 +383,8 @@ contains
       else if (nonhydrostatic) then
         call calc_grad_mf          (block, star_state, tend1, dt)
         call calc_dphsdt           (block, star_state, tend1, dt)
-        call calc_wedphdlev_lev    (block, star_state, tend1, dt)
-        call calc_dptfdlon_dptfdlat(block, star_state, tend1, dt)
-        call calc_dptfdlev         (block, star_state, tend1, dt)
+        call calc_we_lev           (block, star_state, tend1, dt)
+        call calc_grad_ptf         (block, star_state, tend1, dt)
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -458,10 +456,9 @@ contains
       if (hydrostatic) then
         call calc_grad_mf          (block, star_state, tend1, dt)
         call calc_dphsdt           (block, star_state, tend1, dt)
-        call calc_wedphdlev_lev    (block, star_state, tend1, dt)
+        call calc_we_lev           (block, star_state, tend1, dt)
         call calc_wedudlev_wedvdlev(block, star_state, tend1, dt)
-        call calc_dptfdlon_dptfdlat(block, star_state, tend1, dt)
-        call calc_dptfdlev         (block, star_state, tend1, dt)
+        call calc_grad_ptf         (block, star_state, tend1, dt)
         call calc_coriolis         (block, star_state, tend1, dt)
         call calc_grad_ke          (block, star_state, tend1, dt)
 

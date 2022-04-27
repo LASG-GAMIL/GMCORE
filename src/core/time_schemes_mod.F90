@@ -233,12 +233,8 @@ contains
           end do
         end do
         call fill_halo(block, new_state%pt, full_lon=.true., full_lat=.true., full_lev=.true.)
-        ! NOTE: When we use FFSL to transport pt, it may be not needed to filter pt.
-        call filter_on_cell(block, new_state%pt, new_state%pt_f)
-        call fill_halo(block, new_state%pt_f, full_lon=.true., full_lat=.true., full_lev=.true.)
       else if (tend%copy_pt) then
-        new_state%pt   = old_state%pt
-        new_state%pt_f = old_state%pt_f
+        new_state%pt = old_state%pt
       end if
     else
       if (tend%update_gz) then

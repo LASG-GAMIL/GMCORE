@@ -21,6 +21,7 @@ module adv_batch_mod
     character(30) :: alert_key = ''
     integer  :: nstep   = 0 ! Number of dynamic steps for one adv step
     integer  :: uv_step = 0 ! Step counter for u and v
+    integer  :: we_step = 0 ! Step counter for we
     integer  :: mf_step = 0 ! Step counter for mass flux
     real(r8) :: dt          ! Advection time step size in seconds
     integer      , allocatable, dimension(:) :: tracer_idx
@@ -29,10 +30,13 @@ module adv_batch_mod
     character(10), allocatable, dimension(:) :: tracer_units
     real(r8), allocatable, dimension(:,:,:) :: mfx
     real(r8), allocatable, dimension(:,:,:) :: mfy
+    real(r8), allocatable, dimension(:,:,:) :: m_lev
     real(r8), allocatable, dimension(:,:,:) :: u
     real(r8), allocatable, dimension(:,:,:) :: v
+    real(r8), allocatable, dimension(:,:,:) :: we
     real(r8), allocatable, dimension(:,:,:) :: cflx ! CFL number along x-axis
     real(r8), allocatable, dimension(:,:,:) :: cfly ! CFL number along y-axis
+    real(r8), allocatable, dimension(:,:,:) :: cflz ! CFL number along z-axis
     real(r8), allocatable, dimension(:,:,:) :: divx ! Divergence along x-axis
     real(r8), allocatable, dimension(:,:,:) :: divy ! Divergence along y-axis
     real(r8), allocatable, dimension(:,:,:) :: qx   ! Tracer mixing ratio due to advective operator along x axis
@@ -51,6 +55,7 @@ module adv_batch_mod
     procedure :: accum_mf_cell    => adv_batch_accum_mf_cell
     procedure :: accum_uv_vtx     => adv_batch_accum_uv_vtx
     procedure :: accum_mf_vtx     => adv_batch_accum_mf_vtx
+    procedure :: accum_we_lev     => adv_batch_accum_we_lev
     final :: adv_batch_final
   end type adv_batch_type
 
@@ -72,16 +77,20 @@ contains
     this%dt        = dt
     this%nstep     = dt / dt_dyn
     this%uv_step   = 0
+    this%we_step   = 0
     this%mf_step   = 0
 
     select case (loc)
     case ('cell')
       call allocate_array(mesh, this%mfx , half_lon=.true., full_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%mfy , full_lon=.true., half_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%m_lev, full_lon=.true., full_lat=.true., half_lev=.true.)
       call allocate_array(mesh, this%u   , half_lon=.true., full_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%v   , full_lon=.true., half_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%we  , full_lon=.true., full_lat=.true., half_lev=.true.)
       call allocate_array(mesh, this%cflx, half_lon=.true., full_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%cfly, full_lon=.true., half_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%cflz, full_lon=.true., full_lat=.true., half_lev=.true.)
       call allocate_array(mesh, this%divx, full_lon=.true., full_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%divy, full_lon=.true., full_lat=.true., full_lev=.true.)
       select case (adv_scheme)
@@ -135,6 +144,7 @@ contains
     this%dt        = 0
     this%nstep     = 0
     this%uv_step   = 0
+    this%we_step   = 0
     this%mf_step   = 0
 
     if (allocated(this%tracer_idx       )) deallocate(this%tracer_idx       )
@@ -144,10 +154,13 @@ contains
 
     if (allocated(this%mfx )) deallocate(this%mfx )
     if (allocated(this%mfy )) deallocate(this%mfy )
+    if (allocated(this%m_lev)) deallocate(this%m_lev)
     if (allocated(this%u   )) deallocate(this%u   )
     if (allocated(this%v   )) deallocate(this%v   )
+    if (allocated(this%we  )) deallocate(this%we  )
     if (allocated(this%cflx)) deallocate(this%cflx)
     if (allocated(this%cfly)) deallocate(this%cfly)
+    if (allocated(this%cflz)) deallocate(this%cflz)
     if (allocated(this%divx)) deallocate(this%divx)
     if (allocated(this%divy)) deallocate(this%divy)
     if (allocated(this%qx  )) deallocate(this%qx  )
@@ -381,6 +394,50 @@ contains
     end if
 
   end subroutine adv_batch_accum_mf_vtx
+
+  subroutine adv_batch_accum_we_lev(this, we, m_lev, dt)
+
+    class(adv_batch_type), intent(inout) :: this
+    real(r8), intent(in) :: we   (this%mesh%full_lon_lb:this%mesh%full_lon_ub, &
+                                  this%mesh%full_lat_lb:this%mesh%full_lat_ub, &
+                                  this%mesh%half_lev_lb:this%mesh%half_lev_ub)
+    real(r8), intent(in) :: m_lev(this%mesh%full_lon_lb:this%mesh%full_lon_ub, &
+                                  this%mesh%full_lat_lb:this%mesh%full_lat_ub, &
+                                  this%mesh%half_lev_lb:this%mesh%half_lev_ub)
+
+    real(8), intent(in), optional :: dt
+
+    real(8) dt_
+    integer i, j, k
+
+    dt_ = merge(dt, this%dt, present(dt))
+
+    associate (mesh => this%mesh)
+    if (this%we_step == 0) then
+      this%we    = we
+      this%m_lev = m_lev
+      if (this%nstep > 1) this%we_step = this%we_step + 1
+    else if (this%we_step == this%nstep) then
+      this%we    = (this%we    + we   ) / (this%nstep + 1)
+      this%m_lev = (this%m_lev + m_lev) / (this%nstep + 1)
+      this%we_step = 0
+    else
+      this%we    = this%we    + we
+      this%m_lev = this%m_lev + m_lev
+      this%we_step = this%we_step + 1
+    end if
+    if (this%we_step == 0) then
+      do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
+        do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            this%cflz(i,j,k) = dt_ * this%we(i,j,k) / this%m_lev(i,j,k) / mesh%half_dlev(k)
+          end do
+        end do
+      end do
+    end if
+    end associate
+
+  end subroutine adv_batch_accum_we_lev
 
   subroutine adv_batch_final(this)
 

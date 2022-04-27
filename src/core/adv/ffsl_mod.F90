@@ -14,6 +14,7 @@ module ffsl_mod
   public ffsl_calc_mass_hflx_cell
   public ffsl_calc_mass_hflx_vtx
   public ffsl_calc_tracer_hflx_cell
+  public ffsl_calc_tracer_vflx_cell
   public ffsl_calc_tracer_hflx_vtx
   public ffsl_calc_tracer_hval_vtx
 
@@ -41,6 +42,20 @@ module ffsl_mod
                                    block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
                                    block%mesh%full_lev_lb:block%mesh%full_lev_ub)
     end subroutine hflx_cell_interface
+    subroutine vflx_cell_interface(block, batch, w, m, mfz)
+      import block_type, adv_batch_type, r8
+      type(block_type    ), intent(in   ) :: block
+      type(adv_batch_type), intent(inout) :: batch
+      real(r8), intent(in ) :: w  (block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
+                                   block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
+                                   block%mesh%half_lev_lb:block%mesh%half_lev_ub)
+      real(r8), intent(in ) :: m  (block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
+                                   block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
+                                   block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+      real(r8), intent(out) :: mfz(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
+                                   block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
+                                   block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+    end subroutine vflx_cell_interface
     subroutine hflx_vtx_interface(block, batch, u, v, mx, my, mfx, mfy)
       import block_type, adv_batch_type, r8
       type(block_type    ), intent(in   ) :: block
@@ -88,6 +103,7 @@ module ffsl_mod
   end interface
 
   procedure(hflx_cell_interface), pointer :: hflx_cell => null()
+  procedure(vflx_cell_interface), pointer :: vflx_cell => null()
   procedure(hflx_vtx_interface ), pointer :: hflx_vtx  => null()
   procedure(hval_vtx_interface ), pointer :: hval_vtx  => null()
   procedure(slope_interface    ), pointer :: slope     => null()
@@ -99,10 +115,12 @@ contains
     select case (ffsl_flux_type)
     case ('van_leer')
       hflx_cell => hflx_van_leer_cell
+      vflx_cell => vflx_van_leer_cell
       hflx_vtx  => hflx_van_leer_vtx
       hval_vtx  => hval_van_leer_vtx
     case ('ppm')
       hflx_cell => hflx_ppm_cell
+      vflx_cell => vflx_ppm_cell
       hflx_vtx  => hflx_ppm_vtx
       hval_vtx  => hval_ppm_vtx
     end select
@@ -370,19 +388,43 @@ contains
 
   end subroutine ffsl_calc_tracer_hflx_cell
 
+  subroutine ffsl_calc_tracer_vflx_cell(block, batch, q, qmfz, dt)
+
+    type(block_type    ), intent(in   ) :: block
+    type(adv_batch_type), intent(inout) :: batch
+    real(r8), intent(in ) :: q   (block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
+                                  block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
+                                  block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+    real(r8), intent(out) :: qmfz(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
+                                  block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
+                                  block%mesh%half_lev_lb:block%mesh%half_lev_ub)
+    real(8), intent(in), optional :: dt
+
+    integer i, j, k
+    real(8) dt_
+
+    dt_ = merge(dt, batch%dt, present(dt))
+
+    associate (mesh => block%mesh, &
+               we   => batch%we  )
+    call vflx_cell(block, batch, we, q, qmfz)
+    end associate
+
+  end subroutine ffsl_calc_tracer_vflx_cell
+
   subroutine ffsl_calc_tracer_hflx_vtx(block, batch, q, qmfx, qmfy, dt)
 
     type(block_type    ), intent(in   ) :: block
     type(adv_batch_type), intent(inout) :: batch
-    real(r8), intent(in ) :: q    (block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
-                                   block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
-                                   block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-    real(r8), intent(out) :: qmfx (block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
-                                   block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
-                                   block%mesh%full_lev_lb:block%mesh%full_lev_ub)
-    real(r8), intent(out) :: qmfy (block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
-                                   block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
-                                   block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+    real(r8), intent(in ) :: q   (block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
+                                  block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
+                                  block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+    real(r8), intent(out) :: qmfx(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
+                                  block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
+                                  block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+    real(r8), intent(out) :: qmfy(block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
+                                  block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
+                                  block%mesh%full_lev_lb:block%mesh%full_lev_ub)
     real(8), intent(in), optional :: dt
 
     integer i, j, k
@@ -518,9 +560,9 @@ contains
     integer i, j, k, iu, ju, ci
     real(r8) cf, dm
 
-    associate (mesh => block %mesh, &
-               cflx => batch %cflx, & ! in
-               cfly => batch %cfly)   ! in
+    associate (mesh => block%mesh, &
+               cflx => batch%cflx, & ! in
+               cfly => batch%cfly)   ! in
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       ! Along x-axis
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -553,6 +595,48 @@ contains
     end associate
 
   end subroutine hflx_van_leer_cell
+
+  subroutine vflx_van_leer_cell(block, batch, w, m, mfz)
+
+    type(block_type    ), intent(in   ) :: block
+    type(adv_batch_type), intent(inout) :: batch
+    real(r8), intent(in ) :: w  (block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
+                                 block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
+                                 block%mesh%half_lev_lb:block%mesh%half_lev_ub)
+    real(r8), intent(in ) :: m  (block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
+                                 block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
+                                 block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+    real(r8), intent(out) :: mfz(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
+                                 block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
+                                 block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+
+    integer i, j, k, ku, ci
+    real(r8) cf, dm
+
+    associate (mesh => block%mesh, &
+               cflz => batch%cflz)   ! in
+    do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
+      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          ci = int(cflz(i,j,k))
+          cf = cflz(i,j,k) - ci
+          if (cflz(i,j,k) > 0) then
+            ku = k - ci - 1
+            dm = slope(m(i,j,ku-1), m(i,j,ku), m(i,j,ku+1))
+            mfz(i,j,k) = w(i,j,k) * (cf * (m(i,j,ku) + dm * 0.5_r8 * (1 - cf)) + sum(m(i,j,k-ci:k-1))) / cflz(i,j,k)
+          else if (cflz(i,j,k) < 0) then
+            ku = k - ci
+            dm = slope(m(i,j,ku-1), m(i,j,ku), m(i,j,ku+1))
+            mfz(i,j,k) = w(i,j,k) * (cf * (m(i,j,ku) - dm * 0.5_r8 * (1 + cf)) - sum(m(i,j,k:k-ci-1))) / cflz(i,j,k)
+          else
+            mfz(i,j,k) = 0
+          end if
+        end do
+      end do
+    end do
+    end associate
+
+  end subroutine vflx_van_leer_cell
 
   subroutine hflx_van_leer_vtx(block, batch, u, v, mx, my, mfx, mfy)
 
@@ -776,6 +860,66 @@ contains
     end associate
 
   end subroutine hflx_ppm_cell
+
+  subroutine vflx_ppm_cell(block, batch, w, m, mfz)
+
+    type(block_type    ), intent(in   ) :: block
+    type(adv_batch_type), intent(inout) :: batch
+    real(r8), intent(in ) :: w  (block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
+                                 block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
+                                 block%mesh%half_lev_lb:block%mesh%half_lev_ub)
+    real(r8), intent(in ) :: m  (block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
+                                 block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
+                                 block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+    real(r8), intent(out) :: mfz(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
+                                 block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
+                                 block%mesh%half_lev_lb:block%mesh%half_lev_ub)
+
+    integer i, j, k, ku, ci
+    real(r8) cf, s1, s2, ds1, ds2, ds3
+
+    associate (mesh => block%mesh, &
+               cflz => batch%cflz, & ! in
+               mlz  => batch%qlx , & ! work array
+               dmz  => batch%qlx , & ! work array
+               m6z  => batch%q6x )   ! work array
+    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          call ppm(m(i,j,k-2), m(i,j,k-1), m(i,j,k), m(i,j,k+1), m(i,j,k+2), mlz(i,j,k), dmz(i,j,k), m6z(i,j,k))
+        end do
+      end do
+    end do
+    do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
+      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          ci = int(cflz(i,j,k))
+          cf = cflz(i,j,k) - ci
+          if (cflz(i,j,k) > 0) then
+            ku = k - ci - 1
+            s1 = 1 - cf
+            s2 = 1
+            ds1 = s2    - s1
+            ds2 = s2**2 - s1**2
+            ds3 = s2**3 - s1**3
+            mfz(i,j,k) =  w(i,j,k) * (sum(m(i,j,k-ci:i-1)) + mlz(i,j,ku) * ds1 + 0.5_r8 * dmz(i,j,ku) * ds2 + m6z(i,j,ku) * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflz(i,j,k)
+          else if (cflz(i,j,k) < 0) then
+            ku = k - ci
+            s1 = 0
+            s2 = -cf
+            ds1 = s2    - s1
+            ds2 = s2**2 - s1**2
+            ds3 = s2**3 - s1**3
+            mfz(i,j,k) = -w(i,j,k) * (sum(m(i,j,k:k-ci-1)) + mlz(i,j,ku) * ds1 + 0.5_r8 * dmz(i,j,ku) * ds2 + m6z(i,j,ku) * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflz(i,j,k)
+          else
+            mfz(i,j,k) = 0
+          end if
+        end do
+      end do
+    end do
+    end associate
+
+  end subroutine vflx_ppm_cell
 
   subroutine hflx_ppm_vtx(block, batch, u, v, mx, my, mfx, mfy)
 

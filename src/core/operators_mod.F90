@@ -22,14 +22,13 @@ module operators_mod
   public calc_m
   public calc_t
   public calc_gz_lev
-  public calc_wedphdlev_lev
+  public calc_we_lev
   public calc_div
   public calc_vor
   public calc_coriolis
   public calc_grad_ke
   public calc_grad_mf
-  public calc_dptfdlon_dptfdlat
-  public calc_dptfdlev
+  public calc_grad_ptf
   public calc_dphsdt
   public calc_wedudlev_wedvdlev
   public calc_qmf
@@ -82,22 +81,17 @@ contains
 
     do iblk = 1, size(blocks)
       if (baroclinic) then
-        call diag_ph                  (blocks(iblk), blocks(iblk)%state(itime))
-        call diag_t                   (blocks(iblk), blocks(iblk)%state(itime))
+        call calc_ph                      (blocks(iblk), blocks(iblk)%state(itime))
+        call calc_t                       (blocks(iblk), blocks(iblk)%state(itime))
       end if
-      call calc_m                     (blocks(iblk), blocks(iblk)%state(itime))
-      if (nonhydrostatic) then
-        call calc_m_lev               (blocks(iblk), blocks(iblk)%state(itime))
-      end if
-      call calc_mf                    (blocks(iblk), blocks(iblk)%state(itime), dt)
-      call calc_ke                    (blocks(iblk), blocks(iblk)%state(itime))
-      call calc_pv                    (blocks(iblk), blocks(iblk)%state(itime))
-      call interp_pv                  (blocks(iblk), blocks(iblk)%state(itime), dt)
-      call calc_div                   (blocks(iblk), blocks(iblk)%state(itime))
-      if (hydrostatic) then
-        call calc_gz_lev              (blocks(iblk), blocks(iblk)%state(itime))
-      end if
-      call pgf_prepare                (blocks(iblk), blocks(iblk)%state(itime))
+      call calc_m                         (blocks(iblk), blocks(iblk)%state(itime))
+      call calc_mf                        (blocks(iblk), blocks(iblk)%state(itime), dt)
+      call calc_ke                        (blocks(iblk), blocks(iblk)%state(itime))
+      call calc_pv                        (blocks(iblk), blocks(iblk)%state(itime))
+      call interp_pv                      (blocks(iblk), blocks(iblk)%state(itime), dt)
+      call calc_div                       (blocks(iblk), blocks(iblk)%state(itime))
+      if (hydrostatic) call calc_gz_lev   (blocks(iblk), blocks(iblk)%state(itime))
+      call pgf_prepare                    (blocks(iblk), blocks(iblk)%state(itime))
     end do
 
   end subroutine operators_prepare_1
@@ -113,52 +107,33 @@ contains
     ! --------------------------------------------------------------------------
     case (all_pass)
       if (baroclinic) then
-        call diag_ph                  (block, state)
-        call diag_t                   (block, state)
+        call calc_ph                      (block, state)
+        call calc_t                       (block, state)
       end if
-      call calc_m                     (block, state)
-      if (nonhydrostatic) then
-        call calc_m_lev               (block, state)
-      end if
-      call calc_mf                    (block, state, dt)
-      call calc_ke                    (block, state)
-      call calc_div                   (block, state)
-      call calc_pv                    (block, state)
-      call interp_pv                  (block, state, dt)
-      if (hydrostatic) then
-        call calc_gz_lev              (block, state)
-      end if
-      call pgf_prepare                (block, state)
+      call calc_m                         (block, state)
+      call calc_mf                        (block, state, dt)
+      call calc_ke                        (block, state)
+      call calc_div                       (block, state)
+      call calc_pv                        (block, state)
+      call interp_pv                      (block, state, dt)
+      if (hydrostatic) call calc_gz_lev   (block, state)
+      call pgf_prepare                    (block, state)
     ! --------------------------------------------------------------------------
     case (forward_pass)
-      if (baroclinic) then
-      end if
-      call calc_mf                    (block, state, dt)
-      call calc_ke                    (block, state)
-      call calc_div                   (block, state)
-      call calc_pv                    (block, state)
-      call interp_pv                  (block, state, dt)
+      call calc_mf                        (block, state, dt)
+      call calc_ke                        (block, state)
+      call calc_div                       (block, state)
+      call calc_pv                        (block, state)
+      call interp_pv                      (block, state, dt)
     ! --------------------------------------------------------------------------
     case (backward_pass)
       if (hydrostatic) then
-        call calc_ph                  (block, state)
-        call calc_t                   (block, state)
-        call calc_gz_lev              (block, state)
+        call calc_ph                      (block, state)
+        call calc_t                       (block, state)
+        call calc_gz_lev                  (block, state)
       end if
-      call calc_m                     (block, state)
-      call pgf_prepare                (block, state)
-    ! --------------------------------------------------------------------------
-    case (no_wind_pass)
-      if (baroclinic) then
-        call diag_ph                  (block, state)
-        call diag_t                   (block, state)
-        call diag_gz_lev              (block, state)
-      end if
-      call calc_m                     (block, state)
-      if (nonhydrostatic) then
-        call calc_m_lev               (block, state)
-      end if
-      call pgf_prepare                (block, state)
+      call calc_m                         (block, state)
+      call pgf_prepare                    (block, state)
     end select
 
   end subroutine operators_prepare_2
@@ -203,9 +178,9 @@ contains
     integer i, j, k
 
     associate (mesh => block%mesh, &
-               pt   => state%pt_f, & ! in
+               pt   => state%pt  , & ! in
                ph   => state%ph  , & ! in
-               t    => state%t)      ! out
+               t    => state%t   )   ! out
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -218,9 +193,9 @@ contains
 
   end subroutine calc_t
 
-  subroutine calc_wedphdlev_lev(block, state, tend, dt)
+  subroutine calc_we_lev(block, state, tend, dt)
 
-    type(block_type), intent(in) :: block
+    type(block_type), intent(inout) :: block
     type(state_type), intent(inout) :: state
     type(tend_type), intent(in) :: tend
     real(8), intent(in) :: dt
@@ -228,10 +203,11 @@ contains
     integer i, j, k, l
     real(r8) mf
 
-    associate (mesh              => block%mesh             , &
-               dmfdlon           => tend%dmfdlon           , & ! in
-               dmfdlat           => tend%dmfdlat           , & ! in
-               dphs              => tend%dphs              , & ! in
+    associate (mesh       => block%mesh      , &
+               dmfdlon    => tend%dmfdlon    , & ! in
+               dmfdlat    => tend%dmfdlat    , & ! in
+               dphs       => tend%dphs       , & ! in
+               m_lev      => state%m_lev     , & ! in
                we_lev     => state%we_lev    , & ! out
                we_lev_lon => state%we_lev_lon, & ! out
                we_lev_lat => state%we_lev_lat)   ! out
@@ -251,11 +227,15 @@ contains
     we_lev(:,:,mesh%half_lev_iend) = 0.0_r8
     call fill_halo(block, we_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
 
-    call interp_lev_edge_to_lev_lon_edge(mesh, we_lev, we_lev_lon)
-    call interp_lev_edge_to_lev_lat_edge(mesh, we_lev, we_lev_lat)
+    call block%adv_batch_mass%accum_we_lev(we_lev, m_lev, dt)
+
+    if (nonhydrostatic) then
+      call interp_lev_edge_to_lev_lon_edge(mesh, we_lev, we_lev_lon)
+      call interp_lev_edge_to_lev_lat_edge(mesh, we_lev, we_lev_lat)
+    end if
     end associate
 
-  end subroutine calc_wedphdlev_lev
+  end subroutine calc_we_lev
 
   subroutine calc_ke(block, state)
 
@@ -493,12 +473,14 @@ contains
     integer i, j, k
 
     associate (mesh   => block%mesh      , &
+               ph     => state%ph        , & ! in
                ph_lev => state%ph_lev    , & ! in
                gz     => state%gz        , & ! in
                gzs    => block%static%gzs, & ! in
                m      => state%m         , & ! out
                m_lon  => state%m_lon     , & ! out
                m_lat  => state%m_lat     , & ! out
+               m_lev  => state%m_lev     , & ! out
                m_vtx  => state%m_vtx     )   ! out
     if (baroclinic) then
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
@@ -513,6 +495,29 @@ contains
           end do
         end do
       end do
+
+      do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
+        do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            m_lev(i,j,k) = ph(i,j,k) - ph(i,j,k-1)
+          end do
+        end do
+      end do
+      ! Top boundary
+      k = mesh%half_lev_ibeg
+      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          m_lev(i,j,k) = ph(i,j,k) - ph_lev(i,j,k)
+        end do
+      end do
+      ! Bottom boundary
+      k = mesh%half_lev_iend
+      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          m_lev(i,j,k) = ph_lev(i,j,k) - ph(i,j,k-1)
+        end do
+      end do
+      call fill_halo(block, m_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
     else
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -530,27 +535,6 @@ contains
     end associate
 
   end subroutine calc_m
-
-  subroutine interp_pt(block, state)
-
-    type(block_type), intent(in) :: block
-    type(state_type), intent(inout) :: state
-
-    associate (u      => state%u_f   , & ! in
-               v      => state%v_f   , & ! in
-               w      => state%we_lev, & ! in
-               pt     => state%pt_f  , & ! in
-               pt_lon => state%pt_lon, & ! out
-               pt_lat => state%pt_lat, & ! out
-               pt_lev => state%pt_lev)   ! out
-    call interp_cell_to_lon_edge(state%mesh, pt, pt_lon, reversed_area=.true., u=u, upwind_wgt_=upwind_wgt_pt)
-    call interp_cell_to_lat_edge(state%mesh, pt, pt_lat, reversed_area=.true., v=v, upwind_wgt_=upwind_wgt_pt)
-    call fill_halo(block, pt_lon, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
-    call fill_halo(block, pt_lat, full_lon=.true., full_lat=.false., full_lev=.true., west_halo=.false., east_halo=.false., north_halo=.false.)
-    call interp_cell_to_lev_edge(state%mesh, pt, pt_lev, w=w, upwind_wgt_=upwind_wgt_pt)
-    end associate
-
-  end subroutine interp_pt
 
   subroutine calc_mf(block, state, dt)
 
@@ -999,32 +983,34 @@ contains
 
   end subroutine calc_grad_mf
 
-  subroutine calc_dptfdlon_dptfdlat(block, state, tend, dt)
+  subroutine calc_grad_ptf(block, state, tend, dt)
 
     type(block_type), intent(inout) :: block
     type(state_type), intent(inout) :: state
-    type(tend_type), intent(inout) :: tend
+    type(tend_type ), intent(inout) :: tend
     real(8), intent(in) :: dt
 
     integer i, j, k
     real(r8) work(state%mesh%full_lon_ibeg:state%mesh%full_lon_iend,state%mesh%num_full_lev)
     real(r8) pole(state%mesh%num_full_lev)
 
-    call interp_pt(block, state)
-
-    associate (mesh     => block%mesh    , &
-               mf_lon_n => state%mf_lon_n, & ! in
-               mf_lat_n => state%mf_lat_n, & ! in
-               pt_lon   => state%pt_lon  , & ! in
-               pt_lat   => state%pt_lat  , & ! in
-               dptfdlon => tend%dptfdlon , & ! out
-               dptfdlat => tend%dptfdlat)    ! out
+    associate (mesh     => block%mesh   , &
+               pt       => state%pt     , & ! in
+               ptf_lon  => state%ptf_lon, & ! out
+               ptf_lat  => state%ptf_lat, & ! out
+               ptf_lev  => state%ptf_lev, & ! out
+               dptfdlon => tend%dptfdlon, & ! out
+               dptfdlat => tend%dptfdlat, & ! out
+               dptfdlev => tend%dptfdlev)   ! out
+    call adv_calc_tracer_hflx_cell(block, block%adv_batch_mass, pt, ptf_lon, ptf_lat, dt)
+    call fill_halo(block, ptf_lon, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false.)
+    call fill_halo(block, ptf_lat, full_lon=.true., full_lat=.false., full_lev=.true., north_halo=.false.)
+    call adv_calc_tracer_vflx_cell(block, block%adv_batch_mass, pt, ptf_lev, dt)
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          dptfdlon(i,j,k) = (                     &
-            mf_lon_n(i  ,j,k) * pt_lon(i  ,j,k) - &
-            mf_lon_n(i-1,j,k) * pt_lon(i-1,j,k)   &
+          dptfdlon(i,j,k) = (                 &
+            ptf_lon(i,j,k) - ptf_lon(i-1,j,k) &
           ) * mesh%le_lon(j) / mesh%area_cell(j)
         end do
       end do
@@ -1032,9 +1018,9 @@ contains
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          dptfdlat(i,j,k) = (                                        &
-            mf_lat_n(i,j  ,k) * pt_lat(i,j  ,k) * mesh%le_lat(j  ) - &
-            mf_lat_n(i,j-1,k) * pt_lat(i,j-1,k) * mesh%le_lat(j-1)   &
+          dptfdlat(i,j,k) = (                     &
+            ptf_lat(i,j  ,k) * mesh%le_lat(j  ) - &
+            ptf_lat(i,j-1,k) * mesh%le_lat(j-1)   &
           ) / mesh%area_cell(j)
         end do
       end do
@@ -1043,7 +1029,7 @@ contains
       j = mesh%full_lat_ibeg
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          work(i,k) = mf_lat_n(i,j,k) * pt_lat(i,j,k)
+          work(i,k) = ptf_lat(i,j,k)
         end do
       end do
       call zonal_sum(proc%zonal_circle, work, pole)
@@ -1058,7 +1044,7 @@ contains
       j = mesh%full_lat_iend
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          work(i,k) = -mf_lat_n(i,j-1,k) * pt_lat(i,j-1,k)
+          work(i,k) = -ptf_lat(i,j-1,k)
         end do
       end do
       call zonal_sum(proc%zonal_circle, work, pole)
@@ -1069,34 +1055,16 @@ contains
         end do
       end do
     end if
-    end associate
-
-  end subroutine calc_dptfdlon_dptfdlat
-
-  subroutine calc_dptfdlev(block, state, tend, dt)
-
-    type(block_type), intent(inout) :: block
-    type(state_type), intent(inout) :: state
-    type(tend_type), intent(inout) :: tend
-    real(8), intent(in) :: dt
-
-    integer i, j, k
-
-    associate (mesh          => block%mesh  , &
-               pt_lev        => state%pt_lev, & ! in
-               we_lev        => state%we_lev, & ! in
-               dptfdlev      => tend%dptfdlev)  ! out
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          dptfdlev(i,j,k) = we_lev(i,j,k+1) * pt_lev(i,j,k+1) - &
-                            we_lev(i,j,k  ) * pt_lev(i,j,k  )
+          dptfdlev(i,j,k) = ptf_lev(i,j,k+1) - ptf_lev(i,j,k)
         end do
       end do
     end do
     end associate
 
-  end subroutine calc_dptfdlev
+  end subroutine calc_grad_ptf
 
   subroutine calc_dphsdt(block, state, tend, dt)
 

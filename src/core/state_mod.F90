@@ -44,10 +44,9 @@ module state_mod
     real(r8), allocatable, dimension(:,:,:) :: pv_lat            ! Potential vorticity on merdional edge
     real(r8), allocatable, dimension(:,:,:) :: ke                ! Kinetic energy
     real(r8), allocatable, dimension(:,:,:) :: pt                ! Potential temperature
-    real(r8), allocatable, dimension(:,:,:) :: pt_f              ! Potential temperature
-    real(r8), allocatable, dimension(:,:,:) :: pt_lon            ! Potential temperature on the zonal edge
-    real(r8), allocatable, dimension(:,:,:) :: pt_lat            ! Potential temperature on the merdional edge
-    real(r8), allocatable, dimension(:,:,:) :: pt_lev            ! Potential temperature on the vertical edge
+    real(r8), allocatable, dimension(:,:,:) :: ptf_lon           ! Potential temperature on the zonal edge
+    real(r8), allocatable, dimension(:,:,:) :: ptf_lat           ! Potential temperature on the merdional edge
+    real(r8), allocatable, dimension(:,:,:) :: ptf_lev           ! Potential temperature on the vertical edge
     real(r8), allocatable, dimension(:,:,:) :: t                 ! Temperature
     real(r8), allocatable, dimension(:,:,:) :: ph                ! Hydrostatic pressure on full levels
     real(r8), allocatable, dimension(:,:,:) :: ph_lev            ! Hydrostatic pressure on half levels
@@ -135,10 +134,9 @@ contains
     call allocate_array(mesh, this%pv_lat           , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%ke               , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%pt               , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%pt_f             , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%pt_lon           , half_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%pt_lat           , full_lon=.true., half_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%pt_lev           , full_lon=.true., full_lat=.true., half_lev=.true.)
+    call allocate_array(mesh, this%ptf_lon          , half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%ptf_lat          , full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%ptf_lev          , full_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%t                , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%ph               , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%ph_lev           , full_lon=.true., full_lat=.true., half_lev=.true.)
@@ -216,10 +214,9 @@ contains
     if (allocated(this%pv_lat           )) deallocate(this%pv_lat           )
     if (allocated(this%ke               )) deallocate(this%ke               )
     if (allocated(this%pt               )) deallocate(this%pt               )
-    if (allocated(this%pt_f             )) deallocate(this%pt_f             )
-    if (allocated(this%pt_lon           )) deallocate(this%pt_lon           )
-    if (allocated(this%pt_lat           )) deallocate(this%pt_lat           )
-    if (allocated(this%pt_lev           )) deallocate(this%pt_lev           )
+    if (allocated(this%ptf_lon          )) deallocate(this%ptf_lon          )
+    if (allocated(this%ptf_lat          )) deallocate(this%ptf_lat          )
+    if (allocated(this%ptf_lev          )) deallocate(this%ptf_lev          )
     if (allocated(this%t                )) deallocate(this%t                )
     if (allocated(this%ph               )) deallocate(this%ph               )
     if (allocated(this%ph_lev           )) deallocate(this%ph_lev           )

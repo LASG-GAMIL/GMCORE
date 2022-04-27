@@ -33,7 +33,6 @@ module const_mod
   integer, parameter :: nest_ratio = 3
   integer, parameter :: inf_i4 = 10000000
 
-  integer, parameter :: no_wind_pass  = -1
   integer, parameter :: all_pass      = 0
   integer, parameter :: forward_pass  = 1
   integer, parameter :: backward_pass = 2
