@@ -174,6 +174,7 @@ set(gmcore_files
   src/tests/adv/deform_test_mod.F90
   src/tests/adv/solid_rotation_test_mod.F90
   src/tests/adv/moving_vortices_test_mod.F90
+  src/tests/adv/dcmip12_test_mod.F90
   src/tests/swm/rossby_haurwitz_wave_test_mod.F90
   src/tests/swm/mountain_zonal_flow_test_mod.F90
   src/tests/swm/jet_zonal_flow_test_mod.F90

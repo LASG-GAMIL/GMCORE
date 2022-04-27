@@ -482,7 +482,7 @@ contains
                m_lat  => state%m_lat     , & ! out
                m_lev  => state%m_lev     , & ! out
                m_vtx  => state%m_vtx     )   ! out
-    if (baroclinic) then
+    if (baroclinic .or. advection) then
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
