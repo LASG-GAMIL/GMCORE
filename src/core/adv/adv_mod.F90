@@ -260,6 +260,11 @@ contains
           call block%adv_batches(l)%accum_mf_cell( &
             block%state(itime)%mf_lon_n          , &
             block%state(itime)%mf_lat_n          )
+          if (global_mesh%num_full_lev > 1) then
+            call block%adv_batches(l)%accum_we_lev( &
+              block%state(itime)%we_lev           , &
+              block%state(itime)%m_lev            )
+          end if
         case ('vtx')
           call block%adv_batches(l)%accum_uv_vtx ( &
             block%state(itime)%u_lat             , &

@@ -181,7 +181,8 @@ contains
       call fiona_add_var('h0', 'divx', long_name='', units='', dim_names=cell_dims_3d)
       call fiona_add_var('h0', 'divy', long_name='', units='', dim_names=cell_dims_3d)
       if (global_mesh%num_full_lev > 1) then
-        call fiona_add_var('h0', 'w' , long_name='', units='', dim_names= lev_dims_3d)
+        call fiona_add_var('h0', 'w'   , long_name='', units='', dim_names= lev_dims_3d)
+        call fiona_add_var('h0', 'cflz', long_name='', units='', dim_names= lev_dims_3d)
       end if
     end do
     end associate
@@ -468,6 +469,15 @@ contains
         count = [mesh%num_full_lon,mesh%num_half_lat,mesh%num_full_lev]
         call fiona_output('h0', 'v'   , adv_batches(i)%v   (is:ie,js:je,ks:ke), start=start, count=count)
         call fiona_output('h0', 'cfly', adv_batches(i)%cfly(is:ie,js:je,ks:ke), start=start, count=count)
+        if (global_mesh%num_full_lev > 1) then
+          is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
+          js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
+          ks = mesh%half_lev_ibeg; ke = mesh%half_lev_iend
+          start = [is,js,ks]
+          count = [mesh%num_full_lon,mesh%num_full_lat,mesh%num_half_lev]
+          call fiona_output('h0', 'w'   , adv_batches(i)%we  (is:ie,js:je,ks:ke), start=start, count=count)
+          call fiona_output('h0', 'cflz', adv_batches(i)%cflz(is:ie,js:je,ks:ke), start=start, count=count)
+        end if
       end do
       end associate
     end do

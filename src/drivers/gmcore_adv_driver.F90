@@ -77,8 +77,8 @@ program gmcore_adv_driver
 
   do iblk = 1, size(blocks)
     call set_uv(blocks(iblk), blocks(iblk)%state(old), elapsed_seconds)
-    call adv_accum_wind(blocks(iblk), old)
     call set_ic(blocks(iblk))
+    call adv_accum_wind(blocks(iblk), old)
   end do
 
   call history_setup_h0_adv(blocks)
