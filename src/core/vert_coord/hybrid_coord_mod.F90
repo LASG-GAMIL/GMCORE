@@ -56,7 +56,7 @@ contains
       close(10)
     end if
 
-    if (ierr /= 0 .and. .not. baroclinic .and. is_root_proc()) then
+    if (ierr /= 0 .and. .not. (baroclinic .or. advection) .and. is_root_proc()) then
       call log_notice('Run shallow-water model.')
     end if
 

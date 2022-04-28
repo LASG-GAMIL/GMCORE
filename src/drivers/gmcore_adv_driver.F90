@@ -11,6 +11,7 @@ program gmcore_adv_driver
   use solid_rotation_test_mod
   use deform_test_mod
   use moving_vortices_test_mod
+  use dcmip12_test_mod
 
   implicit none
 
@@ -66,6 +67,10 @@ program gmcore_adv_driver
     call moving_vortices_test_init()
     set_ic => moving_vortices_test_set_ic
     set_uv => moving_vortices_test_set_uv
+  case ('dcmip12')
+    call dcmip12_test_init()
+    set_ic => dcmip12_test_set_ic
+    set_uv => dcmip12_test_set_uv
   case default
     call log_error('Unknown test case ' // trim(test_case) // '!', pid=proc%id)
   end select
@@ -79,6 +84,7 @@ program gmcore_adv_driver
   call history_setup_h0_adv(blocks)
   call diagnose(blocks, old)
   call output(old)
+  stop
 
   do while (.not. time_is_finished())
     do iblk = 1, size(blocks)

@@ -35,6 +35,7 @@ module state_mod
     real(r8), allocatable, dimension(:,:,:) :: m_vtx             ! Mass on vertex
     real(r8), allocatable, dimension(:,:,:) :: m_lon             ! Mass on zonal edge
     real(r8), allocatable, dimension(:,:,:) :: m_lat             ! Mass on merdional edge
+    real(r8), allocatable, dimension(:,:,:) :: m_lev             ! Mass on half levels
     real(r8), allocatable, dimension(:,:,:) :: mf_lon_n          ! Normal mass flux on zonal edge
     real(r8), allocatable, dimension(:,:,:) :: mf_lat_n          ! Normal mass flux on merdional edge
     real(r8), allocatable, dimension(:,:,:) :: mf_lat_t          ! Tangient mass flux on zonal edge
@@ -56,7 +57,6 @@ module state_mod
     real(r8), allocatable, dimension(:,:,:) :: div2              ! Laplacian of divergence (s-1)
     real(r8), allocatable, dimension(:,:,:) :: vor               ! Vorticity (s-1)
     ! Nonhydrostatic variables
-    real(r8), allocatable, dimension(:,:,:) :: m_lev
     real(r8), allocatable, dimension(:,:,:) :: we
     real(r8), allocatable, dimension(:,:,:) :: w                 ! Vertical wind speed
     real(r8), allocatable, dimension(:,:,:) :: w_lev             ! Vertical wind speed
@@ -125,6 +125,7 @@ contains
     call allocate_array(mesh, this%m_vtx            , half_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%m_lon            , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%m_lat            , full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%m_lev            , full_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%mf_lon_n         , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%mf_lon_t         , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%mf_lat_n         , full_lon=.true., half_lat=.true., full_lev=.true.)
@@ -146,7 +147,6 @@ contains
     call allocate_array(mesh, this%vor              , half_lon=.true., half_lat=.true., full_lev=.true.)
 
     if (nonhydrostatic) then
-      call allocate_array(mesh, this%m_lev          , full_lon=.true., full_lat=.true., half_lev=.true.)
       call allocate_array(mesh, this%we             , full_lon=.true., full_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%w              , full_lon=.true., full_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%w_lev          , full_lon=.true., full_lat=.true., half_lev=.true.)

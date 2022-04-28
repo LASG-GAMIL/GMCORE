@@ -6,6 +6,8 @@ module dcmip12_test_mod
   use history_mod
   use block_mod
   use vert_coord_mod
+  use operators_mod
+  use interp_mod
   use adv_mod
 
   implicit none
@@ -18,7 +20,6 @@ module dcmip12_test_mod
 
   real(r8), parameter :: T0   = 300
   real(r8), parameter :: p0   = 1.0e5_r8
-  real(r8), parameter :: ptop = 25494.4
   real(r8), parameter :: K0   = 5
   real(r8), parameter :: u0   = 40
   real(r8), parameter :: w0   = 0.15
@@ -26,7 +27,7 @@ module dcmip12_test_mod
   real(r8), parameter :: z2   = 5000
   real(r8), parameter :: z0   = 0.5_r8 * (z1 + z2)
   real(r8), parameter :: ztop = 12000
-  real(r8), parameter :: tau  = 12 * 86400
+  real(r8), parameter :: tau  = 86400
 
   real(r8) rho0
 
@@ -34,6 +35,7 @@ contains
 
   subroutine dcmip12_test_init()
 
+    ptop = 25494.4
     rho0 = p0 / (Rd * T0)
 
   end subroutine dcmip12_test_init

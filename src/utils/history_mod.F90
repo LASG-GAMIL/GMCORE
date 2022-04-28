@@ -163,6 +163,8 @@ contains
     call fiona_add_dim('h0', 'lat'  , size=global_mesh%num_full_lat, add_var=.true., decomp=.true.)
     call fiona_add_dim('h0', 'ilon' , size=global_mesh%num_half_lon, add_var=.true., decomp=.true.)
     call fiona_add_dim('h0', 'ilat' , size=global_mesh%num_half_lat, add_var=.true., decomp=.true.)
+    call fiona_add_dim('h0', 'lev'  , size=global_mesh%num_full_lev)
+    call fiona_add_dim('h0', 'ilev' , size=global_mesh%num_half_lev)
     ! Variables
     associate (adv_batches => blocks(1)%adv_batches)
     do i = 1, size(adv_batches)
@@ -170,14 +172,17 @@ contains
         call fiona_add_var('h0', adv_batches(i)%tracer_names(j), &
                            long_name=adv_batches(i)%tracer_long_names(j), &
                            units=adv_batches(i)%tracer_units(j), &
-                           dim_names=cell_dims_2d, dtype='r8')
+                           dim_names=cell_dims_3d, dtype='r8')
       end do
-      call fiona_add_var('h0', 'u'   , long_name='', units='', dim_names= lon_dims_2d)
-      call fiona_add_var('h0', 'v'   , long_name='', units='', dim_names= lat_dims_2d)
-      call fiona_add_var('h0', 'cflx', long_name='', units='', dim_names= lon_dims_2d)
-      call fiona_add_var('h0', 'cfly', long_name='', units='', dim_names= lat_dims_2d)
-      call fiona_add_var('h0', 'divx', long_name='', units='', dim_names=cell_dims_2d)
-      call fiona_add_var('h0', 'divy', long_name='', units='', dim_names=cell_dims_2d)
+      call fiona_add_var('h0', 'u'   , long_name='', units='', dim_names= lon_dims_3d)
+      call fiona_add_var('h0', 'v'   , long_name='', units='', dim_names= lat_dims_3d)
+      call fiona_add_var('h0', 'cflx', long_name='', units='', dim_names= lon_dims_3d)
+      call fiona_add_var('h0', 'cfly', long_name='', units='', dim_names= lat_dims_3d)
+      call fiona_add_var('h0', 'divx', long_name='', units='', dim_names=cell_dims_3d)
+      call fiona_add_var('h0', 'divy', long_name='', units='', dim_names=cell_dims_3d)
+      if (global_mesh%num_full_lev > 1) then
+        call fiona_add_var('h0', 'w' , long_name='', units='', dim_names= lev_dims_3d)
+      end if
     end do
     end associate
 
