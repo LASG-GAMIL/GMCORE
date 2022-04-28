@@ -22,6 +22,7 @@ module adv_mod
   public adv_allocate_tracers
   public adv_accum_wind
   public adv_calc_mass_hflx_cell
+  public adv_calc_mass_vflx_cell
   public adv_calc_mass_hflx_vtx
   public adv_calc_tracer_hflx_cell
   public adv_calc_tracer_vflx_cell
@@ -95,6 +96,7 @@ module adv_mod
   end interface
 
   procedure(calc_hflx_cell_interface), pointer :: adv_calc_mass_hflx_cell   => null()
+  procedure(calc_vflx_cell_interface), pointer :: adv_calc_mass_vflx_cell   => null()
   procedure(calc_hflx_vtx_interface ), pointer :: adv_calc_mass_hflx_vtx    => null()
   procedure(calc_hflx_cell_interface), pointer :: adv_calc_tracer_hflx_cell => null()
   procedure(calc_vflx_cell_interface), pointer :: adv_calc_tracer_vflx_cell => null()
@@ -118,10 +120,13 @@ contains
     case ('ffsl')
       call ffsl_init()
       adv_calc_mass_hflx_cell   => ffsl_calc_mass_hflx_cell
+      adv_calc_mass_vflx_cell   => ffsl_calc_mass_vflx_cell
       adv_calc_mass_hflx_vtx    => ffsl_calc_mass_hflx_vtx
       adv_calc_tracer_hflx_cell => ffsl_calc_tracer_hflx_cell
       adv_calc_tracer_hflx_vtx  => ffsl_calc_tracer_hflx_vtx
       adv_calc_tracer_hval_vtx  => ffsl_calc_tracer_hval_vtx
+    case default
+      call log_error('Invalid adv_scheme ' // trim(adv_scheme) // '!', pid=proc%id)
     end select
 
     ntracer = 0

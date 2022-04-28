@@ -12,6 +12,7 @@ module ffsl_mod
 
   public ffsl_init
   public ffsl_calc_mass_hflx_cell
+  public ffsl_calc_mass_vflx_cell
   public ffsl_calc_mass_hflx_vtx
   public ffsl_calc_tracer_hflx_cell
   public ffsl_calc_tracer_vflx_cell
@@ -231,6 +232,25 @@ contains
 
   end subroutine ffsl_calc_mass_hflx_cell
 
+  subroutine ffsl_calc_mass_vflx_cell(block, batch, m, mfz, dt)
+
+    type(block_type    ), intent(in   ) :: block
+    type(adv_batch_type), intent(inout) :: batch
+    real(r8), intent(in ) :: m  (block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
+                                 block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
+                                 block%mesh%full_lev_lb:block%mesh%full_lev_ub)
+    real(r8), intent(out) :: mfz(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
+                                 block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
+                                 block%mesh%half_lev_lb:block%mesh%half_lev_ub)
+    real(8), intent(in), optional :: dt
+
+    associate (mesh => block%mesh, &
+               we   => batch%we  )
+    call vflx_cell(block, batch, we, m, mfz)
+    end associate
+
+  end subroutine ffsl_calc_mass_vflx_cell
+
   subroutine ffsl_calc_mass_hflx_vtx(block, batch, m, mfx, mfy, dt)
 
     type(block_type    ), intent(in   ) :: block
@@ -399,11 +419,6 @@ contains
                                   block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
                                   block%mesh%half_lev_lb:block%mesh%half_lev_ub)
     real(8), intent(in), optional :: dt
-
-    integer i, j, k
-    real(8) dt_
-
-    dt_ = merge(dt, batch%dt, present(dt))
 
     associate (mesh => block%mesh, &
                we   => batch%we  )
