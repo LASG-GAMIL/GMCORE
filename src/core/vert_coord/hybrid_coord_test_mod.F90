@@ -22,6 +22,7 @@ module hybrid_coord_test_mod
   public hybrid_coord_dcmip21_l60
   public hybrid_coord_dcmip31_l10
   public hybrid_coord_waccm_l70
+  public hybrid_coord_dcmip_l60
 
 contains
 
@@ -715,6 +716,34 @@ contains
     p0 = 1d5       ! Pa
 
   end subroutine hybrid_coord_wrf_l60
+
+  subroutine hybrid_coord_dcmip_l60(p0, ptop, hyai, hybi)
+    
+    real(r8), intent(out) :: p0
+    real(r8), intent(in ) :: ptop
+    real(r8), intent(out) :: hyai(61)
+    real(r8), intent(out) :: hybi(61)
+    real(r8), parameter :: ztop = 12000._r8
+    real(r8), parameter :: T0   = 300._r8
+    real(r8) eta_top, dz, eta, z
+    integer k 
+
+    if (global_mesh%num_full_lev /= 60 .and. is_root_proc()) then
+      call log_error('num_lev should be 60 in namelist!')
+    end if
+
+    eta_top = exp(-g * ztop / Rd / T0)
+    dz = ztop / 60
+    do k = 1, 61
+      z = ztop - (k - 1) * dz
+      eta = exp(-g * z / Rd / T0)
+      hybi(k) = (eta - eta_top) / (1.0 - eta_top)
+      hyai(k) = eta - hybi(k)
+    end do
+
+    p0 = 1d5       ! Pa
+
+  end subroutine hybrid_coord_dcmip_l60
 
   subroutine hybrid_coord_wrf_l64(p0, ptop, hyai, hybi)
 
