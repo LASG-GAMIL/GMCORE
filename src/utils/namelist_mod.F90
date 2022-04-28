@@ -53,7 +53,7 @@ module namelist_mod
   integer         :: ke_scheme            = 2
   real(r8)        :: ke_cell_wgt          = 3.0_r8 / 8.0_r8
 
-  character(30)   :: pv_scheme            = 'ffsl' ! midpoint, upwind, ffsl
+  character(30)   :: pv_scheme            = 'upwind' ! midpoint, upwind, ffsl
   logical         :: pv_pole_stokes       = .true.
   integer         :: upwind_order_pv      = 3
   real(r8)        :: upwind_wgt_pv        = 1
