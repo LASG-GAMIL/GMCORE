@@ -24,6 +24,7 @@ module dcmip12_test_mod
   real(r8), parameter :: w0   = 0.15
   real(r8), parameter :: z1   = 2000
   real(r8), parameter :: z2   = 5000
+  real(r8), parameter :: z0   = 0.5_r8 * (z1 + z2)
   real(r8), parameter :: ztop = 12000
   real(r8), parameter :: tau  = 12 * 86400
 
@@ -41,12 +42,32 @@ contains
 
     type(block_type), intent(inout) :: block
 
+    real(r8) z
+    integer i, j, k
+
     call adv_add_tracer('dcmip12', dt, 'q0', 'background tracer')
     call adv_add_tracer('dcmip12', dt, 'q1', 'test tracer'      )
 
     call adv_allocate_tracers(block)
 
-
+    associate (mesh => block%mesh, state => block%state(1))
+    ! Background
+    state%q(:,:,:,1) = 1
+    ! Test
+    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          z = state%gz(i,j,k) / g
+          if (z1 < z .and. z < z2) then
+            state%q(i,j,k,2) = 0.5_r8 * (1 + cos(pi2 * (z - z0) / (z2 - z1)))
+          else
+            state%q(i,j,k,2) = 0
+          end if
+        end do
+      end do
+    end do
+    call fill_halo(block, state%q(:,:,:,2), full_lon=.true., full_lat=.true., full_lev=.true.)
+    end associate
 
   end subroutine dcmip12_test_set_ic
 
