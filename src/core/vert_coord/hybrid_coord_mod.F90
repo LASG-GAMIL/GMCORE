@@ -110,8 +110,8 @@ contains
       call log_notice('Model top pressure is ' // to_str(ptop, '(ES10.2)') // 'Pa.')
     end if
 
-    if (baroclinic .and. all(hyai == 0) .and. is_root_proc()) then
-      call log_error('Hybrid coordinate parameters are not set!')
+    if ((baroclinic .or. advection) .and. global_mesh%num_full_lev > 1 .and. all(hyai == 0)) then
+      call log_error('Hybrid coordinate parameters are not set!', pid=proc%id)
     end if
 
     if (all(hyam == 0)) then

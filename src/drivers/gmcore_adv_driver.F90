@@ -76,15 +76,14 @@ program gmcore_adv_driver
   end select
 
   do iblk = 1, size(blocks)
-    call set_ic(blocks(iblk))
     call set_uv(blocks(iblk), blocks(iblk)%state(old), elapsed_seconds)
     call adv_accum_wind(blocks(iblk), old)
+    call set_ic(blocks(iblk))
   end do
 
   call history_setup_h0_adv(blocks)
   call diagnose(blocks, old)
   call output(old)
-  stop
 
   do while (.not. time_is_finished())
     do iblk = 1, size(blocks)
