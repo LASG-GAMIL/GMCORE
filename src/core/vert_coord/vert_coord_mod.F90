@@ -82,9 +82,13 @@ contains
     end select
 
     ! Set vertical level intervals.
-    do k = global_mesh%full_lev_ibeg, global_mesh%full_lev_iend
-      global_mesh%full_dlev(k) = global_mesh%half_lev(k+1) - global_mesh%half_lev(k)
-    end do
+    if (global_mesh%num_full_lev > 1) then
+      do k = global_mesh%full_lev_ibeg, global_mesh%full_lev_iend
+        global_mesh%full_dlev(k) = global_mesh%half_lev(k+1) - global_mesh%half_lev(k)
+      end do
+    else
+      global_mesh%full_dlev(1) = 1
+    end if
     do k = global_mesh%half_lev_ibeg + 1, global_mesh%half_lev_iend - 1
       global_mesh%half_dlev(k) = global_mesh%full_lev(k) - global_mesh%full_lev(k-1)
       global_mesh%half_dlev_upper(k) = global_mesh%half_lev(k) - global_mesh%full_lev(k-1)

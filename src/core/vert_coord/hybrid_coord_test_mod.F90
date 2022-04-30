@@ -723,8 +723,8 @@ contains
     real(r8), intent(in ) :: ptop
     real(r8), intent(out) :: hyai(61)
     real(r8), intent(out) :: hybi(61)
-    real(r8), parameter :: ztop = 12000._r8
-    real(r8), parameter :: T0   = 300._r8
+    real(r8), parameter :: ztop = 12000.0_r8
+    real(r8), parameter :: T0   = 300.0_r8
     real(r8) eta_top, dz, eta, z
     integer k 
 
@@ -733,8 +733,8 @@ contains
     end if
 
     eta_top = exp(-g * ztop / Rd / T0)
-    dz = ztop / 60
-    do k = 1, 61
+    dz = ztop / global_mesh%num_full_lev
+    do k = 1, global_mesh%num_half_lev
       z = ztop - (k - 1) * dz
       eta = exp(-g * z / Rd / T0)
       hybi(k) = (eta - eta_top) / (1.0 - eta_top)

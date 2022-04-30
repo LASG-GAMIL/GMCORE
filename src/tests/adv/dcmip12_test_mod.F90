@@ -142,10 +142,11 @@ contains
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           lon = mesh%full_lon(i)
           rho = ph_lev(i,j,k) / (Rd * T0)
-          dphdlev = m_lev(i,j,k) / mesh%half_dlev(k)
+          ! dphdlev = m_lev(i,j,k) / mesh%half_dlev(k)
+          dphdlev = 1
           we(i,j,k) = -dphdlev * g * w0 * rho0 / K0 * (                   &
             -2 * sin(K0 * lat) * sin(lat) + K0 * cos(lat) * cos(K0 * lat) &
-          ) * sin(pi * gz_lev(i,j,k) / (g * ztop)) * cos_t / (phs(i,j) - ptop)
+          ) * sin(pi * gz_lev(i,j,k) / (g * ztop)) * cos_t / p0
         end do
       end do
     end do

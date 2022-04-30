@@ -612,8 +612,8 @@ contains
     this%half_lon_ub = this%half_lon_iend + this%lon_halo_width
     this%half_lat_lb = this%half_lat_ibeg - this%lat_halo_width
     this%half_lat_ub = this%half_lat_iend + this%lat_halo_width
-    this%full_lev_lb = this%full_lev_ibeg
-    this%full_lev_ub = this%full_lev_iend
+    this%full_lev_lb = this%full_lev_ibeg - 2
+    this%full_lev_ub = this%full_lev_iend + 2
     this%half_lev_lb = this%half_lev_ibeg
     this%half_lev_ub = this%half_lev_iend
 

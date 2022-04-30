@@ -896,7 +896,7 @@ contains
     associate (mesh => block%mesh, &
                cflz => batch%cflz, & ! in
                mlz  => batch%qlx , & ! work array
-               dmz  => batch%qlx , & ! work array
+               dmz  => batch%dqx , & ! work array
                m6z  => batch%q6x )   ! work array
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -917,7 +917,7 @@ contains
             ds1 = s2    - s1
             ds2 = s2**2 - s1**2
             ds3 = s2**3 - s1**3
-            mfz(i,j,k) =  w(i,j,k) * (sum(m(i,j,k-ci:i-1)) + mlz(i,j,ku) * ds1 + 0.5_r8 * dmz(i,j,ku) * ds2 + m6z(i,j,ku) * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflz(i,j,k)
+            mfz(i,j,k) =  w(i,j,k) * (sum(m(i,j,k-ci:k-1)) + mlz(i,j,ku) * ds1 + 0.5_r8 * dmz(i,j,ku) * ds2 + m6z(i,j,ku) * (ds2 / 2.0_r8 - ds3 / 3.0_r8)) / cflz(i,j,k)
           else if (cflz(i,j,k) < 0) then
             ku = k - ci
             s1 = 0

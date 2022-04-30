@@ -1167,20 +1167,28 @@ contains
     type(block_type), intent(inout) :: block
     type(state_type), intent(inout) :: state
 
-    integer i, j, k
+    integer i, j, k, l
 
-    associate (adv_batches => block%adv_batches, &
+    associate (mesh        => block%mesh       , &
+               adv_batches => block%adv_batches, &
                q           => state%q          , & ! in
                qmf_lon     => state%qmf_lon    , & ! out
                qmf_lat     => state%qmf_lat    , & ! out
                qmf_lev     => state%qmf_lev    )   ! out
     do i = 1, size(adv_batches)
       do j = 1, size(adv_batches(i)%tracer_names)
-        k = adv_batches(i)%tracer_idx(j)
-        call adv_calc_mass_hflx_cell(block, adv_batches(i), q(:,:,:,k), qmf_lon(:,:,:,k), qmf_lat(:,:,:,k))
-        call fill_halo(block, qmf_lon(:,:,:,k), full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
-        call fill_halo(block, qmf_lat(:,:,:,k), full_lon=.true., full_lat=.false., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
-        call adv_calc_mass_vflx_cell(block, adv_batches(i), q(:,:,:,k), qmf_lev(:,:,:,k))
+        l = adv_batches(i)%tracer_idx(j)
+        ! Set upper and lower boundary conditions.
+        do k = mesh%full_lev_lb, mesh%full_lev_ibeg - 1
+          q(:,:,k,l) = q(:,:,mesh%full_lev_ibeg,l)
+        end do
+        do k = mesh%full_lev_iend + 1, mesh%full_lev_ub
+          q(:,:,k,l) = q(:,:,mesh%full_lev_iend,l)
+        end do
+        call adv_calc_mass_hflx_cell(block, adv_batches(i), q(:,:,:,l), qmf_lon(:,:,:,l), qmf_lat(:,:,:,l))
+        call fill_halo(block, qmf_lon(:,:,:,l), full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
+        call fill_halo(block, qmf_lat(:,:,:,l), full_lon=.true., full_lat=.false., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
+        call adv_calc_mass_vflx_cell(block, adv_batches(i), q(:,:,:,l), qmf_lev(:,:,:,l))
       end do
     end do
     end associate

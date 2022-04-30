@@ -430,8 +430,8 @@ contains
     call fiona_output('h0', 'lat' , global_mesh%full_lat_deg(1:global_mesh%num_full_lat))
     call fiona_output('h0', 'ilon', global_mesh%half_lon_deg(1:global_mesh%num_half_lon))
     call fiona_output('h0', 'ilat', global_mesh%half_lat_deg(1:global_mesh%num_half_lat))
-    call fiona_output('h0', 'lev' , global_mesh%full_lev)
-    call fiona_output('h0', 'ilev', global_mesh%half_lev)
+    call fiona_output('h0', 'lev' , global_mesh%full_lev(1:global_mesh%num_full_lev))
+    call fiona_output('h0', 'ilev', global_mesh%half_lev(1:global_mesh%num_half_lev))
 
     do iblk = 1, size(blocks)
       associate (mesh        => blocks(iblk)%mesh       , &
@@ -496,8 +496,8 @@ contains
     call fiona_output('h0', 'lat' , global_mesh%full_lat_deg(1:global_mesh%num_full_lat))
     call fiona_output('h0', 'ilon', global_mesh%half_lon_deg(1:global_mesh%num_half_lon))
     call fiona_output('h0', 'ilat', global_mesh%half_lat_deg(1:global_mesh%num_half_lat))
-    call fiona_output('h0', 'lev' , global_mesh%full_lev)
-    call fiona_output('h0', 'ilev', global_mesh%half_lev)
+    call fiona_output('h0', 'lev' , global_mesh%full_lev(1:global_mesh%num_full_lev))
+    call fiona_output('h0', 'ilev', global_mesh%half_lev(1:global_mesh%num_half_lev))
 
     do iblk = 1, size(blocks)
       associate (mesh   => blocks(iblk)%mesh        , &
@@ -556,8 +556,8 @@ contains
     call fiona_output('h0', 'lat' , global_mesh%full_lat_deg(1:global_mesh%num_full_lat))
     call fiona_output('h0', 'ilon', global_mesh%half_lon_deg(1:global_mesh%num_half_lon))
     call fiona_output('h0', 'ilat', global_mesh%half_lat_deg(1:global_mesh%num_half_lat))
-    call fiona_output('h0', 'lev' , global_mesh%full_lev)
-    call fiona_output('h0', 'ilev', global_mesh%half_lev)
+    call fiona_output('h0', 'lev' , global_mesh%full_lev(1:global_mesh%num_full_lev))
+    call fiona_output('h0', 'ilev', global_mesh%half_lev(1:global_mesh%num_half_lev))
 
     do iblk = 1, size(blocks)
       associate (mesh   => blocks(iblk)%mesh        , &
@@ -730,8 +730,8 @@ contains
     call fiona_output('h1', 'lat'   , global_mesh%full_lat_deg(1:global_mesh%num_full_lat))
     call fiona_output('h1', 'ilon'  , global_mesh%half_lon_deg(1:global_mesh%num_half_lon))
     call fiona_output('h1', 'ilat'  , global_mesh%half_lat_deg(1:global_mesh%num_half_lat))
-    call fiona_output('h1', 'lev'   , global_mesh%full_lev)
-    call fiona_output('h1', 'ilev'  , global_mesh%half_lev)
+    call fiona_output('h1', 'lev'   , global_mesh%full_lev(1:global_mesh%num_full_lev))
+    call fiona_output('h1', 'ilev'  , global_mesh%half_lev(1:global_mesh%num_half_lev))
 
     associate (mesh   => blocks(1)%mesh        , &
                state  => blocks(1)%state(itime), &
@@ -809,8 +809,8 @@ contains
     call fiona_output('h1', 'lat'   , global_mesh%full_lat_deg(1:global_mesh%num_full_lat))
     call fiona_output('h1', 'ilon'  , global_mesh%half_lon_deg(1:global_mesh%num_half_lon))
     call fiona_output('h1', 'ilat'  , global_mesh%half_lat_deg(1:global_mesh%num_half_lat))
-    call fiona_output('h1', 'lev'   , global_mesh%full_lev)
-    call fiona_output('h1', 'ilev'  , global_mesh%half_lev)
+    call fiona_output('h1', 'lev'   , global_mesh%full_lev(1:global_mesh%num_full_lev))
+    call fiona_output('h1', 'ilev'  , global_mesh%half_lev(1:global_mesh%num_half_lev))
 
     associate (mesh   => blocks(1)%mesh        , &
                state  => blocks(1)%state(itime), &

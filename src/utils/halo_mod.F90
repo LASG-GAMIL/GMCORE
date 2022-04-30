@@ -138,7 +138,7 @@ contains
 
     this%orient = orient
     this%type = cross_proc_halo
-    num_lev = [mesh%num_full_lev,mesh%num_half_lev]
+    num_lev = [mesh%full_lev_ub-mesh%full_lev_lb+1,mesh%half_lev_ub-mesh%half_lev_lb+1]
 
     do k = 1, 2
       array_size(:,1,1) = [mesh%num_full_lon+2*mesh%lon_halo_width,mesh%num_full_lat+2*mesh%lat_halo_width,num_lev(k)]

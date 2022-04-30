@@ -430,7 +430,8 @@ contains
       do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            this%cflz(i,j,k) = dt_ * this%we(i,j,k) / this%m_lev(i,j,k)
+            ! this%cflz(i,j,k) = dt_ * this%we(i,j,k) / this%m_lev(i,j,k)
+            this%cflz(i,j,k) = dt_ * this%we(i,j,k) / mesh%half_dlev(k)
           end do
         end do
       end do

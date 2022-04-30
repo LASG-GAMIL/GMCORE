@@ -146,7 +146,10 @@ contains
                   star_state%qmf_lat(i,j  ,k,l) * mesh%le_lat(j  ) - &
                   star_state%qmf_lat(i,j-1,k,l) * mesh%le_lat(j-1)   &
                 )                                                    &
-              ) / mesh%area_cell(j) * dt
+              ) / mesh%area_cell(j) * dt - (                         &
+                star_state%qmf_lev(i,j,k+1,l) -                      &
+                star_state%qmf_lev(i,j,k  ,l)                        &
+              ) / mesh%full_dlev(k) * dt
             end do
           end do
         end do
@@ -161,7 +164,9 @@ contains
           pole = pole * mesh%le_lat(j) / global_mesh%num_full_lon / mesh%area_cell(j) * dt
           do k = mesh%full_lev_ibeg, mesh%full_lev_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              new_state%q(i,j,k,l) = old_state%q(i,j,k,l) - pole(k)
+              new_state%q(i,j,k,l) = old_state%q(i,j,k,l) - pole(k) - (     &
+                star_state%qmf_lev(i,j,k+1,l) - star_state%qmf_lev(i,j,k,l) &
+              ) / mesh%full_dlev(k) * dt
             end do
           end do
         end if
@@ -176,7 +181,9 @@ contains
           pole = pole * mesh%le_lat(j-1) / global_mesh%num_full_lon / mesh%area_cell(j) * dt
           do k = mesh%full_lev_ibeg, mesh%full_lev_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              new_state%q(i,j,k,l) = old_state%q(i,j,k,l) + pole(k)
+              new_state%q(i,j,k,l) = old_state%q(i,j,k,l) + pole(k) - (     &
+                star_state%qmf_lev(i,j,k+1,l) - star_state%qmf_lev(i,j,k,l) &
+              ) / mesh%full_dlev(k) * dt
             end do
           end do
         end if

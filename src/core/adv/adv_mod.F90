@@ -164,7 +164,7 @@ contains
 
     type(block_type), intent(inout) :: block
 
-    integer nbatch, nbatch_tracer, i, j, k, is, ie, js, je, ks, ke
+    integer nbatch, nbatch_tracer, i, j, k
     logical found
     character(30) unique_batch_names(100)
     real(r8) unique_tracer_dt(100)
