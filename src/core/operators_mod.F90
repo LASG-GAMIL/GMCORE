@@ -53,7 +53,6 @@ contains
     do iblk = 1, size(blocks)
       if (baroclinic) then
         call diag_ph                  (blocks(iblk), blocks(iblk)%state(itime))
-        call interp_pt                (blocks(iblk), blocks(iblk)%state(itime))
         call diag_t                   (blocks(iblk), blocks(iblk)%state(itime))
       end if
       call diag_m                     (blocks(iblk), blocks(iblk)%state(itime))
@@ -86,7 +85,6 @@ contains
     case (all_pass)
       if (baroclinic) then
         call diag_ph                  (block, state)
-        call interp_pt                (block, state)
         call diag_t                   (block, state)
       end if
       call diag_m                     (block, state)
@@ -106,7 +104,6 @@ contains
     ! --------------------------------------------------------------------------
     case (forward_pass)
       if (baroclinic) then
-        call interp_pt                (block, state)
       end if
       call calc_mf                    (block, state)
       call calc_ke                    (block, state)
@@ -127,7 +124,6 @@ contains
     case (no_wind_pass)
       if (baroclinic) then
         call diag_ph                  (block, state)
-        call interp_pt                (block, state)
         call diag_t                   (block, state)
         call diag_gz_lev              (block, state)
       end if
@@ -457,7 +453,6 @@ contains
         end do
       end do
     end do
-
     call fill_halo(block, gz_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
     end associate
 
@@ -975,13 +970,15 @@ contains
   subroutine calc_dptfdlon_dptfdlat(block, state, tend, dt)
 
     type(block_type), intent(inout) :: block
-    type(state_type), intent(in) :: state
+    type(state_type), intent(inout) :: state
     type(tend_type), intent(inout) :: tend
     real(8), intent(in) :: dt
 
     integer i, j, k
     real(r8) work(state%mesh%full_lon_ibeg:state%mesh%full_lon_iend,state%mesh%num_full_lev)
     real(r8) pole(state%mesh%num_full_lev)
+
+    call interp_pt(block, state)
 
     associate (mesh     => block%mesh    , &
                mf_lon_n => state%mf_lon_n, & ! in

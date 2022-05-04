@@ -20,6 +20,7 @@ module gmcore_mod
   use damp_mod
   use diag_state_mod
   use test_forcing_mod
+  use filter_mod
 
   implicit none
 
@@ -96,14 +97,20 @@ contains
           block%state(itime)%gz_lev(:,:,global_mesh%half_lev_iend) = block%static%gzs
         end do
       end if
-      block%state(old)%u_f = block%state(old)%u
-      block%state(old)%v_f = block%state(old)%v
-      if (baroclinic) then
-        block%state(old)%pt_f = block%state(old)%pt
-        block%state(old)%phs_f = block%state(old)%phs
-      else
-        block%state(old)%gz_f = block%state(old)%gz
-      end if
+        associate (state => block%state(old))
+        call filter_on_lon_edge(block, state%u, state%u_f)
+        call fill_halo(block, state%u_f, full_lon=.false., full_lat=.true., full_lev=.true.)
+        call filter_on_lat_edge(block, state%v, state%v_f)
+        call fill_halo(block, state%v_f, full_lon=.true., full_lat=.false., full_lev=.true.)
+        if (baroclinic) then
+          call filter_on_cell(block, state%phs, state%phs_f)
+          call fill_halo(block, state%phs_f, full_lon=.true., full_lat=.true.)
+          call filter_on_cell(block, state%pt, state%pt_f)
+          call fill_halo(block, state%pt_f, full_lon=.true., full_lat=.true., full_lev=.true.)
+        else
+          state%gz_f = state%gz
+        end if
+        end associate
       end associate
     end do
 

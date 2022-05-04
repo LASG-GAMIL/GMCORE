@@ -89,7 +89,7 @@ contains
     start_time_str = start_time%format('%Y-%m-%dT%H_%M_%S')
     curr_time_str = curr_time%format('%Y-%m-%dT%H_%M_%S')
 
-    alerts = hash_table()
+    call alerts%init()
 
   end subroutine time_init
 
