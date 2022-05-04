@@ -106,20 +106,20 @@ contains
           block%state(itime)%gz_lev(:,:,global_mesh%half_lev_iend) = block%static%gzs
         end do
       end if
-        associate (state => block%state(old))
-        call filter_on_lon_edge(block, state%u, state%u_f)
-        call fill_halo(block, state%u_f, full_lon=.false., full_lat=.true., full_lev=.true.)
-        call filter_on_lat_edge(block, state%v, state%v_f)
-        call fill_halo(block, state%v_f, full_lon=.true., full_lat=.false., full_lev=.true.)
-        if (baroclinic) then
-          call filter_on_cell(block, state%phs, state%phs_f)
-          call fill_halo(block, state%phs_f, full_lon=.true., full_lat=.true.)
-          call filter_on_cell(block, state%pt, state%pt_f)
-          call fill_halo(block, state%pt_f, full_lon=.true., full_lat=.true., full_lev=.true.)
-        else
-          state%gz_f = state%gz
-        end if
-        end associate
+      associate (state => block%state(old))
+      call filter_on_lon_edge(block, state%u_lon, state%u_f)
+      call fill_halo(block, state%u_f, full_lon=.false., full_lat=.true., full_lev=.true.)
+      call filter_on_lat_edge(block, state%v_lat, state%v_f)
+      call fill_halo(block, state%v_f, full_lon=.true., full_lat=.false., full_lev=.true.)
+      if (baroclinic) then
+        call filter_on_cell(block, state%phs, state%phs_f)
+        call fill_halo(block, state%phs_f, full_lon=.true., full_lat=.true.)
+      else
+        call filter_on_cell(block, state%gz, state%gz_f)
+        call fill_halo(block, state%gz_f, full_lon=.true., full_lat=.true.)
+      end if
+      end associate
+      call adv_allocate_tracers(block)
       end associate
     end do
 
