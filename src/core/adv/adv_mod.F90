@@ -123,6 +123,7 @@ contains
       adv_calc_mass_vflx_cell   => ffsl_calc_mass_vflx_cell
       adv_calc_mass_hflx_vtx    => ffsl_calc_mass_hflx_vtx
       adv_calc_tracer_hflx_cell => ffsl_calc_tracer_hflx_cell
+      adv_calc_tracer_vflx_cell => ffsl_calc_tracer_vflx_cell
       adv_calc_tracer_hflx_vtx  => ffsl_calc_tracer_hflx_vtx
       adv_calc_tracer_hval_vtx  => ffsl_calc_tracer_hval_vtx
     case default

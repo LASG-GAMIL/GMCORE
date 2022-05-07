@@ -1185,10 +1185,10 @@ contains
         do k = mesh%full_lev_iend + 1, mesh%full_lev_ub
           q(:,:,k,l) = q(:,:,mesh%full_lev_iend,l)
         end do
-        call adv_calc_mass_hflx_cell(block, adv_batches(i), q(:,:,:,l), qmf_lon(:,:,:,l), qmf_lat(:,:,:,l))
+        call adv_calc_tracer_hflx_cell(block, adv_batches(i), q(:,:,:,l), qmf_lon(:,:,:,l), qmf_lat(:,:,:,l))
         call fill_halo(block, qmf_lon(:,:,:,l), full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
         call fill_halo(block, qmf_lat(:,:,:,l), full_lon=.true., full_lat=.false., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
-        call adv_calc_mass_vflx_cell(block, adv_batches(i), q(:,:,:,l), qmf_lev(:,:,:,l))
+        call adv_calc_tracer_vflx_cell(block, adv_batches(i), q(:,:,:,l), qmf_lev(:,:,:,l))
       end do
     end do
     end associate

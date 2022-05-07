@@ -84,17 +84,19 @@ contains
 
     cos_t = cos(pi * time_in_seconds / tau)
 
-    associate (mesh   => block%mesh  , &
-               phs    => state%phs   , &
-               ph_lev => state%ph_lev, &
-               ph     => state%ph    , &
-               m_lev  => state%m_lev , &
-               t      => state%t     , &
-               gz_lev => state%gz_lev, &
-               gz     => state%gz    , &
-               u      => state%u_lon , &
-               v      => state%v_lat , &
-               we     => state%we_lev)
+    associate (mesh     => block%mesh    , &
+               phs      => state%phs     , &
+               ph_lev   => state%ph_lev  , &
+               ph       => state%ph      , &
+               m_lev    => state%m_lev   , &
+               t        => state%t       , &
+               gz_lev   => state%gz_lev  , &
+               gz       => state%gz      , &
+               u        => state%u_lon   , &
+               v        => state%v_lat   , &
+               mf_lon_n => state%mf_lon_n, &
+               mf_lat_n => state%mf_lat_n, &
+               we       => state%we_lev)
     phs = p0
     t   = T0
     do k = mesh%half_lev_ibeg, mesh%half_lev_iend
@@ -120,6 +122,7 @@ contains
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           lon = mesh%half_lon(i)
           u(i,j,k) = u0 * cos(lat)
+          mf_lon_n(i,j,k) = u(i,j,k)
         end do
       end do
     end do
@@ -132,6 +135,7 @@ contains
           rho = ph(i,j,k) / (Rd * T0)
           v(i,j,k) = -radius * w0 * pi * rho0 / (K0 * ztop * rho) * &
             cos(lat) * sin(K0 * lat) * cos(pi * gz(i,j,k) / (g * ztop)) * cos_t
+          mf_lat_n(i,j,k) = v(i,j,k)
         end do
       end do
     end do

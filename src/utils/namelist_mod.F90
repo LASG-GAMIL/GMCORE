@@ -233,6 +233,11 @@ contains
     close(10)
 
     hydrostatic = .not. nonhydrostatic
+    if (advection) then
+      hydrostatic    = .false.
+      baroclinic     = .false.
+      nonhydrostatic = .false.
+    end if
 
     call const_init(planet)
 
