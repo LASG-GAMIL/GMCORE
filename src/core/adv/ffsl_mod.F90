@@ -124,6 +124,8 @@ contains
       vflx_cell => vflx_ppm_cell
       hflx_vtx  => hflx_ppm_vtx
       hval_vtx  => hval_ppm_vtx
+    case default
+      call log_error('Invalid ffsl_flux_type ' // trim(ffsl_flux_type) // '!', pid=proc%id)
     end select
 
     select case (limiter_type)
@@ -133,6 +135,8 @@ contains
       slope => slope_mono
     case ('pd')
       slope => slope_pd
+    case default
+      call log_error('Invalid limiter_type ' // trim(limiter_type) // '!', pid=proc%id)
     end select
 
   end subroutine ffsl_init

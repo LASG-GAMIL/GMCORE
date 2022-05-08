@@ -94,8 +94,8 @@ program gmcore_adv_driver
       call time_integrator(adv_operator, blocks(iblk), old, new, dt_adv)
     end do
     call diagnose(blocks, new)
-    call time_advance(dt_adv)
     if (is_root_proc() .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
+    call time_advance(dt_adv)
     call output(old)
   end do
 

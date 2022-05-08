@@ -1003,8 +1003,10 @@ contains
                dptfdlat => tend%dptfdlat, & ! out
                dptfdlev => tend%dptfdlev)   ! out
     call adv_calc_tracer_hflx_cell(block, block%adv_batch_mass, pt, ptf_lon, ptf_lat, dt)
-    call fill_halo(block, ptf_lon, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false.)
-    call fill_halo(block, ptf_lat, full_lon=.true., full_lat=.false., full_lev=.true., north_halo=.false.)
+    call fill_halo(block, ptf_lon, full_lon=.false., full_lat=.true., full_lev=.true., &
+                   south_halo=.false., north_halo=.false., east_halo=.false.)
+    call fill_halo(block, ptf_lat, full_lon=.true., full_lat=.false., full_lev=.true., &
+                   north_halo=.false.,  west_halo=.false., east_halo=.false.)
     call adv_calc_tracer_vflx_cell(block, block%adv_batch_mass, pt, ptf_lev, dt)
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -1100,15 +1102,15 @@ contains
 
     integer i, j, k
 
-    associate (mesh              => block%mesh             , &
-               u                 => state%u_f              , & ! in
-               v                 => state%v_f              , & ! in
-               m_lon             => state%m_lon            , & ! in
-               m_lat             => state%m_lat            , & ! in
+    associate (mesh       => block%mesh      , &
+               u          => state%u_f       , & ! in
+               v          => state%v_f       , & ! in
+               m_lon      => state%m_lon     , & ! in
+               m_lat      => state%m_lat     , & ! in
                we_lev_lon => state%we_lev_lon, & ! in
                we_lev_lat => state%we_lev_lat, & ! in
-               wedudlev          => tend%wedudlev          , & ! out
-               wedvdlev          => tend%wedvdlev)             ! out
+               wedudlev   => tend%wedudlev   , & ! out
+               wedvdlev   => tend%wedvdlev   )   ! out
     do k = mesh%full_lev_ibeg + 1, mesh%full_lev_iend - 1
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
@@ -1186,8 +1188,10 @@ contains
           q(:,:,k,l) = q(:,:,mesh%full_lev_iend,l)
         end do
         call adv_calc_tracer_hflx_cell(block, adv_batches(i), q(:,:,:,l), qmf_lon(:,:,:,l), qmf_lat(:,:,:,l))
-        call fill_halo(block, qmf_lon(:,:,:,l), full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
-        call fill_halo(block, qmf_lat(:,:,:,l), full_lon=.true., full_lat=.false., full_lev=.true.,  west_halo=.false.,  east_halo=.false.)
+        call fill_halo(block, qmf_lon(:,:,:,l), full_lon=.false., full_lat=.true., full_lev=.true., &
+                       south_halo=.false., north_halo=.false., east_halo=.false.)
+        call fill_halo(block, qmf_lat(:,:,:,l), full_lon=.true., full_lat=.false., full_lev=.true., &
+                       north_halo=.false.,  west_halo=.false., east_halo=.false.)
         call adv_calc_tracer_vflx_cell(block, adv_batches(i), q(:,:,:,l), qmf_lev(:,:,:,l))
       end do
     end do

@@ -524,6 +524,8 @@ contains
     integer i, j, k
     real(r8) x1, x2, a, b, beta
 
+    if (mesh%num_full_lev == 1) return
+
     if (present(w)) then
       ! WENO interpolation
       select case (vert_weno_order)

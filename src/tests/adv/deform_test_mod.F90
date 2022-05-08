@@ -133,7 +133,11 @@ contains
     integer i, j
     real(r8) lon, lat, k, cos_t
 
-    associate (mesh => block%mesh, u => state%u_lon, v => state%v_lat)
+    associate (mesh => block%mesh    , &
+               u    => state%u_lon   , &
+               v    => state%v_lat   , &
+               mfx  => state%mf_lon_n, &
+               mfy  => state%mf_lat_n)
     k = 10.0_r8 * radius / period
     cos_t = cos(pi * time_in_seconds / period)
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -141,6 +145,7 @@ contains
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
         lon = mesh%half_lon(i)
         u(i,j,1) = k * sin(lon / 2.0_r8)**2 * sin(2 * lat) * cos_t
+        mfx(i,j,1) = u(i,j,1)
       end do
     end do
     call fill_halo(block, u, full_lon=.false., full_lat=.true., full_lev=.true.)
@@ -149,6 +154,7 @@ contains
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         lon = mesh%full_lon(i)
         v(i,j,1) = k / 2.0_r8 * sin(lon) * cos(lat) * cos_t
+        mfy(i,j,1) = v(i,j,1)
       end do
     end do
     call fill_halo(block, v, full_lon=.true., full_lat=.false., full_lev=.true.)
@@ -165,7 +171,11 @@ contains
     integer i, j
     real(r8) lon, lat, k, cos_t
 
-    associate (mesh => block%mesh, u => state%u_lon, v => state%v_lat)
+    associate (mesh => block%mesh    , &
+               u    => state%u_lon   , &
+               v    => state%v_lat   , &
+               mfx  => state%mf_lon_n, &
+               mfy  => state%mf_lat_n)
     k = 10.0_r8 * radius / period
     cos_t = cos(pi * time_in_seconds / period)
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -173,6 +183,7 @@ contains
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
         lon = mesh%half_lon(i)
         u(i,j,1) = k * sin(lon)**2 * sin(2 * lat) * cos_t
+        mfx(i,j,1) = u(i,j,1)
       end do
     end do
     call fill_halo(block, u, full_lon=.false., full_lat=.true., full_lev=.true.)
@@ -181,6 +192,7 @@ contains
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         lon = mesh%full_lon(i)
         v(i,j,1) = k * sin(2 * lon) * cos(lat) * cos_t
+        mfy(i,j,1) = v(i,j,1)
       end do
     end do
     call fill_halo(block, v, full_lon=.true., full_lat=.false., full_lev=.true.)
@@ -197,7 +209,11 @@ contains
     integer i, j
     real(r8) lon, lat, k, cos_t
 
-    associate (mesh => block%mesh, u => state%u_lon, v => state%v_lat)
+    associate (mesh => block%mesh    , &
+               u    => state%u_lon   , &
+               v    => state%v_lat   , &
+               mfx  => state%mf_lon_n, &
+               mfy  => state%mf_lat_n)
     k = 5.0_r8 * radius / period
     cos_t = cos(pi * time_in_seconds / period)
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -205,6 +221,7 @@ contains
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
         lon = mesh%half_lon(i)
         u(i,j,1) = -k * sin(lon / 2.0_r8)**2 * sin(2 * lat) * cos(lat)**2 * cos_t
+        mfx(i,j,1) = u(i,j,1)
       end do
     end do
     call fill_halo(block, u, full_lon=.false., full_lat=.true., full_lev=.true.)
@@ -213,6 +230,7 @@ contains
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         lon = mesh%full_lon(i)
         v(i,j,1) = k / 2.0_r8 * sin(lon) * cos(lat)**3 * cos_t
+        mfy(i,j,1) = v(i,j,1)
       end do
     end do
     call fill_halo(block, v, full_lon=.true., full_lat=.false., full_lev=.true.)
@@ -229,7 +247,11 @@ contains
     integer i, j
     real(r8) lon, lat, k, c1, c2, cos_t
 
-    associate (mesh => block%mesh, u => state%u_lon, v => state%v_lat)
+    associate (mesh => block%mesh    , &
+               u    => state%u_lon   , &
+               v    => state%v_lat   , &
+               mfx  => state%mf_lon_n, &
+               mfy  => state%mf_lat_n)
     k = 10.0_r8 * radius / period
     c1 = pi2 * time_in_seconds / period
     c2 = pi2 * radius / period
@@ -238,7 +260,8 @@ contains
       lat = mesh%full_lat(j)
       do i = mesh%half_lon_ibeg, mesh%half_lon_iend
         lon = mesh%half_lon(i) - c1
-        u(i,j,1) = k * sin(lon)**2  * sin(2 * lat) * cos_t + c2 * cos(lat)
+        u(i,j,1) = k * sin(lon)**2 * sin(2 * lat) * cos_t + c2 * cos(lat)
+        mfx(i,j,1) = u(i,j,1)
       end do
     end do
     call fill_halo(block, u, full_lon=.false., full_lat=.true., full_lev=.true.)
@@ -247,6 +270,7 @@ contains
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         lon = mesh%full_lon(i) - c1
         v(i,j,1) = k * sin(2 * lon) * cos(lat) * cos_t
+        mfy(i,j,1) = v(i,j,1)
       end do
     end do
     call fill_halo(block, v, full_lon=.true., full_lat=.false., full_lev=.true.)
