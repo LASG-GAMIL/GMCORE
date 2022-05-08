@@ -134,7 +134,7 @@ contains
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              qm = qm + state%q(i,j,k,l) * mesh%area_cell(j) * mesh%full_dlev(k)
+              qm = qm + state%q(i,j,k,l) * mesh%area_cell(j)
             end do
           end do
         end do

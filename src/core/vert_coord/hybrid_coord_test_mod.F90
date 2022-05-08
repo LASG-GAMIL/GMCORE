@@ -725,18 +725,17 @@ contains
     real(r8), intent(out) :: hybi(61)
     real(r8), parameter :: ztop = 12000.0_r8
     real(r8), parameter :: T0   = 300.0_r8
-    real(r8) eta_top, dz, eta, z
-    integer k 
+    real(r8) eta_top, deta, eta
+    integer k
 
     if (global_mesh%num_full_lev /= 60 .and. is_root_proc()) then
       call log_error('num_lev should be 60 in namelist!')
     end if
 
     eta_top = exp(-g * ztop / Rd / T0)
-    dz = ztop / global_mesh%num_full_lev
+    deta = (1 - eta_top) / global_mesh%num_full_lev
     do k = 1, global_mesh%num_half_lev
-      z = ztop - (k - 1) * dz
-      eta = exp(-g * z / Rd / T0)
+      eta = eta_top + (k - 1) * deta
       hybi(k) = (eta - eta_top) / (1.0 - eta_top)
       hyai(k) = eta - hybi(k)
     end do

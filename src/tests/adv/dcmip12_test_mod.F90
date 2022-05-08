@@ -88,6 +88,8 @@ contains
                phs      => state%phs     , &
                ph_lev   => state%ph_lev  , &
                ph       => state%ph      , &
+               m_lon    => state%m_lon   , &
+               m_lat    => state%m_lat   , &
                m_lev    => state%m_lev   , &
                t        => state%t       , &
                gz_lev   => state%gz_lev  , &
@@ -116,13 +118,14 @@ contains
     call calc_m(block, state)
     call calc_gz_lev(block, state)
     call interp_lev_edge_to_cell(mesh, gz_lev, gz)
+    m_lon = 1; m_lat = 1; m_lev = 1
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         lat = mesh%full_lat(j)
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           lon = mesh%half_lon(i)
           u(i,j,k) = u0 * cos(lat)
-          mf_lon_n(i,j,k) = u(i,j,k)
+          mf_lon_n(i,j,k) = u(i,j,k) * m_lon(i,j,k)
         end do
       end do
     end do
@@ -135,7 +138,7 @@ contains
           rho = ph(i,j,k) / (Rd * T0)
           v(i,j,k) = -radius * w0 * pi * rho0 / (K0 * ztop * rho) * &
             cos(lat) * sin(K0 * lat) * cos(pi * gz(i,j,k) / (g * ztop)) * cos_t
-          mf_lat_n(i,j,k) = v(i,j,k)
+          mf_lat_n(i,j,k) = v(i,j,k) * m_lat(i,j,k)
         end do
       end do
     end do
@@ -146,8 +149,7 @@ contains
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           lon = mesh%full_lon(i)
           rho = ph_lev(i,j,k) / (Rd * T0)
-          ! dphdlev = m_lev(i,j,k) / mesh%half_dlev(k)
-          dphdlev = 1
+          dphdlev = m_lev(i,j,k) / mesh%half_dlev(k)
           we(i,j,k) = -dphdlev * g * w0 * rho0 / K0 * (                   &
             -2 * sin(K0 * lat) * sin(lat) + K0 * cos(lat) * cos(K0 * lat) &
           ) * sin(pi * gz_lev(i,j,k) / (g * ztop)) * cos_t / p0

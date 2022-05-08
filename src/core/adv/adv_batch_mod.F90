@@ -407,8 +407,8 @@ contains
 
     real(8), intent(in), optional :: dt
 
-    real(8) dt_
-    integer i, j, k
+    real(8) dt_, deta
+    integer i, j, k, l, ks, ke, s
 
     dt_ = merge(dt, this%dt, present(dt))
 
@@ -430,8 +430,29 @@ contains
       do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            ! this%cflz(i,j,k) = dt_ * this%we(i,j,k) / this%m_lev(i,j,k)
-            this%cflz(i,j,k) = dt_ * this%we(i,j,k) / mesh%half_dlev(k)
+            deta = dt_ * abs(this%we(i,j,k) / this%m_lev(i,j,k) * mesh%half_dlev(k))
+            if (this%we(i,j,k) < 0) then
+              ks = k - 1
+              ke = mesh%full_lev_ibeg
+              s = -1
+            else
+              ks = k
+              ke = mesh%full_lev_iend
+              s = 1
+            end if
+            this%cflz(i,j,k) = -1e10
+            do l = ks, ke, s
+              deta = deta - mesh%full_dlev(l)
+              if (deta < 0) then
+                this%cflz(i,j,k) = s * ((1 + deta / mesh%full_dlev(l)) + abs(l - ks))
+                exit
+              end if
+            end do
+            if (this%cflz(i,j,k) == -1e10) then
+              call log_error('cflz exceeds range at i=' // to_str(i) // &
+                                                 ', j=' // to_str(j) // &
+                                                 ', k=' // to_str(k) // '!', __FILE__, __LINE__)
+            end if
           end do
         end do
       end do
