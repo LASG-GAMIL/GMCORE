@@ -38,7 +38,7 @@ module zonal_damp_mod
     module procedure zonal_damp_on_cell_3d
   end interface zonal_damp_on_cell
 
-  real(r8), parameter :: polar_damp_lat0 = 85 * rad
+  real(r8), parameter :: polar_damp_lat0 = 85
 
 contains
 
