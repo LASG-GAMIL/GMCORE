@@ -306,7 +306,7 @@ contains
     call fiona_add_var('h1', 'dptfdlon'     , long_name='zonal potential temperature flux gradient'     , units='', dim_names=cell_dims_3d)
     call fiona_add_var('h1', 'dptfdlat'     , long_name='meridional potential temperature flux gradient', units='', dim_names=cell_dims_3d)
     call fiona_add_var('h1', 'dptfdlev'     , long_name='vertical potential temperature flux gradient'  , units='', dim_names=cell_dims_3d)
-    call fiona_add_var('h1', 'we_lev', long_name='vertical coordinate velocity'                  , units='', dim_names= lev_dims_3d)
+    call fiona_add_var('h1', 'we_lev'       , long_name='vertical coordinate velocity'                  , units='', dim_names= lev_dims_3d)
     call fiona_add_var('h1', 'pgf_lon'      , long_name='zonal pressure gradient force'                 , units='', dim_names= lon_dims_3d)
     call fiona_add_var('h1', 'wedudlev'     , long_name='vertical advection of u'                       , units='', dim_names= lon_dims_3d)
     call fiona_add_var('h1', 'pgf_lat'      , long_name='meridional pressure gradient force'            , units='', dim_names= lat_dims_3d)

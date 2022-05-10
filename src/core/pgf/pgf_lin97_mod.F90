@@ -5,6 +5,7 @@ module pgf_lin97_mod
   use namelist_mod
   use parallel_mod
   use block_mod
+  use filter_mod
 
   implicit none
 
@@ -136,6 +137,11 @@ contains
         end do
       end do
     end if
+
+    call fill_halo(block, pgf_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
+    call filter_on_lon_edge(block, pgf_lon)
+    call fill_halo(block, pgf_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
+    call filter_on_lat_edge(block, pgf_lat)
     end associate
 
   end subroutine pgf_lin97_run

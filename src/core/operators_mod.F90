@@ -229,10 +229,8 @@ contains
 
     call block%adv_batch_mass%accum_we_lev(we_lev, m_lev, dt)
 
-    if (nonhydrostatic) then
-      call interp_lev_edge_to_lev_lon_edge(mesh, we_lev, we_lev_lon)
-      call interp_lev_edge_to_lev_lat_edge(mesh, we_lev, we_lev_lat)
-    end if
+    call interp_lev_edge_to_lev_lon_edge(mesh, we_lev, we_lev_lon)
+    call interp_lev_edge_to_lev_lat_edge(mesh, we_lev, we_lev_lat)
     end associate
 
   end subroutine calc_we_lev
@@ -584,7 +582,7 @@ contains
     end do
     call fill_halo(block, v_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
 
-    call block%adv_batch_pv%accum_uv_vtx(u_lat, v_lon, dt)
+    ! call block%adv_batch_pv%accum_uv_vtx(u_lat, v_lon, dt)
     end associate
 
   end subroutine calc_mf
@@ -1002,12 +1000,21 @@ contains
                dptfdlon => tend%dptfdlon, & ! out
                dptfdlat => tend%dptfdlat, & ! out
                dptfdlev => tend%dptfdlev)   ! out
+    ! Set upper and lower boundary conditions.
+    do k = mesh%full_lev_lb, mesh%full_lev_ibeg - 1
+      pt(:,:,k) = pt(:,:,mesh%full_lev_ibeg)
+    end do
+    do k = mesh%full_lev_iend + 1, mesh%full_lev_ub
+      pt(:,:,k) = pt(:,:,mesh%full_lev_iend)
+    end do
     call adv_calc_tracer_hflx_cell(block, block%adv_batch_mass, pt, ptf_lon, ptf_lat, dt)
     call fill_halo(block, ptf_lon, full_lon=.false., full_lat=.true., full_lev=.true., &
                    south_halo=.false., north_halo=.false., east_halo=.false.)
     call fill_halo(block, ptf_lat, full_lon=.true., full_lat=.false., full_lev=.true., &
                    north_halo=.false.,  west_halo=.false., east_halo=.false.)
-    call adv_calc_tracer_vflx_cell(block, block%adv_batch_mass, pt, ptf_lev, dt)
+    ! FIXME: It seems the vertical FFSL on pt is problematic.
+    ! call adv_calc_tracer_vflx_cell(block, block%adv_batch_mass, pt, ptf_lev, dt)
+    call interp_cell_to_lev_edge(mesh, pt, ptf_lev, w=state%we_lev, upwind_wgt_=0.25_r8)
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -1060,7 +1067,8 @@ contains
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          dptfdlev(i,j,k) = ptf_lev(i,j,k+1) - ptf_lev(i,j,k)
+          dptfdlev(i,j,k) = state%we_lev(i,j,k+1) * ptf_lev(i,j,k+1) - &
+                            state%we_lev(i,j,k  ) * ptf_lev(i,j,k  )
         end do
       end do
     end do

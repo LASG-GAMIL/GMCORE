@@ -219,9 +219,6 @@ contains
 
         call calc_ph(block, new_state)
         call calc_m (block, new_state)
-        if (nonhydrostatic) then
-          call calc_m_lev(block, new_state)
-        end if
       else if (tend%copy_phs) then
         new_state%phs    = old_state%phs
         new_state%phs_f  = old_state%phs_f
