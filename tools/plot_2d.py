@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
 import argparse
-import cartopy.crs as crs
+import cartopy.crs as ccrs
 from cartopy.feature import COASTLINE
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 import matplotlib
-matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import xarray as xr
 import numpy as np
@@ -14,7 +13,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 parser = argparse.ArgumentParser('Plot contour for given variable.')
-parser.add_argument('-i', dest='input', help='Input h0 data file', nargs='+', required=True)
+parser.add_argument('-i', dest='input', help='Input h0 data file', required=True)
 parser.add_argument('-o', dest='output', help='Output figure file')
 parser.add_argument('-v', dest='var', help='Variable name', default='pv')
 parser.add_argument('-t', dest='time_step', help='Time step', required=True, type=int)
@@ -26,19 +25,20 @@ parser.add_argument('--no-grid-lines', dest='without_grid_lines', help='Draw gri
 parser.add_argument('--coast-lines', dest='with_coast_lines', help='Draw coast lines', action='store_true')
 parser.add_argument('--min-level', help='Minimum variable level', type=float)
 parser.add_argument('--max-level', help='Minimum variable level', type=float)
+parser.add_argument('--center-lon', help='Center longitude for plotting', type=float, default=0.0)
 args = parser.parse_args()
 
-ds = [xr.open_dataset(input_file) for input_file in args.input]
+ds = xr.open_dataset(args.input)
 
-if not args.var in ds[0]:
+if not args.var in ds:
 	print(f'[Error]: Invalid variable name {args.var}!')
 	exit(1)
 
-proj = crs.PlateCarree()
+if args.output: matplotlib.use('agg')
 
-ax = plt.axes(projection=proj)
+ax = plt.axes(projection=ccrs.PlateCarree(central_longitude=args.center_lon))
 if not args.without_grid_lines:
-	gl = ax.gridlines(crs=proj, draw_labels=True, linewidth=1, color='k', alpha=0.5, linestyle='--')
+	gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True, linewidth=1, color='k', alpha=0.5, linestyle='--')
 	gl.xlabels_top = False
 	gl.ylabels_right = False
 	gl.xformatter = LONGITUDE_FORMATTER
@@ -49,25 +49,30 @@ cbar_kwargs = {
 #	'shrink': 0.8
 }
 
-var = ds[0][args.var].isel(time=args.time_step)
-for i in range(1, len(args.input)):
-	var0 = ds[i][args.var].isel(time=args.time_step)
-	var = xr.where(var == 9.96920997e+36, var0, var)
+var = ds[args.var].isel(time=args.time_step)
 if 'lev' in var.dims:
 	if args.level_idx != None:
 		var = var.isel(lev=args.level_idx)
+	elif args.plev != None:
+		print(f'[Notice]: Interpolate to {args.plev}hPa level.')
+		p = ds.ph.isel(time=args.time_step)
+		var0 = var.isel(lev=0).assign_coords(lev=(args.plev))
+		for j in range(ds[var.dims[1]].size):
+			for i in range(ds[var.dims[2]].size):
+				var0[j,i] = np.interp(args.plev * 100, p[:,j,i], var[:,j,i])
+		var = var0
 	else:
-		print('[Error]: Please select a vertical level with -k option!')
+		print('[Error]: Please select a vertical level with -k or a pressure level with -p option!')
 		exit(1)
 else:
 	args.level_idx = None
 
 if args.min_level != None and args.max_level != None:
-	var.plot(ax=ax, robust=True, transform=proj, cmap=args.colormap, cbar_kwargs=cbar_kwargs, levels=np.linspace(args.min_level, args.max_level, 21))
+	var.plot.contourf(ax=ax, robust=True, transform=ccrs.PlateCarree(), cmap=args.colormap, cbar_kwargs=cbar_kwargs, levels=np.linspace(args.min_level, args.max_level, 21))
 else:
-	var.plot(ax=ax, robust=True, transform=proj, cmap=args.colormap, cbar_kwargs=cbar_kwargs)
+	var.plot.contourf(ax=ax, robust=True, transform=ccrs.PlateCarree(), cmap=args.colormap, cbar_kwargs=cbar_kwargs, levels=20)
 if args.with_lines:
-	var.plot.contour(ax=ax, transform=proj)
+	var.plot.contour(ax=ax, transform=ccrs.PlateCarree())
 
 if args.with_coast_lines:
 	ax.add_feature(COASTLINE.with_scale('50m'), linewidth=0.5)
@@ -75,7 +80,4 @@ if args.with_coast_lines:
 if args.output:
 	plt.savefig(args.output)
 else:
-	idx_str = f't{str(args.time_step).zfill(3)}'
-	if args.level_idx:
-		idx_str = f'{idx_str}.k{str(args.level_idx).zfill(3)}'
-	plt.savefig(f'{os.path.basename(args.input[0]).replace(".nc", "")}.{args.var}.{idx_str}.png')
+	plt.show()
