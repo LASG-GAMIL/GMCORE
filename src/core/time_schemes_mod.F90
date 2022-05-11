@@ -237,8 +237,6 @@ contains
           end do
         end do
         call fill_halo(block, new_state%pt, full_lon=.true., full_lat=.true., full_lev=.true.)
-        call filter_on_cell(block, new_state%pt, new_state%pt_f)
-        call fill_halo(block, new_state%pt_f, full_lon=.true., full_lat=.true., full_lev=.true.)
       else if (tend%copy_pt) then
         new_state%pt = old_state%pt
       end if

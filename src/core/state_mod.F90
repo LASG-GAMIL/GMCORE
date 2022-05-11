@@ -45,7 +45,6 @@ module state_mod
     real(r8), allocatable, dimension(:,:,:) :: pv_lat            ! Potential vorticity on merdional edge
     real(r8), allocatable, dimension(:,:,:) :: ke                ! Kinetic energy
     real(r8), allocatable, dimension(:,:,:) :: pt                ! Potential temperature
-    real(r8), allocatable, dimension(:,:,:) :: pt_f              ! Potential temperature
     real(r8), allocatable, dimension(:,:,:) :: ptf_lon           ! Potential temperature on the zonal edge
     real(r8), allocatable, dimension(:,:,:) :: ptf_lat           ! Potential temperature on the merdional edge
     real(r8), allocatable, dimension(:,:,:) :: ptf_lev           ! Potential temperature on the vertical edge
@@ -136,7 +135,6 @@ contains
     call allocate_array(mesh, this%pv_lat           , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%ke               , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%pt               , full_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%pt_f             , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%ptf_lon          , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%ptf_lat          , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%ptf_lev          , full_lon=.true., full_lat=.true., half_lev=.true.)
@@ -216,7 +214,6 @@ contains
     if (allocated(this%pv_lat           )) deallocate(this%pv_lat           )
     if (allocated(this%ke               )) deallocate(this%ke               )
     if (allocated(this%pt               )) deallocate(this%pt               )
-    if (allocated(this%pt_f             )) deallocate(this%pt_f             )
     if (allocated(this%ptf_lon          )) deallocate(this%ptf_lon          )
     if (allocated(this%ptf_lat          )) deallocate(this%ptf_lat          )
     if (allocated(this%ptf_lev          )) deallocate(this%ptf_lev          )

@@ -11,6 +11,7 @@ module operators_mod
   use adv_mod
   use nh_mod
   use interp_mod
+  use filter_mod
 
   implicit none
 
@@ -178,7 +179,7 @@ contains
     integer i, j, k
 
     associate (mesh => block%mesh, &
-               pt   => state%pt_f, & ! in
+               pt   => state%pt  , & ! in
                ph   => state%ph  , & ! in
                t    => state%t   )   ! out
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
@@ -188,6 +189,8 @@ contains
         end do
       end do
     end do
+    call fill_halo(block, t, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
+    call filter_on_cell(block, t)
     call fill_halo(block, t, full_lon=.true., full_lat=.true., full_lev=.true.)
     end associate
 
@@ -446,7 +449,8 @@ contains
                gzs    => block%static%gzs, & ! in
                t      => state%t         , & ! in
                ph_lev => state%ph_lev    , & ! in
-               gz_lev => state%gz_lev)       ! out
+               gz_lev => state%gz_lev    , & ! out
+               gz     => state%gz        )   ! out
     do k = mesh%half_lev_ibeg, mesh%half_lev_iend - 1
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -459,6 +463,14 @@ contains
       end do
     end do
     call fill_halo(block, gz_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
+    ! For output
+    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          gz(i,j,k) = 0.5_r8 * (gz_lev(i,j,k) + gz_lev(i,j,k+1))
+        end do
+      end do
+    end do
     end associate
 
   end subroutine calc_gz_lev
