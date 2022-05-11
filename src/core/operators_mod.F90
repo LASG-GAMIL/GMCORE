@@ -178,7 +178,7 @@ contains
     integer i, j, k
 
     associate (mesh => block%mesh, &
-               pt   => state%pt  , & ! in
+               pt   => state%pt_f, & ! in
                ph   => state%ph  , & ! in
                t    => state%t   )   ! out
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
