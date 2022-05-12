@@ -229,7 +229,7 @@ contains
           end do
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              call vert_interp_log_linear(era5_lev, t1(i,j,:), ph(i,j,:), t(i,j,:), allow_extrap=.true.)
+              call vert_interp_log_linear(era5_lev, t1(i,j,:), ph(i,j,1:mesh%num_full_lev), t(i,j,1:mesh%num_full_lev), allow_extrap=.true.)
               pt(i,j,:) = potential_temperature(t(i,j,:), ph(i,j,:))
             end do
           end do
@@ -242,7 +242,7 @@ contains
           end do
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              call vert_interp_log_linear(fnl_lev, t1(i,j,:), ph(i,j,:), t(i,j,:), allow_extrap=.true.)
+              call vert_interp_log_linear(fnl_lev, t1(i,j,:), ph(i,j,1:mesh%num_full_lev), t(i,j,1:mesh%num_full_lev), allow_extrap=.true.)
               pt(i,j,:) = potential_temperature(t(i,j,:), ph(i,j,:))
             end do
           end do
@@ -257,7 +257,7 @@ contains
           end do
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              call vert_interp_log_linear(p1(i,j,:), pt1(i,j,:), ph(i,j,:), pt(i,j,:), allow_extrap=.false.)
+              call vert_interp_log_linear(p1(i,j,:), pt1(i,j,:), ph(i,j,1:mesh%num_full_lev), pt(i,j,1:mesh%num_full_lev), allow_extrap=.false.)
             end do
           end do
           deallocate(pt1, p1)
@@ -270,7 +270,7 @@ contains
           end do
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              call vert_interp_log_linear(p1(i,j,:), t1(i,j,:), ph(i,j,:), t(i,j,:), allow_extrap=.true.)
+              call vert_interp_log_linear(p1(i,j,:), t1(i,j,:), ph(i,j,1:mesh%num_full_lev), t(i,j,1:mesh%num_full_lev), allow_extrap=.true.)
               pt(i,j,:) = potential_temperature(t(i,j,:), ph(i,j,:))
             end do
           end do
@@ -284,7 +284,7 @@ contains
           end do
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              call vert_interp_log_linear(p1(i,j,:), t1(i,j,:), ph(i,j,:), t(i,j,:), allow_extrap=.true.)
+              call vert_interp_log_linear(p1(i,j,:), t1(i,j,:), ph(i,j,1:mesh%num_full_lev), t(i,j,1:mesh%num_full_lev), allow_extrap=.true.)
               pt(i,j,:) = potential_temperature(t(i,j,:), ph(i,j,:))
             end do
           end do
@@ -316,7 +316,7 @@ contains
           end do
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              call vert_interp_linear(era5_lev, u1(i,j,:), ph(i,j,:), u(i,j,:), allow_extrap=.true.)
+              call vert_interp_linear(era5_lev, u1(i,j,:), ph(i,j,1:mesh%num_full_lev), u(i,j,1:mesh%num_full_lev), allow_extrap=.true.)
             end do
           end do
           deallocate(u1)
@@ -328,7 +328,7 @@ contains
           end do
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              call vert_interp_linear(fnl_lev, u1(i,j,:), ph(i,j,:), u(i,j,:), allow_extrap=.true.)
+              call vert_interp_linear(fnl_lev, u1(i,j,:), ph(i,j,1:mesh%num_full_lev), u(i,j,1:mesh%num_full_lev), allow_extrap=.true.)
             end do
           end do
           deallocate(u1)
@@ -342,7 +342,7 @@ contains
           end do
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              call vert_interp_linear(p1(i,j,:), u1(i,j,:), ph(i,j,:), u(i,j,:), allow_extrap=.false.)
+              call vert_interp_linear(p1(i,j,:), u1(i,j,:), ph(i,j,1:mesh%num_full_lev), u(i,j,1:mesh%num_full_lev), allow_extrap=.false.)
             end do
           end do
           deallocate(u1, p1)
@@ -355,7 +355,7 @@ contains
           end do
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-                call vert_interp_linear(p1(i,j,:), u1(i,j,:), ph(i,j,:), u(i,j,:), allow_extrap=.true.)
+                call vert_interp_linear(p1(i,j,:), u1(i,j,:), ph(i,j,1:mesh%num_full_lev), u(i,j,1:mesh%num_full_lev), allow_extrap=.true.)
             end do
           end do
           deallocate(u1, p1)
@@ -368,7 +368,7 @@ contains
           end do
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-              call vert_interp_linear(p1(i,j,:), u1(i,j,:), ph(i,j,:), u(i,j,:), allow_extrap=.true.)
+              call vert_interp_linear(p1(i,j,:), u1(i,j,:), ph(i,j,1:mesh%num_full_lev), u(i,j,1:mesh%num_full_lev), allow_extrap=.true.)
             end do
           end do
           deallocate(u1, p1)
@@ -399,7 +399,7 @@ contains
           end do
           do j = mesh%half_lat_ibeg, mesh%half_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              call vert_interp_linear(era5_lev, v1(i,j,:), ph(i,j,:), v(i,j,:), allow_extrap=.true.)
+              call vert_interp_linear(era5_lev, v1(i,j,:), ph(i,j,1:mesh%num_full_lev), v(i,j,1:mesh%num_full_lev), allow_extrap=.true.)
             end do
           end do
           deallocate(v1)
@@ -411,7 +411,7 @@ contains
           end do
           do j = mesh%half_lat_ibeg, mesh%half_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              call vert_interp_linear(fnl_lev, v1(i,j,:), ph(i,j,:), v(i,j,:), allow_extrap=.true.)
+              call vert_interp_linear(fnl_lev, v1(i,j,:), ph(i,j,1:mesh%num_full_lev), v(i,j,1:mesh%num_full_lev), allow_extrap=.true.)
             end do
           end do
           deallocate(v1)
@@ -425,7 +425,7 @@ contains
           end do
           do j = mesh%half_lat_ibeg, mesh%half_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              call vert_interp_linear(p1(i,j,:), v1(i,j,:), ph(i,j,:), v(i,j,:), allow_extrap=.false.)
+              call vert_interp_linear(p1(i,j,:), v1(i,j,:), ph(i,j,1:mesh%num_full_lev), v(i,j,1:mesh%num_full_lev), allow_extrap=.false.)
             end do
           end do
           deallocate(v1, p1)
@@ -438,7 +438,7 @@ contains
           end do
           do j = mesh%half_lat_ibeg, mesh%half_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              call vert_interp_linear(p1(i,j,:), v1(i,j,:), ph(i,j,:), v(i,j,:), allow_extrap=.true.)
+              call vert_interp_linear(p1(i,j,:), v1(i,j,:), ph(i,j,1:mesh%num_full_lev), v(i,j,1:mesh%num_full_lev), allow_extrap=.true.)
             end do
           end do
           deallocate(v1, p1)
@@ -451,7 +451,7 @@ contains
           end do
           do j = mesh%half_lat_ibeg, mesh%half_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              call vert_interp_linear(p1(i,j,:), v1(i,j,:), ph(i,j,:), v(i,j,:), allow_extrap=.true.)
+              call vert_interp_linear(p1(i,j,:), v1(i,j,:), ph(i,j,1:mesh%num_full_lev), v(i,j,1:mesh%num_full_lev), allow_extrap=.true.)
             end do
           end do
           deallocate(v1, p1)

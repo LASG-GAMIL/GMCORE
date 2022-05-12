@@ -114,6 +114,8 @@ module namelist_mod
   real(r8)        :: rayleigh_damp_top    = 10.0d3 ! m
   logical         :: use_smag_damp        = .false.
   real(r8)        :: smag_damp_coef       = 0.2
+  logical         :: use_zonal_damp       = .true.
+  real(r8)        :: zonal_damp_lat0      = 80
 
   ! Output settings
   character(8)    :: output_i0_dtype      = 'r8'
@@ -214,6 +216,8 @@ module namelist_mod
     rayleigh_damp_top         , &
     use_smag_damp             , &
     smag_damp_coef            , &
+    use_zonal_damp            , &
+    zonal_damp_lat0           , &
     output_h0                 , &
     output_h0_dtype           , &
     output_h1                 , &
@@ -313,6 +317,10 @@ contains
       write(*, *) 'use_smag_damp       = ', to_str(use_smag_damp)
     if (use_smag_damp) then
       write(*, *) 'smag_damp_coef      = ', to_str(smag_damp_coef, 1)
+    end if
+      write(*, *) 'use_zonal_damp      = ', to_str(use_zonal_damp)
+    if (use_zonal_damp) then
+      write(*, *) 'zonal_damp_lat0     = ', to_str(zonal_damp_lat0, 2)
     end if
       write(*, *) '========================================================='
 

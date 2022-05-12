@@ -38,8 +38,6 @@ module zonal_damp_mod
     module procedure zonal_damp_on_cell_3d
   end interface zonal_damp_on_cell
 
-  real(r8), parameter :: polar_damp_lat0 = 85
-
 contains
 
   subroutine zonal_damp_init()
@@ -52,7 +50,7 @@ contains
     allocate(zonal_damp_half_lat(global_mesh%num_half_lat)); zonal_damp_half_lat = .false.
 
     do j = global_mesh%full_lat_ibeg_no_pole, global_mesh%full_lat_iend_no_pole
-      if (abs(global_mesh%full_lat_deg(j)) >= polar_damp_lat0) then
+      if (abs(global_mesh%full_lat_deg(j)) >= zonal_damp_lat0) then
         zonal_damp_full_lat(j) = .true.
       end if
     end do

@@ -68,10 +68,12 @@ contains
       if (use_smag_damp) then
         call smag_damp_run(block, dt, tend, state)
       end if
-      call zonal_damp_on_lon_edge(block, 6, dt, state%u_lon)
-      call zonal_damp_on_lat_edge(block, 6, dt, state%v_lat)
-      call fill_halo(block, state%u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
-      call fill_halo(block, state%v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
+      if (use_zonal_damp) then
+        call zonal_damp_on_lon_edge(block, 6, dt, state%u_lon)
+        call zonal_damp_on_lat_edge(block, 6, dt, state%v_lat)
+        call fill_halo(block, state%u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
+        call fill_halo(block, state%v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
+      end if
       end associate
     end do
 
