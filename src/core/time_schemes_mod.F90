@@ -197,8 +197,8 @@ contains
   subroutine update_state(block, tend, old_state, new_state, dt)
 
     type(block_type), intent(inout) :: block
-    type(tend_type), intent(in) :: tend
-    type(state_type), intent(in) :: old_state
+    type(tend_type ), intent(in   ) :: tend
+    type(state_type), intent(in   ) :: old_state
     type(state_type), intent(inout) :: new_state
     real(8), intent(in) :: dt
 
@@ -242,7 +242,7 @@ contains
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
             if (abs(mesh%full_lat_deg(j)) > 85) then
-              wgt = sin(pi05 * (1 - (pi05 - abs(mesh%full_lat(j))) / (5 * rad)))
+              wgt = 0.5 * sin(pi05 * (1 - (pi05 - abs(mesh%full_lat(j))) / (5 * rad)))
               new_state%pt(:,j,k) = wgt * new_state%t(:,j,k) + (1 - wgt) * new_state%pt(:,j,k)
             end if
           end do
@@ -317,6 +317,24 @@ contains
       call filter_on_lat_edge(block, new_state%v_lat, new_state%v_f)
       call fill_halo(block, new_state%u_f, full_lon=.false., full_lat=.true., full_lev=.true.)
       call fill_halo(block, new_state%v_f, full_lon=.true., full_lat=.false., full_lev=.true.)
+      ! ------------------------------------------------------------------------
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+          if (abs(mesh%full_lat_deg(j)) > 85) then
+            wgt = 0.2 * sin(pi05 * (1 - (pi05 - abs(mesh%full_lat(j))) / (5 * rad)))
+            new_state%u_lon(:,j,k) = wgt * new_state%u_f(:,j,k) + (1 - wgt) * new_state%u_lon(:,j,k)
+          end if
+        end do
+        do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+          if (abs(mesh%half_lat_deg(j)) > 85) then
+            wgt = 0.2 * sin(pi05 * (1 - (pi05 - abs(mesh%half_lat(j))) / (5 * rad)))
+            new_state%v_lat(:,j,k) = wgt * new_state%v_f(:,j,k) + (1 - wgt) * new_state%v_lat(:,j,k)
+          end if
+        end do
+      end do
+      call fill_halo(block, new_state%u_lon, full_lon=.false., full_lat=.true., full_lev=.true., west_halo=.false., east_halo=.false.)
+      call fill_halo(block, new_state%v_lat, full_lon=.true., full_lat=.false., full_lev=.true., west_halo=.false., east_halo=.false.)
+      ! ------------------------------------------------------------------------
     end if
     end associate
 
