@@ -43,39 +43,38 @@ contains
 
   end subroutine damp_final
 
-  subroutine damp_run(dt, new, blocks)
+  subroutine damp_run(block, state, tend, dt)
 
+    type(block_type), intent(inout) :: block
+    type(state_type), intent(inout) :: state
+    type(tend_type), intent(inout) :: tend
     real(8), intent(in) :: dt
-    integer, intent(in) :: new
-    type(block_type), intent(inout) :: blocks(:)
 
-    integer iblk, cyc
+    integer cyc
 
-    do iblk = 1, size(blocks)
-      associate (block => blocks(iblk)           , &
-                 state => blocks(iblk)%state(new), &
-                 tend  => blocks(iblk)%tend(new))
-      if (use_div_damp) then
-        do cyc = 1, div_damp_cycles
-          call div_damp_run(block, dt, state)
-        end do
-      end if
-      if (use_vor_damp) then
-        do cyc = 1, div_damp_cycles
-          call vor_damp_run(block, dt, state)
-        end do
-      end if
-      if (use_smag_damp) then
-        call smag_damp_run(block, dt, tend, state)
-      end if
-      if (use_zonal_damp) then
-        call zonal_damp_on_lon_edge(block, 6, dt, state%u_lon)
-        call zonal_damp_on_lat_edge(block, 6, dt, state%v_lat)
-        call fill_halo(block, state%u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
-        call fill_halo(block, state%v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
-      end if
-      end associate
-    end do
+    if (use_div_damp) then
+      do cyc = 1, div_damp_cycles
+        call div_damp_run(block, dt, state)
+      end do
+    end if
+    if (use_vor_damp) then
+      do cyc = 1, div_damp_cycles
+        call vor_damp_run(block, dt, state)
+      end do
+    end if
+    if (use_smag_damp) then
+      call smag_damp_run(block, dt, tend, state)
+    end if
+    if (use_zonal_damp) then
+      call zonal_damp_on_lon_edge(block, 4, dt, state%u_lon)
+      call zonal_damp_on_lat_edge(block, 4, dt, state%v_lat)
+      call zonal_damp_on_cell    (block, 4, dt, state%pt)
+      call zonal_damp_on_cell    (block, 4, dt, state%phs)
+      call fill_halo(block, state%u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
+      call fill_halo(block, state%v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
+      call fill_halo(block, state%pt, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call fill_halo(block, state%phs, full_lon=.true., full_lat=.true.)
+    end if
 
   end subroutine damp_run
 

@@ -206,13 +206,13 @@ contains
 
     select case (this%time_mean_type)
     case (instance)
-      dt = create_timedelta(days=0)
+      call dt%init(days=0)
     case (daily_mean)
-      dt = create_timedelta(days=1)
+      call dt%init(days=1)
     case (monthly_mean)
-      dt = create_timedelta(days=days_of_month(this%last_time%year, this%last_time%month, calendar))
+      call dt%init(days=days_of_month(this%last_time%year, this%last_time%month, calendar))
     case (yearly_mean)
-      dt = create_timedelta(days=days_of_year(this%last_time%year, calendar))
+      call dt%init(days=days_of_year(this%last_time%year, calendar))
     end select
 
     if (curr_time - this%last_time >= dt) then

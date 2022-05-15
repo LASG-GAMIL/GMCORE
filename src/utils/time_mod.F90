@@ -62,29 +62,30 @@ contains
     real(8), intent(in) :: dt_in_seconds
 
     if (sum(start_time_array) > 0) then
-      start_time = create_datetime(year=start_time_array(1),  &
-                                   month=start_time_array(2), &
-                                   day=start_time_array(3),   &
-                                   hour=start_time_array(4),  &
-                                   minute=start_time_array(5))
+      call start_time%init(year=start_time_array(1),  &
+                           month=start_time_array(2), &
+                           day=start_time_array(3),   &
+                           hour=start_time_array(4),  &
+                           minute=start_time_array(5))
     else
-      start_time = create_datetime(year=1, month=1, day=1, hour=0, minute=0)
+      call start_time%init(year=1, month=1, day=1, hour=0, minute=0)
     end if
+    end_time = start_time
     if (run_days > 0 .or. run_hours > 0) then
-      end_time = start_time + create_timedelta(days=run_days, hours=run_hours)
+      call end_time%add(days=run_days, hours=run_hours)
     else if (sum(end_time_array) > 0) then
-      end_time = create_datetime(year=end_time_array(1),  &
-                                 month=end_time_array(2), &
-                                 day=end_time_array(3),   &
-                                 hour=end_time_array(4),  &
-                                 minute=end_time_array(5))
+      call end_time%init(year=end_time_array(1),  &
+                         month=end_time_array(2), &
+                         day=end_time_array(3),   &
+                         hour=end_time_array(4),  &
+                         minute=end_time_array(5))
     end if
 
     time_step = 0
     elapsed_seconds = 0
     old_time_idx = 1
     new_time_idx = 2
-    dt = create_timedelta(seconds=dt_in_seconds)
+    call dt%init(seconds=dt_in_seconds)
 
     curr_time = start_time
 
@@ -147,7 +148,7 @@ contains
     time_step = time_step + 1
     if (present(dt_in_seconds)) then
       elapsed_seconds = elapsed_seconds + dt_in_seconds
-      curr_time = curr_time + create_timedelta(seconds=dt_in_seconds)
+      call curr_time%add(seconds=dt_in_seconds)
     else
       elapsed_seconds = elapsed_seconds + dt%total_seconds()
       curr_time = curr_time + dt
@@ -167,7 +168,7 @@ contains
     tmp1 = split_string(time_units, ' ', 1)
     tmp2 = split_string(time_units, ' ', 3)
 
-    curr_time = create_datetime(tmp2)
+    call curr_time%init(tmp2)
     select case (tmp1)
     case ('minutes')
       call curr_time%add_minutes(time_value)
@@ -247,7 +248,7 @@ contains
       seconds_ = 0.0
     end if
 
-    alert%period = create_timedelta(months=months_, days=days_, hours=hours_, minutes=minutes_, seconds=seconds_)
+    call alert%period%init(months=months_, days=days_, hours=hours_, minutes=minutes_, seconds=seconds_)
     alert%last_time = start_time - alert%period
     call alerts%insert(trim(name), alert)
 

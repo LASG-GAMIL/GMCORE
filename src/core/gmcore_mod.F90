@@ -403,7 +403,7 @@ contains
         call calc_coriolis         (block, star_state, tend1, dt)
         call calc_grad_ke          (block, star_state, tend1, dt)
         call calc_wedudlev_wedvdlev(block, star_state, tend1, dt)
-        call pgf_run               (block, new_state, tend1)
+        call pgf_run               (block,  new_state, tend1)
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -425,7 +425,7 @@ contains
         call calc_grad_mf        (block, star_state, tend1, dt)
         call calc_coriolis       (block, star_state, tend1, dt)
         call calc_grad_ke        (block, star_state, tend1, dt)
-        call pgf_run             (block, star_state, tend1    )
+        call pgf_run             (block, star_state, tend1)
 
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -570,8 +570,8 @@ contains
     do iblk = 1, size(blocks)
       call time_integrator(operators, blocks(iblk), old, new, dt)
       call test_forcing_run(blocks(iblk), dt, blocks(iblk)%static, blocks(iblk)%state(new))
+      call damp_run(blocks(iblk), blocks(iblk)%state(new), blocks(iblk)%tend(new), dt)
     end do
-    call damp_run(dt, new, blocks)
 
   end subroutine time_integrate
 

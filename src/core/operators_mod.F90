@@ -230,7 +230,7 @@ contains
     we_lev(:,:,mesh%half_lev_iend) = 0.0_r8
     call fill_halo(block, we_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
 
-    call block%adv_batch_mass%accum_we_lev(we_lev, m_lev, dt)
+    ! call block%adv_batch_mass%accum_we_lev(we_lev, m_lev, dt)
 
     call interp_lev_edge_to_lev_lon_edge(mesh, we_lev, we_lev_lon)
     call interp_lev_edge_to_lev_lat_edge(mesh, we_lev, we_lev_lat)
