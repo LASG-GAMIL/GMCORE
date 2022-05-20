@@ -11,7 +11,7 @@ module damp_mod
   use smag_damp_mod
   use laplace_damp_mod
   use zonal_damp_mod
-  use filter_mod
+  use operators_mod
 
   implicit none
 
@@ -66,14 +66,14 @@ contains
       call smag_damp_run(block, dt, tend, state)
     end if
     if (use_zonal_damp) then
-      call zonal_damp_on_lon_edge(block, 4, dt, state%u_lon)
-      call zonal_damp_on_lat_edge(block, 4, dt, state%v_lat)
-      call zonal_damp_on_cell    (block, 4, dt, state%pt)
-      call zonal_damp_on_cell    (block, 4, dt, state%phs)
-      call fill_halo(block, state%u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
-      call fill_halo(block, state%v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
-      call fill_halo(block, state%pt, full_lon=.true., full_lat=.true., full_lev=.true.)
-      call fill_halo(block, state%phs, full_lon=.true., full_lat=.true.)
+      call zonal_damp_on_lon_edge(block, zonal_damp_order, dt, state%u_lon)
+      call zonal_damp_on_lat_edge(block, zonal_damp_order, dt, state%v_lat)
+      state%pt = state%pt * state%m
+      call zonal_damp_on_cell(block, zonal_damp_order, dt, state%phs)
+      call calc_ph(block, state)
+      call calc_m(block, state)
+      call zonal_damp_on_cell(block, zonal_damp_order, dt, state%pt)
+      state%pt = state%pt / state%m
     end if
 
   end subroutine damp_run

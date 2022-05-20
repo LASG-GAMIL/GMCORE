@@ -317,15 +317,6 @@ contains
     associate (mesh => block%mesh, gzs => block%static%gzs, landmask => block%static%landmask)
     call filter_on_cell(block, gzs)
     call fill_halo(block, gzs, full_lon=.true., full_lat=.true.)
-    allocate(lat_coef(global_mesh%num_full_lat))
-    !do j = global_mesh%full_lat_ibeg, global_mesh%full_lat_iend
-    !  lat_coef(j) = exp((90 - abs(global_mesh%full_lat_deg(j)))**2 * log(0.1_r8) / (90 - topo_smooth_lat0)**2)
-    !end do
-    lat_coef = 1
-    do i = 1, topo_smooth_cycles
-      call laplace_damp_on_cell(block, 2, gzs, coef=topo_smooth_coef, lat_coef=lat_coef, fill=.true.)
-    end do
-    deallocate(lat_coef)
     !do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
     !  do i = mesh%full_lon_ibeg, mesh%full_lon_iend
     !    if (landmask(i,j) == 0) gzs(i,j) = 0

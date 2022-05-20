@@ -114,9 +114,6 @@ contains
       if (baroclinic) then
         call filter_on_cell(block, state%phs, state%phs_f)
         call fill_halo(block, state%phs_f, full_lon=.true., full_lat=.true.)
-      else
-        call filter_on_cell(block, state%gz, state%gz_f)
-        call fill_halo(block, state%gz_f, full_lon=.true., full_lat=.true.)
       end if
       end associate
       call adv_allocate_tracers(block)

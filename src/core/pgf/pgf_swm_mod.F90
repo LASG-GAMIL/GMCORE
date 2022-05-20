@@ -24,7 +24,7 @@ contains
     integer i, j, k
 
     associate (mesh    => block%mesh  , &
-               gz      => state%gz_f  , & ! in
+               gz      => state%gz    , & ! in
                pgf_lon => tend%pgf_lon, & ! out
                pgf_lat => tend%pgf_lat)   ! out
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend

@@ -147,7 +147,7 @@ contains
     integer i, j, k
 
     associate (mesh   => block%mesh  , &
-               phs    => state%phs_f , & ! in
+               phs    => state%phs   , & ! in
                ph_lev => state%ph_lev, & ! out
                ph     => state%ph)       ! out
     do k = mesh%half_lev_ibeg, mesh%half_lev_iend
@@ -190,8 +190,6 @@ contains
       end do
     end do
     call fill_halo(block, t, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
-    call filter_on_cell(block, t)
-    call fill_halo(block, t, full_lon=.true., full_lat=.true., full_lev=.true.)
     end associate
 
   end subroutine calc_t
@@ -249,8 +247,8 @@ contains
     real(r8) pole(state%mesh%num_full_lev)
 
     associate (mesh => block%mesh , &
-               u    => state%u_f  , & ! in
-               v    => state%v_f  , & ! in
+               u    => state%u_lon, & ! in
+               v    => state%v_lat, & ! in
                ke   => state%ke   )   ! out
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole + merge(0, 1, mesh%has_north_pole())
@@ -558,8 +556,8 @@ contains
                m        => state%m       , & ! in
                m_lon    => state%m_lon   , & ! in
                m_lat    => state%m_lat   , & ! in
-               u_lon    => state%u_f     , & ! in
-               v_lat    => state%v_f     , & ! in
+               u_lon    => state%u_lon   , & ! in
+               v_lat    => state%v_lat   , & ! in
                u_lat    => state%u_lat   , & ! out
                v_lon    => state%v_lon   , & ! out
                mf_lon_n => state%mf_lon_n, & ! out
@@ -567,6 +565,20 @@ contains
                mf_lon_t => state%mf_lon_t, & ! out
                mf_lat_t => state%mf_lat_t)   ! out
     call block%adv_batch_mass%accum_uv_cell(u_lon, v_lat, dt)
+    !do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+    !  do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole + merge(0, 1, mesh%has_north_pole())
+    !    do i = mesh%half_lon_ibeg - 1, mesh%half_lon_iend
+    !      mf_lon_n(i,j,k) = m_lon(i,j,k) * u_lon(i,j,k)
+    !    end do
+    !  end do
+    !end do
+    !do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+    !  do j = mesh%half_lat_ibeg - merge(0, 1, mesh%has_south_pole()), mesh%half_lat_iend
+    !    do i = mesh%full_lon_ibeg, mesh%full_lon_iend + 1
+    !      mf_lat_n(i,j,k) = m_lat(i,j,k) * v_lat(i,j,k)
+    !    end do
+    !  end do
+    !end do
     call adv_calc_mass_hflx_cell(block, block%adv_batch_mass, m, mf_lon_n, mf_lat_n, dt)
     call fill_halo(block, mf_lon_n, full_lon=.false., full_lat=.true., full_lev=.true.)
     call fill_halo(block, mf_lat_n, full_lon=.true., full_lat=.false., full_lev=.true.)
@@ -673,8 +685,8 @@ contains
 
     associate (mesh  => block%mesh , &
                m_vtx => state%m_vtx, & ! in
-               u_lon => state%u_f  , & ! in
-               v_lat => state%v_f  , & ! in
+               u_lon => state%u_lon, & ! in
+               v_lat => state%v_lat, & ! in
                vor   => state%vor  , & ! in
                pv    => state%pv)      ! out
     call calc_vor(block, state, u_lon, v_lat)
@@ -733,8 +745,8 @@ contains
     integer i, j, k
 
     associate (mesh     => block%mesh    , &
-               un       => state%u_f     , & ! in
-               vn       => state%v_f     , & ! in
+               un       => state%u_lon   , & ! in
+               vn       => state%v_lat   , & ! in
                ut       => state%u_lat   , & ! in
                vt       => state%v_lon   , & ! in
                pv       => state%pv      , & ! in
@@ -792,8 +804,8 @@ contains
     integer i, j, k
 
     associate (mesh     => block%mesh    , &
-               un       => state%u_f     , & ! in
-               vn       => state%v_f     , & ! in
+               un       => state%u_lon   , & ! in
+               vn       => state%v_lat   , & ! in
                ut       => state%u_lat   , & ! in
                vt       => state%v_lon   , & ! in
                pv       => state%pv      , & ! in
@@ -1012,19 +1024,19 @@ contains
                dptfdlon => tend%dptfdlon, & ! out
                dptfdlat => tend%dptfdlat, & ! out
                dptfdlev => tend%dptfdlev)   ! out
-    ! Set upper and lower boundary conditions.
-    do k = mesh%full_lev_lb, mesh%full_lev_ibeg - 1
-      pt(:,:,k) = pt(:,:,mesh%full_lev_ibeg)
-    end do
-    do k = mesh%full_lev_iend + 1, mesh%full_lev_ub
-      pt(:,:,k) = pt(:,:,mesh%full_lev_iend)
-    end do
     call adv_calc_tracer_hflx_cell(block, block%adv_batch_mass, pt, ptf_lon, ptf_lat, dt)
     call fill_halo(block, ptf_lon, full_lon=.false., full_lat=.true., full_lev=.true., &
                    south_halo=.false., north_halo=.false., east_halo=.false.)
     call fill_halo(block, ptf_lat, full_lon=.true., full_lat=.false., full_lev=.true., &
                    north_halo=.false.,  west_halo=.false., east_halo=.false.)
     ! FIXME: It seems the vertical FFSL on pt is problematic.
+    ! Set upper and lower boundary conditions.
+    ! do k = mesh%full_lev_lb, mesh%full_lev_ibeg - 1
+    !   pt(:,:,k) = pt(:,:,mesh%full_lev_ibeg)
+    ! end do
+    ! do k = mesh%full_lev_iend + 1, mesh%full_lev_ub
+    !   pt(:,:,k) = pt(:,:,mesh%full_lev_iend)
+    ! end do
     ! call adv_calc_tracer_vflx_cell(block, block%adv_batch_mass, pt, ptf_lev, dt)
     call interp_cell_to_lev_edge(mesh, pt, ptf_lev, w=state%we_lev, upwind_wgt_=0.25_r8)
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
@@ -1123,8 +1135,8 @@ contains
     integer i, j, k
 
     associate (mesh       => block%mesh      , &
-               u          => state%u_f       , & ! in
-               v          => state%v_f       , & ! in
+               u          => state%u_lon     , & ! in
+               v          => state%v_lat     , & ! in
                m_lon      => state%m_lon     , & ! in
                m_lat      => state%m_lat     , & ! in
                we_lev_lon => state%we_lev_lon, & ! in
