@@ -192,6 +192,7 @@ contains
       end do
     end do
     call fill_halo(block, t, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
+    call filter_on_cell(block, t)
     end associate
 
   end subroutine calc_t
@@ -249,8 +250,8 @@ contains
     real(r8) pole(state%mesh%num_full_lev)
 
     associate (mesh => block%mesh , &
-               u    => state%u_lon, & ! in
-               v    => state%v_lat, & ! in
+               u    => state%u_f  , & ! in
+               v    => state%v_f  , & ! in
                ke   => state%ke   )   ! out
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole + merge(0, 1, mesh%has_north_pole())
@@ -558,8 +559,8 @@ contains
                m        => state%m       , & ! in
                m_lon    => state%m_lon   , & ! in
                m_lat    => state%m_lat   , & ! in
-               u_lon    => state%u_lon   , & ! in
-               v_lat    => state%v_lat   , & ! in
+               u_lon    => state%u_f     , & ! in
+               v_lat    => state%v_f     , & ! in
                u_lat    => state%u_lat   , & ! out
                v_lon    => state%v_lon   , & ! out
                mf_lon_n => state%mf_lon_n, & ! out
@@ -567,23 +568,23 @@ contains
                mf_lon_t => state%mf_lon_t, & ! out
                mf_lat_t => state%mf_lat_t)   ! out
     call block%adv_batch_mass%accum_uv_cell(u_lon, v_lat, dt)
-    !do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-    !  do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole + merge(0, 1, mesh%has_north_pole())
-    !    do i = mesh%half_lon_ibeg - 1, mesh%half_lon_iend
-    !      mf_lon_n(i,j,k) = m_lon(i,j,k) * u_lon(i,j,k)
-    !    end do
-    !  end do
-    !end do
-    !do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-    !  do j = mesh%half_lat_ibeg - merge(0, 1, mesh%has_south_pole()), mesh%half_lat_iend
-    !    do i = mesh%full_lon_ibeg, mesh%full_lon_iend + 1
-    !      mf_lat_n(i,j,k) = m_lat(i,j,k) * v_lat(i,j,k)
-    !    end do
-    !  end do
-    !end do
-    call adv_calc_mass_hflx_cell(block, block%adv_batch_mass, m, mf_lon_n, mf_lat_n, dt)
-    call fill_halo(block, mf_lon_n, full_lon=.false., full_lat=.true., full_lev=.true.)
-    call fill_halo(block, mf_lat_n, full_lon=.true., full_lat=.false., full_lev=.true.)
+    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole + merge(0, 1, mesh%has_north_pole())
+        do i = mesh%half_lon_ibeg - 1, mesh%half_lon_iend
+          mf_lon_n(i,j,k) = m_lon(i,j,k) * u_lon(i,j,k)
+        end do
+      end do
+    end do
+    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      do j = mesh%half_lat_ibeg - merge(0, 1, mesh%has_south_pole()), mesh%half_lat_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend + 1
+          mf_lat_n(i,j,k) = m_lat(i,j,k) * v_lat(i,j,k)
+        end do
+      end do
+    end do
+    !call adv_calc_mass_hflx_cell(block, block%adv_batch_mass, m, mf_lon_n, mf_lat_n, dt)
+    !call fill_halo(block, mf_lon_n, full_lon=.false., full_lat=.true., full_lev=.true.)
+    !call fill_halo(block, mf_lat_n, full_lon=.true., full_lat=.false., full_lev=.true.)
     call block%adv_batch_mass%accum_mf_cell(mf_lon_n, mf_lat_n)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
@@ -687,8 +688,8 @@ contains
 
     associate (mesh  => block%mesh , &
                m_vtx => state%m_vtx, & ! in
-               u_lon => state%u_lon, & ! in
-               v_lat => state%v_lat, & ! in
+               u_lon => state%u_f  , & ! in
+               v_lat => state%v_f  , & ! in
                vor   => state%vor  , & ! in
                pv    => state%pv)      ! out
     call calc_vor(block, state, u_lon, v_lat)
@@ -747,8 +748,8 @@ contains
     integer i, j, k
 
     associate (mesh     => block%mesh    , &
-               un       => state%u_lon   , & ! in
-               vn       => state%v_lat   , & ! in
+               un       => state%u_f     , & ! in
+               vn       => state%v_f     , & ! in
                ut       => state%u_lat   , & ! in
                vt       => state%v_lon   , & ! in
                pv       => state%pv      , & ! in
@@ -1137,8 +1138,8 @@ contains
     integer i, j, k
 
     associate (mesh       => block%mesh      , &
-               u          => state%u_lon     , & ! in
-               v          => state%v_lat     , & ! in
+               u          => state%u_f       , & ! in
+               v          => state%v_f       , & ! in
                m_lon      => state%m_lon     , & ! in
                m_lat      => state%m_lat     , & ! in
                we_lev_lon => state%we_lev_lon, & ! in

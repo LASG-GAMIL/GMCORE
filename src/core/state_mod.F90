@@ -29,6 +29,7 @@ module state_mod
     real(r8), allocatable, dimension(:,:,:) :: we_lev_lon        ! Vertical coordinate speed multiplied by 𝛛π/𝛛η on zonal edge
     real(r8), allocatable, dimension(:,:,:) :: we_lev_lat        ! Vertical coordinate speed multiplied by 𝛛π/𝛛η on merdional edge
     real(r8), allocatable, dimension(:,:,:) :: gz                ! Geopotential (m2 s-2)
+    real(r8), allocatable, dimension(:,:,:) :: gz_f              ! Geopotential (m2 s-2)
     real(r8), allocatable, dimension(:,:,:) :: gz_lev            ! Geopotential height on half levels (m2 s-2)
     real(r8), allocatable, dimension(:,:,:) :: m                 ! Mass
     real(r8), allocatable, dimension(:,:,:) :: m_vtx             ! Mass on vertex
@@ -146,6 +147,10 @@ contains
     call allocate_array(mesh, this%div              , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%vor              , half_lon=.true., half_lat=.true., full_lev=.true.)
 
+    if (.not. baroclinic) then
+      call allocate_array(mesh, this%gz_f           , full_lon=.true., full_lat=.true., full_lev=.true.)
+    end if
+
     if (nonhydrostatic) then
       call allocate_array(mesh, this%we             , full_lon=.true., full_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%w              , full_lon=.true., full_lat=.true., full_lev=.true.)
@@ -199,6 +204,7 @@ contains
     if (allocated(this%we_lev_lon       )) deallocate(this%we_lev_lon       )
     if (allocated(this%we_lev_lat       )) deallocate(this%we_lev_lat       )
     if (allocated(this%gz               )) deallocate(this%gz               )
+    if (allocated(this%gz_f             )) deallocate(this%gz_f             )
     if (allocated(this%gz_lev           )) deallocate(this%gz_lev           )
     if (allocated(this%m                )) deallocate(this%m                )
     if (allocated(this%m_vtx            )) deallocate(this%m_vtx            )

@@ -208,15 +208,13 @@ contains
     associate (mesh => block%mesh)
     if (baroclinic) then
       if (tend%update_phs) then
-        ! ----------------------------------------------------------------------
-        call fill_halo(block, tend%dphs, full_lon=.true., full_lat=.true., south_halo=.false., north_halo=.false.)
-        call filter_on_cell(block, tend%dphs)
-        ! ----------------------------------------------------------------------
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             new_state%phs(i,j) = old_state%phs(i,j) + dt * tend%dphs(i,j)
           end do
         end do
+        call fill_halo(block, new_state%phs, full_lon=.true., full_lat=.true., south_halo=.false., north_halo=.false.)
+        call filter_on_cell(block, new_state%phs, new_state%phs_f)
         call fill_halo(block, new_state%phs, full_lon=.true., full_lat=.true.)
 
         call calc_ph(block, new_state)
@@ -230,10 +228,6 @@ contains
 
       if (tend%update_pt) then
         if (.not. tend%update_phs .and. .not. tend%copy_phs .and. is_root_proc()) call log_error('Mass is not updated or copied!')
-        ! ----------------------------------------------------------------------
-        call fill_halo(block, tend%dpt, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
-        call filter_on_cell(block, tend%dpt)
-        ! ----------------------------------------------------------------------
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -247,10 +241,6 @@ contains
       end if
     else
       if (tend%update_gz) then
-        ! ----------------------------------------------------------------------
-        call fill_halo(block, tend%dgz, full_lon=.true., full_lat=.true., south_halo=.false., north_halo=.false.)
-        call filter_on_cell(block, tend%dgz)
-        ! ----------------------------------------------------------------------
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -259,18 +249,14 @@ contains
           end do
         end do
         call fill_halo(block, new_state%gz, full_lon=.true., full_lat=.true.)
+        call filter_on_cell(block, new_state%gz, new_state%gz_f)
+        call fill_halo(block, new_state%gz_f, full_lon=.true., full_lat=.true.)
       else if (tend%copy_gz) then
         new_state%gz   = old_state%gz
       end if
     end if
 
     if (tend%update_u .and. tend%update_v) then
-      ! ------------------------------------------------------------------------
-      call fill_halo(block, tend%du, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
-      call filter_on_lon_edge(block, tend%du)
-      call fill_halo(block, tend%dv, full_lon=.true., full_lat=.false., full_lev=.true., south_halo=.false., north_halo=.false.)
-      call filter_on_lat_edge(block, tend%dv)
-      ! ------------------------------------------------------------------------
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
@@ -297,6 +283,10 @@ contains
         new_state%v_lat(:,j,:) = (1 - wgt) * new_state%v_lat(:,j,:) + wgt * new_state%v_lat(:,j-1,:)
       end if
       call fill_halo(block, new_state%v_lat, full_lon=.true., full_lat=.false., full_lev=.true., west_halo=.false., east_halo=.false.)
+      call filter_on_lon_edge(block, new_state%u_lon, new_state%u_f)
+      call filter_on_lat_edge(block, new_state%v_lat, new_state%v_f)
+      call fill_halo(block, new_state%u_f, full_lon=.false., full_lat=.true., full_lev=.true.)
+      call fill_halo(block, new_state%v_f, full_lon=.true., full_lat=.false., full_lev=.true.)
     end if
     end associate
 

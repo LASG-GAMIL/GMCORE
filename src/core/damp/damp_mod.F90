@@ -66,14 +66,16 @@ contains
       call smag_damp_run(block, dt, tend, state)
     end if
     if (use_zonal_damp) then
-      call zonal_damp_on_lon_edge(block, zonal_damp_order, dt, state%u_lon)
-      call zonal_damp_on_lat_edge(block, zonal_damp_order, dt, state%v_lat)
-      state%pt = state%pt * state%m
-      call zonal_damp_on_cell(block, zonal_damp_order, dt, state%phs)
-      call calc_ph(block, state)
-      call calc_m(block, state)
-      call zonal_damp_on_cell(block, zonal_damp_order, dt, state%pt)
-      state%pt = state%pt / state%m
+      do cyc = 1, zonal_damp_cycles
+        call zonal_damp_on_lon_edge(block, zonal_damp_order, dt, state%u_lon)
+        call zonal_damp_on_lat_edge(block, zonal_damp_order, dt, state%v_lat)
+        if (baroclinic) then
+          call zonal_damp_on_cell(block, zonal_damp_order, dt, state%phs)
+          call zonal_damp_on_cell(block, zonal_damp_order, dt, state%pt)
+        else
+          call zonal_damp_on_cell(block, zonal_damp_order, dt, state%gz)
+        end if
+      end do
     end if
 
   end subroutine damp_run
