@@ -95,7 +95,7 @@ module namelist_mod
   real(r8)        :: topo_smooth_coef     = 1
   real(r8)        :: topo_smooth_lat0     = 60
   logical         :: use_div_damp         = .false.
-  integer         :: div_damp_cycles      = 5
+  integer         :: div_damp_cycles      = 1
   integer         :: div_damp_order       = 2
   integer         :: div_damp_k0          = 3
   real(r8)        :: div_damp_imp_lat0    = 0
