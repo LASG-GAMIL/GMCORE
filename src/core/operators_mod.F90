@@ -146,18 +146,20 @@ contains
 
     integer i, j, k
 
-    associate (mesh   => block%mesh  , &
-               phs    => state%phs   , & ! in
-               ph_lev => state%ph_lev, & ! out
-               ph     => state%ph)       ! out
+    associate (mesh       => block%mesh      , &
+               phs        => state%phs_f     , & ! in
+               ph_lev     => state%ph_lev    , & ! out
+               ph_exn_lev => state%ph_exn_lev, & ! out
+               ph         => state%ph        )   ! out
     do k = mesh%half_lev_ibeg, mesh%half_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           ph_lev(i,j,k) = vert_coord_calc_ph_lev(k, phs(i,j))
+          ph_exn_lev(i,j,k) = ph_lev(i,j,k)**Rd_o_cp
         end do
       end do
     end do
-    call fill_halo(block, ph_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
+    call fill_halo(block, ph_exn_lev, full_lon=.true., full_lat=.true., full_lev=.false., west_halo=.false., south_halo=.false.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend

@@ -50,6 +50,7 @@ module state_mod
     real(r8), allocatable, dimension(:,:,:) :: t                 ! Temperature
     real(r8), allocatable, dimension(:,:,:) :: ph                ! Hydrostatic pressure on full levels
     real(r8), allocatable, dimension(:,:,:) :: ph_lev            ! Hydrostatic pressure on half levels
+    real(r8), allocatable, dimension(:,:,:) :: ph_exn_lev        ! Exner pressure on half levels
     real(r8), allocatable, dimension(:,:  ) :: phs               ! Surface hydrostatic pressure
     real(r8), allocatable, dimension(:,:  ) :: phs_f             ! Surface hydrostatic pressure
     real(r8), allocatable, dimension(:,:,:) :: div               ! Divergence (s-1)
@@ -139,6 +140,7 @@ contains
     call allocate_array(mesh, this%t                , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%ph               , full_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%ph_lev           , full_lon=.true., full_lat=.true., half_lev=.true.)
+    call allocate_array(mesh, this%ph_exn_lev       , full_lon=.true., full_lat=.true., half_lev=.true.)
     call allocate_array(mesh, this%phs              , full_lon=.true., full_lat=.true.                 )
     call allocate_array(mesh, this%phs_f            , full_lon=.true., full_lat=.true.                 )
     call allocate_array(mesh, this%div              , full_lon=.true., full_lat=.true., full_lev=.true.)
@@ -217,6 +219,7 @@ contains
     if (allocated(this%t                )) deallocate(this%t                )
     if (allocated(this%ph               )) deallocate(this%ph               )
     if (allocated(this%ph_lev           )) deallocate(this%ph_lev           )
+    if (allocated(this%ph_exn_lev       )) deallocate(this%ph_exn_lev       )
     if (allocated(this%phs              )) deallocate(this%phs              )
     if (allocated(this%phs_f            )) deallocate(this%phs_f            )
     if (allocated(this%div              )) deallocate(this%div              )
