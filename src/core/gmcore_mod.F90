@@ -206,17 +206,20 @@ contains
     type(static_type), pointer :: static
     integer i, j, k, iblk
     real(r8) tm, te, tav, tpe, tpt, max_w
+    real(r8) te_ke, te_ie, te_pe
 
-    tm = 0.0_r8
-    te = 0.0_r8
-    tav = 0.0_r8
-    tpe = 0.0_r8
-    tpt = 0.0_r8
+    tm    = 0
+    te    = 0
+    tav   = 0
+    tpe   = 0
+    tpt   = 0
+    te_ke = 0
+    te_ie = 0
+    te_pe = 0
     do iblk = 1, size(blocks)
       mesh => blocks(iblk)%mesh
       state => blocks(iblk)%state(itime)
       static => blocks(iblk)%static
-
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -228,12 +231,12 @@ contains
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            te = te + state%mf_lon_n(i,j,k) * 0.5_r8 * state%u_lon(i,j,k) * mesh%area_lon(j) * 2
+            te_ke = te_ke + state%mf_lon_n(i,j,k) * 0.5_r8 * state%u_lon(i,j,k) * mesh%area_lon(j) * 2
           end do
         end do
         do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            te = te + state%mf_lat_n(i,j,k) * 0.5_r8 * state%v_lat(i,j,k) * mesh%area_lat(j) * 2
+            te_ke = te_ke + state%mf_lat_n(i,j,k) * 0.5_r8 * state%v_lat(i,j,k) * mesh%area_lat(j) * 2
           end do
         end do
       end do
@@ -241,20 +244,20 @@ contains
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              te = te + state%m(i,j,k) * cp * state%t(i,j,k) * mesh%area_cell(j)
+              te_ie = te_ie + state%m(i,j,k) * cp * state%t(i,j,k) * mesh%area_cell(j)
             end do
           end do
         end do
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            te = te + static%gzs(i,j) * state%phs(i,j) * mesh%area_cell(j)
+            te_ie = te_ie + static%gzs(i,j) * state%phs(i,j) * mesh%area_cell(j)
           end do
         end do
       else if (nonhydrostatic) then
       else
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            te = te + (state%m(i,j,1)**2 * g * 0.5_r8 + state%m(i,j,1) * static%gzs(i,j)) * mesh%area_cell(j)
+            te_pe = te_pe + (state%m(i,j,1)**2 * g * 0.5_r8 + state%m(i,j,1) * static%gzs(i,j)) * mesh%area_cell(j)
           end do
         end do
       end if
@@ -291,16 +294,22 @@ contains
       end if
     end do
     call global_sum(proc%comm, tm)
-    call global_sum(proc%comm, te)
+    call global_sum(proc%comm, te_ke)
+    call global_sum(proc%comm, te_ie)
+    call global_sum(proc%comm, te_pe)
     call global_sum(proc%comm, tav)
     call global_sum(proc%comm, tpe)
     if (baroclinic) call global_sum(proc%comm, tpt)
+    te = te_ke + te_ie + te_pe
 
     do iblk = 1, size(blocks)
       blocks(iblk)%state(itime)%tm  = tm
       blocks(iblk)%state(itime)%te  = te
       blocks(iblk)%state(itime)%tav = tav
       blocks(iblk)%state(itime)%tpe = tpe
+      blocks(iblk)%state(itime)%te_ke = te_ke
+      blocks(iblk)%state(itime)%te_ie = te_ie
+      blocks(iblk)%state(itime)%te_pe = te_pe
       if (diag_state(iblk)%is_init()) call diag_state(iblk)%run(blocks(iblk)%state(itime))
     end do
 
@@ -331,13 +340,11 @@ contains
     real(8), intent(in) :: dt
     integer, intent(in) :: pass
 
-    type(mesh_type), pointer :: mesh
     integer i, j, k
-
-    mesh => star_state%mesh
 
     call tend1%reset_flags()
 
+    associate (mesh => block%mesh)
     select case (pass)
     case (all_pass)
       call operators_prepare(block, star_state, dt, pass)
@@ -552,6 +559,7 @@ contains
         tend1%update_v  = .true.
       end if
     end select
+    end associate
 
   end subroutine space_operators
 

@@ -207,6 +207,9 @@ contains
     call fiona_add_var('h0', 'tm'     , long_name='total mass'                  , units='m'     , dim_names=['time'])
     call fiona_add_var('h0', 'te'     , long_name='total energy'                , units='m4 s-4', dim_names=['time']      , dtype='r8')
     call fiona_add_var('h0', 'tpe'    , long_name='total potential enstrophy'   , units='m2 s-5', dim_names=['time']      , dtype='r8')
+    call fiona_add_var('h0', 'te_ke'  , long_name='total kinetic energy'        , units=''      , dim_names=['time']      , dtype='r8')
+    call fiona_add_var('h0', 'te_ie'  , long_name='total internal energy'       , units=''      , dim_names=['time']      , dtype='r8')
+    call fiona_add_var('h0', 'te_pe'  , long_name='total potential energy'      , units=''      , dim_names=['time']      , dtype='r8')
     call fiona_add_var('h0', 'zs'     , long_name='surface height'              , units='m'     , dim_names=['lon', 'lat'], dtype='r8')
     call fiona_add_var('h0', 'dzsdlon', long_name='zonal zs gradient'           , units=''      , dim_names=['lon', 'lat'])
     call fiona_add_var('h0', 'dzsdlat', long_name='meridional zs gradient'      , units=''      , dim_names=['lon', 'lat'])
@@ -545,9 +548,12 @@ contains
       count = [mesh%num_half_lon,mesh%num_half_lat,mesh%num_full_lev]
       call fiona_output('h0', 'vor'     ,  state%vor    (is:ie,js:je,ks:ke)     , start=start, count=count)
       
-      call fiona_output('h0', 'tm' , state %tm)
-      call fiona_output('h0', 'te' , state %te)
-      call fiona_output('h0', 'tpe', state %tpe)
+      call fiona_output('h0', 'tm'   , state%tm)
+      call fiona_output('h0', 'te'   , state%te)
+      call fiona_output('h0', 'tpe'  , state%tpe)
+      call fiona_output('h0', 'te_ke', state%te_ke)
+      call fiona_output('h0', 'te_ie', state%te_ie)
+      call fiona_output('h0', 'te_pe', state%te_pe)
       end associate
     end do
 

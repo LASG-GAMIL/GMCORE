@@ -90,7 +90,7 @@ module state_mod
     real(r8), allocatable, dimension(:,:,:,:) :: qmf_lev         ! Tracer mass flux along vertical direction
     ! Total diagnostics
     real(r8) tm
-    real(r8) te
+    real(r8) te, te_ke, te_ie, te_pe
     real(r8) tpe
     real(r8) tav
   contains
