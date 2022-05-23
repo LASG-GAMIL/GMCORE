@@ -44,7 +44,9 @@ module tend_mod
     real(r8), allocatable, dimension(:,:,:) :: pgf_lat
     real(r8), allocatable, dimension(:,:,:) :: wedudlev
     real(r8), allocatable, dimension(:,:,:) :: wedvdlev
-    real(r8), allocatable, dimension(:,:,:) :: smag_dpt ! Smagorinsky damping potential temperature tendency
+    real(r8), allocatable, dimension(:,:,:) :: smag_dptdt ! Smagorinsky damping potential temperature tendency
+    real(r8), allocatable, dimension(:,:,:) :: smag_dudt
+    real(r8), allocatable, dimension(:,:,:) :: smag_dvdt
     ! Nonhydrostatic tendencies
     real(r8), allocatable, dimension(:,:,:) :: adv_gz_lon ! Advection terms of geopotential
     real(r8), allocatable, dimension(:,:,:) :: adv_gz_lat ! Advection terms of geopotential
@@ -105,7 +107,9 @@ contains
     call allocate_array(mesh, this%wedudlev, half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%wedvdlev, full_lon=.true., half_lat=.true., full_lev=.true.)
     if (use_smag_damp) then
-      call allocate_array(mesh, this%smag_dpt, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%smag_dptdt, full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%smag_dudt , half_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%smag_dvdt , full_lon=.true., half_lat=.true., full_lev=.true.)
     end if
 
     call allocate_array(mesh, this%adv_gz_lon, full_lon=.true., full_lat=.true., half_lev=.true.)
@@ -154,7 +158,10 @@ contains
     if (allocated(this%pgf_lat )) deallocate(this%pgf_lat )
     if (allocated(this%wedudlev)) deallocate(this%wedudlev)
     if (allocated(this%wedvdlev)) deallocate(this%wedvdlev)
-    if (allocated(this%smag_dpt)) deallocate(this%smag_dpt)
+
+    if (allocated(this%smag_dptdt)) deallocate(this%smag_dptdt)
+    if (allocated(this%smag_dudt )) deallocate(this%smag_dudt )
+    if (allocated(this%smag_dvdt )) deallocate(this%smag_dvdt )
 
     if (allocated(this%adv_gz_lon)) deallocate(this%adv_gz_lon)
     if (allocated(this%adv_gz_lat)) deallocate(this%adv_gz_lat)

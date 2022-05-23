@@ -77,8 +77,8 @@ module state_mod
     real(r8), allocatable, dimension(:,:,:) :: mf_lev_lon_n      ! Mass flux on zonal edge and half level
     real(r8), allocatable, dimension(:,:,:) :: mf_lev_lat_n      ! Mass flux on merdional edge and half level
     ! Smagorinsky damping variables
-    real(r8), allocatable, dimension(:,:,:) :: tension_h         ! tension strain
-    real(r8), allocatable, dimension(:,:,:) :: shear_h           ! shear strain on vertex
+    real(r8), allocatable, dimension(:,:,:) :: smag_t            ! tension strain
+    real(r8), allocatable, dimension(:,:,:) :: smag_s            ! shear strain on vertex
     real(r8), allocatable, dimension(:,:,:) :: kmh               ! nonlinear diffusion coef
     real(r8), allocatable, dimension(:,:,:) :: kmh_vtx           ! nonlinear diffusion coef on vertex
     real(r8), allocatable, dimension(:,:,:) :: kmh_lon           ! nonlinear diffusion coef on zonal edge
@@ -180,8 +180,8 @@ contains
     end if
 
     if (use_smag_damp) then
-      call allocate_array(mesh, this%tension_h    , full_lon=.true., full_lat=.true., full_lev=.true.)
-      call allocate_array(mesh, this%shear_h      , half_lon=.true., half_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%smag_t       , full_lon=.true., full_lat=.true., full_lev=.true.)
+      call allocate_array(mesh, this%smag_s       , half_lon=.true., half_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%kmh          , full_lon=.true., full_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%kmh_vtx      , half_lon=.true., half_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%kmh_lon      , half_lon=.true., full_lat=.true., full_lev=.true.)
@@ -255,8 +255,8 @@ contains
       if (associated(this%p_lev         )) deallocate(this%p_lev            )
     end if
 
-    if (allocated(this%tension_h        )) deallocate(this%tension_h        )
-    if (allocated(this%shear_h          )) deallocate(this%shear_h          )
+    if (allocated(this%smag_t           )) deallocate(this%smag_t           )
+    if (allocated(this%smag_s           )) deallocate(this%smag_s           )
     if (allocated(this%kmh              )) deallocate(this%kmh              )
     if (allocated(this%kmh_vtx          )) deallocate(this%kmh_vtx          )
     if (allocated(this%kmh_lon          )) deallocate(this%kmh_lon          )

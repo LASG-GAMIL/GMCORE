@@ -71,7 +71,11 @@ contains
         call zonal_damp_on_lat_edge(block, zonal_damp_order, dt, state%v_lat)
         if (baroclinic) then
           call zonal_damp_on_cell(block, zonal_damp_order, dt, state%phs)
+          call calc_ph(block, state)
+          call calc_m(block, state)
+          state%pt = state%pt * state%m
           call zonal_damp_on_cell(block, zonal_damp_order, dt, state%pt)
+          state%pt = state%pt / state%m
         else
           call zonal_damp_on_cell(block, zonal_damp_order, dt, state%gz)
         end if
