@@ -250,8 +250,8 @@ contains
     real(r8) pole(state%mesh%num_full_lev)
 
     associate (mesh => block%mesh , &
-               u    => state%u_lon, & ! in
-               v    => state%v_lat, & ! in
+               u    => state%u_f  , & ! in
+               v    => state%v_f  , & ! in
                ke   => state%ke   )   ! out
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole + merge(0, 1, mesh%has_north_pole())
@@ -1138,8 +1138,8 @@ contains
     integer i, j, k
 
     associate (mesh       => block%mesh      , &
-               u          => state%u_lon     , & ! in
-               v          => state%v_lat     , & ! in
+               u          => state%u_f       , & ! in
+               v          => state%v_f       , & ! in
                m_lon      => state%m_lon     , & ! in
                m_lat      => state%m_lat     , & ! in
                we_lev_lon => state%we_lev_lon, & ! in
