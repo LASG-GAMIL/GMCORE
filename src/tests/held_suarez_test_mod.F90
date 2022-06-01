@@ -89,7 +89,7 @@ contains
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       kv = kf * max(0.0_r8, (mesh%full_lev(k) - sig_b) / (1.0_r8 - sig_b))
-      do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+      do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           v(i,j,k) = v(i,j,k) - dt * kv * v(i,j,k)
         end do

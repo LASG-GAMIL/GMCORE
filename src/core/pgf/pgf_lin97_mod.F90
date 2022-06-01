@@ -120,7 +120,7 @@ contains
             ) / mesh%de_lon(j) / (dph1 + dph2)
           end do
         end do
-        do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+        do j = mesh%half_lat_ibeg, mesh%half_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             dph1 = ph_exn_lev(i,j+1,k+1) - ph_exn_lev(i,j  ,k  ) ! 2 - 4
             dph2 = ph_exn_lev(i,j  ,k+1) - ph_exn_lev(i,j+1,k  ) ! 1 - 3

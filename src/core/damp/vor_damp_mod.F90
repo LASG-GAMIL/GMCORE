@@ -64,7 +64,7 @@ contains
       end do
 
       do k = global_mesh%full_lev_ibeg, global_mesh%full_lev_iend
-        do j = global_mesh%half_lat_ibeg_no_pole, global_mesh%half_lat_iend_no_pole
+        do j = global_mesh%half_lat_ibeg, global_mesh%half_lat_iend
           jr = merge(j - global_mesh%half_lat_ibeg + 1, global_mesh%half_lat_iend - j + 1, global_mesh%half_lat(j) < 0)
           if (j0 == 0) then
             c_lat(j,k) = vor_damp_coef2 * &
@@ -84,8 +84,8 @@ contains
     js =  1e8
     je = -1e8
     do iblk = 1, size(blocks)
-      js = min(blocks(iblk)%mesh%half_lat_ibeg_no_pole, js)
-      je = max(blocks(iblk)%mesh%half_lat_iend_no_pole, je)
+      js = min(blocks(iblk)%mesh%half_lat_ibeg, js)
+      je = max(blocks(iblk)%mesh%half_lat_iend, je)
     end do
 
     allocate(use_implicit_solver(js:je))

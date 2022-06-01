@@ -80,7 +80,7 @@ contains
       end if
     end do
 
-    do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+    do j = mesh%half_lat_ibeg, mesh%half_lat_iend
       if (abs(mesh%area_lat_west(j) + mesh%area_lat_east(j) - mesh%area_lat(j)) / mesh%area_lat(j) > 1.0d-11) then
         call log_error('Failed to calculate west and east subcell on lat grids!', __FILE__, __LINE__)
       end if
@@ -90,7 +90,7 @@ contains
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       total_area = total_area + mesh%area_lon(j) * mesh%num_full_lon
     end do
-    do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+    do j = mesh%half_lat_ibeg, mesh%half_lat_iend
       total_area = total_area + mesh%area_lat(j) * mesh%num_full_lon
     end do
     if (abs(global_mesh%total_area - total_area) / global_mesh%total_area > 1.0d-9) then
@@ -101,7 +101,7 @@ contains
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       total_area = total_area + (mesh%area_lon_north(j) + mesh%area_lon_south(j)) * mesh%num_full_lon
     end do
-    do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+    do j = mesh%half_lat_ibeg, mesh%half_lat_iend
       total_area = total_area + (mesh%area_lat_west(j) + mesh%area_lat_east(j)) * mesh%num_full_lon
     end do
     if (abs(global_mesh%total_area - total_area) / global_mesh%total_area > 1.0d-9) then
@@ -146,7 +146,7 @@ contains
       end do
 
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-        do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+        do j = mesh%half_lat_ibeg, mesh%half_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             ip_cf   = ip_cf   - tend%qhu     (i,j,k) * state%mf_lat_n(i,j,k) * mesh%area_lat(j)
             ip_ke_h = ip_ke_h + tend%dkedlat (i,j,k) * state%mf_lat_n(i,j,k) * mesh%area_lat(j) * 2
@@ -191,7 +191,7 @@ contains
       end do
 
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-        do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+        do j = mesh%half_lat_ibeg, mesh%half_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             ip_cf = ip_cf - tend%qhu    (i,j,k) * state%mf_lat_n(i,j,k) * mesh%area_lat(j)
             ip_ke = ip_ke + tend%dkedlat(i,j,k) * state%mf_lat_n(i,j,k) * mesh%area_lat(j) * 2

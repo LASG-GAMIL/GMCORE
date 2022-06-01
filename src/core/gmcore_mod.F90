@@ -162,7 +162,7 @@ contains
           dzsdlon(i,j) = (gzs(i+1,j) - gzs(i,j)) / g / mesh%de_lon(j)
         end do
       end do
-      do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+      do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           dzsdlat(i,j) = (gzs(i,j+1) - gzs(i,j)) / g / mesh%de_lat(j)
         end do
@@ -234,7 +234,7 @@ contains
             te_ke = te_ke + state%mf_lon_n(i,j,k) * 0.5_r8 * state%u_lon(i,j,k) * mesh%area_lon(j) * 2
           end do
         end do
-        do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+        do j = mesh%half_lat_ibeg, mesh%half_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             te_ke = te_ke + state%mf_lat_n(i,j,k) * 0.5_r8 * state%v_lat(i,j,k) * mesh%area_lat(j) * 2
           end do
@@ -276,7 +276,7 @@ contains
             tpe = tpe + state%m_lon(i,j,k) * state%pv_lon(i,j,k)**2 * 0.5_r8 * mesh%area_lon(j)
           end do
         end do
-        do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+        do j = mesh%half_lat_ibeg, mesh%half_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             tpe = tpe + state%m_lat(i,j,k) * state%pv_lat(i,j,k)**2 * 0.5_r8 * mesh%area_lat(j)
           end do
@@ -365,7 +365,7 @@ contains
             end do
           end do
 
-          do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+          do j = mesh%half_lat_ibeg, mesh%half_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
               tend1%dv(i,j,k) = - tend1%qhu(i,j,k) - tend1%pgf_lat(i,j,k) - tend1%dkedlat(i,j,k) - tend1%wedvdlev(i,j,k)
             end do
@@ -414,7 +414,7 @@ contains
             end do
           end do
 
-          do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+          do j = mesh%half_lat_ibeg, mesh%half_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
               tend1%dv(i,j,k) = - tend1%qhu(i,j,k) - tend1%pgf_lat(i,j,k) - tend1%dkedlat(i,j,k) - tend1%wedvdlev(i,j,k)
             end do
@@ -471,7 +471,7 @@ contains
             end do
           end do
 
-          do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+          do j = mesh%half_lat_ibeg, mesh%half_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
               tend1%dv(i,j,k) = - tend1%qhu(i,j,k) - tend1%dkedlat(i,j,k) - tend1%wedvdlev(i,j,k)
             end do
@@ -500,7 +500,7 @@ contains
             end do
           end do
 
-          do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+          do j = mesh%half_lat_ibeg, mesh%half_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
               tend1%dv(i,j,k) = - tend1%qhu(i,j,k) - tend1%dkedlat(i,j,k)
             end do
@@ -527,7 +527,7 @@ contains
             end do
           end do
 
-          do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+          do j = mesh%half_lat_ibeg, mesh%half_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
               tend1%dv(i,j,k) = tend2%dv(i,j,k) - tend1%pgf_lat(i,j,k)
             end do
@@ -548,7 +548,7 @@ contains
             end do
           end do
 
-          do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+          do j = mesh%half_lat_ibeg, mesh%half_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
               tend1%dv(i,j,k) = tend2%dv(i,j,k) - tend1%pgf_lat(i,j,k)
             end do

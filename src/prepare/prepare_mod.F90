@@ -28,7 +28,7 @@ contains
           dzsdlon(i,j) = (gzs(i+1,j) - gzs(i,j)) / g / mesh%de_lon(j)
         end do
       end do
-      do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+      do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           dzsdlat(i,j) = (gzs(i,j+1) - gzs(i,j)) / g / mesh%de_lat(j)
         end do

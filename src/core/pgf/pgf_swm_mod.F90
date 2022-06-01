@@ -35,7 +35,7 @@ contains
       end do
     end do
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+      do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           pgf_lat(i,j,k) = (gz(i,j+1,k) - gz(i,j,k)) / mesh%de_lat(j)
         end do

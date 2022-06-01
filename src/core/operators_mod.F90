@@ -765,7 +765,7 @@ contains
                             (1 - b) * 0.5_r8 * (pv(i,j-1,k) + pv(i,j,k))
           end do
         end do
-        do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+        do j = mesh%half_lat_ibeg, mesh%half_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             b  = abs(ut(i,j,k)) / (sqrt(ut(i,j,k)**2 + vn(i,j,k)**2) + eps)
             pv_lat(i,j,k) = b * upwind1(sign(1.0_r8, ut(i,j,k)), upwind_wgt_pv, pv(i-1:i,j,k)) + &
@@ -1172,7 +1172,7 @@ contains
     end do
 
     do k = mesh%full_lev_ibeg + 1, mesh%full_lev_iend - 1
-      do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+      do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           wedvdlev(i,j,k) = (                                 &
             we_lev_lat(i,j,k+1) * (v(i,j,k+1) - v(i,j,k  )) + &
@@ -1182,14 +1182,14 @@ contains
       end do
     end do
     k = mesh%full_lev_ibeg
-    do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+    do j = mesh%half_lat_ibeg, mesh%half_lat_iend
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         wedvdlev(i,j,k) = (we_lev_lat(i,j,k+1) * &
           (v(i,j,k+1) - v(i,j,k))) / m_lat(i,j,k) / 2.0_r8
       end do
     end do
     k = mesh%full_lev_iend
-    do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+    do j = mesh%half_lat_ibeg, mesh%half_lat_iend
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         wedvdlev(i,j,k) = (we_lev_lat(i,j,k  ) * &
           (v(i,j,k) - v(i,j,k-1))) / m_lat(i,j,k) / 2.0_r8

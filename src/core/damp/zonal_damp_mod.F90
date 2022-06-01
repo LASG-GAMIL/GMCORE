@@ -193,7 +193,7 @@ contains
 
     mesh => block%mesh
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+      do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         call zonal_damp_1d(block, order, dt, mesh%half_lon_lb, mesh%half_lon_ub, mesh%lon_halo_width, f(:,j,k), wgt_half_lat(j))
       end do
     end do

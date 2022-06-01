@@ -77,7 +77,7 @@ contains
     call fill_halo(block, kmh_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%half_lat_ibeg_no_pole, mesh%half_lat_iend_no_pole
+      do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         ls2 = smag_damp_coef / (1 / mesh%le_lat(j)**2 + 1 / mesh%de_lat(j)**2)
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           kmh_lat(i,j,k) = ls2 * sqrt(                            &

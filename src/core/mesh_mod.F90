@@ -36,8 +36,6 @@ module mesh_mod
     integer half_lon_iend
     integer half_lat_ibeg
     integer half_lat_iend
-    integer half_lat_ibeg_no_pole
-    integer half_lat_iend_no_pole
     integer half_lev_ibeg
     integer half_lev_iend
     integer full_lon_lb
@@ -398,7 +396,7 @@ contains
       this%de_lon(this%full_lat_iend) = 0.0_r8
     end if
 
-    do j = this%half_lat_ibeg_no_pole, this%half_lat_iend_no_pole
+    do j = this%half_lat_ibeg, this%half_lat_iend
       this%le_lat(j) = radius * this%half_cos_lat(j) * this%dlon
       this%de_lat(j) = 2.0d0 * this%area_lat(j) / this%le_lat(j)
     end do
@@ -430,7 +428,7 @@ contains
         this%full_tangent_wgt(2,j) = this%le_lat(j  ) / this%de_lon(j) * 0.25d0
       end do
 
-      do j = this%half_lat_ibeg_no_pole, this%half_lat_iend_no_pole
+      do j = this%half_lat_ibeg, this%half_lat_iend
         this%half_tangent_wgt(1,j) = this%le_lon(j  ) / this%de_lat(j) * 0.25d0
         this%half_tangent_wgt(2,j) = this%le_lon(j+1) / this%de_lat(j) * 0.25d0
       end do
@@ -440,7 +438,7 @@ contains
         this%full_tangent_wgt(2,j) = this%le_lat(j  ) / this%de_lon(j) * this%area_subcell(1,j  ) / this%area_cell(j  )
       end do
 
-      do j = this%half_lat_ibeg_no_pole, this%half_lat_iend_no_pole
+      do j = this%half_lat_ibeg, this%half_lat_iend
         this%half_tangent_wgt(1,j) = this%le_lon(j  ) / this%de_lat(j) * this%area_subcell(1,j  ) / this%area_cell(j  )
         this%half_tangent_wgt(2,j) = this%le_lon(j+1) / this%de_lat(j) * this%area_subcell(2,j+1) / this%area_cell(j+1)
       end do
@@ -600,8 +598,8 @@ contains
 
     this%full_lat_ibeg_no_pole = merge(this%full_lat_ibeg + 1, this%full_lat_ibeg, this%has_south_pole())
     this%full_lat_iend_no_pole = merge(this%full_lat_iend - 1, this%full_lat_iend, this%has_north_pole())
-    this%half_lat_ibeg_no_pole = this%half_lat_ibeg
-    this%half_lat_iend_no_pole = this%half_lat_iend
+    this%half_lat_ibeg = this%half_lat_ibeg
+    this%half_lat_iend = this%half_lat_iend
 
     ! Use maximum lon_halo_width in this process and its south and north neighbors.
     this%full_lon_lb = this%full_lon_ibeg - this%lon_halo_width
