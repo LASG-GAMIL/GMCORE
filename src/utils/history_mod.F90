@@ -326,6 +326,12 @@ contains
     call fiona_add_var('h1', 'mf_lat_t'     , long_name='tangent mass flux on V grid'                   , units='', dim_names= lat_dims_3d)
     call fiona_add_var('h1', 'm'            , long_name='dph on full levels'                            , units='', dim_names=cell_dims_3d)
     call fiona_add_var('h1', 'ke'           , long_name='kinetic energy on cell grid'                   , units='', dim_names=cell_dims_3d)
+    if (use_smag_damp) then
+      call fiona_add_var('h1', 'smag_t'     , long_name='Tension for Smagorinsky diffusion'             , units='', dim_names=cell_dims_3d)
+      call fiona_add_var('h1', 'smag_s'     , long_name='Shear for Smagorinsky diffusion'               , units='', dim_names= vtx_dims_3d)
+      call fiona_add_var('h1', 'kmh_lon'    , long_name='Smagorinsky diffusion coefficient for u'       , units='', dim_names= lon_dims_3d)
+      call fiona_add_var('h1', 'kmh_lat'    , long_name='Smagorinsky diffusion coefficient for v'       , units='', dim_names= lat_dims_3d)
+    end if
 
   end subroutine history_setup_h1_hydrostatic
 
@@ -766,7 +772,19 @@ contains
     call fiona_output('h1', 'dptfdlon',  tend%dptfdlon (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dptfdlat',  tend%dptfdlat (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dptfdlev',  tend%dptfdlev (is:ie,js:je,ks:ke), start=start, count=count)
-    
+    if (use_smag_damp) then
+      call fiona_output('h1', 'smag_t', state%smag_t(is:ie,js:je,ks:ke), start=start, count=count)
+    end if
+
+    is = mesh%half_lon_ibeg; ie = mesh%half_lon_iend
+    js = mesh%half_lat_ibeg; je = mesh%half_lat_iend
+    ks = mesh%full_lev_ibeg; ke = mesh%full_lev_iend
+    start = [is,js,ks]
+    count = [mesh%num_half_lon,mesh%num_half_lat,mesh%num_full_lev]
+    if (use_smag_damp) then
+      call fiona_output('h1', 'smag_s', state%smag_s(is:ie,js:je,ks:ke), start=start, count=count)
+    end if
+
     is = mesh%half_lon_ibeg; ie = mesh%half_lon_iend
     js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
     ks = mesh%full_lev_ibeg; ke = mesh%full_lev_iend
@@ -779,6 +797,9 @@ contains
     call fiona_output('h1', 'mf_lon_n', state%mf_lon_n (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'mf_lon_t', state%mf_lon_t (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'wedudlev',  tend%wedudlev (is:ie,js:je,ks:ke), start=start, count=count)
+    if (use_smag_damp) then
+      call fiona_output('h1', 'kmh_lon' , state%kmh_lon  (is:ie,js:je,ks:ke), start=start, count=count)
+    end if
 
     is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
     js = mesh%half_lat_ibeg; je = mesh%half_lat_iend
@@ -792,6 +813,9 @@ contains
     call fiona_output('h1', 'mf_lat_n', state%mf_lat_n (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'mf_lat_t', state%mf_lat_t (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'wedvdlev',  tend%wedvdlev (is:ie,js:je,ks:ke), start=start, count=count)
+    if (use_smag_damp) then
+      call fiona_output('h1', 'kmh_lat' , state%kmh_lat  (is:ie,js:je,ks:ke), start=start, count=count)
+    end if
 
     is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
     js = mesh%full_lat_ibeg; je = mesh%full_lat_iend

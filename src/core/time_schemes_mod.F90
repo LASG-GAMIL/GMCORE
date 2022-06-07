@@ -65,11 +65,11 @@ contains
     case ('euler')
       time_integrator => euler
     case ('pc2')
-      time_integrator => predict_correct
+      time_integrator => pc2
     case ('wrfrk3')
-      time_integrator => wrf_runge_kutta_3rd
+      time_integrator => wrfrk3
     case default
-      time_integrator => predict_correct
+      time_integrator => pc2
     end select
 
     if (advection) then
@@ -311,7 +311,7 @@ contains
 
   end subroutine update_state
 
-  subroutine predict_correct(space_operators, block, old, new, dt)
+  subroutine pc2(space_operators, block, old, new, dt)
 
     procedure(space_operators_interface) space_operators
     type(block_type), intent(inout) :: block
@@ -325,9 +325,9 @@ contains
     call step(space_operators, block, state(old), state(3  ), state(new), tend(old), tend(new), dt         )
     end associate
 
-  end subroutine predict_correct
+  end subroutine pc2
 
-  subroutine wrf_runge_kutta_3rd(space_operators, block, old, new, dt)
+  subroutine wrfrk3(space_operators, block, old, new, dt)
 
     procedure(space_operators_interface) space_operators
     type(block_type), intent(inout) :: block
@@ -341,7 +341,7 @@ contains
     call step(space_operators, block, state(old), state(3  ), state(new), tend(old), tend(new), dt         )
     end associate
 
-  end subroutine wrf_runge_kutta_3rd
+  end subroutine wrfrk3
 
   subroutine euler(space_operators, block, old, new, dt)
 

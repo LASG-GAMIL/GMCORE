@@ -10,10 +10,6 @@ module tend_mod
   private
 
   public tend_type
-  public operator(+)
-  public operator(*)
-  public operator(/)
-  public assignment(=)
 
   type tend_type
     type(mesh_type), pointer :: mesh => null()
@@ -59,23 +55,12 @@ module tend_mod
     procedure :: reset_flags => tend_reset_flags
     procedure :: clear => tend_clear
     final :: tend_final
+    generic :: operator(+) => add
+    generic :: operator(*) => multiply
+    generic :: operator(/) => divide
+    generic :: assignment(=) => assign
+    procedure, pass(x) :: add, multiply, divide, assign
   end type tend_type
-
-  interface operator(+)
-    module procedure add_tends
-  end interface operator(+)
-
-  interface operator(*)
-    module procedure mult_scalar
-  end interface operator(*)
-
-  interface operator(/)
-    module procedure div_scalar
-  end interface operator(/)
-
-  interface assignment(=)
-    module procedure assign_tend
-  end interface assignment(=)
 
 contains
 
@@ -180,10 +165,10 @@ contains
 
   end subroutine tend_final
 
-  function add_tends(x, y) result(res)
+  function add(x, y) result(res)
 
-    type(tend_type), intent(in) :: x
-    type(tend_type), intent(in) :: y
+    class(tend_type), intent(in) :: x
+    class(tend_type), intent(in) :: y
 
     type(tend_type) res
 
@@ -219,12 +204,12 @@ contains
       res%update_gz = .false.
     end if
 
-  end function add_tends
+  end function add
 
-  function mult_scalar(s, x) result(res)
+  function multiply(s, x) result(res)
 
     real(r8), intent(in) :: s
-    type(tend_type), intent(in) :: x
+    class(tend_type), intent(in) :: x
 
     type(tend_type) res
 
@@ -260,12 +245,12 @@ contains
       res%update_gz = .false.
     end if
 
-  end function mult_scalar
+  end function multiply
 
-  function div_scalar(x, s) result(res)
+  function divide(x, s) result(res)
 
+    class(tend_type), intent(in) :: x
     real(r8), intent(in) :: s
-    type(tend_type), intent(in) :: x
 
     type(tend_type) res
 
@@ -301,12 +286,12 @@ contains
       res%update_gz = .false.
     end if
 
-  end function div_scalar
+  end function divide
 
-  subroutine assign_tend(x, y)
+  subroutine assign(x, y)
 
-    type(tend_type), intent(inout) :: x
-    type(tend_type), intent(in) :: y
+    class(tend_type), intent(inout) :: x
+    class(tend_type), intent(in) :: y
 
     if (y%update_u) then
       x%du = y%du
@@ -340,6 +325,6 @@ contains
       x%update_gz = .false.
     end if
 
-  end subroutine assign_tend
+  end subroutine assign
 
 end module tend_mod

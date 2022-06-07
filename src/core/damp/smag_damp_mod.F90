@@ -74,7 +74,6 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, kmh_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
@@ -87,7 +86,6 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, kmh_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole

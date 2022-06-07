@@ -97,6 +97,11 @@ module state_mod
     procedure :: init => state_init
     procedure :: clear => state_clear
     final :: state_final
+    generic :: operator(+) => add
+    generic :: operator(*) => multiply
+    generic :: operator(/) => divide
+    generic :: assignment(=) => assign
+    procedure, pass(x) :: add, multiply, divide, assign
   end type state_type
 
 contains
@@ -276,5 +281,87 @@ contains
     call this%clear()
 
   end subroutine state_final
+
+  function add(x, y) result(res)
+
+    class(state_type), intent(in) :: x
+    class(state_type), intent(in) :: y
+
+    type(state_type) res
+
+    if (hydrostatic) then
+      res%u_lon = x%u_lon + y%u_lon
+      res%v_lat = x%v_lat + y%v_lat
+      res%pt    = x%pt    + y%pt
+      res%phs   = x%phs   + y%phs
+    else if (nonhydrostatic) then
+    else
+      res%u_lon = x%u_lon + y%u_lon
+      res%v_lat = x%v_lat + y%v_lat
+      res%gz    = x%gz    + y%gz
+    end if
+
+  end function add
+
+  function multiply(s, x) result(res)
+
+    real(r8), intent(in) :: s
+    class(state_type), intent(in) :: x
+
+    type(state_type) res
+
+    if (hydrostatic) then
+      res%u_lon = s * x%u_lon
+      res%v_lat = s * x%v_lat
+      res%pt    = s * x%pt
+      res%phs   = s * x%phs
+    else if (nonhydrostatic) then
+    else
+      res%u_lon = s * x%u_lon
+      res%v_lat = s * x%v_lat
+      res%gz    = s * x%gz
+    end if
+
+  end function multiply
+
+  function divide(x, s) result(res)
+
+    class(state_type), intent(in) :: x
+    real(r8), intent(in) :: s
+
+    type(state_type) res
+
+    if (hydrostatic) then
+      res%u_lon = x%u_lon / s
+      res%v_lat = x%v_lat / s
+      res%pt    = x%pt / s
+      res%phs   = x%phs / s
+    else if (nonhydrostatic) then
+    else
+      res%u_lon = x%u_lon / s
+      res%v_lat = x%v_lat / s
+      res%gz    = x%gz / s
+    end if
+
+  end function divide
+
+  subroutine assign(x, y)
+
+    class(state_type), intent(inout) :: x
+    class(state_type), intent(in) :: y
+
+    if (hydrostatic) then
+      x%u_lon = y%u_lon
+      x%v_lat = y%v_lat
+      x%pt    = y%pt
+      x%phs   = y%phs
+    else if (nonhydrostatic) then
+    else
+      x%u_lon = y%u_lon
+      x%v_lat = y%v_lat
+      x%gz    = y%gz
+    end if
+
+  end subroutine assign
 
 end module state_mod
