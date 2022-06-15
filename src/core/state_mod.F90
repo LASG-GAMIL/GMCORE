@@ -83,11 +83,6 @@ module state_mod
     real(r8), allocatable, dimension(:,:,:) :: kmh_vtx           ! nonlinear diffusion coef on vertex
     real(r8), allocatable, dimension(:,:,:) :: kmh_lon           ! nonlinear diffusion coef on zonal edge
     real(r8), allocatable, dimension(:,:,:) :: kmh_lat           ! nonlinear diffusion coef on meridional edge
-    ! Tracers
-    real(r8), allocatable, dimension(:,:,:,:) :: q               ! Tracer mass mixing ratio (kg kg-1)
-    real(r8), allocatable, dimension(:,:,:,:) :: qmf_lon         ! Tracer mass flux along zonal direction
-    real(r8), allocatable, dimension(:,:,:,:) :: qmf_lat         ! Tracer mass flux along meridional direction
-    real(r8), allocatable, dimension(:,:,:,:) :: qmf_lev         ! Tracer mass flux along vertical direction
     ! Total diagnostics
     real(r8) tm
     real(r8) te, te_ke, te_ie, te_pe
@@ -266,11 +261,6 @@ contains
     if (allocated(this%kmh_vtx          )) deallocate(this%kmh_vtx          )
     if (allocated(this%kmh_lon          )) deallocate(this%kmh_lon          )
     if (allocated(this%kmh_lat          )) deallocate(this%kmh_lat          )
-
-    if (allocated(this%q                )) deallocate(this%q                )
-    if (allocated(this%qmf_lon          )) deallocate(this%qmf_lon          )
-    if (allocated(this%qmf_lat          )) deallocate(this%qmf_lat          )
-    if (allocated(this%qmf_lev          )) deallocate(this%qmf_lev          )
 
   end subroutine state_clear
 

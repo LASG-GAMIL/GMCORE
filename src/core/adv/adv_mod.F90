@@ -28,6 +28,7 @@ module adv_mod
   public adv_calc_tracer_vflx_cell
   public adv_calc_tracer_hflx_vtx
   public adv_calc_tracer_hval_vtx
+  public adv_batch_type
 
   public upwind1
   public upwind3
@@ -208,16 +209,6 @@ contains
         end do
       end if
     end if
-    if (ntracer > 0) then
-      associate (mesh => block%mesh)
-      do i = 1, size(block%state)
-        allocate(block%state(i)%q      (mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub,ntracer))
-        allocate(block%state(i)%qmf_lon(mesh%half_lon_lb:mesh%half_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub,ntracer))
-        allocate(block%state(i)%qmf_lat(mesh%full_lon_lb:mesh%full_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub,ntracer))
-        allocate(block%state(i)%qmf_lev(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%half_lev_lb:mesh%half_lev_ub,ntracer))
-      end do
-      end associate
-    end if
 
     ! Record tracer information in advection batches.
     do i = 1, nbatch
@@ -228,11 +219,16 @@ contains
         end if
       end do
       call block%adv_batches(i)%allocate_tracers(nbatch_tracer)
+      associate (mesh => block%mesh)
+      allocate(block%adv_batches(i)%q      (mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub,nbatch_tracer,2))
+      allocate(block%adv_batches(i)%qmf_lon(mesh%half_lon_lb:mesh%half_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
+      allocate(block%adv_batches(i)%qmf_lat(mesh%full_lon_lb:mesh%full_lon_ub,mesh%half_lat_lb:mesh%half_lat_ub,mesh%full_lev_lb:mesh%full_lev_ub))
+      allocate(block%adv_batches(i)%qmf_lev(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,mesh%half_lev_lb:mesh%half_lev_ub))
+      end associate
       k = 0
       do j = 1, ntracer
         if (batch_names(j) == block%adv_batches(i)%alert_key) then
           k = k + 1
-          block%adv_batches(i)%tracer_idx       (k) =                   j
           block%adv_batches(i)%tracer_names     (k) = tracer_names     (j)
           block%adv_batches(i)%tracer_long_names(k) = tracer_long_names(j)
           block%adv_batches(i)%tracer_units     (k) = tracer_units     (j)

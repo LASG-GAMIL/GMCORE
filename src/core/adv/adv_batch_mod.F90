@@ -23,11 +23,16 @@ module adv_batch_mod
     integer  :: uv_step = 0 ! Step counter for u and v
     integer  :: we_step = 0 ! Step counter for we
     integer  :: mf_step = 0 ! Step counter for mass flux
+    integer  :: old     = 1 ! Index for old time level
+    integer  :: new     = 2 ! Index for new time level
     real(r8) :: dt          ! Advection time step size in seconds
-    integer      , allocatable, dimension(:) :: tracer_idx
     character(10), allocatable, dimension(:) :: tracer_names
     character(30), allocatable, dimension(:) :: tracer_long_names
     character(10), allocatable, dimension(:) :: tracer_units
+    real(r8), allocatable, dimension(:,:,:,:,:) :: q
+    real(r8), allocatable, dimension(:,:,:) :: qmf_lon
+    real(r8), allocatable, dimension(:,:,:) :: qmf_lat
+    real(r8), allocatable, dimension(:,:,:) :: qmf_lev
     real(r8), allocatable, dimension(:,:,:) :: mfx
     real(r8), allocatable, dimension(:,:,:) :: mfy
     real(r8), allocatable, dimension(:,:,:) :: m_lev
@@ -147,11 +152,14 @@ contains
     this%we_step   = 0
     this%mf_step   = 0
 
-    if (allocated(this%tracer_idx       )) deallocate(this%tracer_idx       )
     if (allocated(this%tracer_names     )) deallocate(this%tracer_names     )
     if (allocated(this%tracer_long_names)) deallocate(this%tracer_long_names)
     if (allocated(this%tracer_units     )) deallocate(this%tracer_units     )
 
+    if (allocated(this%q      )) deallocate(this%q      )
+    if (allocated(this%qmf_lon)) deallocate(this%qmf_lon)
+    if (allocated(this%qmf_lat)) deallocate(this%qmf_lat)
+    if (allocated(this%qmf_lev)) deallocate(this%qmf_lev)
     if (allocated(this%mfx )) deallocate(this%mfx )
     if (allocated(this%mfy )) deallocate(this%mfy )
     if (allocated(this%m_lev)) deallocate(this%m_lev)
@@ -179,7 +187,6 @@ contains
     class(adv_batch_type), intent(inout) :: this
     integer, intent(in) :: ntracer
 
-    allocate(this%tracer_idx       (ntracer))
     allocate(this%tracer_names     (ntracer))
     allocate(this%tracer_long_names(ntracer))
     allocate(this%tracer_units     (ntracer))

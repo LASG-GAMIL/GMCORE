@@ -1199,37 +1199,32 @@ contains
 
   end subroutine calc_wedudlev_wedvdlev
 
-  subroutine calc_qmf(block, state)
+  subroutine calc_qmf(block, adv_batch, tracer_idx)
 
-    type(block_type), intent(inout) :: block
-    type(state_type), intent(inout) :: state
+    type(block_type), intent(in) :: block
+    type(adv_batch_type), intent(inout) :: adv_batch
+    integer, intent(in) :: tracer_idx
 
-    integer i, j, k, l
+    integer i, j, k
 
-    associate (mesh        => block%mesh       , &
-               adv_batches => block%adv_batches, &
-               q           => state%q          , & ! in
-               qmf_lon     => state%qmf_lon    , & ! out
-               qmf_lat     => state%qmf_lat    , & ! out
-               qmf_lev     => state%qmf_lev    )   ! out
-    do i = 1, size(adv_batches)
-      do j = 1, size(adv_batches(i)%tracer_names)
-        l = adv_batches(i)%tracer_idx(j)
-        ! Set upper and lower boundary conditions.
-        do k = mesh%full_lev_lb, mesh%full_lev_ibeg - 1
-          q(:,:,k,l) = q(:,:,mesh%full_lev_ibeg,l)
-        end do
-        do k = mesh%full_lev_iend + 1, mesh%full_lev_ub
-          q(:,:,k,l) = q(:,:,mesh%full_lev_iend,l)
-        end do
-        call adv_calc_tracer_hflx_cell(block, adv_batches(i), q(:,:,:,l), qmf_lon(:,:,:,l), qmf_lat(:,:,:,l))
-        call fill_halo(block, qmf_lon(:,:,:,l), full_lon=.false., full_lat=.true., full_lev=.true., &
-                       south_halo=.false., north_halo=.false., east_halo=.false.)
-        call fill_halo(block, qmf_lat(:,:,:,l), full_lon=.true., full_lat=.false., full_lev=.true., &
-                       north_halo=.false.,  west_halo=.false., east_halo=.false.)
-        call adv_calc_tracer_vflx_cell(block, adv_batches(i), q(:,:,:,l), qmf_lev(:,:,:,l))
-      end do
+    associate (mesh    => block%mesh       , &
+               old     => adv_batch%old    , &
+               l       => tracer_idx       , &
+               q       => adv_batch%q      , & ! in
+               qmf_lon => adv_batch%qmf_lon, & ! out
+               qmf_lat => adv_batch%qmf_lat, & ! out
+               qmf_lev => adv_batch%qmf_lev)   ! out
+    ! Set upper and lower boundary conditions.
+    do k = mesh%full_lev_lb, mesh%full_lev_ibeg - 1
+      q(:,:,k,l,old) = q(:,:,mesh%full_lev_ibeg,l,old)
     end do
+    do k = mesh%full_lev_iend + 1, mesh%full_lev_ub
+      q(:,:,k,l,old) = q(:,:,mesh%full_lev_iend,l,old)
+    end do
+    call adv_calc_tracer_hflx_cell(block, adv_batch, q(:,:,:,l,old), qmf_lon, qmf_lat)
+    call fill_halo(block, qmf_lon, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false., east_halo=.false.)
+    call fill_halo(block, qmf_lat, full_lon=.true., full_lat=.false., full_lev=.true., north_halo=.false.,  west_halo=.false., east_halo=.false.)
+    call adv_calc_tracer_vflx_cell(block, adv_batch, q(:,:,:,l,old), qmf_lev)
     end associate
 
   end subroutine calc_qmf

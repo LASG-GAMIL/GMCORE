@@ -91,7 +91,7 @@ program gmcore_adv_driver
       call adv_accum_wind(blocks(iblk), new)
     end do
     do iblk = 1, size(blocks)
-      call time_integrator(adv_operator, blocks(iblk), old, new, dt_adv)
+      call adv_integrator(blocks(iblk))
     end do
     call diagnose(blocks, new)
     if (is_root_proc() .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
@@ -103,20 +103,86 @@ program gmcore_adv_driver
 
 contains
 
-  subroutine adv_operator(block, old_state, star_state, new_state, tend1, tend2, dt, pass)
+  subroutine adv_integrator(block)
 
     type(block_type), intent(inout) :: block
-    type(state_type), intent(in   ) :: old_state
-    type(state_type), intent(inout) :: star_state
-    type(state_type), intent(inout) :: new_state
-    type(tend_type ), intent(inout) :: tend1
-    type(tend_type ), intent(in   ) :: tend2
-    real(8), intent(in) :: dt
-    integer, intent(in) :: pass
 
-    call calc_qmf(block, star_state)
+    integer i, j, k, l, m
+    real(r8) work(block%mesh%full_lon_ibeg:block%mesh%full_lon_iend,block%mesh%num_full_lev)
+    real(r8) pole(block%mesh%num_full_lev)
 
-  end subroutine adv_operator
+    associate (mesh => block%mesh)
+    do m = 1, size(block%adv_batches)
+      do l = 1, size(block%adv_batches(m)%tracer_names)
+        associate (old     => block%adv_batches(m)%old    , &
+                   new     => block%adv_batches(m)%new    , &
+                   q       => block%adv_batches(m)%q      , &
+                   qmf_lon => block%adv_batches(m)%qmf_lon, &
+                   qmf_lat => block%adv_batches(m)%qmf_lat, &
+                   qmf_lev => block%adv_batches(m)%qmf_lev)
+        call calc_qmf(block, block%adv_batches(m), l)
+        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              q(i,j,k,l,new) = q(i,j,k,l,old) - (       &
+                (                                       &
+                  qmf_lon(i  ,j,k) -                    &
+                  qmf_lon(i-1,j,k)                      &
+                ) * mesh%le_lon(j) + (                  &
+                  qmf_lat(i,j  ,k) * mesh%le_lat(j  ) - &
+                  qmf_lat(i,j-1,k) * mesh%le_lat(j-1)   &
+                )                                       &
+              ) / mesh%area_cell(j) * dt_adv - (        &
+                qmf_lev(i,j,k+1) -                      &
+                qmf_lev(i,j,k  )                        &
+              ) * dt_adv
+            end do
+          end do
+        end do
+        if (mesh%has_south_pole()) then
+          j = mesh%full_lat_ibeg
+          do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              work(i,k) = qmf_lat(i,j,k)
+            end do
+          end do
+          call zonal_sum(proc%zonal_circle, work, pole)
+          pole = pole * mesh%le_lat(j) / global_mesh%num_full_lon / mesh%area_cell(j) * dt_adv
+          do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              q(i,j,k,l,new) = q(i,j,k,l,old) - pole(k) - ( &
+                qmf_lev(i,j,k+1) - qmf_lev(i,j,k) &
+              ) * dt_adv
+            end do
+          end do
+        end if
+        if (mesh%has_north_pole()) then
+          j = mesh%full_lat_iend
+          do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              work(i,k) = qmf_lat(i,j-1,k)
+            end do
+          end do
+          call zonal_sum(proc%zonal_circle, work, pole)
+          pole = pole * mesh%le_lat(j-1) / global_mesh%num_full_lon / mesh%area_cell(j) * dt_adv
+          do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+              q(i,j,k,l,new) = q(i,j,k,l,old) + pole(k) - ( &
+                qmf_lev(i,j,k+1) - qmf_lev(i,j,k) &
+              ) * dt_adv
+            end do
+          end do
+        end if
+        call fill_halo(block, q(:,:,:,l,new), full_lon=.true., full_lat=.true., full_lev=.true.)
+        end associate
+      end do
+      i = block%adv_batches(1)%old
+      block%adv_batches(1)%old = block%adv_batches(1)%new
+      block%adv_batches(1)%new = i
+    end do
+    end associate
+
+  end subroutine adv_integrator
 
   subroutine diagnose(blocks, itime)
 
@@ -128,13 +194,13 @@ contains
 
     qm = 0
     do iblk = 1, size(blocks)
-      associate (mesh  => blocks(iblk)%mesh        , &
-                 state => blocks(iblk)%state(itime))
+      associate (mesh => blocks(iblk)%mesh            , &
+                 q    => blocks(iblk)%adv_batches(1)%q)
       do l = 1, size(blocks(iblk)%adv_batches(1)%tracer_names)
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              qm = qm + state%q(i,j,k,l) * mesh%area_cell(j)
+              qm = qm + q(i,j,k,l,itime) * mesh%area_cell(j)
             end do
           end do
         end do

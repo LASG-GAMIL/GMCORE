@@ -72,11 +72,7 @@ contains
       time_integrator => pc2
     end select
 
-    if (advection) then
-      step => step_adv
-    else
-      step => step_forward_backward
-    end if
+    step => step_forward_backward
 
   end subroutine time_scheme_init
 
@@ -113,86 +109,6 @@ contains
     call update_state(block, tend2, old_state, new_state, dt)
 
   end subroutine step_forward_backward
-
-  subroutine step_adv(space_operators, block, old_state, star_state, new_state, tend1, tend2, dt)
-
-    procedure(space_operators_interface) space_operators
-    type(block_type), intent(inout) :: block
-    type(state_type), intent(in   ) :: old_state
-    type(state_type), intent(inout) :: star_state
-    type(state_type), intent(inout) :: new_state
-    type(tend_type ), intent(inout) :: tend1
-    type(tend_type ), intent(inout) :: tend2
-    real(8), intent(in) :: dt
-
-    integer i, j, k, l, m, n
-    real(r8) work(block%mesh%full_lon_ibeg:block%mesh%full_lon_iend,block%mesh%num_full_lev)
-    real(r8) pole(block%mesh%num_full_lev)
-
-    call space_operators(block, old_state, star_state, new_state, tend1, tend2, dt, all_pass)
-
-    associate (mesh => block%mesh)
-    do m = 1, size(block%adv_batches)
-      do n = 1, size(block%adv_batches(m)%tracer_names)
-        l = block%adv_batches(m)%tracer_idx(n)
-        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              new_state%q(i,j,k,l) = old_state%q(i,j,k,l) - (        &
-                (                                                    &
-                  star_state%qmf_lon(i  ,j,k,l) -                    &
-                  star_state%qmf_lon(i-1,j,k,l)                      &
-                ) * mesh%le_lon(j) + (                               &
-                  star_state%qmf_lat(i,j  ,k,l) * mesh%le_lat(j  ) - &
-                  star_state%qmf_lat(i,j-1,k,l) * mesh%le_lat(j-1)   &
-                )                                                    &
-              ) / mesh%area_cell(j) * dt - (                         &
-                star_state%qmf_lev(i,j,k+1,l) -                      &
-                star_state%qmf_lev(i,j,k  ,l)                        &
-              ) * dt
-            end do
-          end do
-        end do
-        if (mesh%has_south_pole()) then
-          j = mesh%full_lat_ibeg
-          do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              work(i,k) = star_state%qmf_lat(i,j,k,l)
-            end do
-          end do
-          call zonal_sum(proc%zonal_circle, work, pole)
-          pole = pole * mesh%le_lat(j) / global_mesh%num_full_lon / mesh%area_cell(j) * dt
-          do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              new_state%q(i,j,k,l) = old_state%q(i,j,k,l) - pole(k) - (     &
-                star_state%qmf_lev(i,j,k+1,l) - star_state%qmf_lev(i,j,k,l) &
-              ) * dt
-            end do
-          end do
-        end if
-        if (mesh%has_north_pole()) then
-          j = mesh%full_lat_iend
-          do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              work(i,k) = star_state%qmf_lat(i,j-1,k,l)
-            end do
-          end do
-          call zonal_sum(proc%zonal_circle, work, pole)
-          pole = pole * mesh%le_lat(j-1) / global_mesh%num_full_lon / mesh%area_cell(j) * dt
-          do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-            do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              new_state%q(i,j,k,l) = old_state%q(i,j,k,l) + pole(k) - (     &
-                star_state%qmf_lev(i,j,k+1,l) - star_state%qmf_lev(i,j,k,l) &
-              ) * dt
-            end do
-          end do
-        end if
-        call fill_halo(block, new_state%q(:,:,:,l), full_lon=.true., full_lat=.true., full_lev=.true.)
-      end do
-    end do
-    end associate
-
-  end subroutine step_adv
 
   subroutine update_state(block, tend, old_state, new_state, dt)
 

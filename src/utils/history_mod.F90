@@ -456,7 +456,7 @@ contains
           start = [is,js,ks]
           count = [mesh%num_full_lon,mesh%num_full_lat,mesh%num_full_lev]
           call fiona_output('h0', adv_batches(i)%tracer_names(j), &
-                            state%q(is:ie,js:je,ks:ke,adv_batches(i)%tracer_idx(j)), &
+                            adv_batches(i)%q(is:ie,js:je,ks:ke,j,itime), &
                             start=start, count=count)
         end do
         is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend

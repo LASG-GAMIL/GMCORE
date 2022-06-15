@@ -52,23 +52,26 @@ contains
 
     call adv_allocate_tracers(block)
 
-    associate (mesh => block%mesh, state => block%state(1))
+    associate (mesh => block%mesh              , &
+               old  => block%adv_batches(1)%old, &
+               gz   => block%state(1)%gz       , &
+               q    => block%adv_batches(1)%q  )
     ! Background
-    state%q(:,:,:,1) = 1
+    q(:,:,:,1,old) = 1
     ! Test
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          z = state%gz(i,j,k) / g
+          z = gz(i,j,k) / g
           if (z1 < z .and. z < z2) then
-            state%q(i,j,k,2) = 0.5_r8 * (1 + cos(pi2 * (z - z0) / (z2 - z1)))
+            q(i,j,k,2,old) = 0.5_r8 * (1 + cos(pi2 * (z - z0) / (z2 - z1)))
           else
-            state%q(i,j,k,2) = 0
+            q(i,j,k,2,old) = 0
           end if
         end do
       end do
     end do
-    call fill_halo(block, state%q(:,:,:,2), full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block, q(:,:,:,2,old), full_lon=.true., full_lat=.true., full_lev=.true.)
     end associate
 
   end subroutine dcmip12_test_set_ic

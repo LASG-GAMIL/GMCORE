@@ -56,19 +56,21 @@ contains
 
     call adv_allocate_tracers(block)
 
-    associate (mesh => block%mesh, state => block%state(1))
+    associate (mesh => block%mesh              , &
+               old  => block%adv_batches(1)%old, &
+               q    => block%adv_batches(1)%q  )
     ! Background tracer
-    state%q(:,:,:,1) = 1
+    q(:,:,:,1,old) = 1
     ! Vortex tracer 
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       lat = mesh%full_lat(j)
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
         lon = mesh%full_lon(i)
         call rotation_transform(lonv0, latv0, lon, lat, lonr, latr)
-        state%q(i,j,1,2) = 1 - tanh(rho(latr) / gamma * sin(lonr))
+        q(i,j,1,2,old) = 1 - tanh(rho(latr) / gamma * sin(lonr))
       end do
     end do
-    call fill_halo(block, state%q(:,:,:,2), full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block, q(:,:,:,2,old), full_lon=.true., full_lat=.true., full_lev=.true.)
     end associate
 
   end subroutine moving_vortices_test_set_ic

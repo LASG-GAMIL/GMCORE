@@ -66,9 +66,11 @@ contains
     call cartesian_transform(lon1, lat1, x1(1), x1(2), x1(3)); x1 = x1 / radius
     call cartesian_transform(lon2, lat2, x2(1), x2(2), x2(3)); x2 = x2 / radius
 
-    associate (mesh => block%mesh, state => block%state(1))
+    associate (mesh => block%mesh              , &
+               old  => block%adv_batches(1)%old, &
+               q    => block%adv_batches(1)%q  )
     ! Background
-    state%q(:,:,:,1) = 1
+    q(:,:,:,1,old) = 1
     ! Cosine hills
     qmax = 1.0_r8; qmin = 0.1_r8; c = 0.9_r8; r = radius * 0.5_r8
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -78,15 +80,15 @@ contains
         r1 = calc_distance(lon1, lat1, lon, lat)
         r2 = calc_distance(lon2, lat2, lon, lat)
         if (r1 < r) then
-          state%q(i,j,1,2) = qmin + c * qmax * 0.5_r8 * (1 + cos(pi * r1 / r))
+          q(i,j,1,2,old) = qmin + c * qmax * 0.5_r8 * (1 + cos(pi * r1 / r))
         else if (r2 < r) then
-          state%q(i,j,1,2) = qmin + c * qmax * 0.5_r8 * (1 + cos(pi * r2 / r))
+          q(i,j,1,2,old) = qmin + c * qmax * 0.5_r8 * (1 + cos(pi * r2 / r))
         else
-          state%q(i,j,1,2) = qmin
+          q(i,j,1,2,old) = qmin
         end if
       end do
     end do
-    call fill_halo(block, state%q(:,:,:,2), full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block, q(:,:,:,2,old), full_lon=.true., full_lat=.true., full_lev=.true.)
     ! Slotted cylinders
     qmax = 1.0_r8; qmin = 0.1_r8; r = radius * 0.5_r8
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -97,17 +99,17 @@ contains
         r2 = calc_distance(lon2, lat2, lon, lat)
         if ((r1 <= r .and. abs(lon - lon1) >= r / radius / 6.0_r8) .or. &
             (r2 <= r .and. abs(lon - lon2) >= r / radius / 6.0_r8)) then
-          state%q(i,j,1,3) = qmax
+          q(i,j,1,3,old) = qmax
         else if (r1 <= r .and. abs(lon - lon1) < r / radius / 6.0_r8 .and. lat - lat1 < -5.0_r8 / 12.0_r8 * (r / radius)) then
-          state%q(i,j,1,3) = qmax
+          q(i,j,1,3,old) = qmax
         else if (r2 <= r .and. abs(lon - lon2) < r / radius / 6.0_r8 .and. lat - lat2 >  5.0_r8 / 12.0_r8 * (r / radius)) then
-          state%q(i,j,1,3) = qmax
+          q(i,j,1,3,old) = qmax
         else
-          state%q(i,j,1,3) = qmin
+          q(i,j,1,3,old) = qmin
         end if
       end do
     end do
-    call fill_halo(block, state%q(:,:,:,3), full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block, q(:,:,:,3,old), full_lon=.true., full_lat=.true., full_lev=.true.)
     ! Gaussian hills
     qmax = 0.95_r8; c = 5.0_r8
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -116,10 +118,10 @@ contains
         lon = mesh%full_lon(i)
         call cartesian_transform(lon, lat, x(1), x(2), x(3))
         x = x / radius
-        state%q(i,j,1,4) = qmax * (exp(-c * dot_product(x - x1, x - x1)) + exp(-c * dot_product(x - x2, x - x2)))
+        q(i,j,1,4,old) = qmax * (exp(-c * dot_product(x - x1, x - x1)) + exp(-c * dot_product(x - x2, x - x2)))
       end do
     end do
-    call fill_halo(block, state%q(:,:,:,4), full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block, q(:,:,:,4,old), full_lon=.true., full_lat=.true., full_lev=.true.)
     end associate
 
   end subroutine deform_test_set_ic

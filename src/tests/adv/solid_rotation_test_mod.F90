@@ -42,9 +42,11 @@ contains
 
     R0 = radius / 3.0_r8
 
-    associate (mesh => block%mesh, state => block%state(1))
+    associate (mesh => block%mesh              , &
+               old  => block%adv_batches(1)%old, &
+               q    => block%adv_batches(1)%q  )
     ! Background
-    state%q(:,:,:,1) = 1
+    q(:,:,:,1,old) = 1
     ! Cosine bell
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       lat = mesh%full_lat(j)
@@ -52,13 +54,13 @@ contains
         lon = mesh%full_lon(i)
         r = calc_distance(lon0, lat0, lon, lat)
         if (r < R0) then
-          state%q(i,j,1,2) = h0 / 2.0_r8 * (1 + cos(pi * r / R0))
+          q(i,j,1,2,old) = h0 / 2.0_r8 * (1 + cos(pi * r / R0))
         else
-          state%q(i,j,1,2) = 0
+          q(i,j,1,2,old) = 0
         end if
       end do
     end do
-    call fill_halo(block, state%q(:,:,:,2), full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block, q(:,:,:,2,old), full_lon=.true., full_lat=.true., full_lev=.true.)
     end associate
 
   end subroutine solid_rotation_test_set_ic
