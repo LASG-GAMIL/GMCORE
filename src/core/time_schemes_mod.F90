@@ -241,7 +241,7 @@ contains
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
             if (abs(mesh%full_lat_deg(j)) > 85) then
-              wgt = 0.5 * sin(pi05 * (1 - (pi05 - abs(mesh%full_lat(j))) / (5 * rad)))
+              wgt = 0.8 * sin(pi05 * (1 - (pi05 - abs(mesh%full_lat(j))) / (5 * rad)))
               new_state%pt(:,j,k) = wgt * new_state%t(:,j,k) + (1 - wgt) * new_state%pt(:,j,k)
             end if
           end do

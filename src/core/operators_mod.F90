@@ -369,8 +369,8 @@ contains
     integer i, j, k
 
     associate (mesh => block%mesh , &
-               u    => state%u_lon, & ! in
-               v    => state%v_lat, & ! in
+               u    => state%u_f  , & ! in
+               v    => state%v_f  , & ! in
                div  => state%div  , & ! out
                div2 => state%div2 )   ! out
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend

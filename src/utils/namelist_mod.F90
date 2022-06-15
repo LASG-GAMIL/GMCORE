@@ -98,7 +98,7 @@ module namelist_mod
   integer         :: div_damp_cycles      = 1
   integer         :: div_damp_order       = 2
   integer         :: div_damp_k0          = 3
-  real(r8)        :: div_damp_imp_lat0    = 0
+  real(r8)        :: div_damp_imp_lat0    = 90
   real(r8)        :: div_damp_top         = 3.0_r8
   real(r8)        :: div_damp_pole        = 0.0_r8
   real(r8)        :: div_damp_lat0        = 90
@@ -115,7 +115,7 @@ module namelist_mod
   logical         :: use_smag_damp        = .false.
   real(r8)        :: smag_damp_coef       = 0.1
   logical         :: use_zonal_damp       = .false.
-  integer         :: zonal_damp_cycles    = 1
+  integer         :: zonal_damp_cycles    = 5
   integer         :: zonal_damp_order     = 2
   real(r8)        :: zonal_damp_lat0      = 80
 
