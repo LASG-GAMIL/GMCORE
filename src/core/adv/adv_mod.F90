@@ -238,10 +238,6 @@ contains
               end do
             end do
           end if
-          call fill_halo(block, q(:,:,:,l,new), full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
-          do i = 1, 5
-            call zonal_damp_on_cell(block, 2, dt_adv, q(:,:,:,l,new))
-          end do
           do k = mesh%full_lev_ibeg, mesh%full_lev_iend
             do j = mesh%full_lat_ibeg, mesh%full_lat_iend
               do i = mesh%full_lon_ibeg, mesh%full_lon_iend
