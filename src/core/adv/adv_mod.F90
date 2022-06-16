@@ -186,6 +186,10 @@ contains
         unique_tracer_dt  (nbatch) = tracer_dt  (i)
       end if
     end do
+    if (nbatch == 0) return
+    if (allocated(block%adv_batches)) then
+      call log_error('Advection batches have already been alllocated!', pid=proc%id)
+    end if
     if (is_root_proc()) then
       call log_notice('There are ' // to_str(nbatch) // ' advection batches.')
       do i = 1, nbatch
