@@ -240,6 +240,13 @@ contains
     read(10, nml=gmcore_control)
     close(10)
 
+    ! Here we set baroclinic according to levels.
+    baroclinic = num_lev > 1
+    if (.not. baroclinic) then
+      hydrostatic = .false.
+      nonhydrostatic = .false.
+    end if
+
     hydrostatic = .not. nonhydrostatic
     if (advection) then
       hydrostatic    = .false.
