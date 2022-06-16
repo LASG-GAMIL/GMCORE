@@ -193,6 +193,8 @@ contains
 
   subroutine history_setup_h0_hydrostatic()
 
+    integer i, j
+
     call fiona_create_dataset('h0', desc=case_desc, file_prefix=trim(case_name), mpi_comm=proc%comm, group_size=output_group_size, split_file=split_h0)
     ! Dimensions
     call fiona_add_att('h0', 'time_step_size', dt)
@@ -222,6 +224,16 @@ contains
     call fiona_add_var('h0', 'ph'     , long_name='hydrostatic pressure'        , units='Pa'    , dim_names=cell_dims_3d)
     call fiona_add_var('h0', 'vor'    , long_name='relative vorticity'          , units='s-1'   , dim_names= vtx_dims_3d)
     call fiona_add_var('h0', 'div'    , long_name='divergence'                  , units='s-1'   , dim_names=cell_dims_3d)
+    associate (adv_batches => blocks(1)%adv_batches)
+    do i = 1, size(adv_batches)
+      do j = 1, size(adv_batches(i)%tracer_names)
+        call fiona_add_var('h0', adv_batches(i)%tracer_names(j), &
+                           long_name=adv_batches(i)%tracer_long_names(j), &
+                           units=adv_batches(i)%tracer_units(j), &
+                           dim_names=cell_dims_3d, dtype='r8')
+      end do
+    end do
+    end associate
 
   end subroutine history_setup_h0_hydrostatic
 
@@ -456,7 +468,7 @@ contains
           start = [is,js,ks]
           count = [mesh%num_full_lon,mesh%num_full_lat,mesh%num_full_lev]
           call fiona_output('h0', adv_batches(i)%tracer_names(j), &
-                            adv_batches(i)%q(is:ie,js:je,ks:ke,j,itime), &
+                            adv_batches(i)%q(is:ie,js:je,ks:ke,j,adv_batches(i)%old), &
                             start=start, count=count)
         end do
         is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
@@ -507,7 +519,7 @@ contains
     type(block_type), intent(in), target :: blocks(:)
     integer, intent(in) :: itime 
 
-    integer iblk, is, ie, js, je, ks, ke
+    integer iblk, is, ie, js, je, ks, ke, i, j
     integer start(3), count(3)
 
     call fiona_output('h0', 'lon' , global_mesh%full_lon_deg(1:global_mesh%num_full_lon))
@@ -518,9 +530,10 @@ contains
     call fiona_output('h0', 'ilev', global_mesh%half_lev(1:global_mesh%num_half_lev))
 
     do iblk = 1, size(blocks)
-      associate (mesh   => blocks(iblk)%mesh        , &
-                 state  => blocks(iblk)%state(itime), &
-                 static => blocks(iblk)%static)
+      associate (mesh        => blocks(iblk)%mesh        , &
+                 state       => blocks(iblk)%state(itime), &
+                 static      => blocks(iblk)%static      , &
+                 adv_batches => blocks(iblk)%adv_batches )
       is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
       js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
       ks = mesh%full_lev_ibeg; ke = mesh%full_lev_iend
@@ -560,6 +573,19 @@ contains
       call fiona_output('h0', 'te_ke', state%te_ke)
       call fiona_output('h0', 'te_ie', state%te_ie)
       call fiona_output('h0', 'te_pe', state%te_pe)
+
+      do i = 1, size(adv_batches)
+        do j = 1, size(adv_batches(i)%tracer_names)
+          is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
+          js = mesh%full_lat_ibeg; je = mesh%full_lat_iend
+          ks = mesh%full_lev_ibeg; ke = mesh%full_lev_iend
+          start = [is,js,ks]
+          count = [mesh%num_full_lon,mesh%num_full_lat,mesh%num_full_lev]
+          call fiona_output('h0', adv_batches(i)%tracer_names(j), &
+                            adv_batches(i)%q(is:ie,js:je,ks:ke,j,adv_batches(i)%old), &
+                            start=start, count=count)
+        end do
+      end do
       end associate
     end do
 

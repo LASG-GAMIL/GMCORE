@@ -52,15 +52,16 @@ contains
     allocate(era5_psd (num_era5_lon,num_era5_lat             ))
 
     call fiona_start_input('era5')
-    call fiona_input('era5', 'longitude', era5_lon )
-    call fiona_input('era5', 'latitude' , era5_lat )
-    call fiona_input('era5', 'level'    , era5_lev )
-    call fiona_input('era5', 'u'        , era5_u   )
-    call fiona_input('era5', 'v'        , era5_v   )
-    call fiona_input('era5', 't'        , era5_t   )
-    !call fiona_input('era5', 'q'        , era5_q   )
-    !call fiona_input('era5', 'sp'       , era5_ps  )
-    call fiona_input('era5', 'msl'      , era5_mslp)
+    call fiona_input    ('era5', 'longitude', era5_lon )
+    call fiona_input    ('era5', 'latitude' , era5_lat )
+    call fiona_input    ('era5', 'level'    , era5_lev )
+    call fiona_input    ('era5', 'u'        , era5_u   )
+    call fiona_input    ('era5', 'v'        , era5_v   )
+    call fiona_input    ('era5', 't'        , era5_t   )
+    if (fiona_has_var('era5', 'q')) then
+      call fiona_input  ('era5', 'q'        , era5_q   )
+    end if
+    call fiona_input    ('era5', 'msl'      , era5_mslp)
     call fiona_end_input('era5')
 
     ! Reverse latitude order (from South Pole to North Pole).
@@ -78,6 +79,9 @@ contains
 
     ! Change units.
     era5_lev = era5_lev * 100.0_r8
+
+    ! Change specific humidity to mixing ratio.
+    era5_q = era5_q / (1 - era5_q)
 
   end subroutine era5_reader_run
 

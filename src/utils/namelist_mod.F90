@@ -252,6 +252,7 @@ contains
     call const_init(planet)
 
     if (dt_dyn == 0) dt_dyn = dt_adv
+    if (dt_adv == 0) dt_adv = dt_dyn
 
   end subroutine parse_namelist
 

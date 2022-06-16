@@ -32,7 +32,6 @@ module operators_mod
   public calc_grad_ptf
   public calc_dphsdt
   public calc_wedudlev_wedvdlev
-  public calc_qmf
   public nh_prepare
   public nh_solve
   public interp_gz
@@ -231,6 +230,7 @@ contains
     we_lev(:,:,mesh%half_lev_iend) = 0.0_r8
     call fill_halo(block, we_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
 
+    ! FIXME: It seems the vertical FFSL on pt is problematic.
     ! call block%adv_batch_mass%accum_we_lev(we_lev, m_lev, dt)
 
     call interp_lev_edge_to_lev_lon_edge(mesh, we_lev, we_lev_lon)
@@ -1032,16 +1032,6 @@ contains
                    south_halo=.false., north_halo=.false., east_halo=.false.)
     call fill_halo(block, ptf_lat, full_lon=.true., full_lat=.false., full_lev=.true., &
                    north_halo=.false.,  west_halo=.false., east_halo=.false.)
-    ! FIXME: It seems the vertical FFSL on pt is problematic.
-    ! Set upper and lower boundary conditions.
-    ! do k = mesh%full_lev_lb, mesh%full_lev_ibeg - 1
-    !   pt(:,:,k) = pt(:,:,mesh%full_lev_ibeg)
-    ! end do
-    ! do k = mesh%full_lev_iend + 1, mesh%full_lev_ub
-    !   pt(:,:,k) = pt(:,:,mesh%full_lev_iend)
-    ! end do
-    ! call adv_calc_tracer_vflx_cell(block, block%adv_batch_mass, pt, ptf_lev, dt)
-    call interp_cell_to_lev_edge(mesh, pt, ptf_lev, w=state%we_lev, upwind_wgt_=0.25_r8)
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -1091,6 +1081,23 @@ contains
         end do
       end do
     end if
+    ! FIXME: It seems the vertical FFSL on pt is problematic.
+    ! Set upper and lower boundary conditions.
+    ! do k = mesh%full_lev_lb, mesh%full_lev_ibeg - 1
+    !   pt(:,:,k) = pt(:,:,mesh%full_lev_ibeg)
+    ! end do
+    ! do k = mesh%full_lev_iend + 1, mesh%full_lev_ub
+    !   pt(:,:,k) = pt(:,:,mesh%full_lev_iend)
+    ! end do
+    ! call adv_calc_tracer_vflx_cell(block, block%adv_batch_mass, pt, ptf_lev, dt)
+    ! do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+    !   do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+    !     do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+    !       dptfdlev(i,j,k) = ptf_lev(i,j,k+1) - ptf_lev(i,j,k)
+    !     end do
+    !   end do
+    ! end do
+    call interp_cell_to_lev_edge(mesh, pt, ptf_lev, w=state%we_lev, upwind_wgt_=0.25_r8)
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -1198,35 +1205,5 @@ contains
     end associate
 
   end subroutine calc_wedudlev_wedvdlev
-
-  subroutine calc_qmf(block, adv_batch, tracer_idx)
-
-    type(block_type), intent(in) :: block
-    type(adv_batch_type), intent(inout) :: adv_batch
-    integer, intent(in) :: tracer_idx
-
-    integer i, j, k
-
-    associate (mesh    => block%mesh       , &
-               old     => adv_batch%old    , &
-               l       => tracer_idx       , &
-               q       => adv_batch%q      , & ! in
-               qmf_lon => adv_batch%qmf_lon, & ! out
-               qmf_lat => adv_batch%qmf_lat, & ! out
-               qmf_lev => adv_batch%qmf_lev)   ! out
-    ! Set upper and lower boundary conditions.
-    do k = mesh%full_lev_lb, mesh%full_lev_ibeg - 1
-      q(:,:,k,l,old) = q(:,:,mesh%full_lev_ibeg,l,old)
-    end do
-    do k = mesh%full_lev_iend + 1, mesh%full_lev_ub
-      q(:,:,k,l,old) = q(:,:,mesh%full_lev_iend,l,old)
-    end do
-    call adv_calc_tracer_hflx_cell(block, adv_batch, q(:,:,:,l,old), qmf_lon, qmf_lat)
-    call fill_halo(block, qmf_lon, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false., east_halo=.false.)
-    call fill_halo(block, qmf_lat, full_lon=.true., full_lat=.false., full_lev=.true., north_halo=.false.,  west_halo=.false., east_halo=.false.)
-    call adv_calc_tracer_vflx_cell(block, adv_batch, q(:,:,:,l,old), qmf_lev)
-    end associate
-
-  end subroutine calc_qmf
 
 end module operators_mod

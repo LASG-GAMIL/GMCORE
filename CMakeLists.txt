@@ -147,6 +147,7 @@ set(gmcore_files
   src/core/operators_mod.F90
   src/core/filter_types_mod.F90
   src/core/filter_mod.F90
+  src/core/moist_mod.F90
   src/core/damp/div_damp_mod.F90
   src/core/damp/vor_damp_mod.F90
   src/core/damp/laplace_damp_mod.F90

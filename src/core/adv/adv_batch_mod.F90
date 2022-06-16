@@ -4,6 +4,7 @@ module adv_batch_mod
   use const_mod
   use namelist_mod
   use mesh_mod
+  use time_mod
   use allocator_mod
   use parallel_types_mod
   use parallel_zonal_mod
@@ -29,6 +30,7 @@ module adv_batch_mod
     character(10), allocatable, dimension(:) :: tracer_names
     character(30), allocatable, dimension(:) :: tracer_long_names
     character(10), allocatable, dimension(:) :: tracer_units
+    real(r8), allocatable, dimension(:,:,:) :: old_m ! Recorded old mass for converting mixing ratio
     real(r8), allocatable, dimension(:,:,:,:,:) :: q
     real(r8), allocatable, dimension(:,:,:) :: qmf_lon
     real(r8), allocatable, dimension(:,:,:) :: qmf_lat
@@ -56,6 +58,7 @@ module adv_batch_mod
     procedure :: init             => adv_batch_init
     procedure :: clear            => adv_batch_clear
     procedure :: allocate_tracers => adv_batch_allocate_tracers
+    procedure :: copy_old_m       => adv_batch_copy_old_m
     procedure :: accum_uv_cell    => adv_batch_accum_uv_cell
     procedure :: accum_mf_cell    => adv_batch_accum_mf_cell
     procedure :: accum_uv_vtx     => adv_batch_accum_uv_vtx
@@ -87,6 +90,7 @@ contains
 
     select case (loc)
     case ('cell')
+      call allocate_array(mesh, this%old_m, full_lon=.true., full_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%mfx , half_lon=.true., full_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%mfy , full_lon=.true., half_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%m_lev, full_lon=.true., full_lat=.true., half_lev=.true.)
@@ -137,6 +141,8 @@ contains
       call log_error('Invalid grid location ' // trim(loc) // '!', __FILE__, __LINE__)
     end select
 
+    call time_add_alert(alert_key, seconds=dt)
+
   end subroutine adv_batch_init
 
   subroutine adv_batch_clear(this)
@@ -156,6 +162,7 @@ contains
     if (allocated(this%tracer_long_names)) deallocate(this%tracer_long_names)
     if (allocated(this%tracer_units     )) deallocate(this%tracer_units     )
 
+    if (allocated(this%old_m  )) deallocate(this%old_m  )
     if (allocated(this%q      )) deallocate(this%q      )
     if (allocated(this%qmf_lon)) deallocate(this%qmf_lon)
     if (allocated(this%qmf_lat)) deallocate(this%qmf_lat)
@@ -192,6 +199,17 @@ contains
     allocate(this%tracer_units     (ntracer))
 
   end subroutine adv_batch_allocate_tracers
+
+  subroutine adv_batch_copy_old_m(this, m)
+
+    class(adv_batch_type), intent(inout) :: this
+    real(r8), intent(in) :: m(this%mesh%full_lon_lb:this%mesh%full_lon_ub, &
+                              this%mesh%full_lat_lb:this%mesh%full_lat_ub, &
+                              this%mesh%full_lev_lb:this%mesh%full_lev_ub)
+
+    this%old_m = m
+
+  end subroutine adv_batch_copy_old_m
 
   subroutine adv_batch_accum_uv_cell(this, u, v, dt)
 

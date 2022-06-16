@@ -14,6 +14,7 @@ module gmcore_mod
   use vert_coord_mod
   use time_schemes_mod
   use operators_mod
+  use moist_mod
   use interp_mod
   use debug_mod
   use adv_mod
@@ -58,7 +59,6 @@ contains
     call process_create_blocks()
     call time_init(dt_dyn)
     call diag_state_init(blocks)
-    call history_init()
     call restart_init()
     call time_scheme_init()
     call adv_init()
@@ -66,6 +66,9 @@ contains
     call interp_init()
     call operators_init()
     call damp_init(blocks)
+    if (baroclinic) call moist_init()
+    call adv_allocate_tracers(blocks)
+    call history_init()
 
     operators => space_operators
 
@@ -93,7 +96,7 @@ contains
 
   subroutine gmcore_run()
 
-    integer j, iblk, itime
+    integer m, iblk, itime
 
     do iblk = 1, size(blocks)
       associate (block => blocks(iblk)     , &
@@ -117,7 +120,9 @@ contains
         call filter_on_cell(block, state%gz, state%gz_f)
         call fill_halo(block, state%gz_f, full_lon=.true., full_lat=.true.)
       end if
-      call adv_allocate_tracers(block)
+      do m = 1, size(block%adv_batches)
+        call block%adv_batches(m)%copy_old_m(state%m)
+      end do
       end associate
     end do
 
@@ -577,6 +582,7 @@ contains
       call time_integrator(operators, blocks(iblk), old, new, dt)
       call test_forcing_run(blocks(iblk), dt, blocks(iblk)%static, blocks(iblk)%state(new))
       call damp_run(blocks(iblk), blocks(iblk)%state(new), blocks(iblk)%tend(new), dt)
+      call adv_run(blocks(iblk), new)
     end do
 
   end subroutine time_integrate

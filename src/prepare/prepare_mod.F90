@@ -60,6 +60,7 @@ contains
     call bkg_regrid_pt()
     call bkg_regrid_u()
     call bkg_regrid_v()
+    call bkg_regrid_q()
 
     if (nonhydrostatic) then
       do iblk = 1, size(blocks)

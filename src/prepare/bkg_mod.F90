@@ -31,6 +31,7 @@ module bkg_mod
   public bkg_regrid_pt
   public bkg_regrid_u
   public bkg_regrid_v
+  public bkg_regrid_q
 
 contains
 
@@ -461,5 +462,37 @@ contains
     end do
 
   end subroutine bkg_regrid_v
+
+  subroutine bkg_regrid_q()
+
+    real(r8), allocatable, dimension(:,:,:) :: q1
+    integer iblk, i, j, k
+
+    if (is_root_proc()) call log_notice('Regrid water vapor mixing ratio.')
+
+    do iblk = 1, size(blocks)
+      associate (block => blocks(iblk)             , &
+                 mesh  => blocks(iblk)%mesh        , &
+                 ph    => blocks(iblk)%state(1)%ph , &
+                 old   => blocks(iblk)%adv_batches(1)%old, &
+                 q     => blocks(iblk)%adv_batches(1)%q)
+      select case (bkg_type)
+      case ('era5')
+        allocate(q1(mesh%full_lon_lb:mesh%full_lon_ub,mesh%full_lat_lb:mesh%full_lat_ub,num_era5_lev))
+        do k = 1, num_era5_lev
+          call latlon_interp_bilinear_cell(era5_lon, era5_lat, era5_q(:,:,k), mesh, q1(:,:,k))
+        end do
+        do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            call vert_interp_linear(era5_lev, q1(i,j,:), ph(i,j,1:mesh%num_full_lev), q(i,j,1:mesh%num_full_lev,1,old), allow_extrap=.true.)
+          end do
+        end do
+        deallocate(q1)
+      end select
+      call fill_halo(block, q(:,:,:,1,old), full_lon=.true., full_lat=.true., full_lev=.true.)
+      end associate
+    end do
+
+  end subroutine bkg_regrid_q
 
 end module bkg_mod
