@@ -172,19 +172,11 @@ contains
                      qmf_lat => block%adv_batches(m)%qmf_lat, &
                      qmf_lev => block%adv_batches(m)%qmf_lev)
           ! Calculate tracer mass flux.
-          ! Set upper and lower boundary conditions.
-          do k = mesh%full_lev_lb, mesh%full_lev_ibeg - 1
-            q(:,:,k,l,old) = q(:,:,mesh%full_lev_ibeg,l,old)
-          end do
-          do k = mesh%full_lev_iend + 1, mesh%full_lev_ub
-            q(:,:,k,l,old) = q(:,:,mesh%full_lev_iend,l,old)
-          end do
           call adv_calc_tracer_hflx_cell(block, block%adv_batches(m), q(:,:,:,l,old), qmf_lon, qmf_lat)
           call fill_halo(block, qmf_lon, full_lon=.false., full_lat=.true., full_lev=.true., &
                          south_halo=.false., north_halo=.false., east_halo=.false.)
           call fill_halo(block, qmf_lat, full_lon=.true., full_lat=.false., full_lev=.true., &
                          north_halo=.false.,  west_halo=.false., east_halo=.false.)
-          call adv_calc_tracer_vflx_cell(block, block%adv_batches(m), q(:,:,:,l,old), qmf_lev)
           ! Update tracer mixing ratio.
           do k = mesh%full_lev_ibeg, mesh%full_lev_iend
             do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -197,10 +189,7 @@ contains
                     qmf_lat(i,j  ,k) * mesh%le_lat(j  ) -          &
                     qmf_lat(i,j-1,k) * mesh%le_lat(j-1)            &
                   )                                                &
-                ) / mesh%area_cell(j) * dt_adv - (                 &
-                  qmf_lev(i,j,k+1) -                               &
-                  qmf_lev(i,j,k  )                                 &
-                ) * dt_adv
+                ) / mesh%area_cell(j) * dt_adv
               end do
             end do
           end do
@@ -215,9 +204,7 @@ contains
             pole = pole * mesh%le_lat(j) / global_mesh%num_full_lon / mesh%area_cell(j) * dt_adv
             do k = mesh%full_lev_ibeg, mesh%full_lev_iend
               do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-                q(i,j,k,l,new) = old_m(i,j,k) * q(i,j,k,l,old) - pole(k) - ( &
-                  qmf_lev(i,j,k+1) - qmf_lev(i,j,k) &
-                ) * dt_adv
+                q(i,j,k,l,new) = old_m(i,j,k) * q(i,j,k,l,old) - pole(k)
               end do
             end do
           end if
@@ -232,9 +219,7 @@ contains
             pole = pole * mesh%le_lat(j-1) / global_mesh%num_full_lon / mesh%area_cell(j) * dt_adv
             do k = mesh%full_lev_ibeg, mesh%full_lev_iend
               do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-                q(i,j,k,l,new) = old_m(i,j,k) * q(i,j,k,l,old) + pole(k) - ( &
-                  qmf_lev(i,j,k+1) - qmf_lev(i,j,k) &
-                ) * dt_adv
+                q(i,j,k,l,new) = old_m(i,j,k) * q(i,j,k,l,old) + pole(k)
               end do
             end do
           end if
@@ -244,6 +229,25 @@ contains
                 q(i,j,k,l,new) = q(i,j,k,l,new) / block%state(itime)%m(i,j,k)
               end do
             end do
+          end do
+          ! Set upper and lower boundary conditions.
+          do k = mesh%full_lev_lb, mesh%full_lev_ibeg - 1
+            q(:,:,k,l,new) = q(:,:,mesh%full_lev_ibeg,l,new)
+          end do
+          do k = mesh%full_lev_iend + 1, mesh%full_lev_ub
+            q(:,:,k,l,new) = q(:,:,mesh%full_lev_iend,l,new)
+          end do
+          call adv_calc_tracer_vflx_cell(block, block%adv_batches(m), q(:,:,:,l,new), qmf_lev)
+          do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+            do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+                q(i,j,k,l,new) = q(i,j,k,l,new) - ((qmf_lev(i,j,k+1) - qmf_lev(i,j,k)) * dt_adv) / block%state(itime)%m(i,j,k)
+              end do
+            end do
+          end do
+          call fill_halo(block, q(:,:,:,l,new), full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
+          do i = 1, 5
+            call zonal_damp_on_cell(block, 2, dt_adv, q(:,:,:,l,new))
           end do
           call fill_halo(block, q(:,:,:,l,new), full_lon=.true., full_lat=.true., full_lev=.true.)
           end associate
@@ -286,6 +290,11 @@ contains
     character(30) unique_batch_names(100)
     real(r8) unique_tracer_dt(100)
 
+    if (.not. advection) then
+      call block%adv_batch_mass%init(block%mesh, 'cell', 'mass', dt_dyn)
+      ! call block%adv_batch_pv  %init(block%mesh, 'vtx' , 'pv'  , dt_dyn)
+    end if
+
     nbatch = 0
     do i = 1, ntracer
       found = .false.
@@ -313,21 +322,10 @@ contains
     end if
 
     ! Initialize advection batches in block objects and allocate tracer arrays in state objects.
-    if (advection) then
-      allocate(block%adv_batches(nbatch))
-      do i = 1, nbatch
-        call block%adv_batches(i)%init(block%mesh, 'cell', unique_batch_names(i), unique_tracer_dt(i))
-      end do
-    else
-      call block%adv_batch_mass%init(block%mesh, 'cell', 'mass', dt_dyn)
-      call block%adv_batch_pv  %init(block%mesh, 'vtx' , 'pv'  , dt_dyn)
-      if (nbatch > 0) then
-        allocate(block%adv_batches(nbatch))
-        do i = 1, nbatch
-          call block%adv_batches(i)%init(block%mesh, 'cell', unique_batch_names(i), unique_tracer_dt(i))
-        end do
-      end if
-    end if
+    allocate(block%adv_batches(nbatch))
+    do i = 1, nbatch
+      call block%adv_batches(i)%init(block%mesh, 'cell', unique_batch_names(i), unique_tracer_dt(i))
+    end do
 
     ! Record tracer information in advection batches.
     do i = 1, nbatch

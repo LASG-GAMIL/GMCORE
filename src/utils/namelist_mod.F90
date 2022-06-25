@@ -85,7 +85,7 @@ module namelist_mod
   ! Filter settings
   real(r8)        :: max_wave_speed       = 300
   real(r8)        :: max_cfl              = 0.5
-  real(r8)        :: filter_coef_a        = 1.2
+  real(r8)        :: filter_coef_a        = 1.0
   real(r8)        :: filter_coef_b        = 0.4
   real(r8)        :: filter_coef_c        = 0.4
 
@@ -245,15 +245,14 @@ contains
     if (.not. baroclinic) then
       hydrostatic = .false.
       nonhydrostatic = .false.
+    else
+      hydrostatic = .not. nonhydrostatic
     end if
 
-    hydrostatic = .not. nonhydrostatic
     if (advection) then
       hydrostatic    = .false.
       baroclinic     = .false.
       nonhydrostatic = .false.
-    else
-      baroclinic = hydrostatic .or. nonhydrostatic
     end if
 
     call const_init(planet)

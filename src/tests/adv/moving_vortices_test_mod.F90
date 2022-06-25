@@ -88,7 +88,12 @@ contains
     if (lonvr > pi2) lonvr = lonvr - pi2
     call inverse_rotation_transform(lonp0, latp0, lonv, latv, lonvr, latvr)
 
-    associate (mesh => block%mesh, m => state%m, u => state%u_lon, v => state%v_lat)
+    associate (mesh => block%mesh    , &
+               m    => state%m       , &
+               u    => state%u_lon   , &
+               v    => state%v_lat   , &
+               mfx  => state%mf_lon_n, &
+               mfy  => state%mf_lat_n)
     m = 1
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       lat = mesh%full_lat(j)
@@ -101,6 +106,7 @@ contains
       end do
     end do
     call fill_halo(block, u, full_lon=.false., full_lat=.true., full_lev=.true.)
+    mfx = u
     do j = mesh%half_lat_ibeg, mesh%half_lat_iend
       lat = mesh%half_lat(j)
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -111,6 +117,7 @@ contains
       end do
     end do
     call fill_halo(block, v, full_lon=.true., full_lat=.false., full_lev=.true.)
+    mfy = v
     end associate
 
   end subroutine moving_vortices_test_set_uv

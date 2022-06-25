@@ -183,8 +183,19 @@ contains
             end do
           end do
         end do
-        call fill_halo(block, new_state%gz, full_lon=.true., full_lat=.true.)
+        call fill_halo(block, new_state%gz, full_lon=.true., full_lat=.true., south_halo=.false., north_halo=.false.)
         call filter_on_cell(block, new_state%gz, new_state%gz_f)
+        ! ----------------------------------------------------------------------
+        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+            if (abs(mesh%full_lat_deg(j)) > 85) then
+              wgt = 0.8 * sin(pi05 * (1 - (pi05 - abs(mesh%full_lat(j))) / (5 * rad)))
+              new_state%gz(:,j,k) = wgt * new_state%gz_f(:,j,k) + (1 - wgt) * new_state%gz(:,j,k)
+            end if
+          end do
+        end do
+        call fill_halo(block, new_state%gz, full_lon=.true., full_lat=.true.)
+        ! ----------------------------------------------------------------------
         call fill_halo(block, new_state%gz_f, full_lon=.true., full_lat=.true.)
       else if (tend%copy_gz) then
         new_state%gz   = old_state%gz
