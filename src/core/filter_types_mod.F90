@@ -65,13 +65,13 @@ contains
           this%wgt_lon(l,j) = exp(-x**2 / (2 * s**2)) / (s * sqrt(pi2))
         end do
         this%wgt_lon(:,j) = this%wgt_lon(:,j) / sum(this%wgt_lon(:,j))
-        if (mesh%full_lat(j) < 0 .and. j >= mesh%full_lat_ibeg .and. j <= mesh%full_lat_iend) then
-         if (this%ngrid_lon(j) == 3) then
-           write(0, *) 'u', j, mesh%full_lat_deg(j), this%ngrid_lon(j), this%wgt_lon(:this%ngrid_lon(j),j)
-         else
-           write(0, *) 'u', j, mesh%full_lat_deg(j), this%ngrid_lon(j)
-         end if
-        end if
+        ! if (mesh%full_lat(j) < 0 .and. j >= mesh%full_lat_ibeg .and. j <= mesh%full_lat_iend) then
+        !  if (this%ngrid_lon(j) == 3) then
+        !    write(0, *) 'u', j, mesh%full_lat_deg(j), this%ngrid_lon(j), this%wgt_lon(:this%ngrid_lon(j),j)
+        !  else
+        !    write(0, *) 'u', j, mesh%full_lat_deg(j), this%ngrid_lon(j)
+        !  end if
+        ! end if
       end if
     end do
 

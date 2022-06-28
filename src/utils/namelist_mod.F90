@@ -92,8 +92,6 @@ module namelist_mod
   ! Damping settings
   logical         :: use_topo_smooth      = .false.
   integer         :: topo_smooth_cycles   = 1
-  real(r8)        :: topo_smooth_coef     = 1
-  real(r8)        :: topo_smooth_lat0     = 60
   logical         :: use_div_damp         = .false.
   integer         :: div_damp_cycles      = 1
   integer         :: div_damp_order       = 2
@@ -196,8 +194,6 @@ module namelist_mod
     coarse_pole_decay         , &
     use_topo_smooth           , &
     topo_smooth_cycles        , &
-    topo_smooth_coef          , &
-    topo_smooth_lat0          , &
     use_div_damp              , &
     div_damp_cycles           , &
     div_damp_order            , &
@@ -301,12 +297,11 @@ contains
       write(*, *) 'upwind_order_pv     = ', to_str(upwind_order_pv)
       write(*, *) 'upwind_wgt_pv       = ', to_str(upwind_wgt_pv, 2)
     end if
-      write(*, *) 'zonal_tridiag_solver= ', trim(zonal_tridiag_solver)
       write(*, *) 'time_scheme         = ', trim(time_scheme)
       write(*, *) 'upwind_order        = ', to_str(upwind_order)
-    if (upwind_order > 0) then
-      write(*, *) 'upwind_wgt          = ', to_str(upwind_wgt, 2)
-      write(*, *) 'upwind_wgt_pt       = ', to_str(upwind_wgt_pt, 2)
+      write(*, *) 'use_topo_smooth     = ', to_str(use_topo_smooth)
+    if (use_topo_smooth) then
+      write(*, *) 'topo_smooth_cycles  = ', to_str(topo_smooth_cycles)
     end if
       write(*, *) 'use_vor_damp        = ', to_str(use_vor_damp)
     if (use_vor_damp) then

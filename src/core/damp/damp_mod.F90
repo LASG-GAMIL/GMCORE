@@ -54,7 +54,7 @@ contains
 
     if (use_div_damp) then
       do cyc = 1, div_damp_cycles
-        call div_damp_run(block, dt, state)
+        call div_damp_run(block, state)
       end do
     end if
     if (use_vor_damp) then

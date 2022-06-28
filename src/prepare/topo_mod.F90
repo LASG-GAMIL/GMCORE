@@ -311,17 +311,28 @@ contains
 
     type(block_type), intent(inout) :: block
 
-    real(r8), allocatable :: lat_coef(:)
-    integer i, j
+    real(r8) wgt
+    integer i, j, cyc
 
-    associate (mesh => block%mesh, gzs => block%static%gzs, landmask => block%static%landmask)
-    call filter_on_cell(block, gzs)
-    call fill_halo(block, gzs, full_lon=.true., full_lat=.true.)
-    !do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-    !  do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-    !    if (landmask(i,j) == 0) gzs(i,j) = 0
-    !  end do
-    !end do
+    associate (mesh     => block%mesh        , &
+               gzs      => block%static%gzs  , &
+               gzs_f    => block%state(1)%phs, & ! Borrow the array.
+               landmask => block%static%landmask)
+    do cyc = 1, topo_smooth_cycles
+      call filter_on_cell(block, gzs, gzs_f)
+      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+        if (abs(mesh%full_lat_deg(j)) > 70) then
+          wgt = sin(pi05 * (1 - (pi05 - abs(mesh%full_lat(j))) / (20 * rad)))
+          gzs(:,j) = wgt * gzs_f(:,j) + (1 - wgt) * gzs(:,j)
+        end if
+      end do
+      call fill_halo(block, gzs, full_lon=.true., full_lat=.true.)
+      ! do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+      !   do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+      !     if (landmask(i,j) == 0) gzs(i,j) = 0
+      !   end do
+      ! end do
+    end do
     end associate
 
   end subroutine topo_smooth
