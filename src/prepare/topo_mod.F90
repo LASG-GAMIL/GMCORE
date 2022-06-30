@@ -321,8 +321,8 @@ contains
     do cyc = 1, topo_smooth_cycles
       call filter_on_cell(block, gzs, gzs_f)
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-        if (abs(mesh%full_lat_deg(j)) > 70) then
-          wgt = sin(pi05 * (1 - (pi05 - abs(mesh%full_lat(j))) / (20 * rad)))
+        if (abs(mesh%full_lat_deg(j)) > 60) then
+          wgt = sin(pi05 * (1 - (pi05 - abs(mesh%full_lat(j))) / (30 * rad)))
           gzs(:,j) = wgt * gzs_f(:,j) + (1 - wgt) * gzs(:,j)
         end if
       end do

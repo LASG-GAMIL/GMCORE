@@ -80,11 +80,9 @@ contains
     integer iblk
 
     do iblk = 1, size(blocks)
-      if (baroclinic) then
-        call calc_ph                      (blocks(iblk), blocks(iblk)%state(itime))
-        call calc_t                       (blocks(iblk), blocks(iblk)%state(itime))
-      end if
+      if (baroclinic) call calc_ph        (blocks(iblk), blocks(iblk)%state(itime))
       call calc_m                         (blocks(iblk), blocks(iblk)%state(itime))
+      if (baroclinic) call calc_t         (blocks(iblk), blocks(iblk)%state(itime))
       call calc_mf                        (blocks(iblk), blocks(iblk)%state(itime), dt)
       call calc_ke                        (blocks(iblk), blocks(iblk)%state(itime))
       call calc_pv                        (blocks(iblk), blocks(iblk)%state(itime))
@@ -106,11 +104,9 @@ contains
     select case (pass)
     ! --------------------------------------------------------------------------
     case (all_pass)
-      if (baroclinic) then
-        call calc_ph                      (block, state)
-        call calc_t                       (block, state)
-      end if
+      if (baroclinic) call calc_ph        (block, state)
       call calc_m                         (block, state)
+      if (baroclinic) call calc_t         (block, state)
       call calc_mf                        (block, state, dt)
       call calc_ke                        (block, state)
       call calc_div                       (block, state)
