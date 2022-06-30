@@ -247,7 +247,7 @@ contains
           end do
           call fill_halo(block, q(:,:,:,l,new), full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
           do i = 1, 5
-            call zonal_damp_on_cell(block, 2, dt_adv, q(:,:,:,l,new))
+            call zonal_damp_on_cell(block, 2, q(:,:,:,l,new))
           end do
           call fill_halo(block, q(:,:,:,l,new), full_lon=.true., full_lat=.true., full_lev=.true.)
           end associate

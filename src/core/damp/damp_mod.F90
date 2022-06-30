@@ -67,17 +67,17 @@ contains
     end if
     if (use_zonal_damp) then
       do cyc = 1, zonal_damp_cycles
-        call zonal_damp_on_lon_edge(block, zonal_damp_order, dt, state%u_lon)
-        call zonal_damp_on_lat_edge(block, zonal_damp_order, dt, state%v_lat)
+        call zonal_damp_on_lon_edge(block, zonal_damp_order, state%u_lon)
+        call zonal_damp_on_lat_edge(block, zonal_damp_order, state%v_lat)
         if (baroclinic) then
           state%pt = state%pt * state%m
-          call zonal_damp_on_cell(block, zonal_damp_order, dt, state%phs)
+          call zonal_damp_on_cell(block, zonal_damp_order, state%phs)
           call calc_ph(block, state)
           call calc_m(block, state)
-          call zonal_damp_on_cell(block, zonal_damp_order, dt, state%pt)
+          call zonal_damp_on_cell(block, zonal_damp_order, state%pt)
           state%pt = state%pt / state%m
         else
-          call zonal_damp_on_cell(block, zonal_damp_order, dt, state%gz)
+          call zonal_damp_on_cell(block, zonal_damp_order, state%gz)
         end if
       end do
     end if

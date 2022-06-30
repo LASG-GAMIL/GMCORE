@@ -72,11 +72,10 @@ contains
 
   end subroutine zonal_damp_final
 
-  subroutine zonal_damp_on_lon_edge(block, order, dt, f)
+  subroutine zonal_damp_on_lon_edge(block, order, f)
 
     type(block_type), intent(in), target :: block
     integer, intent(in) :: order
-    real(8), intent(in) :: dt
     real(r8), intent(inout) :: f(block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
                                  block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
                                  block%mesh%full_lev_lb:block%mesh%full_lev_ub)
@@ -87,18 +86,17 @@ contains
     mesh => block%mesh
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-        call zonal_damp_1d(block, order, dt, mesh%half_lon_lb, mesh%half_lon_ub, mesh%lon_halo_width, f(:,j,k), wgt_full_lat(j))
+        call zonal_damp_1d(block, order, mesh%half_lon_lb, mesh%half_lon_ub, mesh%lon_halo_width, f(:,j,k), wgt_full_lat(j))
       end do
     end do
     call fill_halo(block, f, full_lon=.false., full_lat=.true., full_lev=.true.)
 
   end subroutine zonal_damp_on_lon_edge
 
-  subroutine zonal_damp_on_lat_edge(block, order, dt, f)
+  subroutine zonal_damp_on_lat_edge(block, order, f)
 
     type(block_type), intent(in), target :: block
     integer, intent(in) :: order
-    real(8), intent(in) :: dt
     real(r8), intent(inout) :: f(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
                                  block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
                                  block%mesh%full_lev_lb:block%mesh%full_lev_ub)
@@ -109,18 +107,17 @@ contains
     mesh => block%mesh
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
-        call zonal_damp_1d(block, order, dt, mesh%full_lon_lb, mesh%full_lon_ub, mesh%lon_halo_width, f(:,j,k), wgt_half_lat(j))
+        call zonal_damp_1d(block, order, mesh%full_lon_lb, mesh%full_lon_ub, mesh%lon_halo_width, f(:,j,k), wgt_half_lat(j))
       end do
     end do
     call fill_halo(block, f, full_lon=.true., full_lat=.false., full_lev=.true.)
 
   end subroutine zonal_damp_on_lat_edge
 
-  subroutine zonal_damp_on_lev_edge(block, order, dt, f)
+  subroutine zonal_damp_on_lev_edge(block, order, f)
 
     type(block_type), intent(in), target :: block
     integer, intent(in) :: order
-    real(8), intent(in) :: dt
     real(r8), intent(inout) :: f(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
                                  block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
                                  block%mesh%half_lev_lb:block%mesh%half_lev_ub)
@@ -131,18 +128,17 @@ contains
     mesh => block%mesh
     do k = mesh%half_lev_ibeg, mesh%half_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-        call zonal_damp_1d(block, order, dt, mesh%full_lon_lb, mesh%full_lon_ub, mesh%lon_halo_width, f(:,j,k), wgt_full_lat(j))
+        call zonal_damp_1d(block, order, mesh%full_lon_lb, mesh%full_lon_ub, mesh%lon_halo_width, f(:,j,k), wgt_full_lat(j))
       end do
     end do
     call fill_halo(block, f, full_lon=.true., full_lat=.true., full_lev=.false.)
 
   end subroutine zonal_damp_on_lev_edge
 
-  subroutine zonal_damp_on_cell_2d(block, order, dt, f)
+  subroutine zonal_damp_on_cell_2d(block, order, f)
 
     type(block_type), intent(in), target :: block
     integer, intent(in) :: order
-    real(8), intent(in) :: dt
     real(r8), intent(inout) :: f(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
                                  block%mesh%full_lat_lb:block%mesh%full_lat_ub)
 
@@ -151,17 +147,16 @@ contains
 
     mesh => block%mesh
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-      call zonal_damp_1d(block, order, dt, mesh%full_lon_lb, mesh%full_lon_ub, mesh%lon_halo_width, f(:,j), wgt_full_lat(j))
+      call zonal_damp_1d(block, order, mesh%full_lon_lb, mesh%full_lon_ub, mesh%lon_halo_width, f(:,j), wgt_full_lat(j))
     end do
     call fill_halo(block, f, full_lon=.true., full_lat=.true.)
 
   end subroutine zonal_damp_on_cell_2d
 
-  subroutine zonal_damp_on_cell_3d(block, order, dt, f)
+  subroutine zonal_damp_on_cell_3d(block, order, f)
 
     type(block_type), intent(in), target :: block
     integer, intent(in) :: order
-    real(8), intent(in) :: dt
     real(r8), intent(inout) :: f(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
                                  block%mesh%full_lat_lb:block%mesh%full_lat_ub, &
                                  block%mesh%full_lev_lb:block%mesh%full_lev_ub)
@@ -172,18 +167,17 @@ contains
     mesh => block%mesh
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-        call zonal_damp_1d(block, order, dt, mesh%full_lon_lb, mesh%full_lon_ub, mesh%lon_halo_width, f(:,j,k), wgt_full_lat(j))
+        call zonal_damp_1d(block, order, mesh%full_lon_lb, mesh%full_lon_ub, mesh%lon_halo_width, f(:,j,k), wgt_full_lat(j))
       end do
     end do
     call fill_halo(block, f, full_lon=.true., full_lat=.true., full_lev=.true.)
 
   end subroutine zonal_damp_on_cell_3d
 
-  subroutine zonal_damp_on_vtx(block, order, dt, f)
+  subroutine zonal_damp_on_vtx(block, order, f)
 
     type(block_type), intent(in), target :: block
     integer, intent(in) :: order
-    real(8), intent(in) :: dt
     real(r8), intent(inout) :: f(block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
                                  block%mesh%half_lat_lb:block%mesh%half_lat_ub, &
                                  block%mesh%full_lev_lb:block%mesh%full_lev_ub)
@@ -194,18 +188,17 @@ contains
     mesh => block%mesh
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
-        call zonal_damp_1d(block, order, dt, mesh%half_lon_lb, mesh%half_lon_ub, mesh%lon_halo_width, f(:,j,k), wgt_half_lat(j))
+        call zonal_damp_1d(block, order, mesh%half_lon_lb, mesh%half_lon_ub, mesh%lon_halo_width, f(:,j,k), wgt_half_lat(j))
       end do
     end do
     call fill_halo(block, f, full_lon=.false., full_lat=.false., full_lev=.true.)
 
   end subroutine zonal_damp_on_vtx
 
-  subroutine zonal_damp_1d(block, order, dt, lb, ub, hw, f, wgt)
+  subroutine zonal_damp_1d(block, order, lb, ub, hw, f, wgt)
 
     type(block_type), intent(in) :: block
     integer, intent(in) :: order
-    real(8), intent(in) :: dt
     integer, intent(in) :: lb
     integer, intent(in) :: ub
     integer, intent(in) :: hw
@@ -218,7 +211,7 @@ contains
 
     if (wgt == 0) return
 
-    c = 0.5_r8**order / dt
+    c = 0.5_r8**order
     is = lb + hw
     ie = ub - hw
     if (order > 2) then
@@ -234,11 +227,11 @@ contains
         g(i) = g(i) * max(0.0_r8, sign(1.0_r8, -g(i) * (f(i) - f(i-1))))
       end do
       do i = is, ie
-        f(i) = wgt * (f(i) - c * dt * (g(i+1) - g(i))) + (1 - wgt) * f(i)
+        f(i) = wgt * (f(i) - c * (g(i+1) - g(i))) + (1 - wgt) * f(i)
       end do
     else
       do i = is, ie
-        g(i) = wgt * (f(i) + c * dt * (f(i-1) - 2.0_r8 * f(i) + f(i+1))) + (1 - wgt) * f(i)
+        g(i) = wgt * (f(i) + c * (f(i-1) - 2.0_r8 * f(i) + f(i+1))) + (1 - wgt) * f(i)
       end do
       f(is:ie) = g(is:ie)
     end if
