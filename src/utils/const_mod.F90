@@ -24,6 +24,7 @@ module const_mod
   real(r8)            :: Rv         ! J kg-1 K-1
   real(r8)            :: cp         ! J kg-1 K-1
   real(r8)            :: cv         ! J kg-1 K-1
+  real(r8)            :: Rd_o_Rv
   real(r8)            :: Rd_o_cp
   real(r8)            :: Rd_o_g
   real(r8)            :: cp_o_cv
@@ -60,6 +61,7 @@ contains
       cp         = 1004.0d0
       cv         = 717.0d0
       lapse_rate = 0.006d0
+      Rd_o_Rv    = Rd / Rv
     case ('mars')
       omega      = 2 * pi / 88642.663d0
       radius     = 3.38992d6

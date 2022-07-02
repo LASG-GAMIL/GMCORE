@@ -128,39 +128,39 @@ set(gmcore_files
   src/utils/tridiag_spk_mod.F90
   src/utils/tridiag_mod.F90
   src/utils/debug_mod.F90
-  src/core/time_schemes_mod.F90
-  src/core/pgf/pgf_mod.F90
-  src/core/pgf/pgf_swm_mod.F90
-  src/core/pgf/pgf_lin97_mod.F90
-  src/core/mesh_mod.F90
-  src/core/vert_coord/sigma_coord_mod.F90
-  src/core/vert_coord/hybrid_coord_test_mod.F90
-  src/core/vert_coord/hybrid_coord_ecmwf_mod.F90
-  src/core/vert_coord/hybrid_coord_mars_mod.F90
-  src/core/vert_coord/hybrid_coord_mod.F90
-  src/core/vert_coord/vert_coord_mod.F90
-  src/core/state_mod.F90
-  src/core/static_mod.F90
-  src/core/tend_mod.F90
-  src/core/nh_mod.F90
-  src/core/interp_mod.F90
-  src/core/operators_mod.F90
-  src/core/filter_types_mod.F90
-  src/core/filter_mod.F90
-  src/core/moist_mod.F90
-  src/core/damp/div_damp_mod.F90
-  src/core/damp/vor_damp_mod.F90
-  src/core/damp/laplace_damp_mod.F90
-  src/core/damp/smag_damp_mod.F90
-  src/core/damp/zonal_damp_mod.F90
-  src/core/damp/damp_mod.F90
-  src/core/adv/adv_batch_mod.F90
-  src/core/adv/adv_mod.F90
-  src/core/adv/ffsl_mod.F90
-  src/core/adv/tvd_mod.F90
-  src/core/adv/weno_mod.F90
-  src/core/adv/upwind_mod.F90
-  src/core/gmcore_mod.F90
+  src/dynamics/time_schemes_mod.F90
+  src/dynamics/pgf/pgf_mod.F90
+  src/dynamics/pgf/pgf_swm_mod.F90
+  src/dynamics/pgf/pgf_lin97_mod.F90
+  src/dynamics/mesh_mod.F90
+  src/dynamics/vert_coord/sigma_coord_mod.F90
+  src/dynamics/vert_coord/hybrid_coord_test_mod.F90
+  src/dynamics/vert_coord/hybrid_coord_ecmwf_mod.F90
+  src/dynamics/vert_coord/hybrid_coord_mars_mod.F90
+  src/dynamics/vert_coord/hybrid_coord_mod.F90
+  src/dynamics/vert_coord/vert_coord_mod.F90
+  src/dynamics/state_mod.F90
+  src/dynamics/static_mod.F90
+  src/dynamics/tend_mod.F90
+  src/dynamics/nh_mod.F90
+  src/dynamics/interp_mod.F90
+  src/dynamics/operators_mod.F90
+  src/dynamics/filter_types_mod.F90
+  src/dynamics/filter_mod.F90
+  src/dynamics/moist_mod.F90
+  src/dynamics/damp/div_damp_mod.F90
+  src/dynamics/damp/vor_damp_mod.F90
+  src/dynamics/damp/laplace_damp_mod.F90
+  src/dynamics/damp/smag_damp_mod.F90
+  src/dynamics/damp/zonal_damp_mod.F90
+  src/dynamics/damp/damp_mod.F90
+  src/dynamics/adv/adv_batch_mod.F90
+  src/dynamics/adv/adv_mod.F90
+  src/dynamics/adv/ffsl_mod.F90
+  src/dynamics/adv/tvd_mod.F90
+  src/dynamics/adv/weno_mod.F90
+  src/dynamics/adv/upwind_mod.F90
+  src/dynamics/gmcore_mod.F90
   src/prepare/prepare_mod.F90
   src/prepare/topo_mod.F90
   src/prepare/latlon_interp_mod.F90
@@ -172,6 +172,7 @@ set(gmcore_files
   src/prepare/openmars_reader_mod.F90
   src/prepare/bkg_mod.F90
   src/physics/test_forcing_mod.F90
+  src/physics/simple_physics_v6.F90
   src/tests/adv/deform_test_mod.F90
   src/tests/adv/solid_rotation_test_mod.F90
   src/tests/adv/moving_vortices_test_mod.F90
