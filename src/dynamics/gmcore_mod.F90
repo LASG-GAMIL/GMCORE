@@ -252,7 +252,7 @@ contains
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              te_ie = te_ie + state%m(i,j,k) * cp * state%t(i,j,k) * mesh%area_cell(j)
+              te_ie = te_ie + state%m(i,j,k) * cpd * state%t(i,j,k) * mesh%area_cell(j)
             end do
           end do
         end do

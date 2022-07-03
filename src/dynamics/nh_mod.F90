@@ -424,7 +424,7 @@ contains
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            p(i,j,k) = p0 * (Rd * pt(i,j,k) * rhod(i,j,k) / p0)**cp_o_cv
+            p(i,j,k) = p0 * (Rd * pt(i,j,k) * rhod(i,j,k) / p0)**cpd_o_cvd
             if (debug_is_inf(p(i,j,k))) then
               print *, i, j, k, pt(i,j,k), rhod(i,j,k)
               stop 'NaN p!'
@@ -456,11 +456,11 @@ contains
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            new_p(i,j,k) = old_p(i,j,k) * (1.0_r8 + cp_o_cv * ( &
-              (new_m(i,j,k) * new_pt(i,j,k)) /                  &
-              (old_m(i,j,k) * old_pt(i,j,k)) -                  &
-              (new_gz_lev(i,j,k+1) - new_gz_lev(i,j,k)) /       &
-              (old_gz_lev(i,j,k+1) - old_gz_lev(i,j,k))         &
+            new_p(i,j,k) = old_p(i,j,k) * (1.0_r8 + cpd_o_cvd * ( &
+              (new_m(i,j,k) * new_pt(i,j,k)) /                    &
+              (old_m(i,j,k) * old_pt(i,j,k)) -                    &
+              (new_gz_lev(i,j,k+1) - new_gz_lev(i,j,k)) /         &
+              (old_gz_lev(i,j,k+1) - old_gz_lev(i,j,k))           &
             ))
           end do
         end do
@@ -576,7 +576,7 @@ contains
       ! last: n, old: *, new: n + 1
       gdtbeta     = g * dt * beta
       gdt1mbeta   = g * dt * (1 - beta)
-      gdtbeta2gam = (g * dt * beta)**2 * cp_o_cv
+      gdtbeta2gam = (g * dt * beta)**2 * cpd_o_cvd
       ! FIXME: Two Poles may skip the duplicate calculation?
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -596,7 +596,7 @@ contains
           w1(k) = w1(k) + gdt1mbeta * (star_p_lev(i,j,k) - star_p(i,j,k-1)) / star_m_lev(i,j,k)
           ! Use linearized state of ideal gas to calculate the first part of ∂pⁿ⁺¹ (i.e. dp1).
           do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
-            dp1 = (old_p(i,j,k) - old_p(i,j,k-1)) + cp_o_cv * ((                                     &
+            dp1 = (old_p(i,j,k) - old_p(i,j,k-1)) + cpd_o_cvd * ((                                   &
               old_p(i,j,k  ) * new_m(i,j,k  ) * new_pt(i,j,k  ) / old_m(i,j,k  ) / old_pt(i,j,k  ) - &
               old_p(i,j,k-1) * new_m(i,j,k-1) * new_pt(i,j,k-1) / old_m(i,j,k-1) / old_pt(i,j,k-1)   &
             ) - (                                                                                    &

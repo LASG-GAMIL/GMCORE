@@ -98,7 +98,7 @@ module simple_physics_mod
                        rair   => Rd     , &
                        rh2o   => Rv     , &
                        epsilo => Rd_o_Rv, &
-                       cpair  => cp
+                       cpair  => cpd
 
   implicit none
 

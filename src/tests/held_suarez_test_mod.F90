@@ -102,7 +102,7 @@ contains
         kt = ka + (ks - ka) * max(0.0_r8, (mesh%full_lev(k) - sig_b) / (1.0_r8 - sig_b)) * mesh%full_cos_lat(j)**4
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           p_p0 = ph(i,j,k) / p0
-          teq = max(200.0_r8, (315.0_r8 - dt_lat * mesh%full_sin_lat(j)**2 - dpt_lev * log(p_p0) * mesh%full_cos_lat(j)**2) * p_p0**Rd_o_cp)
+          teq = max(200.0_r8, (315.0_r8 - dt_lat * mesh%full_sin_lat(j)**2 - dpt_lev * log(p_p0) * mesh%full_cos_lat(j)**2) * p_p0**Rd_o_cpd)
           pt(i,j,k) = pt(i,j,k) - dt * kt * pt(i,j,k) * (1.0_r8 - teq / t(i,j,k))
         end do
       end do

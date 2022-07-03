@@ -150,7 +150,7 @@ contains
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           ph_lev(i,j,k) = vert_coord_calc_ph_lev(k, phs(i,j))
-          ph_exn_lev(i,j,k) = ph_lev(i,j,k)**Rd_o_cp
+          ph_exn_lev(i,j,k) = ph_lev(i,j,k)**Rd_o_cpd
         end do
       end do
     end do

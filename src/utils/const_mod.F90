@@ -22,13 +22,13 @@ module const_mod
   real(r8)            :: g          ! m2 s-2
   real(r8)            :: Rd         ! J kg-1 K-1
   real(r8)            :: Rv         ! J kg-1 K-1
-  real(r8)            :: cp         ! J kg-1 K-1
-  real(r8)            :: cv         ! J kg-1 K-1
+  real(r8)            :: cpd        ! J kg-1 K-1
+  real(r8)            :: cvd        ! J kg-1 K-1
   real(r8)            :: Rd_o_Rv
-  real(r8)            :: Rd_o_cp
+  real(r8)            :: Rd_o_cpd
   real(r8)            :: Rd_o_g
-  real(r8)            :: cp_o_cv
-  real(r8)            :: cv_o_cp
+  real(r8)            :: cpd_o_cvd
+  real(r8)            :: cvd_o_cpd
   real(r8)            :: lapse_rate ! K m-1
 
   integer, parameter :: nest_ratio = 3
@@ -58,8 +58,8 @@ contains
       g          = 9.80616d0
       Rd         = 287.04d0
       Rv         = 461.497d0
-      cp         = 1004.0d0
-      cv         = 717.0d0
+      cpd        = 1004.0d0
+      cvd        = 717.0d0
       lapse_rate = 0.006d0
       Rd_o_Rv    = Rd / Rv
     case ('mars')
@@ -67,17 +67,17 @@ contains
       radius     = 3.38992d6
       g          = 3.72d0
       Rd         = 191.84d0
-      cp         = 735.0d0
-      cv         = 543.16d0
+      cpd        = 735.0d0
+      cvd        = 543.16d0
       lapse_rate = 5.06d-3
     case default
       call log_error('Invalid planet!')
     end select
 
     Rd_o_g  = Rd / g
-    Rd_o_cp = Rd / cp
-    cp_o_cv = cp / cv
-    cv_o_cp = cv / cp
+    Rd_o_cpd = Rd / cpd
+    cpd_o_cvd = cpd / cvd
+    cvd_o_cpd = cvd / cpd
 
   end subroutine const_init
 

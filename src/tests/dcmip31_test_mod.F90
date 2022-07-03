@@ -37,7 +37,7 @@ contains
 
     omega = 0.0_r8
     radius = radius / X
-    t0 = g**2 / N2 / cp
+    t0 = g**2 / N2 / cpd
 
   end subroutine dcmip31_test_set_params
 
@@ -77,7 +77,7 @@ contains
         ts = t0 + (teq - t0) * exp(-u0 * N2 / (4 * g**2) * (u0 + 2 * omega * radius) * (cos_2lat - 1))
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           phs(i,j) = peq * exp(u0 / (4 * t0 * Rd) * (u0 + 2 * omega * radius) * (cos_2lat - 1)) * &
-                     (ts / teq)**(1 / Rd_o_cp)
+                     (ts / teq)**(1 / Rd_o_cpd)
         end do
       end do
       call fill_halo(block, phs, full_lon=.true., full_lat=.true.)
@@ -107,7 +107,7 @@ contains
             cos_2lat = cos(2 * mesh%full_lat(j))
             ts = t0 + (teq - t0) * exp(-u0 * N2 / (4 * g**2) * (u0 + 2 * omega * radius) * (cos_2lat - 1))
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              gz_lev(i,j,k) = - g**2 / N2 * log(ts / t0 * ((ph_lev(i,j,k) / phs(i,j))**Rd_o_cp - 1) + 1)
+              gz_lev(i,j,k) = - g**2 / N2 * log(ts / t0 * ((ph_lev(i,j,k) / phs(i,j))**Rd_o_cpd - 1) + 1)
             end do
           end do
         end do
@@ -119,7 +119,7 @@ contains
           cos_2lat = cos(2 * mesh%full_lat(j))
           ts = t0 + (teq - t0) * exp(-u0 * N2 / (4 * g**2) * (u0 + 2 * omega * radius) * (cos_2lat - 1))
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            pt(i,j,k) = ts * (p0 / phs(i,j))**Rd_o_cp / (ts / t0 * ((ph(i,j,k) / phs(i,j))**Rd_o_cp - 1) + 1)
+            pt(i,j,k) = ts * (p0 / phs(i,j))**Rd_o_cpd / (ts / t0 * ((ph(i,j,k) / phs(i,j))**Rd_o_cpd - 1) + 1)
           end do
         end do
       end do

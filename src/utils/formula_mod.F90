@@ -13,7 +13,7 @@ contains
 
     real(r8), parameter :: p0 = 1.0e5_r8
 
-    res = t * (p0 / p)**Rd_o_cp
+    res = t * (p0 / p)**Rd_o_cpd
 
   end function potential_temperature
 
@@ -24,7 +24,7 @@ contains
 
     real(r8), parameter :: p0 = 1.0e5_r8
 
-    res = pt * (p / p0)**Rd_o_cp
+    res = pt * (p / p0)**Rd_o_cpd
 
   end function temperature
 
@@ -35,7 +35,7 @@ contains
 
     real(r8), parameter :: p0 = 1.0e5_r8
 
-    res = p0 / Rd / pt * (p / p0)**cv_o_cp
+    res = p0 / Rd / pt * (p / p0)**cvd_o_cpd
 
   end function dry_air_density
 
