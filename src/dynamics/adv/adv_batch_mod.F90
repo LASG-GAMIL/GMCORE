@@ -18,8 +18,9 @@ module adv_batch_mod
   ! Different tracers can be combined into one batch, and adved in different frequencfly.
   type adv_batch_type
     type(mesh_type), pointer :: mesh => null()
-    character(10) :: loc       = 'cell'
-    character(30) :: alert_key = ''
+    character(10) :: loc  = 'cell'
+    character(30) :: name = ''
+    logical  :: dynamic = .false.
     integer  :: nstep   = 0 ! Number of dynamic steps for one adv step
     integer  :: uv_step = 0 ! Step counter for u and v
     integer  :: we_step = 0 ! Step counter for we
@@ -69,20 +70,22 @@ module adv_batch_mod
 
 contains
 
-  subroutine adv_batch_init(this, mesh, loc, alert_key, dt)
+  subroutine adv_batch_init(this, mesh, loc, name, dt, dynamic)
 
     class(adv_batch_type), intent(inout) :: this
     type(mesh_type), intent(in), target :: mesh
     character(*), intent(in) :: loc
-    character(*), intent(in) :: alert_key
+    character(*), intent(in) :: name
     real(r8), intent(in) :: dt
+    logical, intent(in) :: dynamic
 
     call this%clear()
 
     this%mesh      => mesh
     this%loc       = loc
-    this%alert_key = alert_key
+    this%name      = name
     this%dt        = dt
+    this%dynamic   = dynamic
     this%nstep     = dt / dt_dyn
     this%uv_step   = 0
     this%we_step   = 0
@@ -141,7 +144,7 @@ contains
       call log_error('Invalid grid location ' // trim(loc) // '!', __FILE__, __LINE__)
     end select
 
-    call time_add_alert(alert_key, seconds=dt)
+    call time_add_alert(name, seconds=dt)
 
   end subroutine adv_batch_init
 
@@ -151,8 +154,9 @@ contains
 
     this%mesh      => null()
     this%loc       = 'cell'
-    this%alert_key = ''
+    this%name      = ''
     this%dt        = 0
+    this%dynamic   = .false.
     this%nstep     = 0
     this%uv_step   = 0
     this%we_step   = 0
@@ -235,7 +239,7 @@ contains
     if (this%uv_step == 0) then
       this%u = u
       this%v = v
-      if (this%nstep > 1) this%uv_step = this%uv_step + 1
+      if (.not. this%dynamic) this%uv_step = this%uv_step + 1
     else if (this%uv_step == this%nstep) then
       this%u = (this%u + u) / (this%nstep + 1)
       this%v = (this%v + v) / (this%nstep + 1)
@@ -385,10 +389,10 @@ contains
     if (this%mf_step == 0) then
       this%mfx = mfx
       this%mfy = mfy
-      if (this%nstep > 1) this%mf_step = this%mf_step + 1
+      if (.not. this%dynamic) this%mf_step = this%mf_step + 1
     else if (this%mf_step == this%nstep) then
-      this%mfx = this%mfx + mfx
-      this%mfy = this%mfy + mfy
+      this%mfx = (this%mfx + mfx) / (this%nstep + 1)
+      this%mfy = (this%mfy + mfy) / (this%nstep + 1)
       this%mf_step = 0
     else
       this%mfx = this%mfx + mfx
@@ -508,7 +512,7 @@ contains
     if (this%we_step == 0) then
       this%we    = we
       this%m_lev = m_lev
-      if (this%nstep > 1) this%we_step = this%we_step + 1
+      if (.not. this%dynamic) this%we_step = this%we_step + 1
     else if (this%we_step == this%nstep) then
       this%we    = (this%we    + we   ) / (this%nstep + 1)
       this%m_lev = (this%m_lev + m_lev) / (this%nstep + 1)

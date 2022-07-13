@@ -156,12 +156,12 @@ contains
 
     integer i, j, k, l, m
     real(r8) work(block%mesh%full_lon_ibeg:block%mesh%full_lon_iend,block%mesh%num_full_lev)
-    real(r8) pole(block%mesh%num_full_lev)
+    real(r8) pole(block%mesh%num_full_lev), qm0, qm1, qm2, qm0_half
 
     call adv_accum_wind(block, itime)
 
     do m = 1, size(block%adv_batches)
-      if (time_is_alerted(block%adv_batches(m)%alert_key) .and. time_step > 0) then
+      if (time_is_alerted(block%adv_batches(m)%name) .and. time_step > 0) then
         do l = 1, size(block%adv_batches(m)%tracer_names)
           associate (mesh    => block%mesh                  , &
                      old     => block%adv_batches(m)%old    , &
@@ -230,6 +230,30 @@ contains
               end do
             end do
           end do
+          ! Fill possible negative values.
+          do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+            do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+                if (q(i,j,k,l,new) < 0) then
+                  qm0 = q(i  ,j,k,l,new) * block%state(itime)%m(i  ,j,k)
+                  qm1 = q(i-1,j,k,l,new) * block%state(itime)%m(i-1,j,k)
+                  qm2 = q(i+1,j,k,l,new) * block%state(itime)%m(i+1,j,k)
+                  qm0_half = 0.5_r8 * qm0
+                  if (qm1 >= qm0_half .and. qm2 >= qm0_half) then
+                    q(i-1,j,k,l,new) = (qm1 - qm0_half) / block%state(itime)%m(i-1,j,k)
+                    q(i+1,j,k,l,new) = (qm2 - qm0_half) / block%state(itime)%m(i+1,j,k)
+                  else if (qm1 > qm0) then
+                    q(i-1,j,k,l,new) = (qm1 - qm0) / block%state(itime)%m(i-1,j,k)
+                  else if (qm2 > qm0) then
+                    q(i+1,j,k,l,new) = (qm2 - qm0) / block%state(itime)%m(i+1,j,k)
+                  else
+                    call log_error('Negative tracer!')
+                  end if
+                  q(i,j,k,l,new) = 0
+                end if
+              end do
+            end do
+          end do
           ! Set upper and lower boundary conditions.
           do k = mesh%full_lev_lb, mesh%full_lev_ibeg - 1
             q(:,:,k,l,new) = q(:,:,mesh%full_lev_ibeg,l,new)
@@ -242,6 +266,30 @@ contains
             do j = mesh%full_lat_ibeg, mesh%full_lat_iend
               do i = mesh%full_lon_ibeg, mesh%full_lon_iend
                 q(i,j,k,l,new) = q(i,j,k,l,new) - ((qmf_lev(i,j,k+1) - qmf_lev(i,j,k)) * dt_adv) / block%state(itime)%m(i,j,k)
+              end do
+            end do
+          end do
+          ! Fill possible negative values.
+          do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+            do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+              do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+                if (q(i,j,k,l,new) < 0) then
+                  qm0 = q(i,j,k  ,l,new) * block%state(itime)%m(i  ,j,k)
+                  qm1 = merge(q(i,j,k-1,l,new) * block%state(itime)%m(i,j,k-1), 0.0_r8, k > mesh%full_lev_ibeg)
+                  qm2 = merge(q(i,j,k+1,l,new) * block%state(itime)%m(i,j,k+1), 0.0_r8, k < mesh%full_lev_iend)
+                  qm0_half = 0.5_r8 * qm0
+                  if (qm1 >= qm0_half .and. qm2 >= qm0_half) then
+                    if (qm1 > 0) q(i,j,k-1,l,new) = (qm1 - qm0_half) / block%state(itime)%m(i,j,k-1)
+                    if (qm2 > 0) q(i,j,k+1,l,new) = (qm2 - qm0_half) / block%state(itime)%m(i,j,k+1)
+                  else if (qm1 > qm0) then
+                    if (qm1 > 0) q(i,j,k-1,l,new) = (qm1 - qm0) / block%state(itime)%m(i,j,k-1)
+                  else if (qm2 > qm0) then
+                    if (qm2 > 0) q(i,j,k+1,l,new) = (qm2 - qm0) / block%state(itime)%m(i,j,k+1)
+                  else
+                    call log_error('Negative tracer!')
+                  end if
+                  q(i,j,k,l,new) = 0
+                end if
               end do
             end do
           end do
@@ -291,8 +339,8 @@ contains
     real(r8) unique_tracer_dt(100)
 
     if (.not. advection) then
-      call block%adv_batch_mass%init(block%mesh, 'cell', 'mass', dt_dyn)
-      ! call block%adv_batch_pv  %init(block%mesh, 'vtx' , 'pv'  , dt_dyn)
+      call block%adv_batch_mass%init(block%mesh, 'cell', 'mass', dt_dyn, dynamic=.true.)
+      ! call block%adv_batch_pv  %init(block%mesh, 'vtx' , 'pv'  , dt_dyn, dynamic=.true.)
     end if
 
     nbatch = 0
@@ -324,14 +372,14 @@ contains
     ! Initialize advection batches in block objects and allocate tracer arrays in state objects.
     allocate(block%adv_batches(nbatch))
     do i = 1, nbatch
-      call block%adv_batches(i)%init(block%mesh, 'cell', unique_batch_names(i), unique_tracer_dt(i))
+      call block%adv_batches(i)%init(block%mesh, 'cell', unique_batch_names(i), unique_tracer_dt(i), dynamic=.false.)
     end do
 
     ! Record tracer information in advection batches.
     do i = 1, nbatch
       nbatch_tracer = 0
       do j = 1, ntracer
-        if (batch_names(j) == block%adv_batches(i)%alert_key) then
+        if (batch_names(j) == block%adv_batches(i)%name) then
           nbatch_tracer = nbatch_tracer + 1
         end if
       end do
@@ -344,7 +392,7 @@ contains
       end associate
       k = 0
       do j = 1, ntracer
-        if (batch_names(j) == block%adv_batches(i)%alert_key) then
+        if (batch_names(j) == block%adv_batches(i)%name) then
           k = k + 1
           block%adv_batches(i)%tracer_names     (k) = tracer_names     (j)
           block%adv_batches(i)%tracer_long_names(k) = tracer_long_names(j)

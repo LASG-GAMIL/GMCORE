@@ -123,6 +123,7 @@ contains
       do m = 1, size(block%adv_batches)
         call block%adv_batches(m)%copy_old_m(state%m)
       end do
+      call adv_accum_wind(block, old)
       end associate
     end do
 
