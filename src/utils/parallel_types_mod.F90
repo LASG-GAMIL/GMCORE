@@ -62,6 +62,7 @@ module parallel_types_mod
     logical :: at_north_pole = .false.
     type(zonal_circle_type) zonal_circle
     type(process_neighbor_type), allocatable :: ngb(:) ! Neighbor processes
+    character(30) :: hostname = ''
 
     integer decomp_type
     integer decomp_loc

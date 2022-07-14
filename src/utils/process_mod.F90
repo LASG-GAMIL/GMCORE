@@ -32,7 +32,7 @@ contains
 
     integer, intent(in), optional :: comm
 
-    integer ierr
+    integer ierr, n
 
     if (present(comm)) then
       proc%comm = comm
@@ -43,6 +43,7 @@ contains
     call MPI_COMM_GROUP(proc%comm, proc%group, ierr)
     call MPI_COMM_SIZE(proc%comm, proc%np, ierr)
     call MPI_COMM_RANK(proc%comm, proc%id, ierr)
+    call MPI_GET_PROCESSOR_NAME(proc%hostname, n, ierr)
 
     call setup_mpi_simple()
     call decompose_domains()

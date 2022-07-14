@@ -59,6 +59,7 @@ program gmcore_driver
     call initial_read()
   else if (topo_file /= 'N/A' .and. bkg_file /= 'N/A') then
     call prepare_run()
+    call prepare_final() ! Release memory for preparation.
   else
     select case (test_case)
     case ('steady_state')
