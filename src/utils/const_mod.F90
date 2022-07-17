@@ -30,6 +30,7 @@ module const_mod
   real(r8)            :: cpd_o_cvd
   real(r8)            :: cvd_o_cpd
   real(r8)            :: lapse_rate ! K m-1
+  real(r8)            :: p0         ! Pa
 
   integer, parameter :: nest_ratio = 3
   integer, parameter :: inf_i4 = 10000000
@@ -62,6 +63,7 @@ contains
       cvd        = 717.0d0
       lapse_rate = 0.006d0
       Rd_o_Rv    = Rd / Rv
+      p0         = 1.0d5
     case ('mars')
       omega      = 2 * pi / 88642.663d0
       radius     = 3.38992d6
@@ -70,6 +72,7 @@ contains
       cpd        = 735.0d0
       cvd        = 543.16d0
       lapse_rate = 5.06d-3
+      p0         = 6.0d2
     case default
       call log_error('Invalid planet!')
     end select

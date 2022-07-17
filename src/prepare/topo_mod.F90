@@ -33,7 +33,6 @@ contains
     character(*), intent(in) :: topo_file
 
     integer i
-    real(r8), allocatable :: tmp(:)
 
     call topo_final()
 
@@ -70,15 +69,6 @@ contains
       call fiona_input('topo', 'latitude' , topo_lat)
       call fiona_input('topo', 'alt'      , topo_gzs)
       call fiona_end_input('topo')
-
-      ! Reverse latitude dimension from the South Pole to the North Pole.
-      topo_lat = topo_lat(num_topo_lat:1:-1)
-      allocate(tmp(num_topo_lat))
-      do i = 1, num_topo_lon
-        tmp = topo_gzs(i,:)
-        topo_gzs(i,:) = tmp(num_topo_lat:1:-1)
-      end do
-      deallocate(tmp)
     case default
       call log_error('Unknown topo_type "' // trim(topo_type) // '"!', pid=proc%id)
     end select

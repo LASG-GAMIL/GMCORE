@@ -476,7 +476,7 @@ contains
     type(block_type), intent(in) :: block
     type(state_type), intent(inout) :: state
 
-    integer i, j, k
+    integer i, j, k, l
 
     associate (mesh   => block%mesh      , &
                ph     => state%ph        , & ! in
@@ -494,8 +494,11 @@ contains
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             m(i,j,k) = ph_lev(i,j,k+1) - ph_lev(i,j,k)
             if (m(i,j,k) <= 0) then
+              do l = mesh%half_lev_ibeg, mesh%half_lev_iend
+                print *, l, ph_lev(i,j,l)
+              end do
               print *, mesh%full_lon_deg(i), '(', to_str(i), ')', mesh%full_lat_deg(j), '(', to_str(j), ')', k
-              print *, 'Model is instable!'
+              print *, 'The pressure levels are not monotonic!'
               call process_stop(1)
             end if
           end do

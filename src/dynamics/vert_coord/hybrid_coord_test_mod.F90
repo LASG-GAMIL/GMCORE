@@ -28,7 +28,7 @@ contains
 
   subroutine hybrid_coord_test_l15(p0, ptop, hyai, hybi)
 
-    real(r8), intent(out) :: p0
+    real(r8), intent(in) :: p0
     real(r8), intent(out) :: ptop
     real(r8), intent(out) :: hyai(16)
     real(r8), intent(out) :: hybi(16)
@@ -70,14 +70,13 @@ contains
             0.88948427  , & !  15
             1.00000000]     !  16
 
-    p0 = 1d5 ! Pa
     ptop = p0 * hyai(1)
 
   end subroutine hybrid_coord_test_l15
 
   subroutine hybrid_coord_test_l26(p0, ptop, hyai, hybi)
 
-    real(r8), intent(out) :: p0
+    real(r8), intent(in) :: p0
     real(r8), intent(out) :: ptop
     real(r8), intent(out) :: hyai(27)
     real(r8), intent(out) :: hybi(27)
@@ -142,14 +141,13 @@ contains
             0.9851122    , & ! 26
             1.0000000]       ! 27
 
-    p0 = 1d5 ! Pa
     ptop = p0 * hyai(1)
 
   end subroutine hybrid_coord_test_l26
 
   subroutine hybrid_coord_test_l30(p0, ptop, hyai, hybi)
 
-    real(r8), intent(out) :: p0
+    real(r8), intent(in) :: p0
     real(r8), intent(out) :: ptop
     real(r8), intent(out) :: hyai(31)
     real(r8), intent(out) :: hybi(31)
@@ -222,14 +220,13 @@ contains
             0.94371412  , & !  30
             1.00000000]     !  31
 
-    p0 = 1d5 ! Pa
     ptop = p0 * hyai(1)
 
   end subroutine hybrid_coord_test_l30
 
   subroutine hybrid_coord_test_l95(p0, ptop, hyai, hybi)
 
-    real(r8), intent(out) :: p0
+    real(r8), intent(in) :: p0
     real(r8), intent(out) :: ptop
     real(r8), intent(out) :: hyai(96)
     real(r8), intent(out) :: hybi(96)
@@ -436,14 +433,13 @@ contains
       1.0000000e+00   &
     ]
 
-    p0 = 1d5 ! Pa
     ptop = p0 * hyai(1)
 
   end subroutine hybrid_coord_test_l95
 
   subroutine hybrid_coord_wrf_l16(p0, ptop, hyai, hybi)
 
-    real(r8), intent(out) :: p0
+    real(r8), intent(in) :: p0
     real(r8), intent(in ) :: ptop
     real(r8), intent(out) :: hyai(17)
     real(r8), intent(out) :: hybi(17)
@@ -491,13 +487,11 @@ contains
       1.00000000e+00  &
     ]
 
-    p0 = 1d5       ! Pa
-
   end subroutine hybrid_coord_wrf_l16
 
   subroutine hybrid_coord_wrf_l26(p0, ptop, hyai, hybi)
 
-    real(r8), intent(out) :: p0
+    real(r8), intent(in) :: p0
     real(r8), intent(in ) :: ptop
     real(r8), intent(out) :: hyai(27)
     real(r8), intent(out) :: hybi(27)
@@ -565,13 +559,11 @@ contains
       1.0000000000000000  & ! 27
     ]
 
-    p0 = 1d5 ! Pa
-
   end subroutine hybrid_coord_wrf_l26
 
   subroutine hybrid_coord_wrf_l32(p0, ptop, hyai, hybi)
 
-    real(r8), intent(out) :: p0
+    real(r8), intent(in) :: p0
     real(r8), intent(in ) :: ptop
     real(r8), intent(out) :: hyai(33)
     real(r8), intent(out) :: hybi(33)
@@ -651,13 +643,11 @@ contains
       1.0000000000000000  & ! 33
     ]
 
-    p0 = 1d5       ! Pa
-
   end subroutine hybrid_coord_wrf_l32
 
   subroutine hybrid_coord_wrf_l60(p0, ptop, hyai, hybi)
 
-    real(r8), intent(out) :: p0
+    real(r8), intent(in) :: p0
     real(r8), intent(in ) :: ptop
     real(r8), intent(out) :: hyai(61)
     real(r8), intent(out) :: hybi(61)
@@ -713,13 +703,11 @@ contains
       1.0000000000000000 &
     ]
 
-    p0 = 1d5       ! Pa
-
   end subroutine hybrid_coord_wrf_l60
 
   subroutine hybrid_coord_dcmip_l60(p0, ptop, hyai, hybi)
     
-    real(r8), intent(out) :: p0
+    real(r8), intent(in) :: p0
     real(r8), intent(in ) :: ptop
     real(r8), intent(out) :: hyai(61)
     real(r8), intent(out) :: hybi(61)
@@ -740,13 +728,11 @@ contains
       hyai(k) = eta - hybi(k)
     end do
 
-    p0 = 1d5       ! Pa
-
   end subroutine hybrid_coord_dcmip_l60
 
   subroutine hybrid_coord_wrf_l64(p0, ptop, hyai, hybi)
 
-    real(r8), intent(out) :: p0
+    real(r8), intent(in) :: p0
     real(r8), intent(in ) :: ptop
     real(r8), intent(out) :: hyai(65)
     real(r8), intent(out) :: hybi(65)
@@ -890,13 +876,11 @@ contains
       1.00000000e+00  & !  65
     ]
 
-    p0 = 1d5       ! Pa
-
   end subroutine hybrid_coord_wrf_l64
 
   subroutine hybrid_coord_schar_l40(p0, ptop, hyai, hybi)
 
-    real(r8), intent(out) :: p0
+    real(r8), intent(in) :: p0
     real(r8), intent(out) :: ptop
     real(r8), intent(out) :: hyai(41)
     real(r8), intent(out) :: hybi(41)
@@ -992,14 +976,13 @@ contains
       1.0_r8                  & ! 41
     ]
 
-    p0 = 1d5       ! Pa
     ptop = p0 * hyai(1)
 
   end subroutine hybrid_coord_schar_l40
 
   subroutine hybrid_coord_dcmip21_l60(p0, ptop, hyai, hybi)
 
-    real(r8), intent(out) :: p0
+    real(r8), intent(in) :: p0
     real(r8), intent(out) :: ptop
     real(r8), intent(out) :: hyai(61)
     real(r8), intent(out) :: hybi(61)
@@ -1135,14 +1118,13 @@ contains
       1.0_r8                   & ! 61
     ]
 
-    p0 = 1d5 ! Pa
     ptop = p0 * hyai(1)
 
   end subroutine hybrid_coord_dcmip21_l60
 
   subroutine hybrid_coord_dcmip31_l10(p0, ptop, hyai, hybi)
 
-    real(r8), intent(out) :: p0
+    real(r8), intent(in) :: p0
     real(r8), intent(out) :: ptop
     real(r8), intent(out) :: hyai(11)
     real(r8), intent(out) :: hybi(11)
@@ -1178,14 +1160,13 @@ contains
       1.0_r8                  & ! 11
     ]
 
-    p0 = 1d5 ! Pa
     ptop = p0 * hyai(1)
 
   end subroutine hybrid_coord_dcmip31_l10
 
   subroutine hybrid_coord_waccm_l70(p0, ptop, hyai, hybi)
 
-    real(r8), intent(out) :: p0
+    real(r8), intent(in) :: p0
     real(r8), intent(out) :: ptop
     real(r8), intent(out) :: hyai(71)
     real(r8), intent(out) :: hybi(71)
@@ -1341,7 +1322,6 @@ contains
       1.000000000000000     &
     ]
 
-    p0 = 1d5 ! Pa
     ptop = p0 * hyai(1)
 
   end subroutine hybrid_coord_waccm_l70

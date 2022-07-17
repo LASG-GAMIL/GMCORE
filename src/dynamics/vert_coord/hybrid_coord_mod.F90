@@ -1,8 +1,8 @@
 module hybrid_coord_mod
 
   use flogger
-  use namelist_mod
-  use const_mod
+  use const_mod, only: r8
+  use namelist_mod, p0 => hybrid_coord_p0
   use hybrid_coord_test_mod
   use hybrid_coord_ecmwf_mod
   use hybrid_coord_mars_mod
@@ -24,11 +24,10 @@ module hybrid_coord_mod
   real(r8), allocatable, dimension(:) :: hyam
   real(r8), allocatable, dimension(:) :: hybm
 
-  real(r8) :: p0 = 1d5 ! Reference pressure (Pa)
   real(r8) :: local_ptop = 0
 
   namelist /hybrid_coord/ &
-    hyai, hybi, hyam, hybm, p0
+    hyai, hybi, hyam, hybm
 
 contains
 
