@@ -12,7 +12,7 @@ Check barotropic test results [here](https://github.com/gmcore-project/gmcore/wi
   - [ ] Optimize for X86 (~2021.04)
 - [ ] Nesting at middle and low latitudes (~2021.11).
 - [ ] Acceleration using GPU (~?).
-- [ ] Baroclinic version (~2021.02).
+- [X] Baroclinic version (~2021.02).
   - [X] Hydrostatic baroclinic version (done)
     - [X] Rossby-Haurwitz wave test
     - [X] Mountain induced wave test
@@ -24,15 +24,17 @@ Check barotropic test results [here](https://github.com/gmcore-project/gmcore/wi
     - [X] Quasi-2D mountain wave on reduced sphere (done)
     - [X] Circular mountain wave on reduced sphere (done)
     - [X] Internal gravity wave (done)
-- [ ] Advection module (~2021.04).
-- [ ] Incorporation with physics parameterisation (2021.05-2021.12).
+- [X] Advection module (done)
+- [ ] Incorporation with physics parameterisation (2022.07-2022.12).
 - [ ] Data assimilation (~?).
 
 # Usage
 
 First make sure you have installed netCDF library, and set `NETCDF_ROOT` environment variable to it. Then clone the repository:
 ```
-$ git clone https://github.com/LASG-GAMIL/GMCORE gmcore
+$ git clone https://gitee.com/dongli85/GMCORE gmcore
+$ cd gmcore
+$ git submodule update --init
 ```
 There is a Python script `run_tests.py`, which will clone the testbed repository, and run several tests, but it assumes MPI to be installed or SLURM job manager is available:
 ```
