@@ -124,7 +124,7 @@ contains
       proc%idom = 1
     end if
     ! Check decomposition dimensions.
-    if (mod(proc%cart_dims(1), 2) /= 0) then
+    if (proc%cart_dims(1) /= 1 .and. mod(proc%cart_dims(1), 2) /= 0) then
       call process_stop(1, 'num_proc_lon should be an even number!')
     end if
     ! Set MPI process topology.

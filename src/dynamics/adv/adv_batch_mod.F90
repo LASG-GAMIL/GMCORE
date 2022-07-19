@@ -329,7 +329,7 @@ contains
             ! Final stage
             this%cfly(i,j,k) = (v1 + 2 * v2 + 2 * v3 + v4) / 6 * dt_ / dy
             if (abs(this%cfly(i,j,k)) > 1) then
-              call log_error('cfly exceeds 1 at j=' // to_str(j) // '!', __FILE__, __LINE__)
+              call log_error('cfly exceeds 1 at j=' // to_str(j) // ', k=' // to_str(k) // '!', __FILE__, __LINE__)
             end if
           end do
         end do
