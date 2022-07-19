@@ -146,6 +146,7 @@ module namelist_mod
     dt_dyn                    , &
     dt_phys                   , &
     dt_adv                    , &
+    run_years                 , &
     run_hours                 , &
     run_days                  , &
     history_interval          , &

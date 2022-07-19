@@ -42,6 +42,7 @@ module time_mod
   integer, public :: end_time_array(5)    = 0
   real(8), public :: run_hours            = 0
   real(8), public :: run_days             = 0
+  real(8), public :: run_years            = 0
 
   type(datetime_type) start_time
   type(datetime_type) end_time
@@ -71,8 +72,8 @@ contains
       call start_time%init(year=1, month=1, day=1, hour=0, minute=0)
     end if
     end_time = start_time
-    if (run_days > 0 .or. run_hours > 0) then
-      call end_time%add(days=run_days, hours=run_hours)
+    if (run_years > 0 .or. run_days > 0 .or. run_hours > 0) then
+      call end_time%add(years=run_years, days=run_days, hours=run_hours)
     else if (sum(end_time_array) > 0) then
       call end_time%init(year=end_time_array(1),  &
                          month=end_time_array(2), &
