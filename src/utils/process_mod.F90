@@ -51,12 +51,17 @@ contains
 
   end subroutine process_init
 
-  subroutine process_stop(code)
+  subroutine process_stop(code, msg)
 
     integer, intent(in) :: code
+    character(*), intent(in), optional :: msg
 
     integer ierr
 
+    if (present(msg)) then
+      call log_warning(msg, pid=proc%id)
+    end if
+    call MPI_BARRIER(proc%comm, ierr)
     call MPI_ABORT(proc%comm, code, ierr)
     call proc%zonal_circle%clear()
 
@@ -118,8 +123,12 @@ contains
       proc%cart_dims = [1, proc%np]
       proc%idom = 1
     end if
-    periods = [.true.,.false.]
+    ! Check decomposition dimensions.
+    if (mod(proc%cart_dims(1), 2) /= 0) then
+      call process_stop(1, 'num_proc_lon should be an even number!')
+    end if
     ! Set MPI process topology.
+    periods = [.true.,.false.]
     call MPI_COMM_SPLIT(proc%comm, proc%idom, proc%id, tmp_comm, ierr)
     call MPI_CART_CREATE(tmp_comm, 2, proc%cart_dims, periods, .true., proc%cart_comm, ierr)
     call MPI_COMM_GROUP(proc%cart_comm, proc%cart_group, ierr)

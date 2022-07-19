@@ -36,6 +36,12 @@ $ git clone https://gitee.com/dongli85/GMCORE gmcore
 $ cd gmcore
 $ git submodule update --init
 ```
+You could build the model by following:
+```
+$ cd build
+$ FC=mpiifort cmake ..
+$ make -j8
+```
 There is a Python script `run_tests.py`, which will clone the testbed repository, and run several tests, but it assumes MPI to be installed or SLURM job manager is available:
 ```
 $ ./run_tests.py -w <work_directory> --slurm -q <job_queue> -n <process_number> --ntasks-per-node <n>

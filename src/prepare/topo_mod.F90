@@ -211,12 +211,21 @@ contains
       call fiona_input('topo', 'y', y)
 
       ! ETOPO1's longitude is from -180 to 180.
-      do i = 1, nx
-        if (lon1 <= x(i)) then
-          is = i - 1
-          exit
-        end if
-      end do
+      if (lon1 > 180) then
+        do i = 1, nx
+          if (lon1 <= x(i) + 180) then
+            is = i - 1
+            exit
+          end if
+        end do
+      else
+        do i = 1, nx
+          if (lon1 <= x(i)) then
+            is = i - 1
+            exit
+          end if
+        end do
+      end if
       if (lon2 <= x(nx)) then
         do i = nx, 1, -1
           if (lon2 >= x(i)) then
