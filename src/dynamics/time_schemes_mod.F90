@@ -15,6 +15,7 @@ module time_schemes_mod
   private
 
   public time_scheme_init
+  public time_scheme_final
   public time_integrator
   public update_state
   public space_operators_interface
@@ -61,6 +62,8 @@ contains
 
   subroutine time_scheme_init()
 
+    call time_scheme_final()
+
     select case (time_scheme)
     case ('euler')
       time_integrator => euler
@@ -75,6 +78,10 @@ contains
     step => step_forward_backward
 
   end subroutine time_scheme_init
+
+  subroutine time_scheme_final()
+
+  end subroutine time_scheme_final
 
   subroutine step_all(space_operators, block, old_state, star_state, new_state, tend1, tend2, dt)
 
@@ -120,6 +127,7 @@ contains
 
     integer i, j, k
     real(r8) wgt
+    real(r8) tmp1(global_mesh%num_full_lev)
 
     associate (mesh => block%mesh)
     if (baroclinic) then
@@ -217,6 +225,34 @@ contains
           end do
         end do
       end do
+      if (use_vdamp_pole_u) then
+        if (mesh%has_south_pole()) then
+          j = mesh%full_lat_ibeg_no_pole
+          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+            tmp1 = new_state%u_lon(i,j,mesh%full_lev_ibeg:mesh%full_lev_iend)
+            do k = mesh%full_lev_ibeg + 1, mesh%full_lev_iend - 1
+              new_state%u_lon(i,j,k) = (1 - 2 * vdamp_pole_u_coef) * tmp1(k) + vdamp_pole_u_coef * (tmp1(k-1) + tmp1(k+1))
+            end do
+            k = mesh%full_lev_ibeg
+            new_state%u_lon(i,j,k) = (1 - vdamp_pole_u_coef) * tmp1(k) + vdamp_pole_u_coef * tmp1(k+1)
+            k = mesh%full_lev_iend
+            new_state%u_lon(i,j,k) = (1 - vdamp_pole_u_coef) * tmp1(k) + vdamp_pole_u_coef * tmp1(k-1)
+          end do
+        end if
+        if (mesh%has_north_pole()) then
+          j = mesh%full_lat_iend_no_pole
+          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+            tmp1 = new_state%u_lon(i,j,mesh%full_lev_ibeg:mesh%full_lev_iend)
+            do k = mesh%full_lev_ibeg + 1, mesh%full_lev_iend - 1
+              new_state%u_lon(i,j,k) = (1 - 2 * vdamp_pole_u_coef) * tmp1(k) + vdamp_pole_u_coef * (tmp1(k-1) + tmp1(k+1))
+            end do
+            k = mesh%full_lev_ibeg
+            new_state%u_lon(i,j,k) = (1 - vdamp_pole_u_coef) * tmp1(k) + vdamp_pole_u_coef * tmp1(k+1)
+            k = mesh%full_lev_iend
+            new_state%u_lon(i,j,k) = (1 - vdamp_pole_u_coef) * tmp1(k) + vdamp_pole_u_coef * tmp1(k-1)
+          end do
+        end if
+      end if
       call fill_halo(block, new_state%u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
       call fill_halo(block, new_state%v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
       wgt = 0.6_r8

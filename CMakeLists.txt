@@ -153,6 +153,7 @@ set(gmcore_files
   src/dynamics/damp/laplace_damp_mod.F90
   src/dynamics/damp/smag_damp_mod.F90
   src/dynamics/damp/zonal_damp_mod.F90
+  src/dynamics/damp/lat_damp_mod.F90
   src/dynamics/damp/damp_mod.F90
   src/dynamics/adv/adv_batch_mod.F90
   src/dynamics/adv/adv_mod.F90

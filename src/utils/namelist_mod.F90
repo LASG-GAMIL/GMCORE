@@ -117,6 +117,8 @@ module namelist_mod
   integer         :: zonal_damp_cycles    = 5
   integer         :: zonal_damp_order     = 2
   real(r8)        :: zonal_damp_lat0      = 80
+  logical         :: use_vdamp_pole_u     = .false.
+  real(r8)        :: vdamp_pole_u_coef    = 0.1
 
   ! Output settings
   character(8)    :: output_i0_dtype      = 'r8'
@@ -221,6 +223,8 @@ module namelist_mod
     zonal_damp_cycles         , &
     zonal_damp_order          , &
     zonal_damp_lat0           , &
+    use_vdamp_pole_u          , &
+    vdamp_pole_u_coef         , &
     output_h0                 , &
     output_h0_dtype           , &
     output_h1                 , &

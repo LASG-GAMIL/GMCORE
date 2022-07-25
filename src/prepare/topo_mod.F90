@@ -8,7 +8,7 @@ module topo_mod
   use block_mod
   use process_mod
   use parallel_mod
-  use laplace_damp_mod
+  use lat_damp_mod
   use filter_mod
 
   implicit none
@@ -118,6 +118,8 @@ contains
     integer , intent(inout) :: cnt
 
     integer is, ie, js, je, i, j
+    integer non_zero
+    real(r8) gzs0, std0, lnd0
 
     if (.not. this%initialized) then
       return
@@ -144,6 +146,10 @@ contains
       if (lat2 >= this%lat(je)) exit
     end do
 
+    non_zero = 0
+    gzs0 = 0
+    std0 = 0
+    lnd0 = 0
     select case (planet)
     case ('earth')
       do j = js, je
@@ -152,12 +158,21 @@ contains
             stop 999
           end if
           if (this%gzs(i,j) > 0) then
-            gzs = gzs + this%gzs(i,j)
-            std = std + this%gzs(i,j)**2
+            gzs0 = gzs0 + this%gzs(i,j)
+            std0 = std0 + this%gzs(i,j)**2
+            non_zero = non_zero + 1
           end if
         end do
       end do
-      lnd = lnd + count(this%gzs(is:ie,js:je) > 0)
+      ! FIXME: Need more tests on this process that zeroing grid where there is
+      ! less than 10% raw topo grids with non-zero values.
+      if (non_zero / (ie - is + 1) / (je - js + 1) < 0.1) then
+        gzs0 = 0
+        std0 = 0
+      end if
+      gzs = gzs + gzs0
+      std = std + std0
+      lnd = lnd + non_zero
     case ('mars')
       gzs = gzs + sum(this%gzs(is:ie,js:je))
       std = std + sum(this%gzs(is:ie,js:je)**2)
@@ -433,12 +448,14 @@ contains
           gzs(:,j) = wgt * gzs_f(:,j) + (1 - wgt) * gzs(:,j)
         end if
       end do
-      call fill_halo(block, gzs, full_lon=.true., full_lat=.true.)
+      call fill_halo(block, gzs, full_lon=.true., full_lat=.true., south_halo=.false., north_halo=.false.)
+      call lat_damp_on_cell(block, gzs)
       ! do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       !   do i = mesh%full_lon_ibeg, mesh%full_lon_iend
       !     if (landmask(i,j) == 0) gzs(i,j) = 0
       !   end do
       ! end do
+      call fill_halo(block, gzs, full_lon=.true., full_lat=.true.)
     end do
     end associate
 

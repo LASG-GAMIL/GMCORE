@@ -11,6 +11,7 @@ module damp_mod
   use smag_damp_mod
   use laplace_damp_mod
   use zonal_damp_mod
+  use lat_damp_mod
   use operators_mod
 
   implicit none
@@ -31,6 +32,7 @@ contains
     call div_damp_init(blocks)
     call laplace_damp_init()
     call zonal_damp_init()
+    call lat_damp_init()
 
   end subroutine damp_init
 
@@ -40,6 +42,7 @@ contains
     call div_damp_final()
     call laplace_damp_final()
     call zonal_damp_final()
+    call lat_damp_final()
 
   end subroutine damp_final
 
