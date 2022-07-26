@@ -1,7 +1,7 @@
 module steady_state_pgf_test_mod
 
   use flogger
-  use const_mod
+  use const_mod, only: r8, pi, Rd, g, omega
   use parallel_mod
   use block_mod
   use vert_coord_mod

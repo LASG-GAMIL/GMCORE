@@ -294,10 +294,10 @@ contains
     call fiona_add_var('h1', 'dkedlat' , long_name='meridional kinetic energy gradient force'      , units='', dim_names= lat_dims_2d)
     call fiona_add_var('h1', 'dmfdlon' , long_name='zonal mass flux divergence'                    , units='', dim_names=cell_dims_2d)
     call fiona_add_var('h1', 'dmfdlat' , long_name='meridional mass flux divergence'               , units='', dim_names=cell_dims_2d)
-    call fiona_add_var('h1', 'mf_lon_n', long_name='normal mass flux on U grid'                    , units='', dim_names= lon_dims_2d)
-    call fiona_add_var('h1', 'mf_lon_t', long_name='tangent mass flux on U grid'                   , units='', dim_names= lon_dims_2d)
-    call fiona_add_var('h1', 'mf_lat_n', long_name='normal mass flux on V grid'                    , units='', dim_names= lat_dims_2d)
-    call fiona_add_var('h1', 'mf_lat_t', long_name='tangent mass flux on V grid'                   , units='', dim_names= lat_dims_2d)
+    call fiona_add_var('h1', 'mfx_lon' , long_name='normal mass flux on U grid'                    , units='', dim_names= lon_dims_2d)
+    call fiona_add_var('h1', 'mfy_lon' , long_name='tangent mass flux on U grid'                   , units='', dim_names= lon_dims_2d)
+    call fiona_add_var('h1', 'mfy_lat' , long_name='normal mass flux on V grid'                    , units='', dim_names= lat_dims_2d)
+    call fiona_add_var('h1', 'mfx_lat' , long_name='tangent mass flux on V grid'                   , units='', dim_names= lat_dims_2d)
     call fiona_add_var('h1', 'ke'      , long_name='kinetic energy on cell grid'                   , units='', dim_names=cell_dims_2d)
 
   end subroutine history_setup_h1_swm
@@ -333,10 +333,10 @@ contains
     call fiona_add_var('h1', 'dkedlat'      , long_name='meridional kinetic energy gradient force'      , units='', dim_names= lat_dims_3d)
     call fiona_add_var('h1', 'dmfdlon'      , long_name='zonal mass flux divergence'                    , units='', dim_names=cell_dims_3d)
     call fiona_add_var('h1', 'dmfdlat'      , long_name='meridional mass flux divergence'               , units='', dim_names=cell_dims_3d)
-    call fiona_add_var('h1', 'mf_lon_n'     , long_name='normal mass flux on U grid'                    , units='', dim_names= lon_dims_3d)
-    call fiona_add_var('h1', 'mf_lon_t'     , long_name='tangent mass flux on U grid'                   , units='', dim_names= lon_dims_3d)
-    call fiona_add_var('h1', 'mf_lat_n'     , long_name='normal mass flux on V grid'                    , units='', dim_names= lat_dims_3d)
-    call fiona_add_var('h1', 'mf_lat_t'     , long_name='tangent mass flux on V grid'                   , units='', dim_names= lat_dims_3d)
+    call fiona_add_var('h1', 'mfx_lon'      , long_name='normal mass flux on U grid'                    , units='', dim_names= lon_dims_3d)
+    call fiona_add_var('h1', 'mfy_lon'      , long_name='tangent mass flux on U grid'                   , units='', dim_names= lon_dims_3d)
+    call fiona_add_var('h1', 'mfy_lat'      , long_name='normal mass flux on V grid'                    , units='', dim_names= lat_dims_3d)
+    call fiona_add_var('h1', 'mfx_lat'      , long_name='tangent mass flux on V grid'                   , units='', dim_names= lat_dims_3d)
     call fiona_add_var('h1', 'm'            , long_name='dph on full levels'                            , units='', dim_names=cell_dims_3d)
     call fiona_add_var('h1', 'ke'           , long_name='kinetic energy on cell grid'                   , units='', dim_names=cell_dims_3d)
     if (use_smag_damp) then
@@ -379,10 +379,10 @@ contains
     call fiona_add_var('h1', 'dkedlat'      , long_name='meridional kinetic energy gradient force'      , units='', dim_names= lat_dims_3d)
     call fiona_add_var('h1', 'dmfdlon'      , long_name='zonal mass flux divergence'                    , units='', dim_names=cell_dims_3d)
     call fiona_add_var('h1', 'dmfdlat'      , long_name='meridional mass flux divergence'               , units='', dim_names=cell_dims_3d)
-    call fiona_add_var('h1', 'mf_lon_n'     , long_name='normal mass flux on U grid'                    , units='', dim_names= lon_dims_3d)
-    call fiona_add_var('h1', 'mf_lon_t'     , long_name='tangent mass flux on U grid'                   , units='', dim_names= lon_dims_3d)
-    call fiona_add_var('h1', 'mf_lat_n'     , long_name='normal mass flux on V grid'                    , units='', dim_names= lat_dims_3d)
-    call fiona_add_var('h1', 'mf_lat_t'     , long_name='tangent mass flux on V grid'                   , units='', dim_names= lat_dims_3d)
+    call fiona_add_var('h1', 'mfx_lon'      , long_name='normal mass flux on U grid'                    , units='', dim_names= lon_dims_3d)
+    call fiona_add_var('h1', 'mfy_lon'      , long_name='tangent mass flux on U grid'                   , units='', dim_names= lon_dims_3d)
+    call fiona_add_var('h1', 'mfy_lat'      , long_name='normal mass flux on V grid'                    , units='', dim_names= lat_dims_3d)
+    call fiona_add_var('h1', 'mfx_lat'      , long_name='tangent mass flux on V grid'                   , units='', dim_names= lat_dims_3d)
     call fiona_add_var('h1', 'm'            , long_name='dph on full levels'                            , units='', dim_names=cell_dims_3d)
     call fiona_add_var('h1', 'ke'           , long_name='kinetic energy on cell grid'                   , units='', dim_names=cell_dims_3d)
     call fiona_add_var('h1', 'adv_gz_lon'   , long_name='advection of gz'                               , units='', dim_names= lev_dims_3d)
@@ -741,8 +741,8 @@ contains
     call fiona_output('h1', 'pgf_lon' ,  tend%pgf_lon  (is:ie,js:je,1), start=start, count=count)
     call fiona_output('h1', 'dkedlon' ,  tend%dkedlon  (is:ie,js:je,1), start=start, count=count)
     call fiona_output('h1', 'dudt   ' ,  tend%du       (is:ie,js:je,1), start=start, count=count)
-    call fiona_output('h1', 'mf_lon_n', state%mf_lon_n (is:ie,js:je,1), start=start, count=count)
-    call fiona_output('h1', 'mf_lon_t', state%mf_lon_t (is:ie,js:je,1), start=start, count=count)
+    call fiona_output('h1', 'mfx_lon' , state%mfx_lon  (is:ie,js:je,1), start=start, count=count)
+    call fiona_output('h1', 'mfy_lon' , state%mfy_lon  (is:ie,js:je,1), start=start, count=count)
 
     is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
     js = mesh%half_lat_ibeg; je = mesh%half_lat_iend
@@ -752,8 +752,8 @@ contains
     call fiona_output('h1', 'pgf_lat' ,  tend%pgf_lat  (is:ie,js:je,1), start=start, count=count)
     call fiona_output('h1', 'dkedlat' ,  tend%dkedlat  (is:ie,js:je,1), start=start, count=count)
     call fiona_output('h1', 'dvdt'    ,  tend%dv       (is:ie,js:je,1), start=start, count=count)
-    call fiona_output('h1', 'mf_lat_n', state%mf_lat_n (is:ie,js:je,1), start=start, count=count)
-    call fiona_output('h1', 'mf_lat_t', state%mf_lat_t (is:ie,js:je,1), start=start, count=count)
+    call fiona_output('h1', 'mfy_lat' , state%mfy_lat  (is:ie,js:je,1), start=start, count=count)
+    call fiona_output('h1', 'mfx_lat' , state%mfx_lat  (is:ie,js:je,1), start=start, count=count)
     end associate
 
     call fiona_end_output('h1')
@@ -822,8 +822,8 @@ contains
     call fiona_output('h1', 'pgf_lon' ,  tend%pgf_lon  (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dkedlon' ,  tend%dkedlon  (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dudt   ' ,  tend%du       (is:ie,js:je,ks:ke), start=start, count=count)
-    call fiona_output('h1', 'mf_lon_n', state%mf_lon_n (is:ie,js:je,ks:ke), start=start, count=count)
-    call fiona_output('h1', 'mf_lon_t', state%mf_lon_t (is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'mfx_lon', state%mfx_lon   (is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'mfy_lon', state%mfy_lon   (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'wedudlev',  tend%wedudlev (is:ie,js:je,ks:ke), start=start, count=count)
     if (use_smag_damp) then
       call fiona_output('h1', 'kmh_lon' , state%kmh_lon  (is:ie,js:je,ks:ke), start=start, count=count)
@@ -838,8 +838,8 @@ contains
     call fiona_output('h1', 'pgf_lat' ,  tend%pgf_lat  (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dkedlat' ,  tend%dkedlat  (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dvdt'    ,  tend%dv       (is:ie,js:je,ks:ke), start=start, count=count)
-    call fiona_output('h1', 'mf_lat_n', state%mf_lat_n (is:ie,js:je,ks:ke), start=start, count=count)
-    call fiona_output('h1', 'mf_lat_t', state%mf_lat_t (is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'mfy_lat', state%mfy_lat   (is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'mfx_lat', state%mfx_lat   (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'wedvdlev',  tend%wedvdlev (is:ie,js:je,ks:ke), start=start, count=count)
     if (use_smag_damp) then
       call fiona_output('h1', 'kmh_lat' , state%kmh_lat  (is:ie,js:je,ks:ke), start=start, count=count)
@@ -907,8 +907,8 @@ contains
     call fiona_output('h1', 'pgf_lon' ,  tend%pgf_lon  (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dkedlon' ,  tend%dkedlon  (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dudt   ' ,  tend%du       (is:ie,js:je,ks:ke), start=start, count=count)
-    call fiona_output('h1', 'mf_lon_n', state%mf_lon_n (is:ie,js:je,ks:ke), start=start, count=count)
-    call fiona_output('h1', 'mf_lon_t', state%mf_lon_t (is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'mfx_lon' , state%mfx_lon  (is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'mfy_lon' , state%mfy_lon  (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'wedudlev',  tend%wedudlev (is:ie,js:je,ks:ke), start=start, count=count)
 
     is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend
@@ -920,8 +920,8 @@ contains
     call fiona_output('h1', 'pgf_lat' ,  tend%pgf_lat  (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dkedlat' ,  tend%dkedlat  (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'dvdt'    ,  tend%dv       (is:ie,js:je,ks:ke), start=start, count=count)
-    call fiona_output('h1', 'mf_lat_n', state%mf_lat_n (is:ie,js:je,ks:ke), start=start, count=count)
-    call fiona_output('h1', 'mf_lat_t', state%mf_lat_t (is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'mfy_lat' , state%mfy_lat  (is:ie,js:je,ks:ke), start=start, count=count)
+    call fiona_output('h1', 'mfx_lat' , state%mfx_lat  (is:ie,js:je,ks:ke), start=start, count=count)
     call fiona_output('h1', 'wedvdlev',  tend%wedvdlev (is:ie,js:je,ks:ke), start=start, count=count)
 
     is = mesh%full_lon_ibeg; ie = mesh%full_lon_iend

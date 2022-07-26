@@ -135,10 +135,10 @@ contains
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            ip_cf   = ip_cf   + tend%qhv     (i,j,k) * state%mf_lon_n(i,j,k) * mesh%area_lon(j)
-            ip_ke_h = ip_ke_h + tend%dkedlon (i,j,k) * state%mf_lon_n(i,j,k) * mesh%area_lon(j) * 2
+            ip_cf   = ip_cf   + tend%qhv     (i,j,k) * state%mfx_lon(i,j,k) * mesh%area_lon(j)
+            ip_ke_h = ip_ke_h + tend%dkedlon (i,j,k) * state%mfx_lon(i,j,k) * mesh%area_lon(j) * 2
             ip_ke_v = ip_ke_v + ( &
-              tend%wedudlev(i,j,k) * state%mf_lon_n(i,j,k) + &
+              tend%wedudlev(i,j,k) * state%mfx_lon(i,j,k) + &
               0.5_r8 * state%u_lon(i,j,k)**2 * (state%we_lev_lon(i,j,k+1) - state%we_lev_lon(i,j,k)) &
             ) * mesh%area_lon(j)
           end do
@@ -148,10 +148,10 @@ contains
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%half_lat_ibeg, mesh%half_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            ip_cf   = ip_cf   - tend%qhu     (i,j,k) * state%mf_lat_n(i,j,k) * mesh%area_lat(j)
-            ip_ke_h = ip_ke_h + tend%dkedlat (i,j,k) * state%mf_lat_n(i,j,k) * mesh%area_lat(j) * 2
+            ip_cf   = ip_cf   - tend%qhu     (i,j,k) * state%mfy_lat(i,j,k) * mesh%area_lat(j)
+            ip_ke_h = ip_ke_h + tend%dkedlat (i,j,k) * state%mfy_lat(i,j,k) * mesh%area_lat(j) * 2
             ip_ke_v = ip_ke_v + ( &
-              tend%wedvdlev(i,j,k) * state%mf_lat_n(i,j,k) + &
+              tend%wedvdlev(i,j,k) * state%mfy_lat(i,j,k) + &
               0.5_r8 * state%v_lat(i,j,k)**2 * (state%we_lev_lat(i,j,k+1) - state%we_lev_lat(i,j,k)) &
             ) * mesh%area_lat(j)
           end do
@@ -183,9 +183,9 @@ contains
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            ip_cf = ip_cf  + tend%qhv    (i,j,k) * state%mf_lon_n(i,j,k) * mesh%area_lon(j)
-            ip_ke = ip_ke + tend%dkedlon(i,j,k) * state%mf_lon_n(i,j,k) * mesh%area_lon(j) * 2
-            ip_pe = ip_pe + tend%pgf_lon(i,j,k) * state%mf_lon_n(i,j,k) * mesh%area_lon(j) * 2
+            ip_cf = ip_cf  + tend%qhv    (i,j,k) * state%mfx_lon(i,j,k) * mesh%area_lon(j)
+            ip_ke = ip_ke + tend%dkedlon(i,j,k) * state%mfx_lon(i,j,k) * mesh%area_lon(j) * 2
+            ip_pe = ip_pe + tend%pgf_lon(i,j,k) * state%mfx_lon(i,j,k) * mesh%area_lon(j) * 2
           end do
         end do
       end do
@@ -193,9 +193,9 @@ contains
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%half_lat_ibeg, mesh%half_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            ip_cf = ip_cf - tend%qhu    (i,j,k) * state%mf_lat_n(i,j,k) * mesh%area_lat(j)
-            ip_ke = ip_ke + tend%dkedlat(i,j,k) * state%mf_lat_n(i,j,k) * mesh%area_lat(j) * 2
-            ip_pe = ip_pe + tend%pgf_lat(i,j,k) * state%mf_lat_n(i,j,k) * mesh%area_lat(j) * 2
+            ip_cf = ip_cf - tend%qhu    (i,j,k) * state%mfy_lat(i,j,k) * mesh%area_lat(j)
+            ip_ke = ip_ke + tend%dkedlat(i,j,k) * state%mfy_lat(i,j,k) * mesh%area_lat(j) * 2
+            ip_pe = ip_pe + tend%pgf_lat(i,j,k) * state%mfy_lat(i,j,k) * mesh%area_lat(j) * 2
           end do
         end do
       end do

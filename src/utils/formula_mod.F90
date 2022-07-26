@@ -4,6 +4,12 @@ module formula_mod
 
   implicit none
 
+  private
+
+  public potential_temperature
+  public temperature
+  public dry_air_density
+
 contains
 
   elemental real(r8) function potential_temperature(t, p) result(res)

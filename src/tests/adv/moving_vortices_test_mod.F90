@@ -88,12 +88,12 @@ contains
     if (lonvr > pi2) lonvr = lonvr - pi2
     call inverse_rotation_transform(lonp0, latp0, lonv, latv, lonvr, latvr)
 
-    associate (mesh => block%mesh    , &
-               m    => state%m       , &
-               u    => state%u_lon   , &
-               v    => state%v_lat   , &
-               mfx  => state%mf_lon_n, &
-               mfy  => state%mf_lat_n)
+    associate (mesh => block%mesh   , &
+               m    => state%m      , &
+               u    => state%u_lon  , &
+               v    => state%v_lat  , &
+               mfx  => state%mfx_lon, &
+               mfy  => state%mfy_lat)
     m = 1
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       lat = mesh%full_lat(j)

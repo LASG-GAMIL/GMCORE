@@ -1,7 +1,7 @@
 module held_suarez_test_mod
 
   use flogger
-  use const_mod
+  use const_mod, only: r8, Rd_o_cpd
   use formula_mod
   use vert_coord_mod
   use block_mod

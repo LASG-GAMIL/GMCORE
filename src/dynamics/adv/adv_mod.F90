@@ -432,8 +432,8 @@ contains
             block%state(itime)%u_lon             , &
             block%state(itime)%v_lat             )
           call block%adv_batches(l)%accum_mf_cell( &
-            block%state(itime)%mf_lon_n          , &
-            block%state(itime)%mf_lat_n          )
+            block%state(itime)%mfx_lon           , &
+            block%state(itime)%mfy_lat           )
           if (global_mesh%num_full_lev > 1) then
             call block%adv_batches(l)%accum_we_lev( &
               block%state(itime)%we_lev           , &
@@ -444,8 +444,8 @@ contains
             block%state(itime)%u_lat             , &
             block%state(itime)%v_lon             )
           call block%adv_batches(l)%accum_mf_vtx ( &
-            block%state(itime)%mf_lat_t          , &
-            block%state(itime)%mf_lon_t          )
+            block%state(itime)%mfx_lat           , &
+            block%state(itime)%mfy_lon           )
         end select
       end do
     end if

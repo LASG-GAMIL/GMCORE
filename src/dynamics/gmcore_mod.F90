@@ -136,7 +136,6 @@ contains
       call time_integrate(dt_dyn, blocks)
       if (is_root_proc() .and. time_is_alerted('print')) call log_print_diag(curr_time%isoformat())
       call time_advance(dt_dyn)
-      call operators_prepare(blocks, old, dt_dyn)
       call diagnose(blocks, old)
       call output(old)
     end do
@@ -240,12 +239,12 @@ contains
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            te_ke = te_ke + state%mf_lon_n(i,j,k) * 0.5_r8 * state%u_lon(i,j,k) * mesh%area_lon(j) * 2
+            te_ke = te_ke + state%mfx_lon(i,j,k) * 0.5_r8 * state%u_lon(i,j,k) * mesh%area_lon(j) * 2
           end do
         end do
         do j = mesh%half_lat_ibeg, mesh%half_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            te_ke = te_ke + state%mf_lat_n(i,j,k) * 0.5_r8 * state%v_lat(i,j,k) * mesh%area_lat(j) * 2
+            te_ke = te_ke + state%mfy_lat(i,j,k) * 0.5_r8 * state%v_lat(i,j,k) * mesh%area_lat(j) * 2
           end do
         end do
       end do

@@ -36,10 +36,10 @@ module state_mod
     real(r8), allocatable, dimension(:,:,:) :: m_lon             ! Mass on zonal edge
     real(r8), allocatable, dimension(:,:,:) :: m_lat             ! Mass on merdional edge
     real(r8), allocatable, dimension(:,:,:) :: m_lev             ! Mass on half levels
-    real(r8), allocatable, dimension(:,:,:) :: mf_lon_n          ! Normal mass flux on zonal edge
-    real(r8), allocatable, dimension(:,:,:) :: mf_lat_n          ! Normal mass flux on merdional edge
-    real(r8), allocatable, dimension(:,:,:) :: mf_lat_t          ! Tangient mass flux on zonal edge
-    real(r8), allocatable, dimension(:,:,:) :: mf_lon_t          ! Tangient mass flux on merdional edge
+    real(r8), allocatable, dimension(:,:,:) :: mfx_lon           ! Normal mass flux on zonal edge
+    real(r8), allocatable, dimension(:,:,:) :: mfy_lat           ! Normal mass flux on merdional edge
+    real(r8), allocatable, dimension(:,:,:) :: mfx_lat           ! Tangient mass flux on zonal edge
+    real(r8), allocatable, dimension(:,:,:) :: mfy_lon           ! Tangient mass flux on merdional edge
     real(r8), allocatable, dimension(:,:,:) :: pv                ! Potential vorticity
     real(r8), allocatable, dimension(:,:,:) :: pv_lon            ! Potential vorticity on zonal edge
     real(r8), allocatable, dimension(:,:,:) :: pv_lat            ! Potential vorticity on merdional edge
@@ -126,10 +126,10 @@ contains
     call allocate_array(mesh, this%m_lon            , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%m_lat            , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%m_lev            , full_lon=.true., full_lat=.true., half_lev=.true.)
-    call allocate_array(mesh, this%mf_lon_n         , half_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%mf_lon_t         , half_lon=.true., full_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%mf_lat_n         , full_lon=.true., half_lat=.true., full_lev=.true.)
-    call allocate_array(mesh, this%mf_lat_t         , full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%mfx_lon          , half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%mfy_lon          , half_lon=.true., full_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%mfy_lat          , full_lon=.true., half_lat=.true., full_lev=.true.)
+    call allocate_array(mesh, this%mfx_lat          , full_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%pv               , half_lon=.true., half_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%pv_lon           , half_lon=.true., full_lat=.true., full_lev=.true.)
     call allocate_array(mesh, this%pv_lat           , full_lon=.true., half_lat=.true., full_lev=.true.)
@@ -210,10 +210,10 @@ contains
     if (allocated(this%m_vtx            )) deallocate(this%m_vtx            )
     if (allocated(this%m_lon            )) deallocate(this%m_lon            )
     if (allocated(this%m_lat            )) deallocate(this%m_lat            )
-    if (allocated(this%mf_lon_n         )) deallocate(this%mf_lon_n         )
-    if (allocated(this%mf_lat_n         )) deallocate(this%mf_lat_n         )
-    if (allocated(this%mf_lat_t         )) deallocate(this%mf_lat_t         )
-    if (allocated(this%mf_lon_t         )) deallocate(this%mf_lon_t         )
+    if (allocated(this%mfx_lon          )) deallocate(this%mfx_lon          )
+    if (allocated(this%mfy_lat          )) deallocate(this%mfy_lat          )
+    if (allocated(this%mfx_lat          )) deallocate(this%mfx_lat          )
+    if (allocated(this%mfy_lon          )) deallocate(this%mfy_lon          )
     if (allocated(this%pv               )) deallocate(this%pv               )
     if (allocated(this%pv_lon           )) deallocate(this%pv_lon           )
     if (allocated(this%pv_lat           )) deallocate(this%pv_lat           )

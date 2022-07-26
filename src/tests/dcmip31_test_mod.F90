@@ -2,7 +2,7 @@ module dcmip31_test_mod
 
   use flogger
   use namelist_mod
-  use const_mod
+  use const_mod, only: r8, pi, Rd, Rd_o_cpd, cpd, g, radius, omega
   use parallel_mod
   use block_mod
   use vert_coord_mod

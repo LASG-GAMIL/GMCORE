@@ -553,44 +553,44 @@ contains
 
     integer i, j, k
 
-    associate (mesh     => block%mesh    , &
-               m        => state%m       , & ! in
-               m_lon    => state%m_lon   , & ! in
-               m_lat    => state%m_lat   , & ! in
-               u_lon    => state%u_f     , & ! in
-               v_lat    => state%v_f     , & ! in
-               u_lat    => state%u_lat   , & ! out
-               v_lon    => state%v_lon   , & ! out
-               mf_lon_n => state%mf_lon_n, & ! out
-               mf_lat_n => state%mf_lat_n, & ! out
-               mf_lon_t => state%mf_lon_t, & ! out
-               mf_lat_t => state%mf_lat_t)   ! out
+    associate (mesh    => block%mesh   , &
+               m       => state%m      , & ! in
+               m_lon   => state%m_lon  , & ! in
+               m_lat   => state%m_lat  , & ! in
+               u_lon   => state%u_f    , & ! in
+               v_lat   => state%v_f    , & ! in
+               u_lat   => state%u_lat  , & ! out
+               v_lon   => state%v_lon  , & ! out
+               mfx_lon => state%mfx_lon, & ! out
+               mfy_lat => state%mfy_lat, & ! out
+               mfy_lon => state%mfy_lon, & ! out
+               mfx_lat => state%mfx_lat)   ! out
     call block%adv_batch_mass%accum_uv_cell(u_lon, v_lat, dt)
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole + merge(0, 1, mesh%has_north_pole())
         do i = mesh%half_lon_ibeg - 1, mesh%half_lon_iend
-          mf_lon_n(i,j,k) = m_lon(i,j,k) * u_lon(i,j,k)
+          mfx_lon(i,j,k) = m_lon(i,j,k) * u_lon(i,j,k)
         end do
       end do
     end do
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%half_lat_ibeg - merge(0, 1, mesh%has_south_pole()), mesh%half_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend + 1
-          mf_lat_n(i,j,k) = m_lat(i,j,k) * v_lat(i,j,k)
+          mfy_lat(i,j,k) = m_lat(i,j,k) * v_lat(i,j,k)
         end do
       end do
     end do
-    !call adv_calc_mass_hflx_cell(block, block%adv_batch_mass, m, mf_lon_n, mf_lat_n, dt)
-    !call fill_halo(block, mf_lon_n, full_lon=.false., full_lat=.true., full_lev=.true.)
-    !call fill_halo(block, mf_lat_n, full_lon=.true., full_lat=.false., full_lev=.true.)
-    call block%adv_batch_mass%accum_mf_cell(mf_lon_n, mf_lat_n)
+    !call adv_calc_mass_hflx_cell(block, block%adv_batch_mass, m, mfx_lon, mfy_lat, dt)
+    !call fill_halo(block, mfx_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
+    !call fill_halo(block, mfy_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
+    call block%adv_batch_mass%accum_mf_cell(mfx_lon, mfy_lat)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          mf_lat_t(i,j,k) = mesh%half_tangent_wgt(1,j) * (mf_lon_n(i-1,j  ,k) + mf_lon_n(i,j  ,k)) + &
-                            mesh%half_tangent_wgt(2,j) * (mf_lon_n(i-1,j+1,k) + mf_lon_n(i,j+1,k))
-          u_lat(i,j,k) = mf_lat_t(i,j,k) / m_lat(i,j,k)
+          mfx_lat(i,j,k) = mesh%half_tangent_wgt(1,j) * (mfx_lon(i-1,j  ,k) + mfx_lon(i,j  ,k)) + &
+                            mesh%half_tangent_wgt(2,j) * (mfx_lon(i-1,j+1,k) + mfx_lon(i,j+1,k))
+          u_lat(i,j,k) = mfx_lat(i,j,k) / m_lat(i,j,k)
         end do
       end do
     end do
@@ -599,9 +599,9 @@ contains
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          mf_lon_t(i,j,k) = mesh%full_tangent_wgt(1,j) * (mf_lat_n(i,j-1,k) + mf_lat_n(i+1,j-1,k)) + &
-                            mesh%full_tangent_wgt(2,j) * (mf_lat_n(i,j  ,k) + mf_lat_n(i+1,j  ,k))
-          v_lon(i,j,k) = mf_lon_t(i,j,k) / m_lon(i,j,k)
+          mfy_lon(i,j,k) = mesh%full_tangent_wgt(1,j) * (mfy_lat(i,j-1,k) + mfy_lat(i+1,j-1,k)) + &
+                            mesh%full_tangent_wgt(2,j) * (mfy_lat(i,j  ,k) + mfy_lat(i+1,j  ,k))
+          v_lon(i,j,k) = mfy_lon(i,j,k) / m_lon(i,j,k)
         end do
       end do
     end do
@@ -853,31 +853,31 @@ contains
 
     integer i, j, k
 
-    associate (mesh          => block%mesh         , &
-               mf_lon_n      => state%mf_lon_n     , & ! in
-               mf_lat_n      => state%mf_lat_n     , & ! in
-               mf_lon_t      => state%mf_lon_t     , & ! in
-               mf_lat_t      => state%mf_lat_t     , & ! in
-               pv_lon        => state%pv_lon       , & ! in
-               pv_lat        => state%pv_lat       , & ! in
-               qhu           => tend%qhu           , & ! out
-               qhv           => tend%qhv)              ! out
+    associate (mesh    => block%mesh   , &
+               mfx_lon => state%mfx_lon, & ! in
+               mfy_lat => state%mfy_lat, & ! in
+               mfy_lon => state%mfy_lon, & ! in
+               mfx_lat => state%mfx_lat, & ! in
+               pv_lon  => state%pv_lon , & ! in
+               pv_lat  => state%pv_lat , & ! in
+               qhu     => tend%qhu     , & ! out
+               qhv     => tend%qhv)        ! out
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           if (coriolis_scheme == 1) then
-            qhu(i,j,k) = (                                                  &
-              mesh%half_tangent_wgt(1,j) * (                                &
-                mf_lon_n(i-1,j  ,k) * (pv_lat(i,j,k) + pv_lon(i-1,j  ,k)) + &
-                mf_lon_n(i  ,j  ,k) * (pv_lat(i,j,k) + pv_lon(i  ,j  ,k))   &
-              ) +                                                           &
-              mesh%half_tangent_wgt(2,j) * (                                &
-                mf_lon_n(i-1,j+1,k) * (pv_lat(i,j,k) + pv_lon(i-1,j+1,k)) + &
-                mf_lon_n(i  ,j+1,k) * (pv_lat(i,j,k) + pv_lon(i  ,j+1,k))   &
-              )                                                             &
+            qhu(i,j,k) = (                                                 &
+              mesh%half_tangent_wgt(1,j) * (                               &
+                mfx_lon(i-1,j  ,k) * (pv_lat(i,j,k) + pv_lon(i-1,j  ,k)) + &
+                mfx_lon(i  ,j  ,k) * (pv_lat(i,j,k) + pv_lon(i  ,j  ,k))   &
+              ) +                                                          &
+              mesh%half_tangent_wgt(2,j) * (                               &
+                mfx_lon(i-1,j+1,k) * (pv_lat(i,j,k) + pv_lon(i-1,j+1,k)) + &
+                mfx_lon(i  ,j+1,k) * (pv_lat(i,j,k) + pv_lon(i  ,j+1,k))   &
+              )                                                            &
             ) * 0.5_r8
           else if (coriolis_scheme == 2) then
-            qhu(i,j,k) = mf_lat_t(i,j,k) * pv_lat(i,j,k)
+            qhu(i,j,k) = mfx_lat(i,j,k) * pv_lat(i,j,k)
           end if
         end do
       end do
@@ -886,18 +886,18 @@ contains
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
           if (coriolis_scheme == 1) then
-            qhv(i,j,k) = (                                                  &
-              mesh%full_tangent_wgt(1,j) * (                                &
-                mf_lat_n(i  ,j-1,k) * (pv_lon(i,j,k) + pv_lat(i  ,j-1,k)) + &
-                mf_lat_n(i+1,j-1,k) * (pv_lon(i,j,k) + pv_lat(i+1,j-1,k))   &
-              ) +                                                           &
-              mesh%full_tangent_wgt(2,j) * (                                &
-                mf_lat_n(i  ,j  ,k) * (pv_lon(i,j,k) + pv_lat(i  ,j  ,k)) + &
-                mf_lat_n(i+1,j  ,k) * (pv_lon(i,j,k) + pv_lat(i+1,j  ,k))   &
-              )                                                             &
+            qhv(i,j,k) = (                                                 &
+              mesh%full_tangent_wgt(1,j) * (                               &
+                mfy_lat(i  ,j-1,k) * (pv_lon(i,j,k) + pv_lat(i  ,j-1,k)) + &
+                mfy_lat(i+1,j-1,k) * (pv_lon(i,j,k) + pv_lat(i+1,j-1,k))   &
+              ) +                                                          &
+              mesh%full_tangent_wgt(2,j) * (                               &
+                mfy_lat(i  ,j  ,k) * (pv_lon(i,j,k) + pv_lat(i  ,j  ,k)) + &
+                mfy_lat(i+1,j  ,k) * (pv_lon(i,j,k) + pv_lat(i+1,j  ,k))   &
+              )                                                            &
             ) * 0.5_r8
           else if (coriolis_scheme == 2) then
-            qhv(i,j,k) = mf_lon_t(i,j,k) * pv_lon(i,j,k)
+            qhv(i,j,k) = mfy_lon(i,j,k) * pv_lon(i,j,k)
           end if
         end do
       end do
@@ -948,16 +948,16 @@ contains
     real(r8) work(state%mesh%full_lon_ibeg:state%mesh%full_lon_iend,state%mesh%num_full_lev)
     real(r8) pole(state%mesh%num_full_lev)
 
-    associate (mesh     => block%mesh    , &
-               mf_lon_n => state%mf_lon_n, & ! in
-               mf_lat_n => state%mf_lat_n, & ! in
-               dmfdlon  => tend%dmfdlon  , & ! out
-               dmfdlat  => tend%dmfdlat)     ! out
+    associate (mesh    => block%mesh   , &
+               mfx_lon => state%mfx_lon, & ! in
+               mfy_lat => state%mfy_lat, & ! in
+               dmfdlon => tend%dmfdlon , & ! out
+               dmfdlat => tend%dmfdlat)    ! out
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          dmfdlon(i,j,k) = (                    &
-            mf_lon_n(i,j,k) - mf_lon_n(i-1,j,k) &
+          dmfdlon(i,j,k) = (                  &
+            mfx_lon(i,j,k) - mfx_lon(i-1,j,k) &
           ) * mesh%le_lon(j) / mesh%area_cell(j)
         end do
       end do
@@ -965,9 +965,9 @@ contains
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          dmfdlat(i,j,k) = (                       &
-            mf_lat_n(i,j  ,k) * mesh%le_lat(j  ) - &
-            mf_lat_n(i,j-1,k) * mesh%le_lat(j-1)   &
+          dmfdlat(i,j,k) = (                      &
+            mfy_lat(i,j  ,k) * mesh%le_lat(j  ) - &
+            mfy_lat(i,j-1,k) * mesh%le_lat(j-1)   &
           ) / mesh%area_cell(j)
         end do
       end do
@@ -976,7 +976,7 @@ contains
       j = mesh%full_lat_ibeg
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          work(i,k) = mf_lat_n(i,j,k)
+          work(i,k) = mfy_lat(i,j,k)
         end do
       end do
       call zonal_sum(proc%zonal_circle, work, pole)
@@ -991,7 +991,7 @@ contains
       j = mesh%full_lat_iend
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          work(i,k) = -mf_lat_n(i,j-1,k)
+          work(i,k) = -mfy_lat(i,j-1,k)
         end do
       end do
       call zonal_sum(proc%zonal_circle, work, pole)
