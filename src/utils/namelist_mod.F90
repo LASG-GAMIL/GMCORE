@@ -113,10 +113,10 @@ module namelist_mod
   real(r8)        :: rayleigh_damp_top    = 10.0d3 ! m
   logical         :: use_smag_damp        = .false.
   real(r8)        :: smag_damp_coef       = 0.1
-  logical         :: use_zonal_damp       = .false.
-  integer         :: zonal_damp_cycles    = 5
-  integer         :: zonal_damp_order     = 2
-  real(r8)        :: zonal_damp_lat0      = 80
+  logical         :: use_lon_damp         = .false.
+  integer         :: lon_damp_cycles      = 1
+  integer         :: lon_damp_order       = 2
+  real(r8)        :: lon_damp_lat0        = 60
   logical         :: use_vdamp_pole_u     = .false.
   real(r8)        :: vdamp_pole_u_coef    = 0.1
 
@@ -219,10 +219,10 @@ module namelist_mod
     rayleigh_damp_top         , &
     use_smag_damp             , &
     smag_damp_coef            , &
-    use_zonal_damp            , &
-    zonal_damp_cycles         , &
-    zonal_damp_order          , &
-    zonal_damp_lat0           , &
+    use_lon_damp            , &
+    lon_damp_cycles         , &
+    lon_damp_order          , &
+    lon_damp_lat0           , &
     use_vdamp_pole_u          , &
     vdamp_pole_u_coef         , &
     output_h0                 , &
@@ -334,11 +334,11 @@ contains
     if (use_smag_damp) then
       write(*, *) 'smag_damp_coef      = ', to_str(smag_damp_coef, 1)
     end if
-      write(*, *) 'use_zonal_damp      = ', to_str(use_zonal_damp)
-    if (use_zonal_damp) then
-      write(*, *) 'zonal_damp_cycles   = ', to_str(zonal_damp_cycles)
-      write(*, *) 'zonal_damp_order    = ', to_str(zonal_damp_order)
-      write(*, *) 'zonal_damp_lat0     = ', to_str(zonal_damp_lat0, 2)
+      write(*, *) 'use_lon_damp        = ', to_str(use_lon_damp)
+    if (use_lon_damp) then
+      write(*, *) 'lon_damp_cycles     = ', to_str(lon_damp_cycles)
+      write(*, *) 'lon_damp_order      = ', to_str(lon_damp_order)
+      write(*, *) 'lon_damp_lat0       = ', to_str(lon_damp_lat0, 2)
     end if
       write(*, *) '========================================================='
 

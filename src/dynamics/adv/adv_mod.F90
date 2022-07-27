@@ -11,7 +11,7 @@ module adv_mod
   use upwind_mod
   use weno_mod
   use tvd_mod
-  use zonal_damp_mod
+  use lon_damp_mod
 
   implicit none
 
@@ -295,7 +295,7 @@ contains
           end do
           call fill_halo(block, q(:,:,:,l,new), full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
           do i = 1, 5
-            call zonal_damp_on_cell(block, 2, q(:,:,:,l,new))
+            call lon_damp_on_cell(block, 2, q(:,:,:,l,new))
           end do
           call fill_halo(block, q(:,:,:,l,new), full_lon=.true., full_lat=.true., full_lev=.true.)
           end associate

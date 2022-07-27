@@ -1,4 +1,4 @@
-module zonal_damp_mod
+module lon_damp_mod
 
   use const_mod
   use namelist_mod
@@ -9,14 +9,14 @@ module zonal_damp_mod
 
   private
 
-  public zonal_damp_init
-  public zonal_damp_final
-  public zonal_damp_on_lon_edge
-  public zonal_damp_on_lat_edge
-  public zonal_damp_on_lev_edge
-  public zonal_damp_on_cell
-  public zonal_damp_on_vtx
-  public zonal_damp_1d
+  public lon_damp_init
+  public lon_damp_final
+  public lon_damp_on_lon_edge
+  public lon_damp_on_lat_edge
+  public lon_damp_on_lev_edge
+  public lon_damp_on_cell
+  public lon_damp_on_vtx
+  public lon_damp_1d
 
   real(r8), allocatable :: wgt_full_lat(:)
   real(r8), allocatable :: wgt_half_lat(:)
@@ -33,19 +33,19 @@ module zonal_damp_mod
      1, -8,  28, -56,  70, -56,  28, - 8,  1   & ! 8
   ], [9, 7])
 
-  interface zonal_damp_on_cell
-    module procedure zonal_damp_on_cell_2d
-    module procedure zonal_damp_on_cell_3d
-  end interface zonal_damp_on_cell
+  interface lon_damp_on_cell
+    module procedure lon_damp_on_cell_2d
+    module procedure lon_damp_on_cell_3d
+  end interface lon_damp_on_cell
 
 contains
 
-  subroutine zonal_damp_init()
+  subroutine lon_damp_init()
 
     integer j
     real(r8) lat, lat0
 
-    call zonal_damp_final()
+    call lon_damp_final()
 
     allocate(wgt_full_lat(global_mesh%num_full_lat))
     allocate(wgt_half_lat(global_mesh%num_half_lat))
@@ -53,26 +53,26 @@ contains
     lat0 = -global_mesh%full_lat_deg(2)
     do j = global_mesh%full_lat_ibeg_no_pole, global_mesh%full_lat_iend_no_pole
       lat = abs(global_mesh%full_lat_deg(j))
-      wgt_full_lat(j) = exp((lat0 - lat)**2 * log(1.0e-3_r8) / (lat0 - zonal_damp_lat0)**2)
+      wgt_full_lat(j) = exp((lat0 - lat)**2 * log(1.0e-3_r8) / (lat0 - lon_damp_lat0)**2)
       wgt_full_lat(j) = merge(0.0_r8, wgt_full_lat(j), wgt_full_lat(j) < 1.0e-6_r8)
     end do
     lat0 = -global_mesh%half_lat_deg(1)
     do j = global_mesh%half_lat_ibeg, global_mesh%half_lat_iend
       lat = abs(global_mesh%half_lat_deg(j))
-      wgt_half_lat(j) = exp((lat0 - lat)**2 * log(1.0e-3_r8) / (lat0 - zonal_damp_lat0)**2)
+      wgt_half_lat(j) = exp((lat0 - lat)**2 * log(1.0e-3_r8) / (lat0 - lon_damp_lat0)**2)
       wgt_half_lat(j) = merge(0.0_r8, wgt_half_lat(j), wgt_half_lat(j) < 1.0e-6_r8)
     end do
 
-  end subroutine zonal_damp_init
+  end subroutine lon_damp_init
 
-  subroutine zonal_damp_final()
+  subroutine lon_damp_final()
 
     if (allocated(wgt_full_lat)) deallocate(wgt_full_lat)
     if (allocated(wgt_half_lat)) deallocate(wgt_half_lat)
 
-  end subroutine zonal_damp_final
+  end subroutine lon_damp_final
 
-  subroutine zonal_damp_on_lon_edge(block, order, f)
+  subroutine lon_damp_on_lon_edge(block, order, f)
 
     type(block_type), intent(in), target :: block
     integer, intent(in) :: order
@@ -86,14 +86,14 @@ contains
     mesh => block%mesh
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-        call zonal_damp_1d(block, order, mesh%half_lon_lb, mesh%half_lon_ub, mesh%lon_halo_width, f(:,j,k), wgt_full_lat(j))
+        call lon_damp_1d(block, order, mesh%half_lon_lb, mesh%half_lon_ub, mesh%lon_halo_width, f(:,j,k), wgt_full_lat(j))
       end do
     end do
     call fill_halo(block, f, full_lon=.false., full_lat=.true., full_lev=.true.)
 
-  end subroutine zonal_damp_on_lon_edge
+  end subroutine lon_damp_on_lon_edge
 
-  subroutine zonal_damp_on_lat_edge(block, order, f)
+  subroutine lon_damp_on_lat_edge(block, order, f)
 
     type(block_type), intent(in), target :: block
     integer, intent(in) :: order
@@ -107,14 +107,14 @@ contains
     mesh => block%mesh
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
-        call zonal_damp_1d(block, order, mesh%full_lon_lb, mesh%full_lon_ub, mesh%lon_halo_width, f(:,j,k), wgt_half_lat(j))
+        call lon_damp_1d(block, order, mesh%full_lon_lb, mesh%full_lon_ub, mesh%lon_halo_width, f(:,j,k), wgt_half_lat(j))
       end do
     end do
     call fill_halo(block, f, full_lon=.true., full_lat=.false., full_lev=.true.)
 
-  end subroutine zonal_damp_on_lat_edge
+  end subroutine lon_damp_on_lat_edge
 
-  subroutine zonal_damp_on_lev_edge(block, order, f)
+  subroutine lon_damp_on_lev_edge(block, order, f)
 
     type(block_type), intent(in), target :: block
     integer, intent(in) :: order
@@ -128,14 +128,14 @@ contains
     mesh => block%mesh
     do k = mesh%half_lev_ibeg, mesh%half_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-        call zonal_damp_1d(block, order, mesh%full_lon_lb, mesh%full_lon_ub, mesh%lon_halo_width, f(:,j,k), wgt_full_lat(j))
+        call lon_damp_1d(block, order, mesh%full_lon_lb, mesh%full_lon_ub, mesh%lon_halo_width, f(:,j,k), wgt_full_lat(j))
       end do
     end do
     call fill_halo(block, f, full_lon=.true., full_lat=.true., full_lev=.false.)
 
-  end subroutine zonal_damp_on_lev_edge
+  end subroutine lon_damp_on_lev_edge
 
-  subroutine zonal_damp_on_cell_2d(block, order, f)
+  subroutine lon_damp_on_cell_2d(block, order, f)
 
     type(block_type), intent(in), target :: block
     integer, intent(in) :: order
@@ -147,13 +147,13 @@ contains
 
     mesh => block%mesh
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-      call zonal_damp_1d(block, order, mesh%full_lon_lb, mesh%full_lon_ub, mesh%lon_halo_width, f(:,j), wgt_full_lat(j))
+      call lon_damp_1d(block, order, mesh%full_lon_lb, mesh%full_lon_ub, mesh%lon_halo_width, f(:,j), wgt_full_lat(j))
     end do
     call fill_halo(block, f, full_lon=.true., full_lat=.true.)
 
-  end subroutine zonal_damp_on_cell_2d
+  end subroutine lon_damp_on_cell_2d
 
-  subroutine zonal_damp_on_cell_3d(block, order, f)
+  subroutine lon_damp_on_cell_3d(block, order, f)
 
     type(block_type), intent(in), target :: block
     integer, intent(in) :: order
@@ -167,14 +167,14 @@ contains
     mesh => block%mesh
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-        call zonal_damp_1d(block, order, mesh%full_lon_lb, mesh%full_lon_ub, mesh%lon_halo_width, f(:,j,k), wgt_full_lat(j))
+        call lon_damp_1d(block, order, mesh%full_lon_lb, mesh%full_lon_ub, mesh%lon_halo_width, f(:,j,k), wgt_full_lat(j))
       end do
     end do
     call fill_halo(block, f, full_lon=.true., full_lat=.true., full_lev=.true.)
 
-  end subroutine zonal_damp_on_cell_3d
+  end subroutine lon_damp_on_cell_3d
 
-  subroutine zonal_damp_on_vtx(block, order, f)
+  subroutine lon_damp_on_vtx(block, order, f)
 
     type(block_type), intent(in), target :: block
     integer, intent(in) :: order
@@ -188,14 +188,14 @@ contains
     mesh => block%mesh
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
-        call zonal_damp_1d(block, order, mesh%half_lon_lb, mesh%half_lon_ub, mesh%lon_halo_width, f(:,j,k), wgt_half_lat(j))
+        call lon_damp_1d(block, order, mesh%half_lon_lb, mesh%half_lon_ub, mesh%lon_halo_width, f(:,j,k), wgt_half_lat(j))
       end do
     end do
     call fill_halo(block, f, full_lon=.false., full_lat=.false., full_lev=.true.)
 
-  end subroutine zonal_damp_on_vtx
+  end subroutine lon_damp_on_vtx
 
-  subroutine zonal_damp_1d(block, order, lb, ub, hw, f, wgt)
+  subroutine lon_damp_1d(block, order, lb, ub, hw, f, wgt)
 
     type(block_type), intent(in) :: block
     integer, intent(in) :: order
@@ -236,6 +236,6 @@ contains
       f(is:ie) = g(is:ie)
     end if
 
-  end subroutine zonal_damp_1d
+  end subroutine lon_damp_1d
 
-end module zonal_damp_mod
+end module lon_damp_mod

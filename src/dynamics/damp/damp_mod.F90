@@ -10,7 +10,7 @@ module damp_mod
   use div_damp_mod
   use smag_damp_mod
   use laplace_damp_mod
-  use zonal_damp_mod
+  use lon_damp_mod
   use lat_damp_mod
   use operators_mod
 
@@ -31,7 +31,7 @@ contains
     call vor_damp_init(blocks)
     call div_damp_init(blocks)
     call laplace_damp_init()
-    call zonal_damp_init()
+    call lon_damp_init()
     call lat_damp_init()
 
   end subroutine damp_init
@@ -41,7 +41,7 @@ contains
     call vor_damp_final()
     call div_damp_final()
     call laplace_damp_final()
-    call zonal_damp_final()
+    call lon_damp_final()
     call lat_damp_final()
 
   end subroutine damp_final
@@ -68,19 +68,19 @@ contains
     if (use_smag_damp) then
       call smag_damp_run(block, dt, tend, state)
     end if
-    if (use_zonal_damp) then
-      do cyc = 1, zonal_damp_cycles
-        call zonal_damp_on_lon_edge(block, zonal_damp_order, state%u_lon)
-        call zonal_damp_on_lat_edge(block, zonal_damp_order, state%v_lat)
+    if (use_lon_damp) then
+      do cyc = 1, lon_damp_cycles
+        call lon_damp_on_lon_edge(block, lon_damp_order, state%u_lon)
+        call lon_damp_on_lat_edge(block, lon_damp_order, state%v_lat)
         if (baroclinic) then
           state%pt = state%pt * state%m
-          call zonal_damp_on_cell(block, zonal_damp_order, state%phs)
+          call lon_damp_on_cell(block, lon_damp_order, state%phs)
           call calc_ph(block, state)
           call calc_m(block, state)
-          call zonal_damp_on_cell(block, zonal_damp_order, state%pt)
+          call lon_damp_on_cell(block, lon_damp_order, state%pt)
           state%pt = state%pt / state%m
         else
-          call zonal_damp_on_cell(block, zonal_damp_order, state%gz)
+          call lon_damp_on_cell(block, lon_damp_order, state%gz)
         end if
       end do
     end if
