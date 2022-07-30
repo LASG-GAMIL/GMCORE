@@ -166,11 +166,11 @@ contains
           associate (mesh    => block%mesh                  , &
                      old     => block%adv_batches(m)%old    , &
                      new     => block%adv_batches(m)%new    , &
-                     old_m   => block%adv_batches(m)%old_m  , &
-                     q       => block%adv_batches(m)%q      , &
-                     qmf_lon => block%adv_batches(m)%qmf_lon, &
-                     qmf_lat => block%adv_batches(m)%qmf_lat, &
-                     qmf_lev => block%adv_batches(m)%qmf_lev)
+                     old_m   => block%adv_batches(m)%old_m  , & ! inout
+                     q       => block%adv_batches(m)%q      , & ! inout
+                     qmf_lon => block%adv_batches(m)%qmf_lon, & ! working array
+                     qmf_lat => block%adv_batches(m)%qmf_lat, & ! working array
+                     qmf_lev => block%adv_batches(m)%qmf_lev)   ! working array
           ! Calculate tracer mass flux.
           call adv_calc_tracer_hflx_cell(block, block%adv_batches(m), q(:,:,:,l,old), qmf_lon, qmf_lat)
           call fill_halo(block, qmf_lon, full_lon=.false., full_lat=.true., full_lev=.true., &

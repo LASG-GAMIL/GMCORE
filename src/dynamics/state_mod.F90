@@ -76,6 +76,8 @@ module state_mod
     real(r8), allocatable, dimension(:,:,:) :: v_lev_lat
     real(r8), allocatable, dimension(:,:,:) :: mf_lev_lon_n      ! Mass flux on zonal edge and half level
     real(r8), allocatable, dimension(:,:,:) :: mf_lev_lat_n      ! Mass flux on merdional edge and half level
+    ! Moist variables
+    real(r8), allocatable, dimension(:,:,:) :: qm                ! Total water mixing ratio (1)
     ! Smagorinsky damping variables
     real(r8), allocatable, dimension(:,:,:) :: smag_t            ! tension strain
     real(r8), allocatable, dimension(:,:,:) :: smag_s            ! shear strain on vertex
@@ -149,6 +151,8 @@ contains
 
     if (.not. baroclinic) then
       call allocate_array(mesh, this%gz_f           , full_lon=.true., full_lat=.true., full_lev=.true.)
+    else
+      call allocate_array(mesh, this%qm             , full_lon=.true., full_lat=.true., full_lev=.true.)
     end if
 
     if (nonhydrostatic) then
@@ -249,6 +253,8 @@ contains
     if (allocated(this%v_lev_lat        )) deallocate(this%v_lev_lat        )
     if (allocated(this%mf_lev_lon_n     )) deallocate(this%mf_lev_lon_n     )
     if (allocated(this%mf_lev_lat_n     )) deallocate(this%mf_lev_lat_n     )
+
+    if (allocated(this%qm               )) deallocate(this%qm               )
 
     if (nonhydrostatic) then
       if (associated(this%p             )) deallocate(this%p                )

@@ -1,6 +1,7 @@
 module moist_mod
 
   use namelist_mod
+  use block_mod
   use adv_mod
 
   implicit none
@@ -8,6 +9,7 @@ module moist_mod
   private
 
   public moist_init
+  public calc_qm
 
 contains
 
@@ -22,5 +24,27 @@ contains
     ! call adv_add_tracer('moist', dt_adv, 'qh', 'hail'        )
 
   end subroutine moist_init
+
+  subroutine calc_qm(block, itime)
+
+    type(block_type), intent(inout), target :: block
+    integer, intent(in) :: itime
+
+    real(r8), pointer, dimension(:,:,:) :: qv
+    integer i, j, k
+
+    associate (mesh => block%mesh,            &
+               qm   => block%state(itime)%qm)   ! out
+    qv => block%adv_batches(1)%q(:,:,:,1,block%adv_batches(1)%old)
+    do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          qm(i,j,k) = qv(i,j,k)
+        end do
+      end do
+    end do
+    end associate
+
+  end subroutine calc_qm
 
 end module moist_mod
