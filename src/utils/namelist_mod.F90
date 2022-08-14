@@ -40,6 +40,8 @@ module namelist_mod
 
   integer         :: num_proc_lon(20)     = 0
   integer         :: num_proc_lat(20)     = 0
+  integer         :: lon_halo_width       = 2
+
 
   character(30)   :: tangent_wgt_scheme   = 'classic'
 
@@ -142,6 +144,7 @@ module namelist_mod
     advection                 , &
     num_proc_lon              , &
     num_proc_lat              , &
+    lon_halo_width            , &
     initial_time              , &
     start_time                , &
     end_time                  , &

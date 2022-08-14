@@ -26,15 +26,15 @@ contains
     real(r8) ls2
 
     associate (mesh      => block%mesh    , &
-               smag_t    => state%smag_t  , &
-               smag_s    => state%smag_s  , &
-               kmh_lon   => state%kmh_lon , &
-               kmh_lat   => state%kmh_lat , &
-               dudt      => tend%smag_dudt, &
-               dvdt      => tend%smag_dvdt, &
-               u         => state%u_lon   , &
-               v         => state%v_lat   , &
-               pt        => state%pt      )
+               smag_t    => state%smag_t  , & ! working array
+               smag_s    => state%smag_s  , & ! working array
+               kmh_lon   => state%kmh_lon , & ! working array
+               kmh_lat   => state%kmh_lat , & ! working array
+               dudt      => tend%smag_dudt, & ! working array
+               dvdt      => tend%smag_dvdt, & ! working array
+               u         => state%u_lon   , & ! inout
+               v         => state%v_lat   , & ! inout
+               pt        => state%pt      )   ! not used yet
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -47,7 +47,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, smag_t, full_lon=.true., full_lat=.true., full_lev=.true.)
+    call fill_halo(block, smag_t, full_lon=.true., full_lat=.true., full_lev=.true., west_halo=.false., south_halo=.false.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
@@ -61,7 +61,7 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, smag_s, full_lon=.false., full_lat=.false., full_lev=.true.)
+    call fill_halo(block, smag_s, full_lon=.false., full_lat=.false., full_lev=.true., east_halo=.false., north_halo=.false.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
@@ -79,9 +79,9 @@ contains
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         ls2 = smag_damp_coef / (1 / mesh%le_lat(j)**2 + 1 / mesh%de_lat(j)**2)
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          kmh_lat(i,j,k) = ls2 * sqrt(                            &
-            0.5_r8 * (smag_t(i,j,k)**2 + smag_t(i  ,j+1,k)**2) +  &
-            0.5_r8 * (smag_s(i,j,k)**2 + smag_s(i-1,j  ,k)**2)    &
+          kmh_lat(i,j,k) = ls2 * sqrt(                           &
+            0.5_r8 * (smag_t(i,j,k)**2 + smag_t(i  ,j+1,k)**2) + &
+            0.5_r8 * (smag_s(i,j,k)**2 + smag_s(i-1,j  ,k)**2)   &
           )
         end do
       end do
@@ -109,7 +109,7 @@ contains
     call fill_halo(block, u, full_lon=.false., full_lat=.true., full_lev=.true.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%half_lat_ibeg + 1, mesh%half_lat_iend - 1
+      do j = mesh%half_lat_ibeg + merge(1, 0, mesh%has_south_pole()), mesh%half_lat_iend - merge(1, 0, mesh%has_north_pole())
         if (mesh%is_pole(j)) then
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             dvdt(i,j,k) = kmh_lat(i,j,k) * (                                           &

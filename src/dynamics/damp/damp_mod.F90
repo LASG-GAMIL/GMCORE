@@ -74,9 +74,9 @@ contains
         call lon_damp_on_lat_edge(block, lon_damp_order, state%v_lat)
         if (baroclinic) then
           state%pt = state%pt * state%m
-          call lon_damp_on_cell(block, lon_damp_order, state%phs)
-          call calc_ph(block, state)
-          call calc_m(block, state)
+          ! call lon_damp_on_cell(block, lon_damp_order, state%phs)
+          ! call calc_ph(block, state)
+          ! call calc_m(block, state)
           call lon_damp_on_cell(block, lon_damp_order, state%pt)
           state%pt = state%pt / state%m
         else

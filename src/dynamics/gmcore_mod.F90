@@ -52,7 +52,7 @@ contains
 
     call log_init()
     call global_mesh%init_global(num_lon, num_lat, num_lev, &
-                                 lon_halo_width=2, &
+                                 lon_halo_width=lon_halo_width, &
                                  lat_halo_width=2)
     call process_init(comm)
     call vert_coord_init(num_lev, namelist_path)
