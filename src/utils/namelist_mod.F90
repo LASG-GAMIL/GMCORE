@@ -116,9 +116,9 @@ module namelist_mod
   logical         :: use_smag_damp        = .false.
   real(r8)        :: smag_damp_coef       = 0.1
   logical         :: use_lon_damp         = .false.
-  integer         :: lon_damp_cycles      = 1
+  integer         :: lon_damp_cycles      = 5
   integer         :: lon_damp_order       = 2
-  real(r8)        :: lon_damp_lat0        = 60
+  real(r8)        :: lon_damp_lat0        = 80
   logical         :: use_vdamp_pole_u     = .false.
   real(r8)        :: vdamp_pole_u_coef    = 0.1
 

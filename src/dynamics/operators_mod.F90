@@ -653,7 +653,8 @@ contains
         pole = pole / global_mesh%num_full_lon / mesh%area_cell(j)
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            vor(i,j,k) = vor(i,j+1,k) / 3.0_r8 + pole(k) * 2.0_r8 / 3.0_r8
+            ! vor(i,j,k) = vor(i,j+1,k) / 3.0_r8 + pole(k) * 2.0_r8 / 3.0_r8
+            vor(i,j,k) = pole(k)
           end do
         end do
       end if
@@ -668,7 +669,8 @@ contains
         pole = pole / global_mesh%num_full_lon / mesh%area_cell(j+1)
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            vor(i,j,k) = vor(i,j-1,k) / 3.0_r8 + pole(k) * 2.0_r8 / 3.0_r8
+            ! vor(i,j,k) = vor(i,j-1,k) / 3.0_r8 + pole(k) * 2.0_r8 / 3.0_r8
+            vor(i,j,k) = pole(k)
           end do
         end do
       end if

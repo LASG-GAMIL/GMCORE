@@ -294,7 +294,7 @@ contains
             end do
           end do
           call fill_halo(block, q(:,:,:,l,new), full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
-          do i = 1, 5
+          do i = 1, 3
             call lon_damp_on_cell(block, 2, q(:,:,:,l,new))
           end do
           call fill_halo(block, q(:,:,:,l,new), full_lon=.true., full_lat=.true., full_lev=.true.)
@@ -429,8 +429,8 @@ contains
         select case (block%adv_batches(l)%loc)
         case ('cell')
           call block%adv_batches(l)%accum_uv_cell( &
-            block%state(itime)%u_lon             , &
-            block%state(itime)%v_lat             )
+            block%state(itime)%u_f               , &
+            block%state(itime)%v_f               )
           call block%adv_batches(l)%accum_mf_cell( &
             block%state(itime)%mfx_lon           , &
             block%state(itime)%mfy_lat           )
@@ -441,8 +441,8 @@ contains
           end if
         case ('vtx')
           call block%adv_batches(l)%accum_uv_vtx ( &
-            block%state(itime)%u_lat             , &
-            block%state(itime)%v_lon             )
+            block%state(itime)%u_f               , &
+            block%state(itime)%v_f               )
           call block%adv_batches(l)%accum_mf_vtx ( &
             block%state(itime)%mfx_lat           , &
             block%state(itime)%mfy_lon           )
