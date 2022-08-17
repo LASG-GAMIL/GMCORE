@@ -212,6 +212,7 @@ contains
     call fiona_add_var('h0', 'te_ke'  , long_name='total kinetic energy'        , units=''      , dim_names=['time']      , dtype='r8')
     call fiona_add_var('h0', 'te_ie'  , long_name='total internal energy'       , units=''      , dim_names=['time']      , dtype='r8')
     call fiona_add_var('h0', 'te_pe'  , long_name='total potential energy'      , units=''      , dim_names=['time']      , dtype='r8')
+    call fiona_add_var('h0', 'ref_ps' , long_name='reference surface pressure'  , units='Pa'    , dim_names=['lon', 'lat'], dtype='r8')
     call fiona_add_var('h0', 'zs'     , long_name='surface height'              , units='m'     , dim_names=['lon', 'lat'], dtype='r8')
     call fiona_add_var('h0', 'dzsdlon', long_name='zonal zs gradient'           , units=''      , dim_names=['lon', 'lat'])
     call fiona_add_var('h0', 'dzsdlat', long_name='meridional zs gradient'      , units=''      , dim_names=['lon', 'lat'])
@@ -342,8 +343,6 @@ contains
     if (use_smag_damp) then
       call fiona_add_var('h1', 'smag_t'     , long_name='Tension for Smagorinsky diffusion'             , units='', dim_names=cell_dims_3d)
       call fiona_add_var('h1', 'smag_s'     , long_name='Shear for Smagorinsky diffusion'               , units='', dim_names= vtx_dims_3d)
-      call fiona_add_var('h1', 'kmh_lon'    , long_name='Smagorinsky diffusion coefficient for u'       , units='', dim_names= lon_dims_3d)
-      call fiona_add_var('h1', 'kmh_lat'    , long_name='Smagorinsky diffusion coefficient for v'       , units='', dim_names= lat_dims_3d)
     end if
 
   end subroutine history_setup_h1_hydrostatic
@@ -540,6 +539,7 @@ contains
       ks = mesh%full_lev_ibeg; ke = mesh%full_lev_iend
       start = [is,js,ks]
       count = [mesh%num_full_lon,mesh%num_full_lat,mesh%num_full_lev]
+      call fiona_output('h0', 'ref_ps'  , static%ref_ps (is:ie,js:je)           , start=start, count=count)
       call fiona_output('h0', 'zs'      , static%gzs    (is:ie,js:je) / g       , start=start, count=count)
       call fiona_output('h0', 'dzsdlon' , static%dzsdlon(is:ie,js:je)           , start=start, count=count)
       call fiona_output('h0', 'dzsdlat' , static%dzsdlat(is:ie,js:je)           , start=start, count=count)

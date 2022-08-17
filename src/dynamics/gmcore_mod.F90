@@ -140,6 +140,9 @@ contains
       call output(old)
     end do
 
+    ! Write a restart file at last.
+    call restart_write(old)
+
   end subroutine gmcore_run
 
   subroutine gmcore_final()

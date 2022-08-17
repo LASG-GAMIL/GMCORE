@@ -7,6 +7,7 @@ module prepare_mod
   use block_mod
   use topo_mod
   use bkg_mod
+  use ref_mod
   use operators_mod
 
   implicit none
@@ -61,6 +62,7 @@ contains
     call bkg_regrid_u()
     call bkg_regrid_v()
     call bkg_regrid_q()
+    call ref_calc_ps()
 
     if (nonhydrostatic) then
       do iblk = 1, size(blocks)

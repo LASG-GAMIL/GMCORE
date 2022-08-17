@@ -18,6 +18,7 @@ module static_mod
     real(r8), allocatable, dimension(:,:) :: zs_std
     real(r8), allocatable, dimension(:,:) :: dzsdlon
     real(r8), allocatable, dimension(:,:) :: dzsdlat
+    real(r8), allocatable, dimension(:,:) :: ref_ps
   contains
     procedure :: init => static_init
     procedure :: clear => static_clear
@@ -40,6 +41,7 @@ contains
     call allocate_array(mesh, this%zs_std  , full_lon=.true., full_lat=.true.)
     call allocate_array(mesh, this%dzsdlon , half_lon=.true., full_lat=.true.)
     call allocate_array(mesh, this%dzsdlat , full_lon=.true., half_lat=.true.)
+    call allocate_array(mesh, this%ref_ps  , full_lon=.true., full_lat=.true.)
 
   end subroutine static_init
 
@@ -52,6 +54,7 @@ contains
     if (allocated(this%zs_std  )) deallocate(this%zs_std  )
     if (allocated(this%dzsdlon )) deallocate(this%dzsdlon )
     if (allocated(this%dzsdlat )) deallocate(this%dzsdlat )
+    if (allocated(this%ref_ps  )) deallocate(this%ref_ps  )
 
   end subroutine static_clear
 

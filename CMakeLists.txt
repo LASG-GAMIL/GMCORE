@@ -172,6 +172,7 @@ set(gmcore_files
   src/prepare/waccm_reader_mod.F90
   src/prepare/openmars_reader_mod.F90
   src/prepare/bkg_mod.F90
+  src/prepare/ref_mod.F90
   src/physics/test_forcing_mod.F90
   src/physics/simple_physics_v6.F90
   src/tests/adv/deform_test_mod.F90
