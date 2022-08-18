@@ -93,9 +93,7 @@ contains
                 block%mesh%full_lat_lb:block%mesh%full_lat_ub)
     real(r8) fy(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
                 block%mesh%half_lat_lb:block%mesh%half_lat_ub)
-    real(r8) g (block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
-                block%mesh%full_lat_lb:block%mesh%full_lat_ub)
-    real(r8) c0, cj_half
+    real(r8) c0, s, cj_half
     real(r8), pointer :: w(:), cj(:)
     integer ns, i, j
 
@@ -105,6 +103,7 @@ contains
     else
       cj => lat_ones
     end if
+    s = (-1)**(order / 2)
 
     associate (mesh => block%mesh)
     ns = diff_halo_width(order-1)
@@ -112,25 +111,23 @@ contains
     ! Calculate damping flux at interfaces.
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       do i = mesh%half_lon_ibeg - 1, mesh%half_lon_iend
-        fx(i,j) = cj(j) * sum(f(i+1-ns:i+ns,j) * w(:2*ns))
+        fx(i,j) = s * cj(j) * sum(f(i+1-ns:i+ns,j) * w(:2*ns))
       end do
     end do
     do j = mesh%half_lat_ibeg - merge(0, 1, mesh%has_south_pole()), mesh%half_lat_iend
       cj_half = merge(cj(j), cj(j+1), mesh%half_lat(j) < 0)
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        fy(i,j) = cj_half * sum(f(i,j+1-ns:j+ns) * w(:2*ns))
+        fy(i,j) = s * cj_half * sum(f(i,j+1-ns:j+ns) * w(:2*ns))
       end do
     end do
     ! Limit damping flux to avoid upgradient (Xue 2000).
     if (order > 2) then
-      fx = fx * (-1)**(order + 1)
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%half_lon_ibeg - 1, mesh%half_lon_iend
           fx(i,j) = fx(i,j) * max(0.0_r8, sign(1.0_r8, -fx(i,j) * (f(i+1,j) - f(i,j))))
         end do
       end do
-      fy = fy * (-1)**(order + 1)
-      do j = mesh%half_lat_ibeg - 1, mesh%half_lat_iend
+      do j = mesh%half_lat_ibeg - merge(0, 1, mesh%has_south_pole()), mesh%half_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
           fy(i,j) = fy(i,j) * max(0.0_r8, sign(1.0_r8, -fy(i,j) * (f(i,j+1) - f(i,j))))
         end do
@@ -148,7 +145,7 @@ contains
     ! Update variable.
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        f(i,j) = f(i,j) + c0 * (fx(i,j) - fx(i-1,j) + fy(i,j) - fy(i,j-1))
+        f(i,j) = f(i,j) - c0 * (fx(i,j) - fx(i-1,j) + fy(i,j) - fy(i,j-1))
       end do
     end do
     end associate
@@ -200,9 +197,7 @@ contains
                 block%mesh%full_lat_lb:block%mesh%full_lat_ub)
     real(r8) fy(block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
                 block%mesh%half_lat_lb:block%mesh%half_lat_ub)
-    real(r8) g (block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
-                block%mesh%full_lat_lb:block%mesh%full_lat_ub)
-    real(r8) c0
+    real(r8) c0, s
     real(r8), pointer :: w(:), cj(:), ck(:)
     integer ns, i, j, k
 
@@ -217,6 +212,7 @@ contains
     else
       ck => lev_ones
     end if
+    s = (-1)**(order / 2)
 
     associate (mesh => block%mesh)
     ns = diff_halo_width(order-1)
@@ -225,23 +221,21 @@ contains
       ! Calculate damping flux at interfaces.
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend + 1
-          fx(i,j) = sum(f(i-ns:i+ns+1,j,k) * w(:2*ns))
+          fx(i,j) = s * sum(f(i-ns:i+ns+1,j,k) * w(:2*ns))
         end do
       end do
       do j = mesh%half_lat_ibeg - 1, mesh%half_lat_iend
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          fy(i,j) = sum(f(i,j-ns+1:j+ns,k) * w(:2*ns))
+          fy(i,j) = s * sum(f(i,j-ns+1:j+ns,k) * w(:2*ns))
         end do
       end do
       ! Limit damping flux to avoid upgradient (Xue 2000).
       if (order > 2) then
-        fx = fx * (-1)**(order + 1)
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend + 1
             fx(i,j) = fx(i,j) * max(0.0_r8, sign(1.0_r8, -fx(i,j) * (f(i,j,k) - f(i-1,j,k))))
           end do
         end do
-        fy = fy * (-1)**(order + 1)
         do j = mesh%half_lat_ibeg - 1, mesh%half_lat_iend
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
             fy(i,j) = fy(i,j) * max(0.0_r8, sign(1.0_r8, -fy(i,j) * (f(i,j+1,k) - f(i,j,k))))
@@ -261,7 +255,7 @@ contains
       ! Update variable.
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-          f(i,j,k) = f(i,j,k) + c0 * cj(j) * ck(k) * (fx(i+1,j) - fx(i,j) + fy(i,j) - fy(i,j-1))
+          f(i,j,k) = f(i,j,k) - c0 * cj(j) * ck(k) * (fx(i+1,j) - fx(i,j) + fy(i,j) - fy(i,j-1))
         end do
       end do
     end do
@@ -285,9 +279,7 @@ contains
                 block%mesh%half_lat_lb:block%mesh%half_lat_ub)
     real(r8) fy(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
                 block%mesh%full_lat_lb:block%mesh%full_lat_ub)
-    real(r8) g (block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
-                block%mesh%half_lat_lb:block%mesh%half_lat_ub)
-    real(r8) c0, cj_half
+    real(r8) c0, cj_half, s
     real(r8), pointer :: w(:), cj(:), ck(:)
     integer ns, i, j, k
 
@@ -302,6 +294,7 @@ contains
     else
       ck => lev_ones
     end if
+    s = (-1)**(order / 2)
 
     associate (mesh => block%mesh)
     ns = diff_halo_width(order-1)
@@ -310,23 +303,21 @@ contains
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         do i = mesh%half_lon_ibeg - 1, mesh%half_lon_iend
-          fx(i,j) = sum(f(i-ns+1:i+ns,j,k) * w(:2*ns))
+          fx(i,j) = s * sum(f(i-ns+1:i+ns,j,k) * w(:2*ns))
         end do
       end do
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend_no_pole + 1
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          fy(i,j) = sum(f(i,j-ns:j+ns+1,k) * w(:2*ns))
+          fy(i,j) = s * sum(f(i,j-ns:j+ns+1,k) * w(:2*ns))
         end do
       end do
       ! Limit damping flux to avoid upgradient (Xue 2000).
       if (order > 2) then
-        fx = fx * (-1)**(order + 1)
         do j = mesh%half_lat_ibeg, mesh%half_lat_iend
           do i = mesh%half_lon_ibeg - 1, mesh%half_lon_iend
             fx(i,j) = fx(i,j) * max(0.0_r8, sign(1.0_r8, -fx(i,j) * (f(i+1,j,k) - f(i,j,k))))
           end do
         end do
-        fy = fy * (-1)**(order + 1)
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             fy(i,j) = fy(i,j) * max(0.0_r8, sign(1.0_r8, -fy(i,j) * (f(i,j,k) - f(i,j-1,k))))
@@ -347,7 +338,7 @@ contains
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         cj_half = merge(cj(j), cj(j+1), mesh%half_lat(j) < 0)
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          f(i,j,k) = f(i,j,k) + c0 * cj_half * ck(k) * (fx(i,j) - fx(i-1,j) + fy(i,j+1) - fy(i,j))
+          f(i,j,k) = f(i,j,k) - c0 * cj_half * ck(k) * (fx(i,j) - fx(i-1,j) + fy(i,j+1) - fy(i,j))
         end do
       end do
     end do
