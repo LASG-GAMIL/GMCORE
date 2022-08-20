@@ -98,8 +98,8 @@ contains
                t       => state%t      , &
                gz_lev  => state%gz_lev , &
                gz      => state%gz     , &
-               u       => state%u_lon  , &
-               v       => state%v_lat  , &
+               u       => state%u_f    , &
+               v       => state%v_f    , &
                mfx_lon => state%mfx_lon, &
                mfy_lat => state%mfy_lat, &
                we      => state%we_lev)

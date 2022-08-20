@@ -76,8 +76,8 @@ contains
 
     associate (mesh => block%mesh   , &
                m    => state%m      , &
-               u    => state%u_lon  , &
-               v    => state%v_lat  , &
+               u    => state%u_f    , &
+               v    => state%v_f    , &
                mfx  => state%mfx_lon, &
                mfy  => state%mfy_lat)
     m = 1

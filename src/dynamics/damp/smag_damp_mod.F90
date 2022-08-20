@@ -109,8 +109,8 @@ contains
     call fill_halo(block, u, full_lon=.false., full_lat=.true., full_lev=.true.)
 
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-      do j = mesh%half_lat_ibeg + merge(1, 0, mesh%has_south_pole()), mesh%half_lat_iend - merge(1, 0, mesh%has_north_pole())
-        if (mesh%is_pole(j)) then
+      do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+        if (j == global_mesh%half_lat_ibeg .or. j == global_mesh%half_lat_iend) then
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             dvdt(i,j,k) = kmh_lat(i,j,k) * (                                           &
               (v(i-1,j,k) - 2 * v(i,j,k) + v(i+1,j,k)) / mesh%le_lat(j)**2             &
