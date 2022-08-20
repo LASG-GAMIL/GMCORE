@@ -87,7 +87,8 @@ contains
       1.0          & ! 29
     ]
 
-    p0 = 1
+    p0 = 6.0e2_r8
+    hyai = hyai / p0
     ptop = p0 * hyai(1)
 
   end subroutine hybrid_coord_mars_emars28
