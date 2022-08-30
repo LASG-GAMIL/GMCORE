@@ -343,6 +343,8 @@ contains
     if (use_smag_damp) then
       call fiona_add_var('h1', 'smag_t'     , long_name='Tension for Smagorinsky diffusion'             , units='', dim_names=cell_dims_3d)
       call fiona_add_var('h1', 'smag_s'     , long_name='Shear for Smagorinsky diffusion'               , units='', dim_names= vtx_dims_3d)
+      call fiona_add_var('h1', 'kmh_lon'    , long_name='Smagorinsky diffusion coefficient for u'       , units='', dim_names= lon_dims_3d)
+      call fiona_add_var('h1', 'kmh_lat'    , long_name='Smagorinsky diffusion coefficient for v'       , units='', dim_names= lat_dims_3d)
     end if
 
   end subroutine history_setup_h1_hydrostatic

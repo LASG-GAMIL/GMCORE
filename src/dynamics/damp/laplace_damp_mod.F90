@@ -50,7 +50,7 @@ contains
 
   subroutine laplace_damp_init()
 
-    integer j, jr, j0, k, k0
+    integer k, k0
 
     allocate(lat_ones       (global_mesh%num_full_lat)); lat_ones  = 1
     allocate(lev_ones       (global_mesh%num_full_lev)); lev_ones  = 1
@@ -89,13 +89,21 @@ contains
     real(r8), intent(in), optional, target :: lat_coef(global_mesh%num_full_lat)
     logical, intent(in), optional :: fill
 
-    real(r8) fx(block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
-                block%mesh%full_lat_lb:block%mesh%full_lat_ub)
-    real(r8) fy(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
-                block%mesh%half_lat_lb:block%mesh%half_lat_ub)
+    real(r8) gx1(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
+                 block%mesh%full_lat_lb:block%mesh%full_lat_ub)
+    real(r8) gx2(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
+                 block%mesh%full_lat_lb:block%mesh%full_lat_ub)
+    real(r8) gy1(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
+                 block%mesh%full_lat_lb:block%mesh%full_lat_ub)
+    real(r8) gy2(block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
+                 block%mesh%full_lat_lb:block%mesh%full_lat_ub)
+    real(r8) fx (block%mesh%half_lon_lb:block%mesh%half_lon_ub, &
+                 block%mesh%full_lat_lb:block%mesh%full_lat_ub)
+    real(r8) fy (block%mesh%full_lon_lb:block%mesh%full_lon_ub, &
+                 block%mesh%half_lat_lb:block%mesh%half_lat_ub)
     real(r8) c0, s, cj_half
-    real(r8), pointer :: w(:), cj(:)
-    integer ns, i, j
+    real(r8), pointer :: cj(:)
+    integer i, j, k
 
     c0 = 0.5_r8**order * merge(coef, 1.0_r8, present(coef))
     if (present(lat_coef)) then
@@ -106,18 +114,30 @@ contains
     s = (-1)**(order / 2)
 
     associate (mesh => block%mesh)
-    ns = diff_halo_width(order-1)
-    w => diff_weights(:,order-1)
+    gx1 = f
+    gy1 = f
+    do k = 1, (order - 2) / 2
+      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+          gx2(i,j) = gx1(i-1,j) - 2 * gx1(i,j) + gx1(i+1,j)
+          gy2(i,j) = gy1(i,j-1) - 2 * gy1(i,j) + gy1(i,j+1)
+        end do
+      end do
+      call fill_halo(block, gx2, full_lon=.true., full_lat=.true., south_halo=.false., north_halo=.false.)
+      call fill_halo(block, gy2, full_lon=.true., full_lat=.true., west_halo=.false., east_halo=.false.)
+      gx1 = gx2
+      gy1 = gy2
+    end do
     ! Calculate damping flux at interfaces.
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
       do i = mesh%half_lon_ibeg - 1, mesh%half_lon_iend
-        fx(i,j) = s * cj(j) * sum(f(i+1-ns:i+ns,j) * w(:2*ns))
+        fx(i,j) = s * cj(j) * (gx1(i+1,j) - gx1(i,j))
       end do
     end do
     do j = mesh%half_lat_ibeg - merge(0, 1, mesh%has_south_pole()), mesh%half_lat_iend
       cj_half = merge(cj(j), cj(j+1), mesh%half_lat(j) < 0)
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        fy(i,j) = s * cj_half * sum(f(i,j+1-ns:j+ns) * w(:2*ns))
+        fy(i,j) = s * cj_half * (gy1(i,j+1) - gy1(i,j))
       end do
     end do
     ! Limit damping flux to avoid upgradient (Xue 2000).
@@ -132,15 +152,6 @@ contains
           fy(i,j) = fy(i,j) * max(0.0_r8, sign(1.0_r8, -fy(i,j) * (f(i,j+1) - f(i,j))))
         end do
       end do
-    end if
-    ! Zero out damping flux contains the pole.
-    if (mesh%has_south_pole()) then
-      j = ns - 1
-      fy(:,:j) = 0
-    end if
-    if (mesh%has_north_pole()) then
-      j = global_mesh%num_half_lat - ns + 1
-      fy(:,j:) = 0
     end if
     ! Update variable.
     do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole

@@ -1,7 +1,7 @@
 module mars_cold_run_mod
 
   use flogger
-  use namelist_mod, only: topo_file
+  use namelist_mod, only: topo_file, use_topo_smooth, ptop
   use const_mod
   use parallel_mod
   use block_mod
@@ -16,8 +16,7 @@ module mars_cold_run_mod
   public mars_cold_run_set_ic
 
   real(r8), parameter :: t0   = 170.0_r8   ! K
-  real(r8), parameter :: ps0  = 6.10_r8    ! Pa
-  real(r8), parameter :: ptop = 0.008_r8   ! Pa
+  real(r8), parameter :: ps0  = 610.0_r8   ! Pa
 
 contains
 
@@ -29,6 +28,9 @@ contains
 
     call topo_read(topo_file)
     call topo_regrid(block)
+    if (use_topo_smooth) then
+      call topo_smooth(block)
+    end if
 
     associate (mesh   => block%mesh           , &
                u      => block%state(1)%u_lon , &

@@ -98,6 +98,9 @@ contains
         call hybrid_coord_mars_emars28(p0, ptop, hyai, hybi)
       case ('dcmip_l60')
         call hybrid_coord_dcmip_l60(p0, ptop, hyai, hybi)
+      case ('equal_eta')
+        call hybrid_coord_equal_eta(p0, ptop, hyai, hybi)
+        local_ptop = ptop
       case default
         if (baroclinic .and. template == 'N/A' .and. is_root_proc()) then
           call log_error('Hybrid vertical coordinate template "' // trim(template) // '" is invalid!')

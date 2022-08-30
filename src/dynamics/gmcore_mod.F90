@@ -212,9 +212,6 @@ contains
     type(block_type), intent(inout), target :: blocks(:)
     integer, intent(in) :: itime
 
-    type(mesh_type), pointer :: mesh
-    type(state_type), pointer :: state
-    type(static_type), pointer :: static
     integer i, j, k, iblk
     real(r8) tm, te, tav, tpe, tpt, max_w
     real(r8) te_ke, te_ie, te_pe
@@ -228,9 +225,9 @@ contains
     te_ie = 0
     te_pe = 0
     do iblk = 1, size(blocks)
-      mesh => blocks(iblk)%mesh
-      state => blocks(iblk)%state(itime)
-      static => blocks(iblk)%static
+      associate (mesh   => blocks(iblk)%mesh, &
+                 state  => blocks(iblk)%state(itime), &
+                 static => blocks(iblk)%static)
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
@@ -242,33 +239,26 @@ contains
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            te_ke = te_ke + state%mfx_lon(i,j,k) * 0.5_r8 * state%u_lon(i,j,k) * mesh%area_lon(j) * 2
+            te_ke = te_ke + state%mfx_lon(i,j,k) * 0.5_r8 * state%u_lon(i,j,k) * mesh%area_lon(j) * 2 * mesh%full_dlev(k)
           end do
         end do
         do j = mesh%half_lat_ibeg, mesh%half_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            te_ke = te_ke + state%mfy_lat(i,j,k) * 0.5_r8 * state%v_lat(i,j,k) * mesh%area_lat(j) * 2
+            te_ke = te_ke + state%mfy_lat(i,j,k) * 0.5_r8 * state%v_lat(i,j,k) * mesh%area_lat(j) * 2 * mesh%full_dlev(k)
           end do
         end do
       end do
-      if (hydrostatic) then
+      if (baroclinic) then
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              te_ie = te_ie + state%m(i,j,k) * cpd * state%t(i,j,k) * mesh%area_cell(j)
+              te_ie = te_ie + state%m(i,j,k) * cpd * state%t(i,j,k) * mesh%area_cell(j) * mesh%full_dlev(k)
             end do
           end do
         end do
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
             te_ie = te_ie + static%gzs(i,j) * state%phs(i,j) * mesh%area_cell(j)
-          end do
-        end do
-      else if (nonhydrostatic) then
-      else
-        do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            te_pe = te_pe + (state%m(i,j,1)**2 * g * 0.5_r8 + state%m(i,j,1) * static%gzs(i,j)) * mesh%area_cell(j)
           end do
         end do
       end if
@@ -303,6 +293,7 @@ contains
           end do
         end do
       end if
+      end associate
     end do
     call global_sum(proc%comm, tm)
     call global_sum(proc%comm, te_ke)

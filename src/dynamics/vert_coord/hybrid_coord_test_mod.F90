@@ -23,6 +23,7 @@ module hybrid_coord_test_mod
   public hybrid_coord_dcmip31_l10
   public hybrid_coord_waccm_l70
   public hybrid_coord_dcmip_l60
+  public hybrid_coord_equal_eta
 
 contains
 
@@ -1325,5 +1326,29 @@ contains
     ptop = p0 * hyai(1)
 
   end subroutine hybrid_coord_waccm_l70
+
+  subroutine hybrid_coord_equal_eta(p0, ptop, hyai, hybi)
+
+    real(r8), intent(in) :: p0
+    real(r8), intent(in) :: ptop
+    real(r8), intent(out) :: hyai(:)
+    real(r8), intent(out) :: hybi(:)
+
+    real(r8) deta, eta, etac, c1, c2, c3, c4
+    integer k
+
+    deta = 1.0_r8 / global_mesh%num_full_lev
+    etac = 0.2
+    c1 = 2 * etac**2 / (1 - etac)**3
+    c2 = -etac * (4 + etac + etac**2) / (1 - etac)**3
+    c3 = 2 * (1 + etac + etac**2) / (1 - etac)**3
+    c4 = -(1 + etac) / (1 - etac)**3
+    do k = 1, global_mesh%num_half_lev
+      eta = (k - 1) * deta
+      hybi(k) = merge(0.0_r8, c1 + c2 * eta + c3 * eta**2 + c4 * eta**3, eta < etac)
+      hyai(k) = eta - hybi(k)
+    end do
+
+  end subroutine hybrid_coord_equal_eta
 
 end module hybrid_coord_test_mod

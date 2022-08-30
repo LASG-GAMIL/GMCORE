@@ -72,7 +72,7 @@ contains
       cpd        = 735.0d0
       cvd        = 543.16d0
       lapse_rate = 5.06d-3
-      p0         = 6.0d2 ! FIXME: Should we use 6 hPa?
+      p0         = 6.1d2 ! FIXME: Should we use 6 hPa?
     case default
       call log_error('Invalid planet!')
     end select

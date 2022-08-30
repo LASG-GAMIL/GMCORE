@@ -30,6 +30,7 @@ contains
 
     call vor_damp_init(blocks)
     call div_damp_init(blocks)
+    call smag_damp_init()
     call laplace_damp_init()
     call lon_damp_init()
     call lat_damp_init()
@@ -40,6 +41,7 @@ contains
 
     call vor_damp_final()
     call div_damp_final()
+    call smag_damp_final()
     call laplace_damp_final()
     call lon_damp_final()
     call lat_damp_final()
@@ -74,6 +76,9 @@ contains
         call lon_damp_on_lat_edge(block, lon_damp_order, state%v_lat)
         if (baroclinic) then
           state%pt = state%pt * state%m
+          call lon_damp_on_cell(block, lon_damp_order, state%phs)
+          call calc_ph(block, state)
+          call calc_m(block, state)
           call lon_damp_on_cell(block, lon_damp_order, state%pt)
           state%pt = state%pt / state%m
         else

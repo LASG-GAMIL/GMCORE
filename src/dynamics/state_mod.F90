@@ -82,7 +82,6 @@ module state_mod
     real(r8), allocatable, dimension(:,:,:) :: smag_t            ! tension strain
     real(r8), allocatable, dimension(:,:,:) :: smag_s            ! shear strain on vertex
     real(r8), allocatable, dimension(:,:,:) :: kmh               ! nonlinear diffusion coef
-    real(r8), allocatable, dimension(:,:,:) :: kmh_vtx           ! nonlinear diffusion coef on vertex
     real(r8), allocatable, dimension(:,:,:) :: kmh_lon           ! nonlinear diffusion coef on zonal edge
     real(r8), allocatable, dimension(:,:,:) :: kmh_lat           ! nonlinear diffusion coef on meridional edge
     ! Total diagnostics
@@ -187,7 +186,6 @@ contains
       call allocate_array(mesh, this%smag_t       , full_lon=.true., full_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%smag_s       , half_lon=.true., half_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%kmh          , full_lon=.true., full_lat=.true., full_lev=.true.)
-      call allocate_array(mesh, this%kmh_vtx      , half_lon=.true., half_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%kmh_lon      , half_lon=.true., full_lat=.true., full_lev=.true.)
       call allocate_array(mesh, this%kmh_lat      , full_lon=.true., half_lat=.true., full_lev=.true.)
     end if
@@ -264,7 +262,6 @@ contains
     if (allocated(this%smag_t           )) deallocate(this%smag_t           )
     if (allocated(this%smag_s           )) deallocate(this%smag_s           )
     if (allocated(this%kmh              )) deallocate(this%kmh              )
-    if (allocated(this%kmh_vtx          )) deallocate(this%kmh_vtx          )
     if (allocated(this%kmh_lon          )) deallocate(this%kmh_lon          )
     if (allocated(this%kmh_lat          )) deallocate(this%kmh_lat          )
 

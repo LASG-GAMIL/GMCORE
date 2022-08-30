@@ -9,6 +9,7 @@ module topo_mod
   use process_mod
   use parallel_mod
   use filter_mod
+  use laplace_damp_mod
 
   implicit none
 
@@ -439,6 +440,7 @@ contains
       !   end do
       ! end do
     end do
+    call laplace_damp_on_cell(block, 8, gzs, fill=.true.)
     end associate
 
   end subroutine topo_smooth
