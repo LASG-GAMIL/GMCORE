@@ -239,12 +239,12 @@ contains
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            te_ke = te_ke + state%mfx_lon(i,j,k) * 0.5_r8 * state%u_lon(i,j,k) * mesh%area_lon(j) * 2 * mesh%full_dlev(k)
+            te_ke = te_ke + state%mfx_lon(i,j,k) * 0.5_r8 * state%u_lon(i,j,k) * mesh%area_lon(j) * 2
           end do
         end do
         do j = mesh%half_lat_ibeg, mesh%half_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            te_ke = te_ke + state%mfy_lat(i,j,k) * 0.5_r8 * state%v_lat(i,j,k) * mesh%area_lat(j) * 2 * mesh%full_dlev(k)
+            te_ke = te_ke + state%mfy_lat(i,j,k) * 0.5_r8 * state%v_lat(i,j,k) * mesh%area_lat(j) * 2
           end do
         end do
       end do
@@ -252,7 +252,7 @@ contains
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-              te_ie = te_ie + state%m(i,j,k) * cpd * state%t(i,j,k) * mesh%area_cell(j) * mesh%full_dlev(k)
+              te_ie = te_ie + state%m(i,j,k) * cpd * state%t(i,j,k) * mesh%area_cell(j)
             end do
           end do
         end do
