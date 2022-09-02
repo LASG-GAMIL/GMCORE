@@ -261,6 +261,12 @@ contains
             te_ie = te_ie + static%gzs(i,j) * state%phs(i,j) * mesh%area_cell(j)
           end do
         end do
+      else
+        do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            te_pe = te_pe + (state%m(i,j,1)**2 * g * 0.5_r8 + state%m(i,j,1) * static%gzs(i,j)) * mesh%area_cell(j)
+          end do
+        end do
       end if
 
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
