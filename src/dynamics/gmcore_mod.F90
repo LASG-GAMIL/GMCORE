@@ -258,7 +258,7 @@ contains
         end do
         do j = mesh%full_lat_ibeg, mesh%full_lat_iend
           do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            te_ie = te_ie + static%gzs(i,j) * state%phs(i,j) * mesh%area_cell(j)
+            te_pe = te_pe + static%gzs(i,j) * state%phs(i,j) * mesh%area_cell(j)
           end do
         end do
       else

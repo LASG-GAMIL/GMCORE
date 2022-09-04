@@ -479,7 +479,7 @@ contains
                p_lev      => state%p_lev     , & ! out
                p_lev_lon  => state%p_lev_lon , & ! out
                p_lev_lat  => state%p_lev_lat)    ! out
-      call interp_cell_to_lev_edge(mesh, p, p_lev, handle_top_bottom=.true.)
+      call interp_cell_to_lev_edge(mesh, p, p_lev)
       call fill_halo(block, p_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
       call interp_lev_edge_to_lev_lon_edge(mesh, p_lev, p_lev_lon)
       call interp_lev_edge_to_lev_lat_edge(mesh, p_lev, p_lev_lat)

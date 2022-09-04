@@ -440,7 +440,7 @@ contains
       !   end do
       ! end do
     end do
-    call laplace_damp_on_cell(block, 8, gzs, fill=.true.)
+    ! call laplace_damp_on_cell(block, 8, gzs, fill=.true.)
     end associate
 
   end subroutine topo_smooth
