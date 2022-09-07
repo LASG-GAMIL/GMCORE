@@ -498,15 +498,23 @@ contains
     end do
 
     k = mesh%half_lev_ibeg
+    x1 = mesh%full_lev(k  ) - mesh%half_lev(k)
+    x2 = mesh%full_lev(k+1) - mesh%half_lev(k)
+    a =  x2 / (x2 - x1)
+    b = -x1 / (x2 - x1)
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        x_lev(i,j,k) = x(i,j,k)
+        x_lev(i,j,k) = a * x(i,j,k) + b * x(i,j,k+1)
       end do
     end do
     k = mesh%half_lev_iend
+    x1 = mesh%half_lev(k) - mesh%full_lev(k-1)
+    x2 = mesh%half_lev(k) - mesh%full_lev(k-2)
+    a =  x2 / (x2 - x1)
+    b = -x1 / (x2 - x1)
     do j = mesh%full_lat_ibeg, mesh%full_lat_iend
       do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-        x_lev(i,j,k) = x(i,j,k-1)
+        x_lev(i,j,k) = a * x(i,j,k-1) + b * x(i,j,k-2)
       end do
     end do
 

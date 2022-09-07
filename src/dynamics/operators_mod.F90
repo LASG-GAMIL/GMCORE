@@ -226,7 +226,7 @@ contains
     we_lev(:,:,mesh%half_lev_iend) = 0.0_r8
     call fill_halo(block, we_lev, full_lon=.true., full_lat=.true., full_lev=.false.)
 
-    ! call block%adv_batch_mass%accum_we_lev(we_lev, m_lev, dt)
+    call block%adv_batch_mass%accum_we_lev(we_lev, m_lev, dt)
 
     call interp_lev_edge_to_lev_lon_edge(mesh, we_lev, we_lev_lon)
     call interp_lev_edge_to_lev_lat_edge(mesh, we_lev, we_lev_lat)
@@ -1084,38 +1084,38 @@ contains
       end do
     end if
     ! --------------------------------- FFSL -----------------------------------
-    ! ! Set upper and lower boundary conditions.
-    ! do k = mesh%full_lev_ibeg - 1, mesh%full_lev_ibeg - 2, -1
-    !   pt(:,:,k) = 2 * pt(:,:,k+1) - pt(:,:,k+2)
-    ! end do
-    ! do k = mesh%full_lev_iend + 1, mesh%full_lev_iend + 2
-    !   pt(:,:,k) = 2 * pt(:,:,k-1) - pt(:,:,k-2)
-    ! end do
-    ! call adv_calc_tracer_vflx_cell(block, block%adv_batch_mass, pt, ptf_lev, dt)
-    ! do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-    !   do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-    !     do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-    !       dptfdlev(i,j,k) = ptf_lev(i,j,k+1) - ptf_lev(i,j,k)
-    !     end do
-    !   end do
-    ! end do
-    ! ------------------------------ Taylor 2020 -------------------------------
-    do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
-      do j = mesh%full_lat_ibeg, mesh%full_lat_iend
-        do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          ptf_lev(i,j,k) = -(gz_lev(i,j,k+1) - gz_lev(i,j,k-1)) / (2 * cpd) / &
-            (ph(i,j,k)**Rd_o_cpd - ph(i,j,k-1)**Rd_o_cpd) * p0**Rd_o_cpd
-        end do
-      end do
+    ! Set upper and lower boundary conditions.
+    do k = mesh%full_lev_ibeg - 1, mesh%full_lev_ibeg - 2, -1
+      pt(:,:,k) = 2 * pt(:,:,k+1) - pt(:,:,k+2)
     end do
+    do k = mesh%full_lev_iend + 1, mesh%full_lev_iend + 2
+      pt(:,:,k) = 2 * pt(:,:,k-1) - pt(:,:,k-2)
+    end do
+    call adv_calc_tracer_vflx_cell(block, block%adv_batch_mass, pt, ptf_lev, dt)
     do k = mesh%full_lev_ibeg, mesh%full_lev_iend
       do j = mesh%full_lat_ibeg, mesh%full_lat_iend
         do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-          dptfdlev(i,j,k) = state%we_lev(i,j,k+1) * ptf_lev(i,j,k+1) - &
-                            state%we_lev(i,j,k  ) * ptf_lev(i,j,k  )
+          dptfdlev(i,j,k) = ptf_lev(i,j,k+1) - ptf_lev(i,j,k)
         end do
       end do
     end do
+    ! ------------------------------ Taylor 2020 -------------------------------
+    ! do k = mesh%half_lev_ibeg + 1, mesh%half_lev_iend - 1
+    !   do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+    !     do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+    !       ptf_lev(i,j,k) = -(gz_lev(i,j,k+1) - gz_lev(i,j,k-1)) / (2 * cpd) / &
+    !         (ph(i,j,k)**Rd_o_cpd - ph(i,j,k-1)**Rd_o_cpd) * p0**Rd_o_cpd
+    !     end do
+    !   end do
+    ! end do
+    ! do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+    !   do j = mesh%full_lat_ibeg, mesh%full_lat_iend
+    !     do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+    !       dptfdlev(i,j,k) = state%we_lev(i,j,k+1) * ptf_lev(i,j,k+1) - &
+    !                         state%we_lev(i,j,k  ) * ptf_lev(i,j,k  )
+    !     end do
+    !   end do
+    ! end do
     end associate
 
   end subroutine calc_grad_ptf
