@@ -160,6 +160,8 @@ contains
 
     call adv_accum_wind(block, itime)
 
+    if (.not. allocated(block%adv_batches)) return
+
     do m = 1, size(block%adv_batches)
       if (time_is_alerted(block%adv_batches(m)%name) .and. time_step > 0) then
         do l = 1, size(block%adv_batches(m)%tracer_names)
