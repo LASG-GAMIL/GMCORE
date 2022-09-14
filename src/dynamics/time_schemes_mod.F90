@@ -138,7 +138,7 @@ contains
           end do
         end do
         call fill_halo(block, new_state%phs, full_lon=.true., full_lat=.true., south_halo=.false., north_halo=.false.)
-        call filter_on_cell(block, new_state%phs, new_state%phs_f)
+        call filter_on_cell(block%big_filter, new_state%phs, new_state%phs_f)
         call fill_halo(block, new_state%phs, full_lon=.true., full_lat=.true.)
 
         call calc_ph(block, new_state)
@@ -152,7 +152,7 @@ contains
 
       if (tend%update_pt) then
         if (.not. tend%update_phs .and. .not. tend%copy_phs .and. is_root_proc()) call log_error('Mass is not updated or copied!')
-         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
             do i = mesh%full_lon_ibeg, mesh%full_lon_iend
               new_state%pt(i,j,k) = old_state%pt(i,j,k) * old_state%m(i,j,k) + dt * tend%dpt(i,j,k)
@@ -161,15 +161,7 @@ contains
         end do
         ! ----------------------------------------------------------------------
         call fill_halo(block, new_state%pt, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
-        call filter_on_cell(block, new_state%pt, new_state%t)
-        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-            if (abs(mesh%full_lat_deg(j)) > 85) then
-              wgt = sin(pi05 * (1 - (pi05 - abs(mesh%full_lat(j))) / (5 * rad)))
-              new_state%pt(:,j,k) = wgt * new_state%t(:,j,k) + (1 - wgt) * new_state%pt(:,j,k)
-            end if
-          end do
-        end do
+        call filter_on_cell(block%small_filter1, new_state%pt)
         ! ----------------------------------------------------------------------
         do k = mesh%full_lev_ibeg, mesh%full_lev_iend
           do j = mesh%full_lat_ibeg, mesh%full_lat_iend
@@ -192,21 +184,14 @@ contains
           end do
         end do
         call fill_halo(block, new_state%gz, full_lon=.true., full_lat=.true., south_halo=.false., north_halo=.false.)
-        call filter_on_cell(block, new_state%gz, new_state%gz_f)
-        ! ----------------------------------------------------------------------
-        do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-          do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-            if (abs(mesh%full_lat_deg(j)) > 85) then
-              wgt = 0.8 * sin(pi05 * (1 - (pi05 - abs(mesh%full_lat(j))) / (5 * rad)))
-              new_state%gz(:,j,k) = wgt * new_state%gz_f(:,j,k) + (1 - wgt) * new_state%gz(:,j,k)
-            end if
-          end do
-        end do
-        call fill_halo(block, new_state%gz, full_lon=.true., full_lat=.true.)
-        ! ----------------------------------------------------------------------
+        call filter_on_cell(block%big_filter, new_state%gz, new_state%gz_f)
         call fill_halo(block, new_state%gz_f, full_lon=.true., full_lat=.true.)
+        ! ----------------------------------------------------------------------
+        call filter_on_cell(block%small_filter1, new_state%gz)
+        ! ----------------------------------------------------------------------
+        call fill_halo(block, new_state%gz, full_lon=.true., full_lat=.true.)
       else if (tend%copy_gz) then
-        new_state%gz   = old_state%gz
+        new_state%gz = old_state%gz
       end if
     end if
 
@@ -225,34 +210,16 @@ contains
           end do
         end do
       end do
-      if (use_vdamp_pole_u) then
-        if (mesh%has_south_pole()) then
-          j = mesh%full_lat_ibeg_no_pole
-          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            tmp1 = new_state%u_lon(i,j,mesh%full_lev_ibeg:mesh%full_lev_iend)
-            do k = mesh%full_lev_ibeg + 1, mesh%full_lev_iend - 1
-              new_state%u_lon(i,j,k) = (1 - 2 * vdamp_pole_u_coef) * tmp1(k) + vdamp_pole_u_coef * (tmp1(k-1) + tmp1(k+1))
-            end do
-            k = mesh%full_lev_ibeg
-            new_state%u_lon(i,j,k) = (1 - vdamp_pole_u_coef) * tmp1(k) + vdamp_pole_u_coef * tmp1(k+1)
-            k = mesh%full_lev_iend
-            new_state%u_lon(i,j,k) = (1 - vdamp_pole_u_coef) * tmp1(k) + vdamp_pole_u_coef * tmp1(k-1)
-          end do
-        end if
-        if (mesh%has_north_pole()) then
-          j = mesh%full_lat_iend_no_pole
-          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
-            tmp1 = new_state%u_lon(i,j,mesh%full_lev_ibeg:mesh%full_lev_iend)
-            do k = mesh%full_lev_ibeg + 1, mesh%full_lev_iend - 1
-              new_state%u_lon(i,j,k) = (1 - 2 * vdamp_pole_u_coef) * tmp1(k) + vdamp_pole_u_coef * (tmp1(k-1) + tmp1(k+1))
-            end do
-            k = mesh%full_lev_ibeg
-            new_state%u_lon(i,j,k) = (1 - vdamp_pole_u_coef) * tmp1(k) + vdamp_pole_u_coef * tmp1(k+1)
-            k = mesh%full_lev_iend
-            new_state%u_lon(i,j,k) = (1 - vdamp_pole_u_coef) * tmp1(k) + vdamp_pole_u_coef * tmp1(k-1)
-          end do
-        end if
+      ! ----------------------------------------------------------------------
+      if (baroclinic) then
+        call fill_halo(block, new_state%u_lon, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
+        call filter_on_lon_edge(block%small_filter1, new_state%u_lon)
+        call fill_halo(block, new_state%u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
+        call fill_halo(block, new_state%v_lat, full_lon=.true., full_lat=.false., full_lev=.true., south_halo=.false., north_halo=.false.)
+        call filter_on_lat_edge(block%small_filter1, new_state%v_lat)
+        call fill_halo(block, new_state%v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
       end if
+      ! ----------------------------------------------------------------------
       call fill_halo(block, new_state%u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
       call fill_halo(block, new_state%v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
       wgt = 0.6_r8
@@ -265,8 +232,8 @@ contains
         new_state%v_lat(:,j,:) = (1 - wgt) * new_state%v_lat(:,j,:) + wgt * new_state%v_lat(:,j-1,:)
       end if
       call fill_halo(block, new_state%v_lat, full_lon=.true., full_lat=.false., full_lev=.true., west_halo=.false., east_halo=.false.)
-      call filter_on_lon_edge(block, new_state%u_lon, new_state%u_f)
-      call filter_on_lat_edge(block, new_state%v_lat, new_state%v_f)
+      call filter_on_lon_edge(block%big_filter, new_state%u_lon, new_state%u_f)
+      call filter_on_lat_edge(block%big_filter, new_state%v_lat, new_state%v_f)
       call fill_halo(block, new_state%u_f, full_lon=.false., full_lat=.true., full_lev=.true.)
       call fill_halo(block, new_state%v_f, full_lon=.true., full_lat=.false., full_lev=.true.)
     end if

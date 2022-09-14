@@ -11,7 +11,6 @@ module operators_mod
   use adv_mod
   use nh_mod
   use interp_mod
-  use filter_mod
 
   implicit none
 
@@ -186,8 +185,6 @@ contains
         end do
       end do
     end do
-    call fill_halo(block, t, full_lon=.true., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
-    call filter_on_cell(block, t)
     end associate
 
   end subroutine calc_t

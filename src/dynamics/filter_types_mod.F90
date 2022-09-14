@@ -2,6 +2,7 @@ module filter_types_mod
 
   use const_mod
   use namelist_mod
+  use math_mod
   use mesh_mod
   use state_mod
 
@@ -12,6 +13,7 @@ module filter_types_mod
   public filter_type
 
   type filter_type
+    type(mesh_type), pointer :: mesh => null()
     real(r8), allocatable :: width_lon(:)
     integer , allocatable :: ngrid_lon(:)
     real(r8), allocatable :: wgt_lon(:,:)
@@ -26,20 +28,42 @@ module filter_types_mod
 
 contains
 
-  subroutine filter_init(this, mesh)
+  subroutine gaussian_weight(width, ngrid, w)
+
+    real(r8), intent(in) :: width
+    integer, intent(in) :: ngrid
+    real(r8), intent(out) :: w(:)
+
+    real(r8) s
+    integer i, x
+
+    s = filter_coef_b * width / 2.0_r8
+    do i = 1, ngrid
+      x = i - (ngrid + 1) / 2
+      w(i) = exp(-x**2 / (2 * s**2)) / (s * sqrt(pi2))
+    end do
+    w = w / sum(w)
+
+  end subroutine gaussian_weight
+
+  subroutine filter_init(this, mesh, type)
 
     class(filter_type), intent(inout) :: this
-    type(mesh_type), intent(in) :: mesh
+    type(mesh_type), intent(in), target :: mesh
+    character(*), intent(in) :: type
 
-    real(r8) dx, dy, dt, cfl, w, s, x
-    integer j, l, n
+    real(r8) dx, dy, dt, cfl, w, lat0
+    integer j, n
 
     call this%clear()
 
+    this%mesh => mesh
     dt = dt_dyn
-
     allocate(this%width_lon(mesh%full_lat_lb:mesh%full_lat_ub)); this%width_lon = 0
     allocate(this%ngrid_lon(mesh%full_lat_lb:mesh%full_lat_ub)); this%ngrid_lon = 0
+    allocate(this%width_lat(mesh%half_lat_lb:mesh%half_lat_ub)); this%width_lat = 0
+    allocate(this%ngrid_lat(mesh%half_lat_lb:mesh%half_lat_ub)); this%ngrid_lat = 0
+
     if (max_wave_speed > 0) then
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         dx = mesh%de_lon(j)
@@ -52,22 +76,6 @@ contains
           this%ngrid_lon(j) = n
         end if
       end do
-    end if
-    allocate(this%wgt_lon(maxval(this%ngrid_lon),mesh%full_lat_lb:mesh%full_lat_ub)); this%wgt_lon = 0
-    do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
-      if (this%ngrid_lon(j) > 1) then
-        s = filter_coef_b * this%width_lon(j) / 2.0_r8
-        do l = 1, this%ngrid_lon(j)
-          x = l - (this%ngrid_lon(j) + 1) / 2
-          this%wgt_lon(l,j) = exp(-x**2 / (2 * s**2)) / (s * sqrt(pi2))
-        end do
-        this%wgt_lon(:,j) = this%wgt_lon(:,j) / sum(this%wgt_lon(:,j))
-      end if
-    end do
-
-    allocate(this%width_lat(mesh%half_lat_lb:mesh%half_lat_ub)); this%width_lat = 0
-    allocate(this%ngrid_lat(mesh%half_lat_lb:mesh%half_lat_ub)); this%ngrid_lat = 0
-    if (max_wave_speed > 0) then
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         dx = mesh%le_lat(j)
         dy = mesh%de_lat(j)
@@ -80,17 +88,61 @@ contains
         end if
       end do
     end if
+
+    allocate(this%wgt_lon(maxval(this%ngrid_lon),mesh%full_lat_lb:mesh%full_lat_ub)); this%wgt_lon = 0
     allocate(this%wgt_lat(maxval(this%ngrid_lat),mesh%half_lat_lb:mesh%half_lat_ub)); this%wgt_lat = 0
-    do j = mesh%half_lat_ibeg, mesh%half_lat_iend
-      if (this%ngrid_lat(j) > 1) then
-        s = filter_coef_b * this%width_lat(j) / 2.0_r8
-        do l = 1, this%ngrid_lat(j)
-          x = l - (this%ngrid_lat(j) + 1) / 2
-          this%wgt_lat(l,j) = exp(-x**2 / (2 * s**2)) / (s * sqrt(pi2))
-        end do
-        this%wgt_lat(:,j) = this%wgt_lat(:,j) / sum(this%wgt_lat(:,j))
-      end if
-    end do
+    select case (type)
+    case ('big_filter')
+      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+        if (this%ngrid_lon(j) > 1) then
+          call gaussian_weight(this%width_lon(j), this%ngrid_lon(j), this%wgt_lon(:,j))
+        end if
+      end do
+      do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+        if (this%ngrid_lat(j) > 1) then
+          call gaussian_weight(this%width_lat(j), this%ngrid_lat(j), this%wgt_lat(:,j))
+        end if
+      end do
+    case ('small_filter1')
+      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+        if (this%ngrid_lon(j) > 1) then
+          w = filter_coef_d
+          n = w * this%ngrid_lon(j); if (mod(n, 2) == 0) n = n + 1; this%ngrid_lon(j) = n
+          this%width_lon(j) = w * this%width_lon(j)
+          call gaussian_weight(this%width_lon(j), this%ngrid_lon(j), this%wgt_lon(:,j))
+        end if
+      end do
+      lat0 = -global_mesh%half_lat_deg(1)
+      do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+        if (this%ngrid_lat(j) > 1) then
+          w = filter_coef_d
+          n = w * this%ngrid_lat(j); if (mod(n, 2) == 0) n = n + 1; this%ngrid_lat(j) = n
+          this%width_lat(j) = w * this%width_lat(j)
+          call gaussian_weight(this%width_lat(j), this%ngrid_lat(j), this%wgt_lat(:,j))
+        end if
+      end do
+    case ('small_filter2')
+      lat0 = -global_mesh%full_lat_deg(2)
+      do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+        if (this%ngrid_lon(j) > 1) then
+          w = exp_two_values(0.1_r8, 0.0_r8, lat0, 80.0_r8, abs(mesh%full_lat_deg(j)))
+          n = w * this%ngrid_lon(j); if (mod(n, 2) == 0) n = n + 1; this%ngrid_lon(j) = n
+          this%width_lon(j) = w * this%width_lon(j)
+          call gaussian_weight(this%width_lon(j), this%ngrid_lon(j), this%wgt_lon(:,j))
+        end if
+      end do
+      lat0 = -global_mesh%half_lat_deg(1)
+      do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+        if (this%ngrid_lat(j) > 1) then
+          w = exp_two_values(0.1_r8, 0.0_r8, lat0, 80.0_r8, abs(mesh%half_lat_deg(j)))
+          n = w * this%ngrid_lat(j); if (mod(n, 2) == 0) n = n + 1; this%ngrid_lat(j) = n
+          this%width_lat(j) = w * this%width_lat(j)
+          call gaussian_weight(this%width_lat(j), this%ngrid_lat(j), this%wgt_lat(:,j))
+        end if
+      end do
+    case default
+      call log_error('Invalid filter type ' // trim(type) // '!')
+    end select
 
   end subroutine filter_init
 

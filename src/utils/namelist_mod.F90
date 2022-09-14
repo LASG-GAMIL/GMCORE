@@ -54,7 +54,7 @@ module namelist_mod
   real(r8)        :: hybrid_coord_p0      = 1.0e5_r8
 
   integer         :: ke_scheme            = 2
-  real(r8)        :: ke_cell_wgt          = 3.0_r8 / 8.0_r8
+  real(r8)        :: ke_cell_wgt          = 0.5_r8
 
   character(30)   :: pv_scheme            = 'upwind' ! midpoint, upwind, ffsl
   logical         :: pv_pole_stokes       = .true.
@@ -90,13 +90,13 @@ module namelist_mod
   real(r8)        :: max_cfl              = 0.5
   real(r8)        :: filter_coef_a        = 1.0
   real(r8)        :: filter_coef_b        = 0.4
-  real(r8)        :: filter_coef_c        = 0.4
+  real(r8)        :: filter_coef_c        = 0.2
+  real(r8)        :: filter_coef_d        = 0.375
 
   ! Damping settings
   logical         :: use_topo_smooth      = .false.
   integer         :: topo_smooth_cycles   = 1
   logical         :: use_div_damp         = .false.
-  integer         :: div_damp_cycles      = 1
   integer         :: div_damp_order       = 2
   integer         :: div_damp_k0          = 3
   real(r8)        :: div_damp_imp_lat0    = 90
@@ -106,7 +106,6 @@ module namelist_mod
   real(r8)        :: div_damp_coef2       = 1.0_r8 / 128.0_r8
   real(r8)        :: div_damp_coef4       = 0.01_r8
   logical         :: use_vor_damp         = .false.
-  integer         :: vor_damp_cycles      = 1
   integer         :: vor_damp_order       = 2
   real(r8)        :: vor_damp_imp_lat0    = 50
   real(r8)        :: vor_damp_lat0        = 50
@@ -115,12 +114,6 @@ module namelist_mod
   real(r8)        :: rayleigh_damp_top    = 10.0d3 ! m
   logical         :: use_smag_damp        = .false.
   real(r8)        :: smag_damp_coef       = 0.1
-  logical         :: use_lon_damp         = .false.
-  integer         :: lon_damp_cycles      = 5
-  integer         :: lon_damp_order       = 2
-  real(r8)        :: lon_damp_lat0        = 80
-  logical         :: use_vdamp_pole_u     = .false.
-  real(r8)        :: vdamp_pole_u_coef    = 0.1
 
   ! Output settings
   character(8)    :: output_i0_dtype      = 'r8'
@@ -198,12 +191,12 @@ module namelist_mod
     filter_coef_a             , &
     filter_coef_b             , &
     filter_coef_c             , &
+    filter_coef_d             , &
     coarse_pole_mul           , &
     coarse_pole_decay         , &
     use_topo_smooth           , &
     topo_smooth_cycles        , &
     use_div_damp              , &
-    div_damp_cycles           , &
     div_damp_order            , &
     div_damp_imp_lat0         , &
     div_damp_k0               , &
@@ -213,7 +206,6 @@ module namelist_mod
     div_damp_coef2            , &
     div_damp_coef4            , &
     use_vor_damp              , &
-    vor_damp_cycles           , &
     vor_damp_order            , &
     vor_damp_imp_lat0         , &
     vor_damp_lat0             , &
@@ -222,12 +214,6 @@ module namelist_mod
     rayleigh_damp_top         , &
     use_smag_damp             , &
     smag_damp_coef            , &
-    use_lon_damp            , &
-    lon_damp_cycles         , &
-    lon_damp_order          , &
-    lon_damp_lat0           , &
-    use_vdamp_pole_u          , &
-    vdamp_pole_u_coef         , &
     output_h0                 , &
     output_h0_dtype           , &
     output_h1                 , &
@@ -292,6 +278,7 @@ contains
       write(*, *) 'filter_coef_a       = ', filter_coef_a
       write(*, *) 'filter_coef_b       = ', filter_coef_b
       write(*, *) 'filter_coef_c       = ', filter_coef_c
+      write(*, *) 'filter_coef_d       = ', filter_coef_d
       write(*, *) 'pgf_scheme          = ', trim(pgf_scheme)
       write(*, *) 'adv_scheme          = ', trim(adv_scheme)
       write(*, *) 'limiter_type        = ', trim(limiter_type)
@@ -316,13 +303,11 @@ contains
     end if
       write(*, *) 'use_vor_damp        = ', to_str(use_vor_damp)
     if (use_vor_damp) then
-      write(*, *) 'vor_damp_cycles     = ', to_str(vor_damp_cycles)
       write(*, *) 'vor_damp_coef2      = ', vor_damp_coef2
       write(*, *) 'vor_damp_lat0       = ', vor_damp_lat0
     end if
       write(*, *) 'use_div_damp        = ', to_str(use_div_damp)
     if (use_div_damp) then
-      write(*, *) 'div_damp_cycles     = ', to_str(div_damp_cycles)
       write(*, *) 'div_damp_coef2      = ', div_damp_coef2
       write(*, *) 'div_damp_top        = ', to_str(div_damp_top, 3)
       write(*, *) 'div_damp_pole       = ', div_damp_pole
@@ -336,12 +321,6 @@ contains
       write(*, *) 'use_smag_damp       = ', to_str(use_smag_damp)
     if (use_smag_damp) then
       write(*, *) 'smag_damp_coef      = ', to_str(smag_damp_coef, 1)
-    end if
-      write(*, *) 'use_lon_damp        = ', to_str(use_lon_damp)
-    if (use_lon_damp) then
-      write(*, *) 'lon_damp_cycles     = ', to_str(lon_damp_cycles)
-      write(*, *) 'lon_damp_order      = ', to_str(lon_damp_order)
-      write(*, *) 'lon_damp_lat0       = ', to_str(lon_damp_lat0, 2)
     end if
       write(*, *) '========================================================='
 

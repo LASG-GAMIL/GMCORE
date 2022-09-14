@@ -205,10 +205,10 @@ contains
     call blocks(1)%init_stage_1(proc%id, global_mesh%lon_halo_width, global_mesh%lat_halo_width, &
                                 proc%lon_ibeg, proc%lon_iend, proc%lat_ibeg, proc%lat_iend)
 
-    ! Each process calculate lon_halo_width from its filter%ngrid_lat(:).
+    ! Each process calculate lon_halo_width from its big_filter%ngrid_lat(:).
     max_hw = 2
     do j = blocks(1)%mesh%half_lat_ibeg, blocks(1)%mesh%half_lat_iend
-      max_hw = max(max_hw, (blocks(1)%filter%ngrid_lat(j) - 1) / 2)
+      max_hw = max(max_hw, (blocks(1)%big_filter%ngrid_lat(j) - 1) / 2)
     end do
     lon_halo_width = max(max_hw, global_mesh%lon_halo_width)
 

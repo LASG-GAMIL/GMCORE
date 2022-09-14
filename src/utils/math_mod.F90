@@ -8,6 +8,7 @@ module math_mod
   public cross_product
   public math_inv_matrix
   public tridiag_thomas
+  public exp_two_values
 
 contains
 
@@ -141,5 +142,20 @@ contains
     end do
 
   end subroutine tridiag_thomas
+
+  pure real(r8) function exp_two_values(val1, val2, x0, x1, x) result(res)
+
+    real(r8), intent(in) :: val1
+    real(r8), intent(in) :: val2
+    real(r8), intent(in) :: x0
+    real(r8), intent(in) :: x1
+    real(r8), intent(in) :: x
+
+    real(r8) w
+
+    w = exp((x - x0)**2 * log(1.0e-3_r8) / (x1 - x0)**2)
+    res = w * val1 + (1 - w) * val2
+
+  end function exp_two_values
 
 end module math_mod

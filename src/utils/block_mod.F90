@@ -33,7 +33,9 @@ module block_mod
     type(adv_batch_type) adv_batch_mass ! For mass, potential temperature
     type(adv_batch_type) adv_batch_pv
     type(adv_batch_type), allocatable :: adv_batches(:)
-    type(filter_type) filter
+    type(filter_type) big_filter
+    type(filter_type) small_filter1
+    type(filter_type) small_filter2
     type(halo_type), allocatable :: halo(:)
   contains
     procedure :: init_stage_1 => block_init_stage_1
@@ -60,7 +62,9 @@ contains
     this%id = id
 
     call this%mesh%init_from_parent(global_mesh, this%id, lon_halo_width, lat_halo_width, lon_ibeg, lon_iend, lat_ibeg, lat_iend)
-    call this%filter%init(this%mesh)
+    call this%big_filter%init(this%mesh, 'big_filter')
+    call this%small_filter1%init(this%mesh, 'small_filter1')
+    call this%small_filter2%init(this%mesh, 'small_filter2')
 
   end subroutine block_init_stage_1
 

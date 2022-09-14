@@ -43,12 +43,14 @@ contains
   subroutine lon_damp_init()
 
     integer j
-    real(r8) lat, lat0
+    real(r8) lat, lat0, lon_damp_lat0
 
     call lon_damp_final()
 
     allocate(wgt_full_lat(global_mesh%num_full_lat))
     allocate(wgt_half_lat(global_mesh%num_half_lat))
+
+    lon_damp_lat0 = 80
 
     lat0 = -global_mesh%full_lat_deg(2)
     do j = global_mesh%full_lat_ibeg_no_pole, global_mesh%full_lat_iend_no_pole

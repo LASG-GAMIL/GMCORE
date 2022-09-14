@@ -6,6 +6,7 @@ module damp_mod
   use namelist_mod
   use parallel_mod
   use block_mod
+  use filter_mod
   use vor_damp_mod
   use div_damp_mod
   use smag_damp_mod
@@ -55,36 +56,14 @@ contains
     type(tend_type), intent(inout) :: tend
     real(8), intent(in) :: dt
 
-    integer cyc
-
     if (use_div_damp) then
-      do cyc = 1, div_damp_cycles
-        call div_damp_run(block, state)
-      end do
+      call div_damp_run(block, state)
     end if
     if (use_vor_damp) then
-      do cyc = 1, div_damp_cycles
-        call vor_damp_run(block, dt, state)
-      end do
+      call vor_damp_run(block, dt, state)
     end if
     if (use_smag_damp) then
       call smag_damp_run(block, dt, tend, state)
-    end if
-    if (use_lon_damp) then
-      do cyc = 1, lon_damp_cycles
-        call lon_damp_on_lon_edge(block, lon_damp_order, state%u_lon)
-        call lon_damp_on_lat_edge(block, lon_damp_order, state%v_lat)
-        if (baroclinic) then
-          state%pt = state%pt * state%m
-          call lon_damp_on_cell(block, lon_damp_order, state%phs)
-          call calc_ph(block, state)
-          call calc_m(block, state)
-          call lon_damp_on_cell(block, lon_damp_order, state%pt)
-          state%pt = state%pt / state%m
-        else
-          call lon_damp_on_cell(block, lon_damp_order, state%gz)
-        end if
-      end do
     end if
 
   end subroutine damp_run
