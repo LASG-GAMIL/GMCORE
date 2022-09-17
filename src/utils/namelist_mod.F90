@@ -235,8 +235,9 @@ contains
     ! Here we set baroclinic according to levels.
     baroclinic = num_lev > 1
     if (.not. baroclinic) then
-      hydrostatic = .false.
+      hydrostatic    = .false.
       nonhydrostatic = .false.
+      ke_scheme      = 1
     else
       hydrostatic = .not. nonhydrostatic
     end if
