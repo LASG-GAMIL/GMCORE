@@ -7,7 +7,6 @@ module damp_mod
   use parallel_mod
   use block_mod
   use filter_mod
-  use vor_damp_mod
   use div_damp_mod
   use smag_damp_mod
   use laplace_damp_mod
@@ -29,7 +28,6 @@ contains
 
     type(block_type), intent(in) :: blocks(:)
 
-    call vor_damp_init(blocks)
     call div_damp_init(blocks)
     call smag_damp_init()
     call laplace_damp_init()
@@ -40,7 +38,6 @@ contains
 
   subroutine damp_final()
 
-    call vor_damp_final()
     call div_damp_final()
     call smag_damp_final()
     call laplace_damp_final()
@@ -58,9 +55,6 @@ contains
 
     if (use_div_damp) then
       call div_damp_run(block, state)
-    end if
-    if (use_vor_damp) then
-      call vor_damp_run(block, dt, state)
     end if
     if (use_smag_damp) then
       call smag_damp_run(block, dt, tend, state)

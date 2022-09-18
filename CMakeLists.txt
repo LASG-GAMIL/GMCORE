@@ -149,7 +149,6 @@ set(gmcore_files
   src/dynamics/filter_mod.F90
   src/dynamics/moist_mod.F90
   src/dynamics/damp/div_damp_mod.F90
-  src/dynamics/damp/vor_damp_mod.F90
   src/dynamics/damp/laplace_damp_mod.F90
   src/dynamics/damp/smag_damp_mod.F90
   src/dynamics/damp/lon_damp_mod.F90

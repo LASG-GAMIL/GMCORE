@@ -8,6 +8,7 @@ module div_damp_mod
   use process_mod
   use block_mod
   use tridiag_mod
+  use vert_coord_mod
   use operators_mod
 
   implicit none
@@ -27,7 +28,7 @@ contains
 
     type(block_type), intent(in) :: blocks(:)
 
-    integer j, k, r
+    integer j, k
     integer iblk
 
     if (.not. use_div_damp) return
@@ -39,18 +40,14 @@ contains
 
     select case (div_damp_order)
     case (2)
-      r = 1
       do k = global_mesh%full_lev_ibeg, global_mesh%full_lev_iend
         do j = global_mesh%full_lat_ibeg_no_pole, global_mesh%full_lat_iend_no_pole
           if (baroclinic) then
             c_lon(j,k) = div_damp_coef2 * &
-              (1.0_r8 + div_damp_top * exp((k-1)**2 * log(0.2_r8) / (div_damp_k0-1)**2)) * &
-              global_mesh%full_cos_lat(j)**r * &
-              radius**2 * global_mesh%dlat(j) * global_mesh%dlon
+              max(1.0_r8, 8 * (1 + tanh(log(ptop / vert_coord_calc_ph(k, p0))))) * &
+              global_mesh%le_lon(j) * global_mesh%de_lon(j)
           else
-            c_lon(j,k) = div_damp_coef2 * &
-              global_mesh%full_cos_lat(j)**r * &
-              radius**2 * global_mesh%dlat(j) * global_mesh%dlon
+            c_lon(j,k) = div_damp_coef2 * global_mesh%le_lon(j) * global_mesh%de_lon(j)
           end if
         end do
       end do
@@ -58,14 +55,22 @@ contains
         do j = global_mesh%half_lat_ibeg, global_mesh%half_lat_iend
           if (baroclinic) then
             c_lat(j,k) = div_damp_coef2 * &
-              (1.0_r8 + div_damp_top * exp((k-1)**2 * log(0.2_r8) / (div_damp_k0-1)**2)) * &
-              global_mesh%half_cos_lat(j)**r * &
-              radius**2 * global_mesh%dlat(j) * global_mesh%dlon
+              max(1.0_r8, 8 * (1 + tanh(log(ptop / vert_coord_calc_ph(k, p0))))) * &
+              global_mesh%le_lat(j) * global_mesh%de_lat(j)
           else
-            c_lat(j,k) = div_damp_coef2 * &
-              global_mesh%half_cos_lat(j)**r * &
-              radius**2 * global_mesh%dlat(j) * global_mesh%dlon
+            c_lat(j,k) = div_damp_coef2 * global_mesh%le_lat(j) * global_mesh%de_lat(j)
           end if
+        end do
+      end do
+    case (4)
+      do k = global_mesh%full_lev_ibeg, global_mesh%full_lev_iend
+        do j = global_mesh%full_lat_ibeg_no_pole, global_mesh%full_lat_iend_no_pole
+          c_lon(j,k) = div_damp_coef4 * global_mesh%le_lon(j)**2 * global_mesh%de_lon(j)**2
+        end do
+      end do
+      do k = global_mesh%full_lev_ibeg, global_mesh%full_lev_iend
+        do j = global_mesh%half_lat_ibeg, global_mesh%half_lat_iend
+          c_lat(j,k) = div_damp_coef4 * global_mesh%le_lat(j)**2 * global_mesh%de_lat(j)**2
         end do
       end do
     case default

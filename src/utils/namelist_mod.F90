@@ -105,11 +105,6 @@ module namelist_mod
   real(r8)        :: div_damp_lat0        = 90
   real(r8)        :: div_damp_coef2       = 1.0_r8 / 128.0_r8
   real(r8)        :: div_damp_coef4       = 0.01_r8
-  logical         :: use_vor_damp         = .false.
-  integer         :: vor_damp_order       = 2
-  real(r8)        :: vor_damp_imp_lat0    = 50
-  real(r8)        :: vor_damp_lat0        = 50
-  real(r8)        :: vor_damp_coef2       = 0.0005
   real(r8)        :: rayleigh_damp_w_coef = 0.2
   real(r8)        :: rayleigh_damp_top    = 10.0d3 ! m
   logical         :: use_smag_damp        = .false.
@@ -205,11 +200,6 @@ module namelist_mod
     div_damp_lat0             , &
     div_damp_coef2            , &
     div_damp_coef4            , &
-    use_vor_damp              , &
-    vor_damp_order            , &
-    vor_damp_imp_lat0         , &
-    vor_damp_lat0             , &
-    vor_damp_coef2            , &
     rayleigh_damp_w_coef      , &
     rayleigh_damp_top         , &
     use_smag_damp             , &
@@ -301,11 +291,6 @@ contains
       write(*, *) 'use_topo_smooth     = ', to_str(use_topo_smooth)
     if (use_topo_smooth) then
       write(*, *) 'topo_smooth_cycles  = ', to_str(topo_smooth_cycles)
-    end if
-      write(*, *) 'use_vor_damp        = ', to_str(use_vor_damp)
-    if (use_vor_damp) then
-      write(*, *) 'vor_damp_coef2      = ', vor_damp_coef2
-      write(*, *) 'vor_damp_lat0       = ', vor_damp_lat0
     end if
       write(*, *) 'use_div_damp        = ', to_str(use_div_damp)
     if (use_div_damp) then
