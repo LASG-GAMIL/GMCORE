@@ -125,7 +125,7 @@ contains
       lat0 = -global_mesh%full_lat_deg(2)
       do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
         if (this%ngrid_lon(j) > 1) then
-          w = exp_two_values(0.1_r8, 0.0_r8, lat0, 80.0_r8, abs(mesh%full_lat_deg(j)))
+          w = exp_two_values(filter_coef_e, filter_coef_d, lat0, 80.0_r8, abs(mesh%full_lat_deg(j)))
           n = w * this%ngrid_lon(j); if (mod(n, 2) == 0) n = n + 1; this%ngrid_lon(j) = n
           this%width_lon(j) = w * this%width_lon(j)
           call gaussian_weight(this%width_lon(j), this%ngrid_lon(j), this%wgt_lon(:,j))
@@ -134,7 +134,7 @@ contains
       lat0 = -global_mesh%half_lat_deg(1)
       do j = mesh%half_lat_ibeg, mesh%half_lat_iend
         if (this%ngrid_lat(j) > 1) then
-          w = exp_two_values(0.1_r8, 0.0_r8, lat0, 80.0_r8, abs(mesh%half_lat_deg(j)))
+          w = exp_two_values(filter_coef_e, filter_coef_d, lat0, 80.0_r8, abs(mesh%half_lat_deg(j)))
           n = w * this%ngrid_lat(j); if (mod(n, 2) == 0) n = n + 1; this%ngrid_lat(j) = n
           this%width_lat(j) = w * this%width_lat(j)
           call gaussian_weight(this%width_lat(j), this%ngrid_lat(j), this%wgt_lat(:,j))

@@ -92,6 +92,7 @@ module namelist_mod
   real(r8)        :: filter_coef_b        = 0.4
   real(r8)        :: filter_coef_c        = 0.2
   real(r8)        :: filter_coef_d        = 0.375
+  real(r8)        :: filter_coef_e        = 0.16
 
   ! Damping settings
   logical         :: use_topo_smooth      = .false.
@@ -187,6 +188,7 @@ module namelist_mod
     filter_coef_b             , &
     filter_coef_c             , &
     filter_coef_d             , &
+    filter_coef_e             , &
     coarse_pole_mul           , &
     coarse_pole_decay         , &
     use_topo_smooth           , &
@@ -270,6 +272,7 @@ contains
       write(*, *) 'filter_coef_b       = ', filter_coef_b
       write(*, *) 'filter_coef_c       = ', filter_coef_c
       write(*, *) 'filter_coef_d       = ', filter_coef_d
+      write(*, *) 'filter_coef_e       = ', filter_coef_e
       write(*, *) 'pgf_scheme          = ', trim(pgf_scheme)
       write(*, *) 'adv_scheme          = ', trim(adv_scheme)
       write(*, *) 'limiter_type        = ', trim(limiter_type)

@@ -97,19 +97,11 @@ contains
 
     associate (mesh => block%mesh , &
                div  => state%div  , &
+               div2 => state%div2 , &
                u    => state%u_lon, &
                v    => state%v_lat)
     select case (div_damp_order)
     case (2)
-      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
-        do j = mesh%half_lat_ibeg, mesh%half_lat_iend
-          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
-            v(i,j,k) = v(i,j,k) + c_lat(j,k) * (div(i,j+1,k) - div(i,j,k)) / mesh%de_lat(j)
-          end do
-        end do
-      end do
-      call fill_halo(block, v, full_lon=.true., full_lat=.false., full_lev=.true.)
-
       do k = mesh%full_lev_ibeg, mesh%full_lev_iend
         do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
           do i = mesh%half_lon_ibeg, mesh%half_lon_iend
@@ -117,9 +109,31 @@ contains
           end do
         end do
       end do
-      call fill_halo(block, u, full_lon=.false., full_lat=.true., full_lev=.true.)
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            v(i,j,k) = v(i,j,k) + c_lat(j,k) * (div(i,j+1,k) - div(i,j,k)) / mesh%de_lat(j)
+          end do
+        end do
+      end do
     case (4)
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%full_lat_ibeg_no_pole, mesh%full_lat_iend_no_pole
+          do i = mesh%half_lon_ibeg, mesh%half_lon_iend
+            u(i,j,k) = u(i,j,k) - c_lon(j,k) * (div2(i+1,j,k) - div2(i,j,k)) / mesh%de_lon(j)
+          end do
+        end do
+      end do
+      do k = mesh%full_lev_ibeg, mesh%full_lev_iend
+        do j = mesh%half_lat_ibeg, mesh%half_lat_iend
+          do i = mesh%full_lon_ibeg, mesh%full_lon_iend
+            v(i,j,k) = v(i,j,k) - c_lat(j,k) * (div2(i,j+1,k) - div2(i,j,k)) / mesh%de_lat(j)
+          end do
+        end do
+      end do
     end select
+    call fill_halo(block, u, full_lon=.false., full_lat=.true., full_lev=.true.)
+    call fill_halo(block, v, full_lon=.true., full_lat=.false., full_lev=.true.)
     end associate
 
   end subroutine div_damp_run

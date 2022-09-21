@@ -213,10 +213,10 @@ contains
       ! ----------------------------------------------------------------------
       if (baroclinic) then
         call fill_halo(block, new_state%u_lon, full_lon=.false., full_lat=.true., full_lev=.true., south_halo=.false., north_halo=.false.)
-        call filter_on_lon_edge(block%small_filter1, new_state%u_lon)
+        call filter_on_lon_edge(block%small_filter2, new_state%u_lon)
         call fill_halo(block, new_state%u_lon, full_lon=.false., full_lat=.true., full_lev=.true.)
         call fill_halo(block, new_state%v_lat, full_lon=.true., full_lat=.false., full_lev=.true., south_halo=.false., north_halo=.false.)
-        call filter_on_lat_edge(block%small_filter1, new_state%v_lat)
+        call filter_on_lat_edge(block%small_filter2, new_state%v_lat)
         call fill_halo(block, new_state%v_lat, full_lon=.true., full_lat=.false., full_lev=.true.)
       end if
       ! ----------------------------------------------------------------------
