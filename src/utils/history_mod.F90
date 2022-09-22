@@ -670,17 +670,22 @@ contains
 
     real(8) time1, time2
 
-    if (is_root_proc()) then
-      call log_notice('Write state.')
-      call cpu_time(time1)
-    end if
-
     if (.not. time_has_alert('h0_new_file')) then
+      if (restart) then
+        restart = .false.
+        call log_notice('Skip write state at restart step, and set restart to false.', pid=proc%id)
+        return ! Skip the restart step.
+      end if
       call fiona_start_output('h0', elapsed_seconds, new_file=time_step==0)
     else if (time_is_alerted('h0_new_file')) then
       call fiona_start_output('h0', elapsed_seconds, new_file=.true., tag=curr_time%format('%Y-%m-%d_%H_%M'))
     else
       call fiona_start_output('h0', elapsed_seconds, new_file=.false.)
+    end if
+
+    if (is_root_proc()) then
+      call log_notice('Write state.')
+      call cpu_time(time1)
     end if
 
     if (advection) then

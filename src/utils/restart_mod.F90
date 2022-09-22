@@ -161,9 +161,23 @@ contains
     integer start(3), count(3)
     real(8) time_value
     character(30) time_units
+    character(256) tmp_file
 
     if (restart_file == 'N/A') then
-      call log_error('Parameter restart_file is needed to restart!')
+      tmp_file = '.' // trim(case_name) // '.tmp'
+      if (is_root_proc()) then
+        call system('ls ' // trim(case_name) // '.*.r0.nc | sort -r >> ' // trim(tmp_file))
+      end if
+      call barrier()
+      open(10, file=tmp_file, status='old')
+      read(10, '(A)') restart_file
+      close(10)
+      if (is_root_proc()) then
+        call system('rm ' // trim(tmp_file))
+      end if
+      if (restart_file == '') then
+        call log_error('Parameter restart_file is needed to restart!', pid=proc%id)
+      end if
     end if
 
     call fiona_open_dataset('r0', file_path=restart_file, mpi_comm=proc%comm)
